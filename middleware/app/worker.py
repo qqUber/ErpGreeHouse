@@ -1,9 +1,12 @@
 import asyncio
+import json
 from celery import Celery
 from aiogram.types import Update
+import httpx
 from .config import get_settings
 from .bot import create_bot, create_dispatcher
 from .storage import get_redis
+from .db import get_db
 
 
 settings = get_settings()
@@ -65,6 +68,47 @@ def send_customer_message(chat_id: int, text: str) -> dict:
         return {"sent": bool(ok), "chat_id": int(chat_id)}
 
     return asyncio.run(runner())
+
+@celery_app.task
+def deliver_webhook_event(integration_id: int, event_type: str, payload: dict) -> dict:
+    db = get_db()
+    conn = db.connect()
+    try:
+        cur = conn.execute("SELECT id, enabled, config_json FROM integrations WHERE id=?", (integration_id,))
+        row = cur.fetchone()
+        if not row or int(row["enabled"]) != 1:
+            return {"delivered": False, "reason": "integration disabled or missing"}
+        try:
+            cfg = json.loads(row["config_json"] or "{}")
+        except Exception:
+            cfg = {}
+        url = str(cfg.get("url") or "").strip()
+        if not url:
+            return {"delivered": False, "reason": "missing url"}
+        headers = cfg.get("headers") if isinstance(cfg.get("headers"), dict) else {}
+
+        body = {"event_type": event_type, "data": payload}
+        status = "error"
+        http_status = None
+        response_body = None
+        try:
+            with httpx.Client(timeout=httpx.Timeout(5.0)) as client:
+                resp = client.post(url, json=body, headers=headers)
+                http_status = int(resp.status_code)
+                response_body = resp.text[:2000] if resp.text else ""
+                status = "ok" if 200 <= resp.status_code < 300 else "error"
+        except Exception as e:
+            response_body = str(e)[:2000]
+            status = "error"
+
+        conn.execute(
+            "INSERT INTO integration_deliveries(integration_id, event_type, status, http_status, response_body) VALUES(?,?,?,?,?)",
+            (int(integration_id), str(event_type), str(status), http_status, response_body),
+        )
+        conn.commit()
+        return {"delivered": status == "ok", "http_status": http_status}
+    finally:
+        conn.close()
 
 async def safe_send(bot, chat_id: int, text: str) -> bool:
     try:

@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from .auth import require_admin
 from .db import get_db
 from .erp_client import ERPClient
 from .identify import generate_qr_token, normalize_name, normalize_phone
@@ -17,6 +18,7 @@ from .loyalty import LoyaltyRules, calc_earned_points, clamp_redeem_points
 from .pdfgen import ReceiptLine, write_simple_receipt_pdf
 from .storage import get_redis
 from .worker import send_customer_message
+from .integration_events import dispatch_event
 
 
 router = APIRouter(prefix="/api/v1")
@@ -31,14 +33,6 @@ def public_status() -> dict[str, Any]:
         "admin_auth_configured": admin_configured,
         "erp_sync_enabled": os.getenv("ERP_SYNC_ENABLED", "false").lower() in ("1", "true", "yes"),
     }
-
-
-def _require_admin(x_admin_secret: str | None) -> None:
-    expected = os.getenv("ADMIN_SECRET", "")
-    if not expected:
-        raise HTTPException(status_code=500, detail="ADMIN_SECRET not configured")
-    if not x_admin_secret or x_admin_secret != expected:
-        raise HTTPException(status_code=401, detail="Invalid admin secret")
 
 
 def _cache_get_json(key: str) -> Any | None:
@@ -97,7 +91,7 @@ class CreateSaleIn(BaseModel):
 def dashboard(
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    _require_admin(x_admin_secret)
+    require_admin(x_admin_secret)
     today = datetime.now().strftime("%Y-%m-%d")
     cache_key = f"crm:cache:dashboard:{today}"
     cached = _cache_get_json(cache_key)
@@ -132,7 +126,7 @@ def list_customers(
     q: str | None = None,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    _require_admin(x_admin_secret)
+    require_admin(x_admin_secret)
     q_norm = (normalize_name(q) or normalize_phone(q) or "").strip() if q else ""
     cache_key = f"crm:cache:customers:{q_norm}" if q_norm else "crm:cache:customers:all"
     cached = _cache_get_json(cache_key)
@@ -166,7 +160,7 @@ def get_customer(
     customer_id: int,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    _require_admin(x_admin_secret)
+    require_admin(x_admin_secret)
     db = get_db()
     conn = db.connect()
     try:
@@ -198,7 +192,7 @@ def get_receipt(
     transaction_id: int,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> FileResponse:
-    _require_admin(x_admin_secret)
+    require_admin(x_admin_secret)
     db = get_db()
     conn = db.connect()
     try:
@@ -219,7 +213,7 @@ def identify_phone(
     payload: IdentifyPhoneIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    _require_admin(x_admin_secret)
+    require_admin(x_admin_secret)
     phone = normalize_phone(payload.phone)
     if not phone:
         raise HTTPException(status_code=400, detail="Invalid phone")
@@ -247,7 +241,7 @@ def identify_name(
     payload: IdentifyNameIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    _require_admin(x_admin_secret)
+    require_admin(x_admin_secret)
     name = normalize_name(payload.name)
     if not name:
         raise HTTPException(status_code=400, detail="Invalid name")
@@ -269,7 +263,7 @@ def identify_qr(
     payload: IdentifyQrIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    _require_admin(x_admin_secret)
+    require_admin(x_admin_secret)
     token = payload.qr.strip()
     if not token:
         raise HTTPException(status_code=400, detail="Invalid qr")
@@ -290,11 +284,13 @@ def create_sale(
     payload: CreateSaleIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    _require_admin(x_admin_secret)
+    require_admin(x_admin_secret)
     if not payload.items:
         raise HTTPException(status_code=400, detail="items required")
 
     total = sum(i.price * i.qty for i in payload.items)
+    tx_id = 0
+    result: dict[str, Any] | None = None
 
     db = get_db()
     conn = db.connect()
@@ -360,7 +356,7 @@ def create_sale(
             )
             conn.commit()
 
-        return {
+        result = {
             "transaction_id": tx_id,
             "total": total,
             "bonus_used": bonus_used,
@@ -372,6 +368,21 @@ def create_sale(
         }
     finally:
         conn.close()
+
+    if result:
+        dispatch_event(
+            "transaction.created",
+            {
+                "transaction_id": int(result["transaction_id"]),
+                "customer_id": payload.customer_id,
+                "total": int(result["total"]),
+                "bonus_used": int(result["bonus_used"]),
+                "bonus_earned": int(result["bonus_earned"]),
+            },
+        )
+        return result
+
+    raise HTTPException(status_code=500, detail="Transaction not created")
 
 
 def _maybe_sync_to_erpnext(telegram_id: int, items: list[SaleItem], bonus_used: int) -> str | None:
@@ -402,7 +413,7 @@ def _maybe_sync_to_erpnext(telegram_id: int, items: list[SaleItem], bonus_used: 
 def export_transactions_csv(
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> StreamingResponse:
-    _require_admin(x_admin_secret)
+    require_admin(x_admin_secret)
     db = get_db()
     conn = db.connect()
     try:

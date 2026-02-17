@@ -88,8 +88,38 @@ def init_db() -> None:
                 message TEXT,
                 created_at TEXT NOT NULL DEFAULT (datetime('now'))
             );
+
+            CREATE TABLE IF NOT EXISTS integrations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                enabled INTEGER NOT NULL DEFAULT 1,
+                secret TEXT NOT NULL,
+                config_json TEXT NOT NULL DEFAULT '{}',
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_integrations_kind ON integrations(kind);
+            CREATE INDEX IF NOT EXISTS idx_integrations_enabled ON integrations(enabled);
+
+            CREATE TABLE IF NOT EXISTS integration_deliveries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                integration_id INTEGER NOT NULL,
+                event_type TEXT NOT NULL,
+                status TEXT NOT NULL,
+                http_status INTEGER,
+                response_body TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(integration_id) REFERENCES integrations(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_integration_deliveries_integration_id ON integration_deliveries(integration_id);
             """
         )
         conn.commit()
+        cols = [r["name"] for r in conn.execute("PRAGMA table_info(transactions)").fetchall()]
+        if "pos_receipt_id" not in cols:
+            conn.execute("ALTER TABLE transactions ADD COLUMN pos_receipt_id TEXT")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_transactions_pos_receipt_id ON transactions(pos_receipt_id)")
+            conn.commit()
     finally:
         conn.close()

@@ -8,6 +8,7 @@ from starlette.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 from .config import get_settings
 from .db import init_db
 from .admin_api import router as admin_router, public_router as public_router
+from .integrations_api import router as integrations_router, public_router as integrations_public_router
 from .worker import process_telegram_update
 from .bot import create_bot
 from .worker import send_broadcast
@@ -27,6 +28,8 @@ app.add_middleware(
 
 app.include_router(admin_router)
 app.include_router(public_router)
+app.include_router(integrations_router)
+app.include_router(integrations_public_router)
 
 admin_dist = Path(__file__).resolve().parents[2] / "admin-ui" / "dist"
 if admin_dist.exists():

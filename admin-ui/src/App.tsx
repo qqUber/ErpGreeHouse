@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Api, CustomerDetails, CustomerListItem, Dashboard, getAdminSecret, setAdminSecret } from './api'
+import { Api, CustomerDetails, CustomerListItem, Dashboard, Integration, IntegrationDelivery, getAdminSecret, setAdminSecret } from './api'
 
-type Tab = 'dashboard' | 'customers' | 'pos'
+type Tab = 'dashboard' | 'customers' | 'pos' | 'integrations'
 
 type PublicStatus = {
   api: string
@@ -25,8 +25,16 @@ function App() {
   const [publicStatus, setPublicStatus] = useState<PublicStatus | null>(null)
   const [adminKey, setAdminKey] = useState(getAdminSecret())
   const [authReady, setAuthReady] = useState(false)
+  const [integrations, setIntegrations] = useState<Integration[]>([])
+  const [selectedIntegrationId, setSelectedIntegrationId] = useState<number | null>(null)
+  const [integrationDeliveries, setIntegrationDeliveries] = useState<IntegrationDelivery[]>([])
+  const [integrationsBusy, setIntegrationsBusy] = useState(false)
 
   const selected = useMemo(() => customers.find(c => c.id === selectedId) || null, [customers, selectedId])
+  const selectedIntegration = useMemo(
+    () => integrations.find(i => i.id === selectedIntegrationId) || null,
+    [integrations, selectedIntegrationId]
+  )
 
   async function loadPublicStatus() {
     try {
@@ -53,6 +61,23 @@ function App() {
     setError(null)
     const d = await Api.customer(id)
     setDetails(d)
+  }
+
+  async function loadIntegrations() {
+    setError(null)
+    setIntegrationsBusy(true)
+    try {
+      const res = await Api.integrations()
+      setIntegrations(res.items)
+    } finally {
+      setIntegrationsBusy(false)
+    }
+  }
+
+  async function loadDeliveries(id: number) {
+    setError(null)
+    const res = await Api.integrationDeliveries(id)
+    setIntegrationDeliveries(res.items)
   }
 
   async function bootstrap() {
@@ -86,6 +111,20 @@ function App() {
     }
   }, [selectedId, authReady])
 
+  useEffect(() => {
+    if (!authReady) return
+    if (tab === 'integrations') {
+      loadIntegrations().catch(e => setError(String(e)))
+    }
+  }, [tab, authReady])
+
+  useEffect(() => {
+    if (!authReady) return
+    if (selectedIntegrationId != null) {
+      loadDeliveries(selectedIntegrationId).catch(e => setError(String(e)))
+    }
+  }, [selectedIntegrationId, authReady])
+
   async function doLogin() {
     setAdminSecret(adminKey.trim())
     await bootstrap()
@@ -102,6 +141,7 @@ function App() {
           <div className={`tab ${tab === 'dashboard' ? 'tabActive' : ''}`} onClick={() => setTab('dashboard')}>Сводка</div>
           <div className={`tab ${tab === 'customers' ? 'tabActive' : ''}`} onClick={() => setTab('customers')}>Клиенты</div>
           <div className={`tab ${tab === 'pos' ? 'tabActive' : ''}`} onClick={() => setTab('pos')}>Операции</div>
+          <div className={`tab ${tab === 'integrations' ? 'tabActive' : ''}`} onClick={() => setTab('integrations')}>Интеграции</div>
         </div>
       </div>
 
@@ -165,6 +205,37 @@ function App() {
             await loadCustomers()
             setSelectedId(customerId)
             setTab('customers')
+          }}
+        />
+      ) : null}
+      {authReady && tab === 'integrations' ? (
+        <IntegrationsView
+          items={integrations}
+          busy={integrationsBusy}
+          selected={selectedIntegration}
+          deliveries={integrationDeliveries}
+          select={id => setSelectedIntegrationId(id)}
+          reload={() => loadIntegrations()}
+          create={async p => {
+            await Api.createIntegration(p)
+            await loadIntegrations()
+          }}
+          update={async (id, p) => {
+            await Api.updateIntegration(id, p)
+            await loadIntegrations()
+          }}
+          rotate={async id => {
+            await Api.rotateIntegrationSecret(id)
+            await loadIntegrations()
+            setSelectedIntegrationId(id)
+          }}
+          remove={async id => {
+            await Api.deleteIntegration(id)
+            setSelectedIntegrationId(null)
+            await loadIntegrations()
+          }}
+          refreshDeliveries={async id => {
+            await loadDeliveries(id)
           }}
         />
       ) : null}
@@ -449,6 +520,196 @@ function PosView(props: {
           Чек сохраняется в PDF. При наличии Telegram ID отправляется уведомление.
         </div>
       </div>
+    </div>
+  )
+}
+
+function IntegrationsView(props: {
+  items: Integration[]
+  busy: boolean
+  selected: Integration | null
+  deliveries: IntegrationDelivery[]
+  select: (id: number) => void
+  reload: () => Promise<void>
+  create: (p: { name: string; kind: string; enabled: boolean; config: any }) => Promise<void>
+  update: (id: number, p: { name: string; kind: string; enabled: boolean; config: any }) => Promise<void>
+  rotate: (id: number) => Promise<void>
+  remove: (id: number) => Promise<void>
+  refreshDeliveries: (id: number) => Promise<void>
+}) {
+  const { items, busy, selected, deliveries, select, reload, create, update, rotate, remove, refreshDeliveries } = props
+
+  const [mode, setMode] = useState<'create' | 'edit'>('create')
+  const [name, setName] = useState('')
+  const [kind, setKind] = useState('pos_webhook')
+  const [enabled, setEnabled] = useState(true)
+  const [configText, setConfigText] = useState('{}')
+  const [info, setInfo] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!selected) return
+    setMode('edit')
+    setName(selected.name)
+    setKind(selected.kind)
+    setEnabled(selected.enabled)
+    setConfigText(JSON.stringify(selected.config || {}, null, 2))
+  }, [selected?.id])
+
+  function parseConfig(): any {
+    const t = (configText || '').trim()
+    if (!t) return {}
+    return JSON.parse(t)
+  }
+
+  async function onSave() {
+    setInfo(null)
+    try {
+      const cfg = parseConfig()
+      if (mode === 'create') {
+        await create({ name: name.trim(), kind: kind.trim(), enabled, config: cfg })
+        setName('')
+        setKind('pos_webhook')
+        setEnabled(true)
+        setConfigText('{}')
+        setInfo('Интеграция создана.')
+      } else if (mode === 'edit' && selected) {
+        await update(selected.id, { name: name.trim(), kind: kind.trim(), enabled, config: cfg })
+        setInfo('Изменения сохранены.')
+      }
+    } catch (e: any) {
+      setInfo(String(e?.message || e))
+    }
+  }
+
+  const webhookUrl = selected ? `${location.origin}/api/v1/public/integrations/${selected.id}/pos/receipt` : ''
+
+  return (
+    <div className="grid">
+      <div className="card cardWide">
+        <div className="row" style={{ marginBottom: 10 }}>
+          <div style={{ fontWeight: 800 }}>Подключения</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn" disabled={busy} onClick={() => void reload()}>Обновить</button>
+          </div>
+        </div>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Наименование</th>
+              <th>Тип</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map(i => (
+              <tr key={i.id} style={{ cursor: 'pointer', background: selected?.id === i.id ? 'rgba(0,0,0,0.04)' : 'transparent' }} onClick={() => select(i.id)}>
+                <td>{i.id}</td>
+                <td>{i.name}</td>
+                <td>{i.kind}</td>
+                <td><span className={`pill ${i.enabled ? 'pillGood' : 'pillWarn'}`}>{i.enabled ? 'Активна' : 'Отключена'}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
+          Типы: pos_webhook (входящий чек), outbound_webhook (исходящие события).
+        </div>
+      </div>
+
+      <div className="card cardWide">
+        <div className="row" style={{ marginBottom: 10 }}>
+          <div style={{ fontWeight: 800 }}>{mode === 'create' ? 'Создание' : 'Настройки'}</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className={`btn ${mode === 'create' ? 'btnPrimary' : ''}`} onClick={() => setMode('create')}>Новая</button>
+            <button className={`btn ${mode === 'edit' ? 'btnPrimary' : ''}`} disabled={!selected} onClick={() => setMode('edit')}>Редактирование</button>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gap: 10 }}>
+          <div>
+            <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Наименование</div>
+            <input className="input" value={name} onChange={e => setName(e.target.value)} />
+          </div>
+
+          <div className="row">
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Тип</div>
+              <input className="input" value={kind} onChange={e => setKind(e.target.value)} />
+            </div>
+            <div style={{ width: 180 }}>
+              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Статус</div>
+              <button className={`btn ${enabled ? 'btnPrimary' : ''}`} onClick={() => setEnabled(v => !v)}>{enabled ? 'Активна' : 'Отключена'}</button>
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Конфигурация (JSON)</div>
+            <textarea className="input" style={{ height: 160, resize: 'vertical' }} value={configText} onChange={e => setConfigText(e.target.value)} />
+          </div>
+
+          <div className="row">
+            <button className="btn btnPrimary" onClick={() => void onSave()} disabled={!name.trim() || !kind.trim()}>
+              Сохранить
+            </button>
+            {mode === 'edit' && selected ? (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn" onClick={() => void rotate(selected.id)}>Сменить ключ</button>
+                <button className="btn" onClick={() => void remove(selected.id)}>Удалить</button>
+              </div>
+            ) : (
+              <div />
+            )}
+          </div>
+
+          {info ? <div style={{ color: info.toLowerCase().includes('error') ? '#8b0000' : 'rgba(0,0,0,0.75)' }}>{info}</div> : null}
+
+          {selected && selected.kind === 'pos_webhook' ? (
+            <div>
+              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Webhook URL (приём чека)</div>
+              <input className="input" readOnly value={webhookUrl} />
+              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginTop: 8 }}>
+                Заголовок авторизации: x-integration-secret
+              </div>
+              <input className="input" readOnly value={selected.secret} style={{ marginTop: 6 }} />
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {selected ? (
+        <div className="card cardFull">
+          <div className="row">
+            <div style={{ fontWeight: 800 }}>Доставка событий</div>
+            <button className="btn" onClick={() => void refreshDeliveries(selected.id)}>Обновить</button>
+          </div>
+          <table className="table" style={{ marginTop: 10 }}>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Событие</th>
+                <th>Статус</th>
+                <th>HTTP</th>
+                <th>Дата</th>
+              </tr>
+            </thead>
+            <tbody>
+              {deliveries.map(d => (
+                <tr key={d.id}>
+                  <td>{d.id}</td>
+                  <td>{d.event_type}</td>
+                  <td><span className={`pill ${d.status === 'ok' ? 'pillGood' : 'pillWarn'}`}>{d.status}</span></td>
+                  <td>{d.http_status ?? '—'}</td>
+                  <td>{d.created_at}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
+            Для outbound_webhook укажите config.url и (опционально) config.headers.
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

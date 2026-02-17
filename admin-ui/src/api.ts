@@ -42,6 +42,23 @@ export type CustomerDetails = {
   transactions: TransactionItem[]
 }
 
+export type Integration = {
+  id: number
+  name: string
+  kind: string
+  enabled: boolean
+  secret: string
+  config: Record<string, any>
+}
+
+export type IntegrationDelivery = {
+  id: number
+  event_type: string
+  status: string
+  http_status: number | null
+  created_at: string
+}
+
 function baseUrl() {
   return (import.meta as any).env.VITE_API_BASE_URL || ''
 }
@@ -90,5 +107,14 @@ export const Api = {
   identifyQr: (qr: string) => api<{ customer_id: number }>('/api/v1/identify/qr', { method: 'POST', body: JSON.stringify({ qr }) }),
   identifyName: (name: string) => api<{ items: CustomerListItem[] }>('/api/v1/identify/name', { method: 'POST', body: JSON.stringify({ name }) }),
   createSale: (payload: any) => api<any>('/api/v1/pos/sale', { method: 'POST', body: JSON.stringify(payload) }),
-  receiptUrl: (txId: number) => `${baseUrl()}/api/v1/transactions/${txId}/receipt`
+  receiptUrl: (txId: number) => `${baseUrl()}/api/v1/transactions/${txId}/receipt`,
+
+  integrations: () => api<{ items: Integration[] }>('/api/v1/integrations', { method: 'GET', headers: {} }),
+  createIntegration: (payload: { name: string; kind: string; enabled: boolean; config: any }) =>
+    api<{ id: number }>('/api/v1/integrations', { method: 'POST', body: JSON.stringify(payload) }),
+  updateIntegration: (id: number, payload: { name: string; kind: string; enabled: boolean; config: any }) =>
+    api<{ updated: boolean }>(`/api/v1/integrations/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  deleteIntegration: (id: number) => api<{ deleted: boolean }>(`/api/v1/integrations/${id}`, { method: 'DELETE' }),
+  rotateIntegrationSecret: (id: number) => api<{ secret: string }>(`/api/v1/integrations/${id}/rotate-secret`, { method: 'POST' }),
+  integrationDeliveries: (id: number) => api<{ items: IntegrationDelivery[] }>(`/api/v1/integrations/${id}/deliveries`, { method: 'GET', headers: {} })
 }
