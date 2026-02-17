@@ -57,6 +57,15 @@ def send_broadcast(text: str) -> dict:
         
     return asyncio.run(runner())
 
+@celery_app.task
+def send_customer_message(chat_id: int, text: str) -> dict:
+    async def runner() -> dict:
+        bot = create_bot()
+        ok = await safe_send(bot, int(chat_id), text)
+        return {"sent": bool(ok), "chat_id": int(chat_id)}
+
+    return asyncio.run(runner())
+
 async def safe_send(bot, chat_id: int, text: str) -> bool:
     try:
         await bot.send_message(chat_id=chat_id, text=text)

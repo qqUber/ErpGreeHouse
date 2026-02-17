@@ -1,13 +1,41 @@
+import os
+from pathlib import Path
 from fastapi import FastAPI, Request, Header, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from starlette.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 
 from .config import get_settings
+from .db import init_db
+from .admin_api import router as admin_router, public_router as public_router
 from .worker import process_telegram_update
 from .bot import create_bot
 from .worker import send_broadcast
 
 
 app = FastAPI(title="Telegram CRM Middleware")
+
+origins_raw = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:5174")
+origins = [o.strip() for o in origins_raw.split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(admin_router)
+app.include_router(public_router)
+
+admin_dist = Path(__file__).resolve().parents[2] / "admin-ui" / "dist"
+if admin_dist.exists():
+    app.mount("/", StaticFiles(directory=str(admin_dist), html=True), name="admin-ui")
+
+
+@app.on_event("startup")
+async def _startup() -> None:
+    init_db()
 
 
 def verify_webhook_secret(secret_header: str | None, expected: str) -> None:

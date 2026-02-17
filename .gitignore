@@ -7,6 +7,8 @@ venv/
 .vscode/
 *.log
 *.sqlite3
+*.db
+*.tsbuildinfo
 __dist__/
 dist/
 build/
@@ -16,3 +18,8 @@ build/
 .env.*
 
 node_modules/
+
+.trae/
+middleware/Lib/
+middleware/Scripts/
+middleware/crm.db

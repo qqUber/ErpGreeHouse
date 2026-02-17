@@ -4,6 +4,8 @@ from aiogram.filters import Command
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from .erp_client import ERPClient
 from .menu import MENU, find_item
+from .db import get_db
+from .identify import generate_qr_token, normalize_name, normalize_phone
 from .storage import get_redis, get_json, set_json, delete
 
 
@@ -16,6 +18,44 @@ def _cart_key(tg_id: int) -> str:
 
 def _consent_key(tg_id: int) -> str:
     return f"crm:consent:{tg_id}"
+
+def _upsert_local_customer(telegram_id: int, full_name: str, phone: str) -> int:
+    db = get_db()
+    conn = db.connect()
+    try:
+        cur = conn.execute("SELECT id, qr_token FROM customers WHERE telegram_id=? OR phone=?", (telegram_id, phone))
+        row = cur.fetchone()
+        name_norm = normalize_name(full_name)
+        qr_token = generate_qr_token()
+        if row:
+            existing_qr = row["qr_token"] or qr_token
+            conn.execute(
+                "UPDATE customers SET phone=?, full_name=?, telegram_id=?, qr_token=?, updated_at=datetime('now') WHERE id=?",
+                (phone, name_norm, telegram_id, existing_qr, int(row["id"])),
+            )
+            conn.commit()
+            return int(row["id"])
+        cur2 = conn.execute(
+            "INSERT INTO customers(phone, full_name, telegram_id, qr_token) VALUES(?,?,?,?)",
+            (phone, name_norm, telegram_id, qr_token),
+        )
+        conn.commit()
+        return int(cur2.lastrowid)
+    finally:
+        conn.close()
+
+
+def _store_consent(customer_id: int, consent_text: str, consent_version: str) -> None:
+    db = get_db()
+    conn = db.connect()
+    try:
+        conn.execute(
+            "INSERT INTO consents(customer_id, source, consent_version, consent_text) VALUES(?,?,?,?)",
+            (customer_id, "telegram", consent_version, consent_text),
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 @router.message(Command("start"))
@@ -51,7 +91,10 @@ async def cmd_register(message: Message) -> None:
         await message.answer("Формат: /register Имя Телефон")
         return
     name = args[1]
-    phone = args[2]
+    phone = normalize_phone(args[2])
+    if not phone:
+        await message.answer("Телефон должен быть в формате +79991234567")
+        return
     consent_text = "Я соглашаюсь на обработку персональных данных."
     r = get_redis()
     r.hset(_consent_key(message.from_user.id), mapping={"name": name, "phone": phone})
@@ -80,6 +123,8 @@ async def cb_consent(cb: CallbackQuery) -> None:
         await cb.answer()
         return
     client = ERPClient()
+    consent_text = "Я соглашаюсь на обработку персональных данных."
+    consent_version = "1.0"
     try:
         created = await client.create_customer(
             telegram_id=cb.from_user.id,
@@ -87,6 +132,8 @@ async def cb_consent(cb: CallbackQuery) -> None:
             phone=data.get("phone", ""),
             consent_text="Согласие принято",
         )
+        customer_id = _upsert_local_customer(cb.from_user.id, data.get("name", ""), data.get("phone", ""))
+        _store_consent(customer_id, consent_text, consent_version)
         delete(_consent_key(cb.from_user.id))
         await cb.message.edit_text(f"Готово. Начислено 100 приветственных баллов.")
     except Exception as e:
@@ -247,7 +294,23 @@ async def cmd_help(message: Message) -> None:
             "/add код количество — добавить в корзину",
             "/pay N — применить N баллов",
             "/order — оформить заказ",
+            "/qr — показать QR токен",
             "/delete — удалить данные",
         ]
     )
     await message.answer(text)
+
+
+@router.message(Command("qr"))
+async def cmd_qr(message: Message) -> None:
+    db = get_db()
+    conn = db.connect()
+    try:
+        cur = conn.execute("SELECT qr_token FROM customers WHERE telegram_id=?", (message.from_user.id,))
+        row = cur.fetchone()
+        if not row or not row["qr_token"]:
+            await message.answer("Сначала зарегистрируйся: /start")
+            return
+        await message.answer(f"Твой QR-код для идентификации на кассе:\n{row['qr_token']}")
+    finally:
+        conn.close()

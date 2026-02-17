@@ -82,7 +82,7 @@ function Run-UnitTests {
 function Run-IntegrationTests {
     Write-Host "🔗 Running Integration Tests..." -ForegroundColor Green
     
-    $INTEGRATION_CMD = "$PYTHON_CMD -m pytest tests/test_erp_client.py -v --tb=short"
+    $INTEGRATION_CMD = "$PYTHON_CMD -m pytest tests/integration -v --tb=short"
     
     if ($HtmlReport) {
         $INTEGRATION_CMD += " --html=$REPORT_SUBDIR/integration_tests.html --self-contained-html"
