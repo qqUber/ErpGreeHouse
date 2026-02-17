@@ -1,0 +1,57 @@
+{
+ "name": "Loyalty Transaction",
+ "module": "Telegram CRM",
+ "custom": 1,
+ "fields": [
+  {
+   "fieldname": "telegram_client",
+   "fieldtype": "Link",
+   "label": "Client",
+   "options": "Telegram Client",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "transaction_type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "Accrual\nRedemption\nExpiration\nAdjustment",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "points",
+   "fieldtype": "Int",
+   "label": "Points",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "order_reference",
+   "fieldtype": "Link",
+   "label": "Order Reference",
+   "options": "Sales Order"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Small",
+   "label": "Description"
+  },
+  {
+   "fieldname": "transaction_date",
+   "fieldtype": "Datetime",
+   "label": "Date",
+   "default": "Now",
+   "in_list_view": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 0
+  }
+ ]
+}
