@@ -3,9 +3,9 @@
 > **Modern Customer Relationship Management System with Telegram Integration and ERPNext Loyalty Program**
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
+[![aiogram](https://img.shields.io/badge/aiogram-3.13+-blue.svg)](https://docs.aiogram.dev/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Testing](https://img.shields.io/badge/Tests-85%25-success.svg)](docs/testing/test_report.html)
 
 ## 📋 Project Overview
 
@@ -17,9 +17,9 @@
 - **👤 Customer Registration**: 152-FZ compliant registration with consent management
 - **🛒 Order Processing**: Complete order lifecycle with loyalty integration
 - **💰 Loyalty Management**: Points accrual and redemption system
-- **🔄 ERPNext Integration**: Real-time synchronization with ERP system
-- **📊 Analytics & Reporting**: Comprehensive metrics and business intelligence
+- **🔄 ERPNext Integration**: Real-time synchronization with ERP system (with mock mode)
 - **⚡ High Performance**: Async architecture for 1000+ concurrent users
+- **🛡️ Security**: Rate limiting, input validation, JWT authentication
 
 ## 🏗️ Architecture
 
@@ -29,22 +29,19 @@ graph TD
     B --> C[Redis Cache]
     B --> D[ERPNext API]
     B --> E[Celery Worker]
-    E --> F[Database]
-    G[React Frontend] --> H[Flask API]
-    H --> D
+    E --> F[PostgreSQL Database]
 ```
 
 ### Technology Stack
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| **Middleware** | Python 3.11, FastAPI | API Gateway for Telegram, async webhooks |
-| **Worker** | Celery, Redis | Background task processing, queues |
-| **Integration** | Python, REST API | ERPNext integration via Custom Fields |
-| **Frontend** | React 18, Vite | Web interface for managers |
-| **Backend** | Python, Flask | API for frontend |
+| **Middleware** | Python 3.11, FastAPI, aiogram | Async Telegram bot and API |
+| **Worker** | Celery, Redis | Background task processing |
+| **Integration** | Python, httpx, REST API | ERPNext integration with mock mode |
 | **Database** | PostgreSQL | Primary data storage |
 | **Cache** | Redis | Session management, caching |
+| **Testing** | pytest, pytest-asyncio | Unit and integration tests |
 
 ## 🚀 Quick Start
 
@@ -53,20 +50,20 @@ graph TD
 - Python 3.11+
 - Redis 6.0+
 - PostgreSQL 12+
-- Node.js 18+ (for frontend)
 - Telegram Bot Token
-- ERPNext Instance
+- ERPNext Instance (optional, mock mode available)
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-org/telegram-crm-mvp.git
-   cd telegram-crm-mvp
+   git clone https://github.com/qqUber/ErpGreeHouse.git
+   cd ErpGreeHouse
    ```
 
 2. **Set up Python environment**
    ```bash
+   cd middleware
    python -m venv venv
    source venv/bin/activate  # Linux/Mac
    # or
@@ -86,7 +83,15 @@ graph TD
 
 5. **Run tests**
    ```bash
-   python simple_test_runner.py
+   # Cross-platform setup
+   bash setup_test_env.sh  # Linux/Mac
+   # or
+   powershell -ExecutionPolicy Bypass -File setup_test_env.ps1  # Windows
+   
+   # Run tests
+   bash run_tests.sh  # Linux/Mac
+   # or
+   powershell -ExecutionPolicy Bypass -File run_tests.ps1  # Windows
    ```
 
 6. **Start the application**
@@ -104,10 +109,8 @@ graph TD
 docs/
 ├── architecture/          # System architecture and design
 ├── plans/                # Development plans and roadmaps
-├── api/                   # API documentation and specifications
 ├── testing/              # Testing strategies and reports
-├── deployment/           # Deployment guides and infrastructure
-└── guides/               # User guides and tutorials
+└── pre-commit-checklist.md # Code review checklist
 ```
 
 ### 🎯 Key Documents
@@ -135,41 +138,43 @@ docs/
 
 ### Test Categories
 
-- **Unit Tests**: 85% coverage of business logic
-- **Integration Tests**: 95% coverage of API endpoints
-- **E2E Tests**: 100% coverage of critical user journeys
-- **Load Tests**: 1000+ concurrent users support
-- **Security Tests**: OWASP Top 10 compliance
+- **Unit Tests**: Core business logic testing
+- **Integration Tests**: API endpoints testing
+- **E2E Tests**: Critical user journeys testing
+- **Load Tests**: Concurrent users support
+- **Security Tests**: OWASP compliance
 
 ### Cross-Platform Testing
 
 | Platform | Status | Scripts |
 |----------|--------|---------|
-| **Linux** | ✅ Ready | `run_tests.sh` |
-| **Windows** | ⚠️ Needs fixes | `run_tests.ps1` |
-| **Universal** | ✅ Recommended | `simple_test_runner.py` |
+| **Linux** | ✅ Ready | `setup_test_env.sh`, `run_tests.sh` |
+| **Windows** | ✅ Ready | `setup_test_env.ps1`, `run_tests.ps1` |
+| **Metrics** | ✅ Ready | `collect_metrics.sh` |
 
 ### Running Tests
 
 ```bash
-# Quick validation
-python simple_test_runner.py
+# Setup environment (cross-platform)
+bash setup_test_env.sh  # Linux/Mac
+powershell -ExecutionPolicy Bypass -File setup_test_env.ps1  # Windows
 
-# Full test suite (Linux)
-bash run_tests.sh
+# Run full test suite
+bash run_tests.sh  # Linux/Mac
+powershell -ExecutionPolicy Bypass -File run_tests.ps1  # Windows
 
-# Metrics collection
-bash collect_metrics.sh
+# Collect metrics
+bash collect_metrics.sh  # Linux/Mac
 ```
 
 ## 📊 Performance Metrics
 
-| Metric | Target | Current |
+| Metric | Target | Status |
 |--------|--------|---------|
-| **Response Time** | <200ms | ✅ 150ms |
+| **Response Time** | <200ms | ✅ Implemented |
 | **Concurrent Users** | 1000+ | ✅ Supported |
-| **Test Coverage** | >80% | ✅ 85% |
-| **Error Rate** | <1% | ✅ 0.2% |
+| **Async Processing** | Non-blocking | ✅ With Celery |
+| **Error Rate** | <1% | ✅ Target set |
 
 ## 🔧 Configuration
 
@@ -184,6 +189,7 @@ TELEGRAM_WEBHOOK_URL=https://your-domain.com/webhook
 ERP_API_BASE_URL=https://your-erpnext.com
 ERP_API_KEY=your_api_key
 ERP_API_SECRET=your_api_secret
+ERP_MOCK_MODE=true          # Use mock ERPNext responses for development
 
 # Database Configuration
 DATABASE_URL=postgresql://user:pass@localhost/telegram_crm
@@ -192,15 +198,6 @@ REDIS_URL=redis://localhost:6379/0
 # Security
 JWT_SECRET_KEY=your_jwt_secret
 WEBHOOK_SECRET=your_webhook_secret
-```
-
-### Feature Flags
-
-```bash
-# Development features
-ERP_MOCK_MODE=true          # Use mock ERPNext responses
-DEBUG_MODE=true             # Enable debug logging
-TEST_MODE=false             # Enable test mode features
 
 # Performance tuning
 CACHE_TTL=3600              # Cache TTL in seconds
@@ -208,26 +205,49 @@ MAX_CONCURRENT_REQUESTS=100 # Request limit per user
 RATE_LIMIT_PER_MINUTE=60    # Rate limiting
 ```
 
-## 🚀 Deployment
-
-### Docker Deployment
+### Feature Flags
 
 ```bash
-# Build and run with Docker Compose
+# Development features
+DEBUG_MODE=true             # Enable debug logging
+TEST_MODE=false             # Enable test mode features
+MOCK_MODE=true              # Use mock responses
+
+# Security features
+ENABLE_RATE_LIMITING=true   # Enable rate limiting
+ENABLE_JWT_AUTH=true        # Enable JWT authentication
+LOG_REQUESTS=true          # Log all requests
+```
+
+## 🚀 Deployment
+
+### Docker Deployment (Full Stack)
+
+```bash
+# Start complete infrastructure (includes ERPNext)
 docker-compose up -d
+
+# Start only middleware services
+docker-compose -f docker-compose.infrastructure.yml up -d
 
 # View logs
 docker-compose logs -f middleware
 ```
 
-### Manual Deployment
+### Manual Deployment (Middleware Only)
 
 ```bash
-# Linux deployment
-bash scripts/deploy.sh
+# Linux/Mac deployment
+cd middleware
+bash setup_test_env.sh
+bash run_tests.sh
+python -m app.main
 
 # Windows deployment
-powershell -ExecutionPolicy Bypass -File scripts/deploy.ps1
+cd middleware
+powershell -ExecutionPolicy Bypass -File setup_test_env.ps1
+powershell -ExecutionPolicy Bypass -File run_tests.ps1
+python -m app.main
 ```
 
 ## 📈 Monitoring
@@ -258,11 +278,13 @@ open reports/$(date +%Y%m%d)/dashboard.html
 - **Input Validation**: SQL injection and XSS prevention
 - **JWT Authentication**: Secure API access
 - **Webhook Validation**: Telegram webhook verification
+- **Mock Mode**: Safe development without real ERPNext
 
 ### Security Scanning
 
 ```bash
-# Run security tests
+# Run security tests (from middleware directory)
+cd middleware
 bandit -r app/
 safety check
 ```
@@ -273,16 +295,27 @@ safety check
 
 1. **Fork the repository**
 2. **Create feature branch**: `git checkout -b feature/amazing-feature`
-3. **Make changes**: Follow coding standards
+3. **Make changes**: Follow coding standards and pre-commit hooks
 4. **Run tests**: Ensure all tests pass
 5. **Submit PR**: Use descriptive title and description
 
 ### Code Standards
 
-- **Python**: PEP 8 compliance
-- **JavaScript**: ESLint configuration
-- **Testing**: Minimum 80% coverage
-- **Documentation**: Update relevant docs
+- **Python**: PEP 8 compliance, Black formatting, isort imports
+- **Testing**: Minimum 80% coverage, pytest for async code
+- **Documentation**: Update relevant docs in `/docs`
+- **Pre-commit**: All hooks must pass before commit
+
+### Pre-commit Hooks
+
+```bash
+# Install pre-commit
+pip install pre-commit
+pre-commit install
+
+# Run all hooks
+pre-commit run --all-files
+```
 
 ## 📞 Support
 
@@ -291,16 +324,16 @@ safety check
 - **Documentation**: Check `/docs` directory first
 - **Issues**: Create GitHub issue with detailed description
 - **Discussions**: Use GitHub Discussions for questions
-- **Email**: support@your-company.com
 
 ### Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| **Bot not responding** | Check webhook configuration and logs |
-| **Database connection failed** | Verify DATABASE_URL and network access |
+| **Bot not responding** | Check TELEGRAM_BOT_TOKEN and webhook configuration |
+| **Database connection failed** | Verify DATABASE_URL and PostgreSQL service |
 | **Redis connection error** | Check REDIS_URL and Redis service status |
-| **ERPNext API errors** | Verify API credentials and ERPNext availability |
+| **ERPNext API errors** | Verify ERP credentials or enable ERP_MOCK_MODE |
+| **Tests failing** | Run setup scripts and check dependencies |
 
 ## 📄 License
 
@@ -310,8 +343,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **ERPNext Team** for the excellent ERP system
 - **Telegram** for the powerful bot API
-- **FastAPI Community** for the amazing framework
-- **Contributors** who helped build this system
+- **FastAPI Community** for the amazing async framework
+- **aiogram Team** for the modern Telegram bot framework
 
 ---
 
@@ -319,4 +352,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **📅 Last Updated**: February 17, 2026  
 **🔄 Version**: 1.0.0  
-**🎯 Status**: Production Ready
+**🎯 Status**: Development Ready
