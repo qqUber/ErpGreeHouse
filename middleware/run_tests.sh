@@ -7,6 +7,7 @@ echo "🧪 Running Telegram CRM MVP Tests"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
+export PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 
 # Detect OS
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
