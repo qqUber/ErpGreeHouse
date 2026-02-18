@@ -72,20 +72,14 @@ function baseUrl() {
   return (import.meta as any).env.VITE_API_BASE_URL || ''
 }
 
+let _adminSecret = ''
+
 export function getAdminSecret() {
-  try {
-    return localStorage.getItem('admin_secret') || ''
-  } catch {
-    return ''
-  }
+  return _adminSecret
 }
 
 export function setAdminSecret(v: string) {
-  try {
-    localStorage.setItem('admin_secret', v)
-  } catch {
-    return
-  }
+  _adminSecret = String(v || '')
 }
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -96,27 +90,49 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 
   const res = await fetch(`${baseUrl()}${path}`, {
     ...init,
-    headers
+    headers,
+    credentials: 'include'
   })
 
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(text || `HTTP ${res.status}`)
+    try {
+      const j = JSON.parse(text || '{}')
+      const d = j?.detail ? String(j.detail) : ''
+      throw new Error(d || `HTTP ${res.status}`)
+    } catch {
+      throw new Error(`HTTP ${res.status}`)
+    }
   }
 
   return (await res.json()) as T
 }
 
 export const Api = {
-  publicStatus: () => api<{ api: string; admin_auth_configured: boolean; erp_sync_enabled: boolean }>('/api/v1/public/status', { method: 'GET', headers: {} }),
-  authStatus: () => api<{ bootstrap_enabled: boolean; default_admin_present: boolean; default_admin_username: string; must_change_password: boolean }>('/api/v1/public/auth/status', { method: 'GET', headers: {} }),
-  login: (username: string, password: string) => api<{ token: string; must_change_password: boolean }>('/api/v1/public/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
-  changePassword: (old_password: string, new_password: string) => api<{ changed: boolean }>('/api/v1/auth/change-password', { method: 'POST', body: JSON.stringify({ old_password, new_password }) }),
-  recoverPassword: (username: string, new_password: string, recoverySecret: string) =>
-    api<{ recovered: boolean }>('/api/v1/public/auth/recover', { method: 'POST', body: JSON.stringify({ username, new_password }), headers: { 'x-admin-recovery': recoverySecret } as any }),
+  publicStatus: (signal?: AbortSignal) =>
+    api<{ api: string; admin_auth_configured: boolean; erp_sync_enabled: boolean }>('/api/v1/public/status', { method: 'GET', headers: {}, signal }),
+  authStatus: (signal?: AbortSignal) =>
+    api<{ bootstrap_enabled: boolean; default_admin_present: boolean; default_admin_username: string; must_change_password: boolean }>('/api/v1/public/auth/status', {
+      method: 'GET',
+      headers: {},
+      signal
+    }),
+  login: (username: string, password: string, signal?: AbortSignal) =>
+    api<{ token: string; must_change_password: boolean }>('/api/v1/public/auth/login', { method: 'POST', body: JSON.stringify({ username, password }), signal }),
+  changePassword: (old_password: string, new_password: string, signal?: AbortSignal) =>
+    api<{ changed: boolean }>('/api/v1/auth/change-password', { method: 'POST', body: JSON.stringify({ old_password, new_password }), signal }),
+  logout: (signal?: AbortSignal) => api<{ logged_out: boolean }>('/api/v1/auth/logout', { method: 'POST', headers: {}, signal }),
+  recoverPassword: (username: string, new_password: string, recoverySecret: string, signal?: AbortSignal) =>
+    api<{ recovered: boolean }>('/api/v1/public/auth/recover', {
+      method: 'POST',
+      body: JSON.stringify({ username, new_password }),
+      headers: { 'x-admin-recovery': recoverySecret } as any,
+      signal
+    }),
 
-  dashboard: () => api<Dashboard>('/api/v1/dashboard'),
-  customers: (q?: string) => api<{ items: CustomerListItem[] }>(`/api/v1/customers${q ? `?q=${encodeURIComponent(q)}` : ''}`),
+  dashboard: (signal?: AbortSignal) => api<Dashboard>('/api/v1/dashboard', { signal }),
+  customers: (q?: string, signal?: AbortSignal) =>
+    api<{ items: CustomerListItem[] }>(`/api/v1/customers${q ? `?q=${encodeURIComponent(q)}` : ''}`, { signal }),
   customer: (id: number) => api<CustomerDetails>(`/api/v1/customers/${id}`),
   identifyPhone: (phone: string) => api<{ customer_id: number }>('/api/v1/identify/phone', { method: 'POST', body: JSON.stringify({ phone }) }),
   identifyQr: (qr: string) => api<{ customer_id: number }>('/api/v1/identify/qr', { method: 'POST', body: JSON.stringify({ qr }) }),

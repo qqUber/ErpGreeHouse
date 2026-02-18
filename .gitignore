@@ -23,3 +23,7 @@ node_modules/
 middleware/Lib/
 middleware/Scripts/
 middleware/crm.db
+middleware/reports/
+middleware/.pytest_cache/
+.coverage
+coverage.xml

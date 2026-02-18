@@ -312,6 +312,9 @@ safety check
 
 ## 🤝 Contributing
 
+Обязательное правило завершения задачи: [Definition of Done](docs/definition-of-done.md).
+CI/CD: [GitHub Actions workflows](docs/ci-cd.md).
+
 ### Development Setup
 
 1. **Fork the repository**

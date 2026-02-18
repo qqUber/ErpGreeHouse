@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Api, CustomerDetails, CustomerListItem, Dashboard, Integration, IntegrationDelivery, IntegrationTemplate, getAdminSecret, setAdminSecret } from './api'
 
 type Tab = 'dashboard' | 'customers' | 'pos' | 'integrations' | 'settings'
@@ -16,6 +16,17 @@ type AuthStatus = {
   must_change_password: boolean
 }
 
+type NoticeLevel = 'ok' | 'warn' | 'err'
+type Notice = { level: NoticeLevel; message: string; visible: boolean }
+
+type AuthFlow = {
+  active: boolean
+  step: number
+  percent: number
+  label: string
+  steps: Array<{ label: string; done: boolean }>
+}
+
 function money(n: number) {
   return new Intl.NumberFormat('ru-RU').format(n)
 }
@@ -28,6 +39,14 @@ function App() {
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [details, setDetails] = useState<CustomerDetails | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<Notice | null>(null)
+  const [authFlow, setAuthFlow] = useState<AuthFlow | null>(null)
+  const authAbortRef = useRef<AbortController | null>(null)
+  const authWorkerRef = useRef<Worker | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showSettingsOld, setShowSettingsOld] = useState(false)
+  const [showSettingsNew, setShowSettingsNew] = useState(false)
 
   const [publicStatus, setPublicStatus] = useState<PublicStatus | null>(null)
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
@@ -52,6 +71,26 @@ function App() {
     () => integrations.find(i => i.id === selectedIntegrationId) || null,
     [integrations, selectedIntegrationId]
   )
+
+  function clipMessage(s: string) {
+    const t = String(s || '').replace(/\s+/g, ' ').trim()
+    return t.length > 80 ? `${t.slice(0, 77)}...` : t
+  }
+
+  function showNotice(level: NoticeLevel, message: string) {
+    const m = clipMessage(message)
+    setNotice({ level, message: m, visible: true })
+    window.setTimeout(() => setNotice(prev => (prev ? { ...prev, visible: false } : prev)), 3500)
+  }
+
+  function stopAuthFlow() {
+    authAbortRef.current?.abort()
+    authAbortRef.current = null
+    authWorkerRef.current?.postMessage({ type: 'stop' })
+    authWorkerRef.current?.terminate()
+    authWorkerRef.current = null
+    setAuthFlow(null)
+  }
 
   async function loadPublicStatus() {
     try {
@@ -119,10 +158,6 @@ function App() {
     setError(null)
     await loadPublicStatus()
     await loadAuthStatus()
-    if (!getAdminSecret()) {
-      setAuthReady(false)
-      return
-    }
     try {
       await Promise.all([loadDashboard(), loadCustomers()])
       setAuthReady(true)
@@ -130,15 +165,29 @@ function App() {
       const msg = String(e?.message || e)
       if (msg.includes('401') || msg.toLowerCase().includes('unauthorized')) {
         setAuthReady(false)
-        setError('Доступ запрещён. Проверьте ключ или выполните вход по паролю.')
         return
       }
-      setError(msg)
+      showNotice('err', msg)
+      setAuthReady(false)
     }
   }
 
   useEffect(() => {
     bootstrap()
+  }, [])
+
+  useEffect(() => {
+    const onVis = () => {
+      if (document.hidden) {
+        setPassword('')
+        setNewPassword('')
+        setRecoverySecret('')
+        setOldPassword('')
+        setSettingsNewPassword('')
+      }
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
   }, [])
 
   useEffect(() => {
@@ -161,48 +210,140 @@ function App() {
     }
   }, [selectedIntegrationId, authReady])
 
+  function startAuthFlowSteps(labels: string[]) {
+    stopAuthFlow()
+    const ctrl = new AbortController()
+    authAbortRef.current = ctrl
+    const steps = labels.map(label => ({ label, done: false }))
+    setAuthFlow({ active: true, step: 0, percent: 0, label: steps[0]?.label || '', steps })
+    const w = new Worker(new URL('./authWorker.ts', import.meta.url), { type: 'module' })
+    authWorkerRef.current = w
+    w.onmessage = e => {
+      const m = e.data as any
+      if (m?.type === 'progress') {
+        setAuthFlow(prev => (prev ? { ...prev, step: m.step, percent: m.percent, label: m.label } : prev))
+      }
+    }
+    w.postMessage({ type: 'start', steps: labels.map(label => ({ label })) })
+    return ctrl.signal
+  }
+
+  function markAuthStepDone(stepIndex: number) {
+    authWorkerRef.current?.postMessage({ type: 'completeStep', step: stepIndex })
+    setAuthFlow(prev => {
+      if (!prev) return prev
+      const next = prev.steps.map((s, i) => (i === stepIndex ? { ...s, done: true } : s))
+      return { ...prev, steps: next }
+    })
+  }
+
+  function setAuthStep(stepIndex: number, label: string) {
+    authWorkerRef.current?.postMessage({ type: 'setStep', step: stepIndex, label })
+    setAuthFlow(prev => (prev ? { ...prev, step: stepIndex, label } : prev))
+  }
+
   async function doLoginByKey() {
     setError(null)
-    setMustChangePassword(false)
-    setAdminSecret(adminKey.trim())
-    await bootstrap()
+    try {
+      const signal = startAuthFlowSteps(['Подключение к серверу', 'Проверка ключа', 'Создание сессии'])
+      setAuthStep(0, 'Подключение к серверу...')
+      await Api.publicStatus(signal)
+      markAuthStepDone(0)
+
+      setAuthStep(1, 'Проверка ключа...')
+      setMustChangePassword(false)
+      setAdminSecret(adminKey.trim())
+      markAuthStepDone(1)
+
+      setAuthStep(2, 'Создание сессии...')
+      await bootstrap()
+      markAuthStepDone(2)
+      showNotice('ok', 'Вход выполнен.')
+      stopAuthFlow()
+    } catch (e: any) {
+      if (String(e?.name || '').toLowerCase().includes('abort')) {
+        showNotice('warn', 'Вход отменён.')
+      } else {
+        showNotice('err', String(e?.message || e))
+      }
+      stopAuthFlow()
+    }
   }
 
   async function doLoginByPassword() {
     setError(null)
     try {
-      const res = await Api.login(username.trim(), password)
+      const signal = startAuthFlowSteps(['Подключение к серверу', 'Проверка учетных данных', 'Создание сессии'])
+      setAuthStep(0, 'Подключение к серверу...')
+      await Promise.all([Api.publicStatus(signal), Api.authStatus(signal)])
+      markAuthStepDone(0)
+
+      setAuthStep(1, 'Проверка учетных данных...')
+      const res = await Api.login(username.trim(), password, signal)
       setMustChangePassword(Boolean(res.must_change_password))
-      setAdminSecret(res.token)
-      setAdminKey(res.token)
       setPassword('')
+      markAuthStepDone(1)
+
+      setAuthStep(2, 'Создание сессии...')
       await bootstrap()
+      markAuthStepDone(2)
       if (res.must_change_password) {
         setTab('settings')
       }
+      showNotice('ok', 'Вход выполнен.')
+      stopAuthFlow()
     } catch (e: any) {
-      setError(String(e?.message || e))
+      if (String(e?.name || '').toLowerCase().includes('abort')) {
+        showNotice('warn', 'Вход отменён.')
+      } else {
+        showNotice('err', String(e?.message || e))
+      }
+      stopAuthFlow()
     }
   }
 
   async function doRecoverPassword() {
     setError(null)
     try {
-      await Api.recoverPassword(username.trim(), newPassword, recoverySecret)
+      const signal = startAuthFlowSteps(['Подключение к серверу', 'Проверка данных', 'Сброс пароля'])
+      setAuthStep(0, 'Подключение к серверу...')
+      await Promise.all([Api.publicStatus(signal), Api.authStatus(signal)])
+      markAuthStepDone(0)
+
+      setAuthStep(1, 'Проверка данных...')
+      markAuthStepDone(1)
+
+      setAuthStep(2, 'Сброс пароля...')
+      await Api.recoverPassword(username.trim(), newPassword, recoverySecret, signal)
+      markAuthStepDone(2)
       setRecoverySecret('')
       setNewPassword('')
       setPassword('')
       setLoginMode('password')
-      setError('Пароль восстановлен. Выполните вход.')
+      showNotice('ok', 'Пароль восстановлен. Выполните вход.')
+      stopAuthFlow()
     } catch (e: any) {
-      setError(String(e?.message || e))
+      if (String(e?.name || '').toLowerCase().includes('abort')) {
+        showNotice('warn', 'Операция отменена.')
+      } else {
+        showNotice('err', String(e?.message || e))
+      }
+      stopAuthFlow()
     }
   }
 
   async function doChangePassword() {
     setError(null)
     try {
-      await Api.changePassword(oldPassword, settingsNewPassword)
+      const signal = startAuthFlowSteps(['Проверка учетных данных', 'Обновление пароля', 'Завершение'])
+      setAuthStep(0, 'Проверка учетных данных...')
+      markAuthStepDone(0)
+
+      setAuthStep(1, 'Обновление пароля...')
+      await Api.changePassword(oldPassword, settingsNewPassword, signal)
+      markAuthStepDone(1)
+
+      setAuthStep(2, 'Завершение...')
       setOldPassword('')
       setSettingsNewPassword('')
       setAdminSecret('')
@@ -210,9 +351,31 @@ function App() {
       setAuthReady(false)
       setMustChangePassword(false)
       setTab('dashboard')
-      setError('Пароль изменён. Выполните вход заново.')
+      markAuthStepDone(2)
+      showNotice('ok', 'Пароль изменён. Войдите заново.')
+      stopAuthFlow()
     } catch (e: any) {
-      setError(String(e?.message || e))
+      if (String(e?.name || '').toLowerCase().includes('abort')) {
+        showNotice('warn', 'Операция отменена.')
+      } else {
+        showNotice('err', String(e?.message || e))
+      }
+      stopAuthFlow()
+    }
+  }
+
+  async function doLogout() {
+    setError(null)
+    try {
+      await Api.logout()
+    } catch {
+    } finally {
+      setAdminSecret('')
+      setAdminKey('')
+      setAuthReady(false)
+      setMustChangePassword(false)
+      setTab('dashboard')
+      showNotice('ok', 'Вы вышли из системы.')
     }
   }
 
@@ -220,8 +383,7 @@ function App() {
     <div className="container">
       <div className="header">
         <div className="brand">
-          <div style={{ fontWeight: 800 }}>CRM · Администрирование</div>
-          <div className="badge">Enterprise</div>
+          <div style={{ fontWeight: 800 }}>Панель управления</div>
         </div>
         <div className="tabs">
           <div className={`tab ${tab === 'dashboard' ? 'tabActive' : ''}`} onClick={() => setTab('dashboard')}>Сводка</div>
@@ -231,6 +393,12 @@ function App() {
           <div className={`tab ${tab === 'settings' ? 'tabActive' : ''}`} onClick={() => setTab('settings')}>Настройки</div>
         </div>
       </div>
+
+      {notice ? (
+        <div className="grid">
+          <StatusBar notice={notice} />
+        </div>
+      ) : null}
 
       {!authReady ? (
         <div className="grid">
@@ -255,10 +423,23 @@ function App() {
               <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
                 <div className="row">
                   <div style={{ flex: 1 }}>
-                    <input className="input" value={username} onChange={e => setUsername(e.target.value)} placeholder="Логин" />
+                    <input className="input" value={username} onChange={e => setUsername(e.target.value)} placeholder="Логин" autoComplete="off" spellCheck={false} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <input className="input" value={password} onChange={e => setPassword(e.target.value)} placeholder="Пароль" type="password" />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input
+                        className="input"
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        placeholder="Пароль"
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+                      <button className="btn" onClick={() => setShowPassword(v => !v)} aria-label="Показать пароль" type="button">
+                        {showPassword ? 'Скрыть' : 'Показать'}
+                      </button>
+                    </div>
                   </div>
                   <button className="btn btnPrimary" onClick={() => void doLoginByPassword()} disabled={!username.trim() || !password}>
                     Войти
@@ -275,7 +456,7 @@ function App() {
             {loginMode === 'key' ? (
               <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
                 <div style={{ flex: '1 1 320px' }}>
-                  <input className="input" value={adminKey} onChange={e => setAdminKey(e.target.value)} placeholder="x-admin-secret" />
+                  <input className="input" value={adminKey} onChange={e => setAdminKey(e.target.value)} placeholder="x-admin-secret" autoComplete="off" spellCheck={false} />
                 </div>
                 <button className="btn btnPrimary" onClick={() => void doLoginByKey()} disabled={!adminKey.trim()}>
                   Войти
@@ -287,15 +468,36 @@ function App() {
               <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
                 <div className="row">
                   <div style={{ flex: 1 }}>
-                    <input className="input" value={username} onChange={e => setUsername(e.target.value)} placeholder="Логин" />
+                    <input className="input" value={username} onChange={e => setUsername(e.target.value)} placeholder="Логин" autoComplete="off" spellCheck={false} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <input className="input" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Новый пароль" type="password" />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input
+                        className="input"
+                        value={newPassword}
+                        onChange={e => setNewPassword(e.target.value)}
+                        placeholder="Новый пароль"
+                        type={showNewPassword ? 'text' : 'password'}
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+                      <button className="btn" onClick={() => setShowNewPassword(v => !v)} aria-label="Показать пароль" type="button">
+                        {showNewPassword ? 'Скрыть' : 'Показать'}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div className="row">
                   <div style={{ flex: 1 }}>
-                    <input className="input" value={recoverySecret} onChange={e => setRecoverySecret(e.target.value)} placeholder="Код восстановления (ADMIN_RECOVERY_SECRET)" type="password" />
+                    <input
+                      className="input"
+                      value={recoverySecret}
+                      onChange={e => setRecoverySecret(e.target.value)}
+                      placeholder="Код восстановления"
+                      type="password"
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
                   </div>
                   <button className="btn btnPrimary" onClick={() => void doRecoverPassword()} disabled={!username.trim() || newPassword.length < 8 || !recoverySecret}>
                     Сбросить пароль
@@ -309,16 +511,6 @@ function App() {
                 Требуется смена пароля. Откройте вкладку «Настройки».
               </div>
             ) : null}
-            {error ? <div style={{ marginTop: 12, color: '#8b0000', whiteSpace: 'pre-wrap' }}>{error}</div> : null}
-          </div>
-        </div>
-      ) : null}
-
-      {authReady && error ? (
-        <div className="grid">
-          <div className="card cardFull">
-            <div className="pill pillWarn">Сбой</div>
-            <div style={{ marginTop: 10, whiteSpace: 'pre-wrap' }}>{error}</div>
           </div>
         </div>
       ) : null}
@@ -389,16 +581,47 @@ function App() {
                   {mustChangePassword ? 'Требуется смена пароля. После смены потребуется вход заново.' : 'Смена пароля администратора.'}
                 </div>
               </div>
-              <div className="pill">Сессия: x-admin-secret</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div className="pill">Сессия активна</div>
+                <button className="btn" onClick={() => void doLogout()} type="button">
+                  Выйти
+                </button>
+              </div>
             </div>
 
             <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
               <div className="row">
                 <div style={{ flex: 1 }}>
-                  <input className="input" value={oldPassword} onChange={e => setOldPassword(e.target.value)} placeholder="Текущий пароль" type="password" />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      className="input"
+                      value={oldPassword}
+                      onChange={e => setOldPassword(e.target.value)}
+                      placeholder="Текущий пароль"
+                      type={showSettingsOld ? 'text' : 'password'}
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                    <button className="btn" onClick={() => setShowSettingsOld(v => !v)} type="button">
+                      {showSettingsOld ? 'Скрыть' : 'Показать'}
+                    </button>
+                  </div>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <input className="input" value={settingsNewPassword} onChange={e => setSettingsNewPassword(e.target.value)} placeholder="Новый пароль (мин. 8 символов)" type="password" />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      className="input"
+                      value={settingsNewPassword}
+                      onChange={e => setSettingsNewPassword(e.target.value)}
+                      placeholder="Новый пароль (мин. 8 символов)"
+                      type={showSettingsNew ? 'text' : 'password'}
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                    <button className="btn" onClick={() => setShowSettingsNew(v => !v)} type="button">
+                      {showSettingsNew ? 'Скрыть' : 'Показать'}
+                    </button>
+                  </div>
                 </div>
                 <button className="btn btnPrimary" onClick={() => void doChangePassword()} disabled={!oldPassword || settingsNewPassword.length < 8}>
                   Сменить пароль
@@ -412,9 +635,54 @@ function App() {
         </div>
       ) : null}
 
-      <div style={{ marginTop: 14, color: 'rgba(0,0,0,0.45)', fontSize: 12 }}>
-        Синхронизация с ERP: {publicStatus?.erp_sync_enabled ? 'включена' : 'выключена'}
+      {authFlow?.active ? (
+        <div className="overlay" role="dialog" aria-modal="true">
+          <div className="overlayPanel">
+            <div className="row">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="spinner" />
+                <div style={{ fontWeight: 800 }}>Авторизация</div>
+              </div>
+              <button className="btn" onClick={() => stopAuthFlow()} type="button">
+                Отменить
+              </button>
+            </div>
+            <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.65)', fontSize: 13 }}>{authFlow.label}</div>
+            <div style={{ marginTop: 10 }} className="progress" aria-label="progress">
+              <div className="progressFill" style={{ width: `${Math.max(0, Math.min(100, authFlow.percent))}%` }} />
+            </div>
+            <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(0,0,0,0.55)' }}>{Math.max(0, Math.min(100, authFlow.percent))}%</div>
+            <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
+              {authFlow.steps.map((s, idx) => (
+                <div key={idx} className="row" style={{ fontSize: 12, color: 'rgba(0,0,0,0.65)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className={`pill ${s.done ? 'pillGood' : 'pillWarn'}`}>{s.done ? 'Готово' : '...'}</span>
+                    <span>{s.label}</span>
+                  </div>
+                  <span>{s.done ? '100%' : idx === authFlow.step ? `${Math.max(0, Math.min(100, authFlow.percent))}%` : '0%'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
+      <div className="footerVersion">
+        v{__APP_VERSION__}
+        {__BUILD_ID__ ? ` · ${String(__BUILD_ID__).slice(0, 10)}` : ''}
       </div>
+    </div>
+  )
+}
+
+function StatusBar({ notice }: { notice: Notice }) {
+  const cls =
+    notice.level === 'ok' ? 'statusBar statusBarOk' : notice.level === 'warn' ? 'statusBar statusBarWarn' : 'statusBar statusBarErr'
+  const icon = notice.level === 'ok' ? '✓' : notice.level === 'warn' ? '!' : '×'
+  return (
+    <div className={`${cls} ${notice.visible ? 'statusBarVisible' : ''}`} role="status" aria-live="polite">
+      <div className="statusBarIcon">{icon}</div>
+      <div className="statusBarText">{notice.message}</div>
+      <div />
     </div>
   )
 }
@@ -747,6 +1015,24 @@ function IntegrationsView(props: {
     return JSON.parse(t)
   }
 
+  async function copyWithAutoClear(text: string) {
+    try {
+      await navigator.clipboard.writeText(text)
+      setInfo('Скопировано.')
+      window.setTimeout(async () => {
+        try {
+          const current = await navigator.clipboard.readText()
+          if (current === text) {
+            await navigator.clipboard.writeText('')
+          }
+        } catch {
+        }
+      }, 12000)
+    } catch {
+      setInfo('Не удалось скопировать.')
+    }
+  }
+
   async function onSave() {
     setInfo(null)
     try {
@@ -869,11 +1155,21 @@ function IntegrationsView(props: {
           {selected && selected.kind === 'pos_webhook' ? (
             <div>
               <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Webhook URL (приём чека)</div>
-              <input className="input" readOnly value={webhookUrl} />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input className="input" readOnly value={webhookUrl} />
+                <button className="btn" onClick={() => void copyWithAutoClear(webhookUrl)} type="button">
+                  Копировать
+                </button>
+              </div>
               <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginTop: 8 }}>
                 Заголовок авторизации: x-integration-secret
               </div>
-              <input className="input" readOnly value={selected.secret} style={{ marginTop: 6 }} />
+              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                <input className="input" readOnly value={selected.secret} />
+                <button className="btn" onClick={() => void copyWithAutoClear(selected.secret)} type="button">
+                  Копировать
+                </button>
+              </div>
             </div>
           ) : null}
         </div>

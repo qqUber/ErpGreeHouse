@@ -1,17 +1,26 @@
 import os
 import secrets
+import hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
 from .db import get_db
+from .request_context import get_admin_session_token
+from .rate_limit import register_bruteforce_failure, require_bruteforce_guard, require_rate_limit
 from .security import constant_time_equals, hash_password, new_salt
 
 
 public_router = APIRouter(prefix="/api/v1/public/auth")
 router = APIRouter(prefix="/api/v1/auth")
+
+_ADMIN_COOKIE_NAME = "admin_session"
+
+
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 def _bootstrap_default_admin() -> None:
@@ -48,9 +57,10 @@ def _issue_token(admin_user_id: int) -> str:
     db = get_db()
     conn = db.connect()
     try:
+        token_db = _hash_token(token)
         conn.execute(
             "INSERT INTO admin_tokens(admin_user_id, token, expires_at) VALUES(?,?,?)",
-            (int(admin_user_id), token, expires_at),
+            (int(admin_user_id), token_db, expires_at),
         )
         conn.commit()
         return token
@@ -65,8 +75,14 @@ def _get_admin_by_token(token: str) -> dict[str, Any] | None:
         row = conn.execute(
             "SELECT t.token, t.expires_at, u.id as user_id, u.username, u.must_change_password, u.password_hash, u.password_salt, u.password_iter "
             "FROM admin_tokens t JOIN admin_users u ON u.id=t.admin_user_id WHERE t.token=?",
-            (token,),
+            (_hash_token(token),),
         ).fetchone()
+        if not row:
+            row = conn.execute(
+                "SELECT t.token, t.expires_at, u.id as user_id, u.username, u.must_change_password, u.password_hash, u.password_salt, u.password_iter "
+                "FROM admin_tokens t JOIN admin_users u ON u.id=t.admin_user_id WHERE t.token=?",
+                (token,),
+            ).fetchone()
         if not row:
             return None
         if str(row["expires_at"]) <= datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"):
@@ -81,10 +97,11 @@ def require_admin_token_or_env(x_admin_secret: str | None) -> dict[str, Any]:
     if expected and x_admin_secret and constant_time_equals(x_admin_secret, expected):
         return {"user_id": 0, "username": "env"}
 
-    if not x_admin_secret:
+    token = x_admin_secret or get_admin_session_token()
+    if not token:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-    admin = _get_admin_by_token(x_admin_secret)
+    admin = _get_admin_by_token(token)
     if not admin:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return admin
@@ -101,7 +118,8 @@ class LoginOut(BaseModel):
 
 
 @public_router.get("/status")
-def auth_status() -> dict[str, Any]:
+def auth_status(request: Request) -> dict[str, Any]:
+    require_rate_limit(request, scope="auth_status", limit=60, window_sec=60)
     _bootstrap_default_admin()
     username = os.getenv("ADMIN_DEFAULT_USERNAME", "admin").strip() or "admin"
 
@@ -120,7 +138,9 @@ def auth_status() -> dict[str, Any]:
 
 
 @public_router.post("/login")
-def login(payload: LoginIn) -> LoginOut:
+def login(payload: LoginIn, response: Response, request: Request) -> LoginOut:
+    require_rate_limit(request, scope="auth_login", limit=20, window_sec=60)
+    require_bruteforce_guard(request, username=payload.username, max_attempts=8, window_sec=900, lock_sec=900)
     _bootstrap_default_admin()
     db = get_db()
     conn = db.connect()
@@ -130,11 +150,24 @@ def login(payload: LoginIn) -> LoginOut:
             (payload.username.strip(),),
         ).fetchone()
         if not row:
+            register_bruteforce_failure(request, username=payload.username, max_attempts=8, window_sec=900, lock_sec=900)
             raise HTTPException(status_code=401, detail="Invalid credentials")
         ph = hash_password(payload.password, salt=str(row["password_salt"]), iterations=int(row["password_iter"]))
         if not constant_time_equals(ph, str(row["password_hash"])):
+            register_bruteforce_failure(request, username=payload.username, max_attempts=8, window_sec=900, lock_sec=900)
             raise HTTPException(status_code=401, detail="Invalid credentials")
         token = _issue_token(int(row["id"]))
+        ttl_min = int(os.getenv("ADMIN_TOKEN_TTL_MIN", "720"))
+        cookie_secure = os.getenv("ADMIN_COOKIE_SECURE", "false").lower() in ("1", "true", "yes")
+        response.set_cookie(
+            _ADMIN_COOKIE_NAME,
+            token,
+            httponly=True,
+            samesite="lax",
+            secure=cookie_secure,
+            max_age=int(ttl_min * 60),
+            path="/",
+        )
         return LoginOut(token=token, must_change_password=bool(int(row["must_change_password"])))
     finally:
         conn.close()
@@ -181,6 +214,26 @@ def change_password(
         conn.close()
 
 
+@router.post("/logout")
+def logout(
+    response: Response,
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+) -> dict[str, Any]:
+    token = x_admin_secret or get_admin_session_token()
+    if token:
+        db = get_db()
+        conn = db.connect()
+        try:
+            conn.execute("DELETE FROM admin_tokens WHERE token=?", (_hash_token(token),))
+            conn.execute("DELETE FROM admin_tokens WHERE token=?", (token,))
+            conn.commit()
+        finally:
+            conn.close()
+
+    response.delete_cookie(_ADMIN_COOKIE_NAME, path="/")
+    return {"logged_out": True}
+
+
 class RecoverIn(BaseModel):
     username: str = Field(min_length=1, max_length=80)
     new_password: str = Field(min_length=8, max_length=200)
@@ -188,9 +241,11 @@ class RecoverIn(BaseModel):
 
 @public_router.post("/recover")
 def recover_password(
+    request: Request,
     payload: RecoverIn,
     x_admin_recovery: str | None = Header(default=None, alias="x-admin-recovery"),
 ) -> dict[str, Any]:
+    require_rate_limit(request, scope="auth_recover", limit=5, window_sec=60)
     expected = os.getenv("ADMIN_RECOVERY_SECRET", "")
     if not expected:
         raise HTTPException(status_code=500, detail="ADMIN_RECOVERY_SECRET not configured")
