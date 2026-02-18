@@ -104,6 +104,7 @@ jobs:
       contents: read
     env:
       ERP_MOCK_MODE: 'true'
+      PYTHONPATH: ${{ github.workspace }}/middleware
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
