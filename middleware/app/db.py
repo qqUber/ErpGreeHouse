@@ -113,6 +113,27 @@ def init_db() -> None:
                 FOREIGN KEY(integration_id) REFERENCES integrations(id) ON DELETE CASCADE
             );
             CREATE INDEX IF NOT EXISTS idx_integration_deliveries_integration_id ON integration_deliveries(integration_id);
+
+            CREATE TABLE IF NOT EXISTS admin_users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                password_salt TEXT NOT NULL,
+                password_iter INTEGER NOT NULL,
+                must_change_password INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+
+            CREATE TABLE IF NOT EXISTS admin_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                admin_user_id INTEGER NOT NULL,
+                token TEXT NOT NULL UNIQUE,
+                expires_at TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(admin_user_id) REFERENCES admin_users(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_admin_tokens_admin_user_id ON admin_tokens(admin_user_id);
             """
         )
         conn.commit()

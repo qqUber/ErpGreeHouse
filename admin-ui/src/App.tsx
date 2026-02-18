@@ -1,12 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Api, CustomerDetails, CustomerListItem, Dashboard, Integration, IntegrationDelivery, getAdminSecret, setAdminSecret } from './api'
+import { Api, CustomerDetails, CustomerListItem, Dashboard, Integration, IntegrationDelivery, IntegrationTemplate, getAdminSecret, setAdminSecret } from './api'
 
-type Tab = 'dashboard' | 'customers' | 'pos' | 'integrations'
+type Tab = 'dashboard' | 'customers' | 'pos' | 'integrations' | 'settings'
 
 type PublicStatus = {
   api: string
   admin_auth_configured: boolean
   erp_sync_enabled: boolean
+}
+
+type AuthStatus = {
+  bootstrap_enabled: boolean
+  default_admin_present: boolean
+  default_admin_username: string
+  must_change_password: boolean
 }
 
 function money(n: number) {
@@ -23,9 +30,19 @@ function App() {
   const [error, setError] = useState<string | null>(null)
 
   const [publicStatus, setPublicStatus] = useState<PublicStatus | null>(null)
+  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
+  const [loginMode, setLoginMode] = useState<'password' | 'key' | 'recover'>('password')
+  const [username, setUsername] = useState('admin')
+  const [password, setPassword] = useState('')
+  const [recoverySecret, setRecoverySecret] = useState('')
+  const [newPassword, setNewPassword] = useState('')
   const [adminKey, setAdminKey] = useState(getAdminSecret())
   const [authReady, setAuthReady] = useState(false)
+  const [mustChangePassword, setMustChangePassword] = useState(false)
+  const [oldPassword, setOldPassword] = useState('')
+  const [settingsNewPassword, setSettingsNewPassword] = useState('')
   const [integrations, setIntegrations] = useState<Integration[]>([])
+  const [integrationTemplates, setIntegrationTemplates] = useState<IntegrationTemplate[]>([])
   const [selectedIntegrationId, setSelectedIntegrationId] = useState<number | null>(null)
   const [integrationDeliveries, setIntegrationDeliveries] = useState<IntegrationDelivery[]>([])
   const [integrationsBusy, setIntegrationsBusy] = useState(false)
@@ -42,6 +59,18 @@ function App() {
       setPublicStatus(s)
     } catch {
       setPublicStatus(null)
+    }
+  }
+
+  async function loadAuthStatus() {
+    try {
+      const s = await Api.authStatus()
+      setAuthStatus(s)
+      if (!username.trim() && s.default_admin_username) {
+        setUsername(s.default_admin_username)
+      }
+    } catch {
+      setAuthStatus(null)
     }
   }
 
@@ -80,9 +109,16 @@ function App() {
     setIntegrationDeliveries(res.items)
   }
 
+  async function loadIntegrationTemplates() {
+    setError(null)
+    const res = await Api.integrationTemplates()
+    setIntegrationTemplates(res.items)
+  }
+
   async function bootstrap() {
     setError(null)
     await loadPublicStatus()
+    await loadAuthStatus()
     if (!getAdminSecret()) {
       setAuthReady(false)
       return
@@ -94,7 +130,7 @@ function App() {
       const msg = String(e?.message || e)
       if (msg.includes('401') || msg.toLowerCase().includes('unauthorized')) {
         setAuthReady(false)
-        setError('Доступ запрещён. Проверьте ключ администратора.')
+        setError('Доступ запрещён. Проверьте ключ или выполните вход по паролю.')
         return
       }
       setError(msg)
@@ -114,7 +150,7 @@ function App() {
   useEffect(() => {
     if (!authReady) return
     if (tab === 'integrations') {
-      loadIntegrations().catch(e => setError(String(e)))
+      Promise.all([loadIntegrations(), loadIntegrationTemplates()]).catch(e => setError(String(e)))
     }
   }, [tab, authReady])
 
@@ -125,9 +161,59 @@ function App() {
     }
   }, [selectedIntegrationId, authReady])
 
-  async function doLogin() {
+  async function doLoginByKey() {
+    setError(null)
+    setMustChangePassword(false)
     setAdminSecret(adminKey.trim())
     await bootstrap()
+  }
+
+  async function doLoginByPassword() {
+    setError(null)
+    try {
+      const res = await Api.login(username.trim(), password)
+      setMustChangePassword(Boolean(res.must_change_password))
+      setAdminSecret(res.token)
+      setAdminKey(res.token)
+      setPassword('')
+      await bootstrap()
+      if (res.must_change_password) {
+        setTab('settings')
+      }
+    } catch (e: any) {
+      setError(String(e?.message || e))
+    }
+  }
+
+  async function doRecoverPassword() {
+    setError(null)
+    try {
+      await Api.recoverPassword(username.trim(), newPassword, recoverySecret)
+      setRecoverySecret('')
+      setNewPassword('')
+      setPassword('')
+      setLoginMode('password')
+      setError('Пароль восстановлен. Выполните вход.')
+    } catch (e: any) {
+      setError(String(e?.message || e))
+    }
+  }
+
+  async function doChangePassword() {
+    setError(null)
+    try {
+      await Api.changePassword(oldPassword, settingsNewPassword)
+      setOldPassword('')
+      setSettingsNewPassword('')
+      setAdminSecret('')
+      setAdminKey('')
+      setAuthReady(false)
+      setMustChangePassword(false)
+      setTab('dashboard')
+      setError('Пароль изменён. Выполните вход заново.')
+    } catch (e: any) {
+      setError(String(e?.message || e))
+    }
   }
 
   return (
@@ -142,6 +228,7 @@ function App() {
           <div className={`tab ${tab === 'customers' ? 'tabActive' : ''}`} onClick={() => setTab('customers')}>Клиенты</div>
           <div className={`tab ${tab === 'pos' ? 'tabActive' : ''}`} onClick={() => setTab('pos')}>Операции</div>
           <div className={`tab ${tab === 'integrations' ? 'tabActive' : ''}`} onClick={() => setTab('integrations')}>Интеграции</div>
+          <div className={`tab ${tab === 'settings' ? 'tabActive' : ''}`} onClick={() => setTab('settings')}>Настройки</div>
         </div>
       </div>
 
@@ -152,24 +239,76 @@ function App() {
               <div>
                 <div style={{ fontWeight: 800, fontSize: 16 }}>Вход</div>
                 <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
-                  {publicStatus?.admin_auth_configured === false
-                    ? 'Админ-доступ не настроен на сервере. Установите переменную ADMIN_SECRET.'
-                    : 'Введите ключ администратора для доступа к панели.'}
+                  Используйте вход по паролю или по ключу x-admin-secret.
                 </div>
               </div>
               <div className="pill">API: {publicStatus?.api || 'недоступен'}</div>
             </div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
-              <div style={{ flex: '1 1 320px' }}>
-                <input className="input" value={adminKey} onChange={e => setAdminKey(e.target.value)} placeholder="Ключ администратора" />
-              </div>
-              <button className="btn btnPrimary" onClick={() => void doLogin()}>
-                Войти
-              </button>
-              <button className="btn" onClick={() => void loadPublicStatus()}>
-                Проверить статус
-              </button>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+              <button className={`btn ${loginMode === 'password' ? 'btnPrimary' : ''}`} onClick={() => setLoginMode('password')}>По паролю</button>
+              <button className={`btn ${loginMode === 'key' ? 'btnPrimary' : ''}`} onClick={() => setLoginMode('key')}>По ключу</button>
+              <button className={`btn ${loginMode === 'recover' ? 'btnPrimary' : ''}`} onClick={() => setLoginMode('recover')}>Восстановление</button>
+              <button className="btn" onClick={() => void loadPublicStatus()}>Статус API</button>
             </div>
+
+            {loginMode === 'password' ? (
+              <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+                <div className="row">
+                  <div style={{ flex: 1 }}>
+                    <input className="input" value={username} onChange={e => setUsername(e.target.value)} placeholder="Логин" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <input className="input" value={password} onChange={e => setPassword(e.target.value)} placeholder="Пароль" type="password" />
+                  </div>
+                  <button className="btn btnPrimary" onClick={() => void doLoginByPassword()} disabled={!username.trim() || !password}>
+                    Войти
+                  </button>
+                </div>
+                <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
+                  {authStatus?.default_admin_present
+                    ? `Дефолтный админ: ${authStatus.default_admin_username}`
+                    : 'Дефолтный админ не создан. Проверьте ADMIN_BOOTSTRAP_DEFAULT.'}
+                </div>
+              </div>
+            ) : null}
+
+            {loginMode === 'key' ? (
+              <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 320px' }}>
+                  <input className="input" value={adminKey} onChange={e => setAdminKey(e.target.value)} placeholder="x-admin-secret" />
+                </div>
+                <button className="btn btnPrimary" onClick={() => void doLoginByKey()} disabled={!adminKey.trim()}>
+                  Войти
+                </button>
+              </div>
+            ) : null}
+
+            {loginMode === 'recover' ? (
+              <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+                <div className="row">
+                  <div style={{ flex: 1 }}>
+                    <input className="input" value={username} onChange={e => setUsername(e.target.value)} placeholder="Логин" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <input className="input" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Новый пароль" type="password" />
+                  </div>
+                </div>
+                <div className="row">
+                  <div style={{ flex: 1 }}>
+                    <input className="input" value={recoverySecret} onChange={e => setRecoverySecret(e.target.value)} placeholder="Код восстановления (ADMIN_RECOVERY_SECRET)" type="password" />
+                  </div>
+                  <button className="btn btnPrimary" onClick={() => void doRecoverPassword()} disabled={!username.trim() || newPassword.length < 8 || !recoverySecret}>
+                    Сбросить пароль
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {mustChangePassword ? (
+              <div style={{ marginTop: 12, color: '#8b0000' }}>
+                Требуется смена пароля. Откройте вкладку «Настройки».
+              </div>
+            ) : null}
             {error ? <div style={{ marginTop: 12, color: '#8b0000', whiteSpace: 'pre-wrap' }}>{error}</div> : null}
           </div>
         </div>
@@ -211,6 +350,7 @@ function App() {
       {authReady && tab === 'integrations' ? (
         <IntegrationsView
           items={integrations}
+          templates={integrationTemplates}
           busy={integrationsBusy}
           selected={selectedIntegration}
           deliveries={integrationDeliveries}
@@ -238,6 +378,38 @@ function App() {
             await loadDeliveries(id)
           }}
         />
+      ) : null}
+      {authReady && tab === 'settings' ? (
+        <div className="grid">
+          <div className="card cardFull">
+            <div className="row">
+              <div>
+                <div style={{ fontWeight: 900, fontSize: 18 }}>Настройки доступа</div>
+                <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
+                  {mustChangePassword ? 'Требуется смена пароля. После смены потребуется вход заново.' : 'Смена пароля администратора.'}
+                </div>
+              </div>
+              <div className="pill">Сессия: x-admin-secret</div>
+            </div>
+
+            <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+              <div className="row">
+                <div style={{ flex: 1 }}>
+                  <input className="input" value={oldPassword} onChange={e => setOldPassword(e.target.value)} placeholder="Текущий пароль" type="password" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <input className="input" value={settingsNewPassword} onChange={e => setSettingsNewPassword(e.target.value)} placeholder="Новый пароль (мин. 8 символов)" type="password" />
+                </div>
+                <button className="btn btnPrimary" onClick={() => void doChangePassword()} disabled={!oldPassword || settingsNewPassword.length < 8}>
+                  Сменить пароль
+                </button>
+              </div>
+              <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
+                Восстановление выполняется через endpoint /api/v1/public/auth/recover с заголовком x-admin-recovery (значение ADMIN_RECOVERY_SECRET).
+              </div>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       <div style={{ marginTop: 14, color: 'rgba(0,0,0,0.45)', fontSize: 12 }}>
@@ -526,6 +698,7 @@ function PosView(props: {
 
 function IntegrationsView(props: {
   items: Integration[]
+  templates: IntegrationTemplate[]
   busy: boolean
   selected: Integration | null
   deliveries: IntegrationDelivery[]
@@ -537,9 +710,10 @@ function IntegrationsView(props: {
   remove: (id: number) => Promise<void>
   refreshDeliveries: (id: number) => Promise<void>
 }) {
-  const { items, busy, selected, deliveries, select, reload, create, update, rotate, remove, refreshDeliveries } = props
+  const { items, templates, busy, selected, deliveries, select, reload, create, update, rotate, remove, refreshDeliveries } = props
 
   const [mode, setMode] = useState<'create' | 'edit'>('create')
+  const [templateId, setTemplateId] = useState('')
   const [name, setName] = useState('')
   const [kind, setKind] = useState('pos_webhook')
   const [enabled, setEnabled] = useState(true)
@@ -549,11 +723,23 @@ function IntegrationsView(props: {
   useEffect(() => {
     if (!selected) return
     setMode('edit')
+    setTemplateId('')
     setName(selected.name)
     setKind(selected.kind)
     setEnabled(selected.enabled)
     setConfigText(JSON.stringify(selected.config || {}, null, 2))
   }, [selected?.id])
+
+  useEffect(() => {
+    if (!templateId) return
+    const t = templates.find(x => x.id === templateId)
+    if (!t) return
+    setMode('create')
+    setName(t.name)
+    setKind(t.kind)
+    setEnabled(true)
+    setConfigText(JSON.stringify(t.config || {}, null, 2))
+  }, [templateId])
 
   function parseConfig(): any {
     const t = (configText || '').trim()
@@ -627,6 +813,22 @@ function IntegrationsView(props: {
         </div>
 
         <div style={{ display: 'grid', gap: 10 }}>
+          {mode === 'create' ? (
+            <div>
+              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Шаблон</div>
+              <select className="input" value={templateId} onChange={e => setTemplateId(e.target.value)}>
+                <option value="">Без шаблона</option>
+                {templates.map(t => (
+                  <option key={t.id} value={t.id}>
+                    {t.region} · {t.name}
+                  </option>
+                ))}
+              </select>
+              <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12, marginTop: 6 }}>
+                {templateId ? templates.find(t => t.id === templateId)?.description : 'Выберите типовой сценарий для быстрых настроек.'}
+              </div>
+            </div>
+          ) : null}
           <div>
             <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Наименование</div>
             <input className="input" value={name} onChange={e => setName(e.target.value)} />

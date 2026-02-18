@@ -1,0 +1,218 @@
+import os
+import secrets
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+from fastapi import APIRouter, Header, HTTPException
+from pydantic import BaseModel, Field
+
+from .db import get_db
+from .security import constant_time_equals, hash_password, new_salt
+
+
+public_router = APIRouter(prefix="/api/v1/public/auth")
+router = APIRouter(prefix="/api/v1/auth")
+
+
+def _bootstrap_default_admin() -> None:
+    enabled = os.getenv("ADMIN_BOOTSTRAP_DEFAULT", "true").lower() in ("1", "true", "yes")
+    if not enabled:
+        return
+
+    username = os.getenv("ADMIN_DEFAULT_USERNAME", "admin").strip() or "admin"
+    password = os.getenv("ADMIN_DEFAULT_PASSWORD", "admin").strip() or "admin"
+    iterations = int(os.getenv("ADMIN_PBKDF2_ITER", "200000"))
+
+    db = get_db()
+    conn = db.connect()
+    try:
+        row = conn.execute("SELECT id FROM admin_users WHERE username=?", (username,)).fetchone()
+        if row:
+            return
+        salt = new_salt()
+        ph = hash_password(password, salt=salt, iterations=iterations)
+        conn.execute(
+            "INSERT INTO admin_users(username, password_hash, password_salt, password_iter, must_change_password) VALUES(?,?,?,?,1)",
+            (username, ph, salt, iterations),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _issue_token(admin_user_id: int) -> str:
+    token = secrets.token_urlsafe(32)
+    ttl_min = int(os.getenv("ADMIN_TOKEN_TTL_MIN", "720"))
+    expires_at = (datetime.now(timezone.utc) + timedelta(minutes=ttl_min)).strftime("%Y-%m-%d %H:%M:%S")
+
+    db = get_db()
+    conn = db.connect()
+    try:
+        conn.execute(
+            "INSERT INTO admin_tokens(admin_user_id, token, expires_at) VALUES(?,?,?)",
+            (int(admin_user_id), token, expires_at),
+        )
+        conn.commit()
+        return token
+    finally:
+        conn.close()
+
+
+def _get_admin_by_token(token: str) -> dict[str, Any] | None:
+    db = get_db()
+    conn = db.connect()
+    try:
+        row = conn.execute(
+            "SELECT t.token, t.expires_at, u.id as user_id, u.username, u.must_change_password, u.password_hash, u.password_salt, u.password_iter "
+            "FROM admin_tokens t JOIN admin_users u ON u.id=t.admin_user_id WHERE t.token=?",
+            (token,),
+        ).fetchone()
+        if not row:
+            return None
+        if str(row["expires_at"]) <= datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"):
+            return None
+        return dict(row)
+    finally:
+        conn.close()
+
+
+def require_admin_token_or_env(x_admin_secret: str | None) -> dict[str, Any]:
+    expected = os.getenv("ADMIN_SECRET", "").strip()
+    if expected and x_admin_secret and constant_time_equals(x_admin_secret, expected):
+        return {"user_id": 0, "username": "env"}
+
+    if not x_admin_secret:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    admin = _get_admin_by_token(x_admin_secret)
+    if not admin:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return admin
+
+
+class LoginIn(BaseModel):
+    username: str = Field(min_length=1, max_length=80)
+    password: str = Field(min_length=1, max_length=200)
+
+
+class LoginOut(BaseModel):
+    token: str
+    must_change_password: bool
+
+
+@public_router.get("/status")
+def auth_status() -> dict[str, Any]:
+    _bootstrap_default_admin()
+    username = os.getenv("ADMIN_DEFAULT_USERNAME", "admin").strip() or "admin"
+
+    db = get_db()
+    conn = db.connect()
+    try:
+        row = conn.execute("SELECT id, must_change_password FROM admin_users WHERE username=?", (username,)).fetchone()
+        return {
+            "bootstrap_enabled": os.getenv("ADMIN_BOOTSTRAP_DEFAULT", "true").lower() in ("1", "true", "yes"),
+            "default_admin_present": bool(row),
+            "default_admin_username": username,
+            "must_change_password": bool(int(row["must_change_password"])) if row else False,
+        }
+    finally:
+        conn.close()
+
+
+@public_router.post("/login")
+def login(payload: LoginIn) -> LoginOut:
+    _bootstrap_default_admin()
+    db = get_db()
+    conn = db.connect()
+    try:
+        row = conn.execute(
+            "SELECT id, username, password_hash, password_salt, password_iter, must_change_password FROM admin_users WHERE username=?",
+            (payload.username.strip(),),
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        ph = hash_password(payload.password, salt=str(row["password_salt"]), iterations=int(row["password_iter"]))
+        if not constant_time_equals(ph, str(row["password_hash"])):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        token = _issue_token(int(row["id"]))
+        return LoginOut(token=token, must_change_password=bool(int(row["must_change_password"])))
+    finally:
+        conn.close()
+
+
+class ChangePasswordIn(BaseModel):
+    old_password: str = Field(min_length=1, max_length=200)
+    new_password: str = Field(min_length=8, max_length=200)
+
+
+@router.post("/change-password")
+def change_password(
+    payload: ChangePasswordIn,
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+) -> dict[str, Any]:
+    admin = require_admin_token_or_env(x_admin_secret)
+    if int(admin.get("user_id", 0)) == 0:
+        raise HTTPException(status_code=400, detail="Not supported for env-based admin")
+
+    db = get_db()
+    conn = db.connect()
+    try:
+        row = conn.execute(
+            "SELECT id, password_hash, password_salt, password_iter FROM admin_users WHERE id=?",
+            (int(admin["user_id"]),),
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        ph = hash_password(payload.old_password, salt=str(row["password_salt"]), iterations=int(row["password_iter"]))
+        if not constant_time_equals(ph, str(row["password_hash"])):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        salt = new_salt()
+        iterations = int(os.getenv("ADMIN_PBKDF2_ITER", "200000"))
+        new_hash = hash_password(payload.new_password, salt=salt, iterations=iterations)
+        conn.execute(
+            "UPDATE admin_users SET password_hash=?, password_salt=?, password_iter=?, must_change_password=0, updated_at=datetime('now') WHERE id=?",
+            (new_hash, salt, iterations, int(admin["user_id"])),
+        )
+        conn.execute("DELETE FROM admin_tokens WHERE admin_user_id=?", (int(admin["user_id"]),))
+        conn.commit()
+        return {"changed": True}
+    finally:
+        conn.close()
+
+
+class RecoverIn(BaseModel):
+    username: str = Field(min_length=1, max_length=80)
+    new_password: str = Field(min_length=8, max_length=200)
+
+
+@public_router.post("/recover")
+def recover_password(
+    payload: RecoverIn,
+    x_admin_recovery: str | None = Header(default=None, alias="x-admin-recovery"),
+) -> dict[str, Any]:
+    expected = os.getenv("ADMIN_RECOVERY_SECRET", "")
+    if not expected:
+        raise HTTPException(status_code=500, detail="ADMIN_RECOVERY_SECRET not configured")
+    if not x_admin_recovery or not constant_time_equals(x_admin_recovery, expected):
+        raise HTTPException(status_code=401, detail="Invalid recovery secret")
+
+    db = get_db()
+    conn = db.connect()
+    try:
+        row = conn.execute("SELECT id FROM admin_users WHERE username=?", (payload.username.strip(),)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        salt = new_salt()
+        iterations = int(os.getenv("ADMIN_PBKDF2_ITER", "200000"))
+        new_hash = hash_password(payload.new_password, salt=salt, iterations=iterations)
+        conn.execute(
+            "UPDATE admin_users SET password_hash=?, password_salt=?, password_iter=?, must_change_password=0, updated_at=datetime('now') WHERE id=?",
+            (new_hash, salt, iterations, int(row["id"])),
+        )
+        conn.execute("DELETE FROM admin_tokens WHERE admin_user_id=?", (int(row["id"]),))
+        conn.commit()
+        return {"recovered": True}
+    finally:
+        conn.close()

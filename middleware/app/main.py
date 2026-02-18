@@ -8,6 +8,8 @@ from starlette.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 from .config import get_settings
 from .db import init_db
 from .admin_api import router as admin_router, public_router as public_router
+from .admin_auth_api import public_router as auth_public_router, router as auth_router
+from .admin_auth_api import _bootstrap_default_admin
 from .integrations_api import router as integrations_router, public_router as integrations_public_router
 from .worker import process_telegram_update
 from .bot import create_bot
@@ -28,6 +30,8 @@ app.add_middleware(
 
 app.include_router(admin_router)
 app.include_router(public_router)
+app.include_router(auth_public_router)
+app.include_router(auth_router)
 app.include_router(integrations_router)
 app.include_router(integrations_public_router)
 
@@ -39,6 +43,7 @@ if admin_dist.exists():
 @app.on_event("startup")
 async def _startup() -> None:
     init_db()
+    _bootstrap_default_admin()
 
 
 def verify_webhook_secret(secret_header: str | None, expected: str) -> None:

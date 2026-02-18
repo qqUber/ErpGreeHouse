@@ -11,6 +11,7 @@ from .db import get_db
 from .identify import generate_qr_token, normalize_phone
 from .integration_events import dispatch_event
 from .loyalty import LoyaltyRules, calc_earned_points, clamp_redeem_points
+from .pos_templates import list_integration_templates
 from .storage import get_redis
 from .worker import send_customer_message
 
@@ -72,6 +73,14 @@ def list_integrations(
         return {"items": items}
     finally:
         conn.close()
+
+
+@router.get("/templates")
+def list_templates(
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+) -> dict[str, Any]:
+    require_admin(x_admin_secret)
+    return {"items": list_integration_templates()}
 
 
 @router.post("")

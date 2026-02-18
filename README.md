@@ -99,6 +99,27 @@ graph TD
    python -m app.main
    ```
 
+### Admin UI (dev)
+
+1. **Build Admin UI**
+   ```bash
+   cd admin-ui
+   npm install
+   npm run build
+   ```
+
+2. **Open**
+   - http://localhost:8000/
+
+3. **Login options**
+   - **Login/password (dev bootstrap)**: values are taken from `middleware/.env` (see `middleware/.env.example`)
+     - `ADMIN_DEFAULT_USERNAME` (default: `admin`)
+     - `ADMIN_DEFAULT_PASSWORD` (default in example: `ChangeMe123!`)
+   - **Key-based**: send `x-admin-secret` equal to `ADMIN_SECRET`
+
+4. **Password recovery (dev)**
+   - Call `POST /api/v1/public/auth/recover` with header `x-admin-recovery: ADMIN_RECOVERY_SECRET`
+
 ## 📚 Documentation
 
 > **📋 Documentation Rule**: "One Source of Truth" - All documentation changes must be made through pull requests to the `dev` branch with brief descriptions.

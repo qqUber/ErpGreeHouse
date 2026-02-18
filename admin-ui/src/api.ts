@@ -59,6 +59,15 @@ export type IntegrationDelivery = {
   created_at: string
 }
 
+export type IntegrationTemplate = {
+  id: string
+  region: string
+  name: string
+  kind: string
+  description: string
+  config: Record<string, any>
+}
+
 function baseUrl() {
   return (import.meta as any).env.VITE_API_BASE_URL || ''
 }
@@ -100,6 +109,12 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const Api = {
   publicStatus: () => api<{ api: string; admin_auth_configured: boolean; erp_sync_enabled: boolean }>('/api/v1/public/status', { method: 'GET', headers: {} }),
+  authStatus: () => api<{ bootstrap_enabled: boolean; default_admin_present: boolean; default_admin_username: string; must_change_password: boolean }>('/api/v1/public/auth/status', { method: 'GET', headers: {} }),
+  login: (username: string, password: string) => api<{ token: string; must_change_password: boolean }>('/api/v1/public/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
+  changePassword: (old_password: string, new_password: string) => api<{ changed: boolean }>('/api/v1/auth/change-password', { method: 'POST', body: JSON.stringify({ old_password, new_password }) }),
+  recoverPassword: (username: string, new_password: string, recoverySecret: string) =>
+    api<{ recovered: boolean }>('/api/v1/public/auth/recover', { method: 'POST', body: JSON.stringify({ username, new_password }), headers: { 'x-admin-recovery': recoverySecret } as any }),
+
   dashboard: () => api<Dashboard>('/api/v1/dashboard'),
   customers: (q?: string) => api<{ items: CustomerListItem[] }>(`/api/v1/customers${q ? `?q=${encodeURIComponent(q)}` : ''}`),
   customer: (id: number) => api<CustomerDetails>(`/api/v1/customers/${id}`),
@@ -110,6 +125,7 @@ export const Api = {
   receiptUrl: (txId: number) => `${baseUrl()}/api/v1/transactions/${txId}/receipt`,
 
   integrations: () => api<{ items: Integration[] }>('/api/v1/integrations', { method: 'GET', headers: {} }),
+  integrationTemplates: () => api<{ items: IntegrationTemplate[] }>('/api/v1/integrations/templates', { method: 'GET', headers: {} }),
   createIntegration: (payload: { name: string; kind: string; enabled: boolean; config: any }) =>
     api<{ id: number }>('/api/v1/integrations', { method: 'POST', body: JSON.stringify(payload) }),
   updateIntegration: (id: number, payload: { name: string; kind: string; enabled: boolean; config: any }) =>
