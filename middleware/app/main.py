@@ -42,6 +42,7 @@ if admin_dist.exists():
 
 @app.on_event("startup")
 async def _startup() -> None:
+    get_settings()
     init_db()
     _bootstrap_default_admin()
 
