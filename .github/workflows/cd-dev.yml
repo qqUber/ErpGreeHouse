@@ -55,6 +55,12 @@ jobs:
           mkdir -p ../out
           set -o pipefail
           bash ./run_tests.sh 2>&1 | tee ../out/middleware-tests.log
+          status=${PIPESTATUS[0]}
+          if [[ $status -ne 0 ]]; then
+            msg=$(tail -n 60 ../out/middleware-tests.log | tr '\n' ' ' | sed 's/%/%25/g')
+            echo "::error::middleware tests failed: ${msg}"
+            exit $status
+          fi
       - name: coverage gate (security/auth)
         working-directory: middleware
         run: |
