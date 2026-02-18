@@ -47,7 +47,7 @@ run_limited() {
     echo "Running $test_type tests (Memory: $memory_limit, CPU: $cpu_limit)..."
     
     # Use different approaches based on OS
-    if [[ "$OS" == "linux" ]] && command -v systemd-run &> /dev/null; then
+    if [[ "$OS" == "linux" ]] && [[ "${CI:-}" != "true" ]] && command -v systemd-run &> /dev/null && systemd-run --user --scope --quiet true &> /dev/null; then
         # Linux with systemd
         systemd-run --user --scope \
             -p MemoryMax=$memory_limit \
