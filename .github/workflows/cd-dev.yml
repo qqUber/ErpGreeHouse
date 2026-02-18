@@ -51,7 +51,10 @@ jobs:
           python -m pip install pytest pytest-asyncio pytest-cov pytest-mock pytest-html httpx structlog
       - name: middleware tests
         working-directory: middleware
-        run: bash ./run_tests.sh
+        run: |
+          mkdir -p ../out
+          set -o pipefail
+          bash ./run_tests.sh 2>&1 | tee ../out/middleware-tests.log
       - name: coverage gate (security/auth)
         working-directory: middleware
         run: |
@@ -130,3 +133,13 @@ jobs:
               title: `CD failed (development): ${context.sha}`,
               body: `Run: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`
             })
+
+      - name: upload debug artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-debug-${{ github.sha }}
+          path: |
+            out/middleware-tests.log
+            middleware/reports
+          if-no-files-found: warn
