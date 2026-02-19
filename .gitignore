@@ -8,6 +8,8 @@ venv/
 *.log
 *.sqlite3
 *.db
+*.db-shm
+*.db-wal
 *.tsbuildinfo
 __dist__/
 dist/
@@ -22,6 +24,8 @@ admin-ui/test-results/
 admin-ui/playwright-report/
 admin-ui/allure-results/
 admin-ui/allure-report/
+admin-ui/test_output*.txt
+admin-ui/debug_page.html
 
 .trae/
 middleware/Lib/

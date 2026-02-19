@@ -177,6 +177,7 @@ def auth_status(request: Request) -> dict[str, Any]:
 def login(payload: LoginIn, response: Response, request: Request) -> LoginOut:
     require_rate_limit(request, scope="auth_login", limit=20, window_sec=60)
     require_bruteforce_guard(request, username=payload.username, max_attempts=8, window_sec=900, lock_sec=900)
+
     _bootstrap_default_admin()
     _bootstrap_demo_users()
     db = get_db()
@@ -195,6 +196,7 @@ def login(payload: LoginIn, response: Response, request: Request) -> LoginOut:
         if not constant_time_equals(ph, str(row["password_hash"])):
             register_bruteforce_failure(request, username=payload.username, max_attempts=8, window_sec=900, lock_sec=900)
             raise HTTPException(status_code=401, detail="Invalid credentials")
+        
         token = _issue_token(int(row["id"]))
         ttl_min = int(os.getenv("ADMIN_TOKEN_TTL_MIN", "720"))
         cookie_secure = os.getenv("ADMIN_COOKIE_SECURE", "false").lower() in ("1", "true", "yes")

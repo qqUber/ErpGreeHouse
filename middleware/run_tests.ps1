@@ -8,7 +8,7 @@ param(
     [switch]$HtmlReport = $true
 )
 
-Write-Host "🧪 Telegram CRM MVP - Windows Test Runner" -ForegroundColor Green
+Write-Host "[TEST] Telegram CRM MVP - Windows Test Runner" -ForegroundColor Green
 Write-Host "=========================================" -ForegroundColor Green
 
 # Configuration
@@ -31,28 +31,28 @@ if (Get-Command python3 -ErrorAction SilentlyContinue) {
 
 # Check if virtual environment exists
 if (Test-Path "$PROJECT_ROOT/venv") {
-    Write-Host "📦 Activating virtual environment..." -ForegroundColor Yellow
+    Write-Host "[VENV] Activating virtual environment..." -ForegroundColor Yellow
     & "$PROJECT_ROOT/venv/Scripts/Activate.ps1"
 }
 
 # Validate Python environment
-Write-Host "🔍 Validating Python environment..." -ForegroundColor Yellow
+Write-Host "[VALIDATION] Validating Python environment..." -ForegroundColor Yellow
 try {
     & $PYTHON_CMD --version
     & $PYTHON_CMD -c "import sys; print(f'Python {sys.version}')"
 } catch {
-    Write-Host "❌ Python not found. Please install Python 3.11+" -ForegroundColor Red
+    Write-Host "[ERROR] Python not found. Please install Python 3.11+" -ForegroundColor Red
     exit 1
 }
 
 # Install test dependencies if needed
-Write-Host "📦 Installing test dependencies..." -ForegroundColor Yellow
+Write-Host "[DEPS] Installing test dependencies..." -ForegroundColor Yellow
 & $PYTHON_CMD -m pip install --upgrade pip
 & $PYTHON_CMD -m pip install pytest pytest-asyncio pytest-cov pytest-html pytest-xdist
 
 # Run different test types based on parameter
 function Run-UnitTests {
-    Write-Host "🧪 Running Unit Tests..." -ForegroundColor Green
+    Write-Host "[TEST] Running Unit Tests..." -ForegroundColor Green
     
     $UNIT_TEST_CMD = "$PYTHON_CMD -m pytest tests/ -v --tb=short"
     
@@ -71,16 +71,16 @@ function Run-UnitTests {
     Invoke-Expression $UNIT_TEST_CMD
     
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ Unit tests failed" -ForegroundColor Red
+        Write-Host "[FAILED] Unit tests failed" -ForegroundColor Red
         return $false
     }
     
-    Write-Host "✅ Unit tests passed" -ForegroundColor Green
+    Write-Host "[PASSED] Unit tests passed" -ForegroundColor Green
     return $true
 }
 
 function Run-IntegrationTests {
-    Write-Host "🔗 Running Integration Tests..." -ForegroundColor Green
+    Write-Host "[INTEGRATION] Running Integration Tests..." -ForegroundColor Green
     
     $INTEGRATION_CMD = "$PYTHON_CMD -m pytest tests/integration -v --tb=short"
     
@@ -98,16 +98,16 @@ function Run-IntegrationTests {
     Invoke-Expression $INTEGRATION_CMD
     
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ Integration tests failed" -ForegroundColor Red
+        Write-Host "[FAILED] Integration tests failed" -ForegroundColor Red
         return $false
     }
     
-    Write-Host "✅ Integration tests passed" -ForegroundColor Green
+    Write-Host "[PASSED] Integration tests passed" -ForegroundColor Green
     return $true
 }
 
 function Run-SecurityTests {
-    Write-Host "🔒 Running Security Tests..." -ForegroundColor Green
+    Write-Host "[SECURITY] Running Security Tests..." -ForegroundColor Green
     
     try {
         & $PYTHON_CMD -m pip install bandit safety
@@ -118,16 +118,16 @@ function Run-SecurityTests {
         Write-Host "Running Safety check..." -ForegroundColor Yellow
         & $PYTHON_CMD -m safety check --json > $REPORT_SUBDIR/safety_report.json
         
-        Write-Host "✅ Security tests completed" -ForegroundColor Green
+        Write-Host "[SUCCESS] Security tests completed" -ForegroundColor Green
         return $true
     } catch {
-        Write-Host "⚠️ Security tests partially completed" -ForegroundColor Yellow
+        Write-Host "[WARNING] Security tests partially completed" -ForegroundColor Yellow
         return $true
     }
 }
 
 function Run-Linting {
-    Write-Host "📋 Running Code Linting..." -ForegroundColor Green
+    Write-Host "[LINTING] Running Code Linting..." -ForegroundColor Green
     
     try {
         & $PYTHON_CMD -m pip install flake8 black isort
@@ -141,16 +141,16 @@ function Run-Linting {
         Write-Host "Running Flake8 linting..." -ForegroundColor Yellow
         & $PYTHON_CMD -m flake8 app/ tests/ --max-line-length=88 --extend-ignore=E203,W503
         
-        Write-Host "✅ Linting passed" -ForegroundColor Green
+        Write-Host "[PASSED] Linting passed" -ForegroundColor Green
         return $true
     } catch {
-        Write-Host "⚠️ Linting issues found" -ForegroundColor Yellow
+        Write-Host "[WARNING] Linting issues found" -ForegroundColor Yellow
         return $false
     }
 }
 
 # Main test execution
-Write-Host "🚀 Starting test execution..." -ForegroundColor Green
+Write-Host "[RUN] Starting test execution..." -ForegroundColor Green
 $OverallResult = $true
 
 switch ($TestType.ToLower()) {
@@ -183,7 +183,7 @@ switch ($TestType.ToLower()) {
 }
 
 # Generate summary report
-Write-Host "📊 Generating test summary..." -ForegroundColor Yellow
+Write-Host "[SUMMARY] Generating test summary..." -ForegroundColor Yellow
 
 $SummaryReport = @"
 # Test Execution Summary
@@ -191,7 +191,7 @@ $SummaryReport = @"
 **Platform**: Windows PowerShell
 **Python**: $(& $PYTHON_CMD --version)
 **Test Type**: $TestType
-**Overall Result**: $(if ($OverallResult) { "PASSED ✅" } else { "FAILED ❌" })
+**Overall Result**: $(if ($OverallResult) { "PASSED" } else { "FAILED" })
 
 ## Reports Generated
 - Unit Tests: $REPORT_SUBDIR/unit_tests.html
@@ -201,9 +201,9 @@ $SummaryReport = @"
 
 ## Next Steps
 $(if ($OverallResult) {
-    "✅ All tests passed! Ready for deployment."
+    "[SUCCESS] All tests passed! Ready for deployment."
 } else {
-    "❌ Some tests failed. Check reports above and fix issues."
+    "[FAIL] Some tests failed. Check reports above and fix issues."
 })
 "@
 
@@ -211,12 +211,12 @@ $SummaryReport | Out-File -FilePath "$REPORT_SUBDIR/test_summary.md" -Encoding U
 
 Write-Host "`n$SummaryReport" -ForegroundColor Cyan
 
-Write-Host "`n📁 Reports saved to: $REPORT_SUBDIR" -ForegroundColor Green
+Write-Host "`n[REPORTS] Reports saved to: $REPORT_SUBDIR" -ForegroundColor Green
 
 if ($OverallResult) {
-    Write-Host "🎉 All tests completed successfully!" -ForegroundColor Green
+    Write-Host "[SUCCESS] All tests completed successfully!" -ForegroundColor Green
     exit 0
 } else {
-    Write-Host "💥 Some tests failed. Check reports for details." -ForegroundColor Red
+    Write-Host "[FAIL] Some tests failed. Check reports for details." -ForegroundColor Red
     exit 1
 }

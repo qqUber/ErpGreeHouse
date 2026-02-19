@@ -155,7 +155,6 @@ class TestERPClient:
 "@
     
     $testContent | Out-File -FilePath $testFile -Encoding UTF8
-}
 
 # 9. Create PowerShell Test Scripts
 Write-Host "📝 Creating PowerShell test scripts..." -ForegroundColor Yellow
