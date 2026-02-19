@@ -6,18 +6,27 @@ const isManual = uiMode === 'manual'
 export default defineConfig({
   testDir: './e2e',
   timeout: 60_000,
-  expect: { timeout: 10_000 },
-  retries: Number(process.env.E2E_RETRIES || (process.env.CI ? 2 : 0)),
+  expect: { timeout: 5_000 },
+  retries: 0,
   use: {
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:5173',
     channel: process.env.E2E_BROWSER_CHANNEL || undefined,
     headless: !isManual,
     launchOptions: isManual ? { slowMo: Number(process.env.E2E_SLOWMO_MS || 250) } : undefined,
+    // Trace: retain on failure for debugging (essential since retries=0)
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure'
+    video: 'off'
   },
-  reporter: [['list'], ['html', { open: 'never' }], ['allure-playwright']],
+  
+  // Fail fast to save time
+  maxFailures: 1,
+  // Disable auto-open report on CI or manually
+  reporter: [['list'], ['html', { open: 'never' }]],
+  
+  // Limit workers to 1 to reduce memory usage and avoid OOM
+  workers: 1,
+
   projects: [
     { name: 'smoke', testDir: './e2e/smoke' },
     { name: 'critical', testDir: './e2e/critical' }

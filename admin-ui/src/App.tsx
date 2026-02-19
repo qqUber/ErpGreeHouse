@@ -76,6 +76,8 @@ function App() {
   const [me, setMe] = useState<AdminMe | null>(null)
   const [products, setProducts] = useState<Array<{ id: number; code: string; name: string; kind: string; price: number; active: boolean }>>([])
 
+  console.log(`[App] Render. LoginMode=${loginMode} Username=${username} PasswordLen=${password.length} Notice=${notice ? JSON.stringify(notice) : 'null'}`)
+
   const selected = useMemo(() => customers.find(c => c.id === selectedId) || null, [customers, selectedId])
   const selectedIntegration = useMemo(
     () => integrations.find(i => i.id === selectedIntegrationId) || null,
@@ -88,12 +90,14 @@ function App() {
   }
 
   function showNotice(level: NoticeLevel, message: string) {
+    console.log(`[App] showNotice: ${level} - ${message}`)
     const m = clipMessage(message)
     setNotice({ level, message: m, visible: true })
     window.setTimeout(() => setNotice(prev => (prev ? { ...prev, visible: false } : prev)), 3500)
   }
 
   function stopAuthFlow() {
+    console.log('[App] stopAuthFlow called')
     authAbortRef.current?.abort()
     authAbortRef.current = null
     authWorkerRef.current?.postMessage({ type: 'stop' })
@@ -283,6 +287,7 @@ function App() {
       showNotice('ok', 'Вход выполнен.')
       stopAuthFlow()
     } catch (e: any) {
+      console.log(`[App] Login failed: ${e?.message || e}`)
       if (String(e?.name || '').toLowerCase().includes('abort')) {
         showNotice('warn', 'Вход отменён.')
       } else {
@@ -293,6 +298,7 @@ function App() {
   }
 
   async function doLoginByPassword() {
+    console.log('[App] doLoginByPassword started')
     setError(null)
     try {
       const signal = startAuthFlowSteps(['Подключение к серверу', 'Проверка учетных данных', 'Создание сессии'])
@@ -315,6 +321,8 @@ function App() {
       showNotice('ok', 'Вход выполнен.')
       stopAuthFlow()
     } catch (e: any) {
+      console.error(`[App] Login failed (catch):`, e)
+      console.error(`[App] Login failed message:`, e.message)
       if (String(e?.name || '').toLowerCase().includes('abort')) {
         showNotice('warn', 'Вход отменён.')
       } else {
@@ -743,14 +751,18 @@ function App() {
 }
 
 function StatusBar({ notice }: { notice: Notice }) {
+  useEffect(() => {
+    console.log('[App] StatusBar MOUNTED')
+    return () => console.log('[App] StatusBar UNMOUNTED')
+  }, [])
+  console.log(`[App] StatusBar render: visible=${notice.visible} level=${notice.level} msg=${notice.message}`)
   const cls =
     notice.level === 'ok' ? 'statusBar statusBarOk' : notice.level === 'warn' ? 'statusBar statusBarWarn' : 'statusBar statusBarErr'
   const icon = notice.level === 'ok' ? '✓' : notice.level === 'warn' ? '!' : '×'
   return (
-    <div className={`${cls} ${notice.visible ? 'statusBarVisible' : ''}`} role="status" aria-live="polite">
+    <div className={`${cls} ${notice.visible ? 'statusBarVisible' : ''}`} role="status" aria-live="polite" data-testid="status-bar">
       <div className="statusBarIcon">{icon}</div>
       <div className="statusBarText">{notice.message}</div>
-      <div />
     </div>
   )
 }

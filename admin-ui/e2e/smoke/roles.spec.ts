@@ -1,12 +1,49 @@
 import { attachConsole, expect, retryBackoff, test } from '../_shared'
 import type { Page } from '@playwright/test'
+import * as fs from 'fs'
+
+test.beforeEach(async ({ page }) => {
+  page.on('console', msg => console.log(`[Browser] ${msg.type()}: ${msg.text()}`))
+  page.on('pageerror', err => console.error(`[Browser] Uncaught exception: ${err.message}`))
+})
 
 async function login(page: Page, username: string, password: string) {
   await page.goto('/')
   await page.getByPlaceholder('Логин').fill(username)
   await page.getByPlaceholder('Пароль').fill(password)
   await page.getByRole('button', { name: 'Войти' }).click()
-  await expect(page.getByText(/Роль:/)).toBeVisible()
+
+  // Wait for auth overlay to detach to ensure UI is interactive and loaded
+  const authOverlay = page.locator('.overlay')
+  if (await authOverlay.isVisible()) {
+    console.log('[Test] Auth overlay visible, waiting for detach...')
+    try {
+      await authOverlay.waitFor({ state: 'detached', timeout: 10000 })
+    } catch (e) {
+      console.error('[Test] Auth overlay did not detach, using fallback timeout...')
+      await page.waitForTimeout(5000)
+    }
+  }
+
+  // Debug page content if role is not found
+  try {
+    await expect(page.getByText(/Роль:/)).toBeVisible({ timeout: 10000 })
+  } catch (e) {
+    console.error('[Test] Role element check failed')
+    const content = await page.content()
+    console.error('[Test] Page content length:', content.length)
+    console.error('[Test] Page content (first 2000 chars):', content.slice(0, 2000))
+    
+    // Check for error notices
+    const errorNotices = await page.locator('.statusBarErr').allTextContents()
+    console.error('[Test] Error notices:', errorNotices)
+
+    // Save page content to file for debugging
+    fs.writeFileSync('debug_page.html', content)
+    console.error('[Test] Page content saved to debug_page.html')
+    
+    throw e
+  }
 }
 
 const consoleFlush = new Map<string, () => Promise<void>>()

@@ -112,15 +112,19 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   })
 
   if (!res.ok) {
-    const text = await res.text()
-    try {
-      const j = JSON.parse(text || '{}')
-      const d = j?.detail ? String(j.detail) : ''
-      throw new Error(d || `HTTP ${res.status}`)
-    } catch {
-      throw new Error(`HTTP ${res.status}`)
+        console.log(`[Api] Error ${res.status}, reading body...`)
+        const text = await res.text()
+        console.error(`[Api] Error ${res.status} body: "${text}"`)
+        let errorMsg = `HTTP ${res.status}`
+        try {
+            const j = JSON.parse(text || '{}')
+            if (j?.detail) errorMsg = String(j.detail)
+        } catch (err) {
+            console.error('[Api] JSON parse error:', err)
+        }
+        console.error(`[Api] Throwing error: "${errorMsg}"`)
+        throw new Error(errorMsg)
     }
-  }
 
   return (await res.json()) as T
 }
