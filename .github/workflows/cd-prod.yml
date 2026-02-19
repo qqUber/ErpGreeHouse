@@ -25,6 +25,7 @@ jobs:
       ERP_MOCK_MODE: 'true'
       ENVIRONMENT: production
       PYTHONPATH: ${{ github.workspace }}/middleware
+      NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - uses: actions/checkout@v4
 

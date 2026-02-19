@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Api, CustomerDetails, CustomerListItem, Dashboard, Integration, IntegrationDelivery, IntegrationTemplate, getAdminSecret, setAdminSecret } from './api'
+import { AdminMe, Api, CustomerDetails, CustomerListItem, Dashboard, Integration, IntegrationDelivery, IntegrationTemplate, getAdminSecret, setAdminSecret } from './api'
 
-type Tab = 'dashboard' | 'customers' | 'pos' | 'integrations' | 'settings'
+type Tab = 'dashboard' | 'customers' | 'pos' | 'integrations' | 'products' | 'settings'
 
 type PublicStatus = {
   api: string
@@ -25,6 +25,14 @@ type AuthFlow = {
   percent: number
   label: string
   steps: Array<{ label: string; done: boolean }>
+}
+
+function roleLabel(role: string) {
+  const r = String(role || '').toLowerCase()
+  if (r === 'owner') return 'Админ'
+  if (r === 'operator') return 'Оператор'
+  if (r === 'marketer') return 'Менеджер'
+  return r || '—'
 }
 
 function money(n: number) {
@@ -65,6 +73,8 @@ function App() {
   const [selectedIntegrationId, setSelectedIntegrationId] = useState<number | null>(null)
   const [integrationDeliveries, setIntegrationDeliveries] = useState<IntegrationDelivery[]>([])
   const [integrationsBusy, setIntegrationsBusy] = useState(false)
+  const [me, setMe] = useState<AdminMe | null>(null)
+  const [products, setProducts] = useState<Array<{ id: number; code: string; name: string; kind: string; price: number; active: boolean }>>([])
 
   const selected = useMemo(() => customers.find(c => c.id === selectedId) || null, [customers, selectedId])
   const selectedIntegration = useMemo(
@@ -154,12 +164,24 @@ function App() {
     setIntegrationTemplates(res.items)
   }
 
+  async function loadProducts() {
+    setError(null)
+    const res = await Api.products()
+    setProducts(res.items)
+  }
+
   async function bootstrap() {
     setError(null)
     await loadPublicStatus()
     await loadAuthStatus()
     try {
-      await Promise.all([loadDashboard(), loadCustomers()])
+      await Promise.all([loadDashboard(), loadCustomers(), loadProducts()])
+      try {
+        const m = await Api.me()
+        setMe(m)
+      } catch {
+        setMe(null)
+      }
       setAuthReady(true)
     } catch (e: any) {
       const msg = String(e?.message || e)
@@ -374,10 +396,29 @@ function App() {
       setAdminKey('')
       setAuthReady(false)
       setMustChangePassword(false)
+      setMe(null)
       setTab('dashboard')
       showNotice('ok', 'Вы вышли из системы.')
     }
   }
+
+  const allowedTabs: Tab[] = useMemo(() => {
+    const role = String(me?.role || '').toLowerCase()
+    if (!authReady) return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings']
+    if (role === 'operator') return ['dashboard', 'customers', 'pos', 'products', 'settings']
+    if (role === 'marketer') return ['dashboard', 'customers', 'integrations', 'products', 'settings']
+    return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings']
+  }, [authReady, me?.role])
+
+  const safeTab: Tab = useMemo(() => {
+    if (!authReady) return tab
+    return allowedTabs.includes(tab) ? tab : allowedTabs[0] || 'dashboard'
+  }, [tab, authReady, allowedTabs])
+
+  useEffect(() => {
+    if (!authReady) return
+    if (tab !== safeTab) setTab(safeTab)
+  }, [safeTab, tab, authReady])
 
   return (
     <div className="container">
@@ -386,12 +427,26 @@ function App() {
           <div style={{ fontWeight: 800 }}>Панель управления</div>
         </div>
         <div className="tabs">
-          <div className={`tab ${tab === 'dashboard' ? 'tabActive' : ''}`} onClick={() => setTab('dashboard')}>Сводка</div>
-          <div className={`tab ${tab === 'customers' ? 'tabActive' : ''}`} onClick={() => setTab('customers')}>Клиенты</div>
-          <div className={`tab ${tab === 'pos' ? 'tabActive' : ''}`} onClick={() => setTab('pos')}>Операции</div>
-          <div className={`tab ${tab === 'integrations' ? 'tabActive' : ''}`} onClick={() => setTab('integrations')}>Интеграции</div>
-          <div className={`tab ${tab === 'settings' ? 'tabActive' : ''}`} onClick={() => setTab('settings')}>Настройки</div>
+          {allowedTabs.includes('dashboard') ? (
+            <div className={`tab ${safeTab === 'dashboard' ? 'tabActive' : ''}`} onClick={() => setTab('dashboard')}>Сводка</div>
+          ) : null}
+          {allowedTabs.includes('customers') ? (
+            <div className={`tab ${safeTab === 'customers' ? 'tabActive' : ''}`} onClick={() => setTab('customers')}>Клиенты</div>
+          ) : null}
+          {allowedTabs.includes('pos') ? (
+            <div className={`tab ${safeTab === 'pos' ? 'tabActive' : ''}`} onClick={() => setTab('pos')}>Операции</div>
+          ) : null}
+          {allowedTabs.includes('integrations') ? (
+            <div className={`tab ${safeTab === 'integrations' ? 'tabActive' : ''}`} onClick={() => setTab('integrations')}>Интеграции</div>
+          ) : null}
+          {allowedTabs.includes('products') ? (
+            <div className={`tab ${safeTab === 'products' ? 'tabActive' : ''}`} onClick={() => setTab('products')}>Товары</div>
+          ) : null}
+          {allowedTabs.includes('settings') ? (
+            <div className={`tab ${safeTab === 'settings' ? 'tabActive' : ''}`} onClick={() => setTab('settings')}>Настройки</div>
+          ) : null}
         </div>
+        {authReady ? <div className="pill">Роль: {roleLabel(me?.role || '')}</div> : null}
       </div>
 
       {notice ? (
@@ -515,8 +570,8 @@ function App() {
         </div>
       ) : null}
 
-      {authReady && tab === 'dashboard' ? <DashboardView dash={dash} reload={() => loadDashboard()} /> : null}
-      {authReady && tab === 'customers' ? (
+      {authReady && safeTab === 'dashboard' ? <DashboardView dash={dash} reload={() => loadDashboard()} /> : null}
+      {authReady && safeTab === 'customers' ? (
         <CustomersView
           q={q}
           setQ={setQ}
@@ -528,9 +583,11 @@ function App() {
           refresh={() => loadCustomers()}
         />
       ) : null}
-      {authReady && tab === 'pos' ? (
+      {authReady && safeTab === 'pos' ? (
         <PosView
           refreshCustomers={() => loadCustomers()}
+          products={products}
+          reloadProducts={() => loadProducts()}
           onSaleDone={async (customerId: number) => {
             await loadDashboard()
             await loadCustomers()
@@ -539,7 +596,7 @@ function App() {
           }}
         />
       ) : null}
-      {authReady && tab === 'integrations' ? (
+      {authReady && safeTab === 'integrations' ? (
         <IntegrationsView
           items={integrations}
           templates={integrationTemplates}
@@ -571,7 +628,18 @@ function App() {
           }}
         />
       ) : null}
-      {authReady && tab === 'settings' ? (
+      {authReady && safeTab === 'products' ? (
+        <ProductsView
+          items={products}
+          reload={() => loadProducts()}
+          canEdit={String(me?.role || '').toLowerCase() !== 'operator'}
+          create={async p => {
+            await Api.createProduct(p)
+            await loadProducts()
+          }}
+        />
+      ) : null}
+      {authReady && safeTab === 'settings' ? (
         <div className="grid">
           <div className="card cardFull">
             <div className="row">
@@ -828,11 +896,115 @@ function CustomersView(props: {
   )
 }
 
+function ProductsView(props: {
+  items: Array<{ id: number; code: string; name: string; kind: string; price: number; active: boolean }>
+  reload: () => Promise<void>
+  canEdit: boolean
+  create: (p: { code: string; name: string; kind: string; price: number; active: boolean }) => Promise<void>
+}) {
+  const { items, reload, canEdit, create } = props
+  const [code, setCode] = useState('')
+  const [name, setName] = useState('')
+  const [kind, setKind] = useState('goods')
+  const [price, setPrice] = useState(0)
+  const [info, setInfo] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  async function onCreate() {
+    setBusy(true)
+    setInfo(null)
+    try {
+      await create({ code: code.trim(), name: name.trim(), kind: kind.trim(), price: Math.max(0, Number(price || 0)), active: true })
+      setCode('')
+      setName('')
+      setPrice(0)
+      setInfo('Создано.')
+    } catch (e: any) {
+      setInfo(String(e?.message || e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="grid">
+      <div className="card cardFull">
+        <div className="row">
+          <div>
+            <div style={{ fontWeight: 900, fontSize: 18 }}>Товары / услуги</div>
+            <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>Каталог для быстрой продажи и демо-сценариев.</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn" onClick={() => void reload()} disabled={busy}>Обновить</button>
+          </div>
+        </div>
+      </div>
+
+      {canEdit ? (
+        <div className="card cardFull">
+          <div className="row">
+            <div style={{ flex: 1 }}>
+              <input className="input" value={code} onChange={e => setCode(e.target.value)} placeholder="Код (например E2E_COFFEE)" />
+            </div>
+            <div style={{ flex: 2 }}>
+              <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Название" />
+            </div>
+            <div style={{ width: 160 }}>
+              <input className="input" value={kind} onChange={e => setKind(e.target.value)} placeholder="Тип" />
+            </div>
+            <div style={{ width: 140 }}>
+              <input className="input" value={price} onChange={e => setPrice(Math.max(0, Number(e.target.value || 0)))} placeholder="Цена" />
+            </div>
+            <button className="btn btnPrimary" disabled={busy || !code.trim() || !name.trim()} onClick={() => void onCreate()}>
+              Создать
+            </button>
+          </div>
+          {info ? <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.65)' }}>{info}</div> : null}
+        </div>
+      ) : (
+        <div className="card cardFull" style={{ color: 'rgba(0,0,0,0.55)' }}>
+          У вас нет прав на создание/изменение каталога.
+        </div>
+      )}
+
+      <div className="card cardFull">
+        <div style={{ fontWeight: 800, marginBottom: 10 }}>Список</div>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Код</th>
+              <th>Название</th>
+              <th>Тип</th>
+              <th>Цена</th>
+              <th>Активен</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map(p => (
+              <tr key={p.id}>
+                <td>{p.id}</td>
+                <td>{p.code}</td>
+                <td>{p.name}</td>
+                <td>{p.kind}</td>
+                <td>{money(p.price)} ₽</td>
+                <td><span className={`pill ${p.active ? 'pillGood' : 'pillWarn'}`}>{p.active ? 'Да' : 'Нет'}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 function PosView(props: {
   refreshCustomers: () => Promise<void>
   onSaleDone: (customerId: number) => Promise<void>
+  products: Array<{ id: number; code: string; name: string; kind: string; price: number; active: boolean }>
+  reloadProducts: () => Promise<void>
 }) {
-  const { refreshCustomers, onSaleDone } = props
+  const { refreshCustomers, onSaleDone, products, reloadProducts } = props
 
   const [mode, setMode] = useState<'phone' | 'qr' | 'name'>('phone')
   const [input, setInput] = useState('')
@@ -841,6 +1013,7 @@ function PosView(props: {
     { code: 'COFFEE', name: 'Капучино', price: 240, qty: 1 },
     { code: 'DESSERT', name: 'Чизкейк', price: 190, qty: 1 }
   ])
+  const [productPick, setProductPick] = useState<number | ''>('')
   const [bonus, setBonus] = useState(50)
   const [busy, setBusy] = useState(false)
   const [info, setInfo] = useState<string | null>(null)
@@ -910,6 +1083,45 @@ function PosView(props: {
           <div className="pill">Клиент: {found || '—'}</div>
         </div>
         {info ? <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.65)' }}>{info}</div> : null}
+      </div>
+
+      <div className="card cardWide">
+        <div className="row" style={{ marginBottom: 10 }}>
+          <div style={{ fontWeight: 800 }}>Каталог</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn" disabled={busy} onClick={() => void reloadProducts()}>
+              Обновить
+            </button>
+          </div>
+        </div>
+        <div className="row">
+          <select className="input" value={productPick} onChange={e => setProductPick((e.target.value ? Number(e.target.value) : '') as any)} style={{ maxWidth: 520 }}>
+            <option value="">Выберите товар/услугу</option>
+            {products.filter(p => p.active).map(p => (
+              <option key={p.id} value={p.id}>
+                {p.code} · {p.name} · {money(p.price)} ₽
+              </option>
+            ))}
+          </select>
+          <button
+            className="btn btnPrimary"
+            disabled={busy || !productPick}
+            onClick={() => {
+              const p = products.find(x => x.id === Number(productPick))
+              if (!p) return
+              setItems(prev => {
+                const idx = prev.findIndex(it => it.code === p.code)
+                if (idx >= 0) {
+                  return prev.map((it, i) => (i === idx ? { ...it, qty: it.qty + 1 } : it))
+                }
+                return [{ code: p.code, name: p.name, price: p.price, qty: 1 }, ...prev]
+              })
+              setProductPick('')
+            }}
+          >
+            Добавить в чек
+          </button>
+        </div>
       </div>
 
       <div className="card cardWide">

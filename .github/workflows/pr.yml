@@ -70,6 +70,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -92,6 +94,90 @@ jobs:
           name: admin-ui-dist
           path: admin-ui/dist
           if-no-files-found: error
+
+  admin_ui_e2e:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    permissions:
+      contents: read
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+      ERP_MOCK_MODE: 'true'
+      E2E_TEST_MODE: 'true'
+      PYTHONPATH: ${{ github.workspace }}/middleware
+      ADMIN_BOOTSTRAP_DEFAULT: 'true'
+      ADMIN_DEFAULT_USERNAME: admin
+      ADMIN_DEFAULT_PASSWORD: admin
+      ADMIN_OPERATOR_USERNAME: operator
+      ADMIN_OPERATOR_PASSWORD: operator
+      ADMIN_MARKETER_USERNAME: manager
+      ADMIN_MARKETER_PASSWORD: manager
+      CRM_DB_PATH: .local/crm.db
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: middleware deps
+        working-directory: middleware
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: admin-ui/package-lock.json
+      - name: admin-ui deps
+        working-directory: admin-ui
+        run: npm ci
+      - name: install browsers
+        working-directory: admin-ui
+        run: npx playwright install --with-deps chromium
+      - name: e2e
+        working-directory: middleware
+        env:
+          E2E_BASE_URL: http://127.0.0.1:5173
+        run: |
+          set -euo pipefail
+          mid_pid=""
+          ui_pid=""
+          cleanup() { kill ${ui_pid:-} ${mid_pid:-} 2>/dev/null || true; }
+          trap cleanup EXIT
+
+          python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          mid_pid=$!
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:8000/health >/dev/null && break || true
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8000/health >/dev/null
+
+          cd ../admin-ui
+          VITE_API_BASE_URL=http://127.0.0.1:8000 npm run dev -- --host 127.0.0.1 --port 5173 --strictPort &
+          ui_pid=$!
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:5173/ >/dev/null && break || true
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:5173/ >/dev/null
+
+          npm run test:e2e
+      - name: upload e2e artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-ui-e2e
+          path: |
+            admin-ui/playwright-report
+            admin-ui/test-results
+            admin-ui/allure-results
+          if-no-files-found: warn
 
   middleware:
     runs-on: ubuntu-latest
@@ -152,6 +238,7 @@ jobs:
       - codeql
       - precommit
       - admin_ui
+      - admin_ui_e2e
       - middleware
     permissions:
       pull-requests: write
@@ -165,6 +252,7 @@ jobs:
           echo "- codeql: ok" >> $GITHUB_STEP_SUMMARY
           echo "- pre-commit: ok" >> $GITHUB_STEP_SUMMARY
           echo "- admin-ui: ok (artifact: admin-ui-dist)" >> $GITHUB_STEP_SUMMARY
+          echo "- admin-ui e2e: ok (artifact: admin-ui-e2e)" >> $GITHUB_STEP_SUMMARY
           echo "- middleware: ok (artifact: middleware-reports)" >> $GITHUB_STEP_SUMMARY
       - uses: actions/github-script@v7
         with:
@@ -177,6 +265,7 @@ jobs:
               '- CodeQL: OK',
               '- pre-commit: OK',
               '- admin-ui build: OK (artifact: admin-ui-dist)',
+              '- admin-ui e2e: OK (artifact: admin-ui-e2e)',
               '- middleware tests: OK (artifact: middleware-reports)'
             ].join('\n')
             await github.rest.issues.createComment({

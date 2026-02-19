@@ -68,6 +68,23 @@ export type IntegrationTemplate = {
   config: Record<string, any>
 }
 
+export type Product = {
+  id: number
+  code: string
+  name: string
+  kind: string
+  price: number
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type AdminMe = {
+  user_id: number
+  username: string
+  role: string
+}
+
 function baseUrl() {
   return (import.meta as any).env.VITE_API_BASE_URL || ''
 }
@@ -111,6 +128,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 export const Api = {
   publicStatus: (signal?: AbortSignal) =>
     api<{ api: string; admin_auth_configured: boolean; erp_sync_enabled: boolean }>('/api/v1/public/status', { method: 'GET', headers: {}, signal }),
+  me: (signal?: AbortSignal) => api<AdminMe>('/api/v1/auth/me', { method: 'GET', headers: {}, signal }),
   authStatus: (signal?: AbortSignal) =>
     api<{ bootstrap_enabled: boolean; default_admin_present: boolean; default_admin_username: string; must_change_password: boolean }>('/api/v1/public/auth/status', {
       method: 'GET',
@@ -148,5 +166,8 @@ export const Api = {
     api<{ updated: boolean }>(`/api/v1/integrations/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteIntegration: (id: number) => api<{ deleted: boolean }>(`/api/v1/integrations/${id}`, { method: 'DELETE' }),
   rotateIntegrationSecret: (id: number) => api<{ secret: string }>(`/api/v1/integrations/${id}/rotate-secret`, { method: 'POST' }),
-  integrationDeliveries: (id: number) => api<{ items: IntegrationDelivery[] }>(`/api/v1/integrations/${id}/deliveries`, { method: 'GET', headers: {} })
+  integrationDeliveries: (id: number) => api<{ items: IntegrationDelivery[] }>(`/api/v1/integrations/${id}/deliveries`, { method: 'GET', headers: {} }),
+  products: (q?: string) => api<{ items: Product[] }>(`/api/v1/products${q ? `?q=${encodeURIComponent(q)}` : ''}`, { method: 'GET', headers: {} }),
+  createProduct: (payload: { code: string; name: string; kind: string; price: number; active: boolean }) =>
+    api<{ id: number }>('/api/v1/products', { method: 'POST', body: JSON.stringify(payload) })
 }

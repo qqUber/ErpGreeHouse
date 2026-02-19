@@ -18,6 +18,10 @@ build/
 .env.*
 
 node_modules/
+admin-ui/test-results/
+admin-ui/playwright-report/
+admin-ui/allure-results/
+admin-ui/allure-report/
 
 .trae/
 middleware/Lib/

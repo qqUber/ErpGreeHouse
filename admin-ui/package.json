@@ -6,13 +6,21 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test --project=smoke",
+    "test:e2e:critical": "playwright test --project=critical",
+    "test:e2e:manual": "E2E_UI_MODE=manual E2E_PAUSE=1 playwright test --project=smoke --workers=1",
+    "report:allure": "allure generate allure-results --clean -o allure-report"
   },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "allure-commandline": "^2.34.1",
+    "allure-playwright": "^3.3.4",
+    "@playwright/test": "^1.55.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",

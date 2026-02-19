@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
 
-from .auth import require_admin, require_integration_secret
+from .auth import require_integration_secret, require_roles
 from .db import get_db
 from .identify import generate_qr_token, normalize_phone
 from .integration_events import dispatch_event
@@ -49,7 +49,7 @@ class IntegrationOut(BaseModel):
 def list_integrations(
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_admin(x_admin_secret)
+    require_roles(x_admin_secret, roles=("owner", "marketer"))
     db = get_db()
     conn = db.connect()
     try:
@@ -79,7 +79,7 @@ def list_integrations(
 def list_templates(
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_admin(x_admin_secret)
+    require_roles(x_admin_secret, roles=("owner", "marketer"))
     return {"items": list_integration_templates()}
 
 
@@ -88,7 +88,7 @@ def create_integration(
     payload: IntegrationIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_admin(x_admin_secret)
+    require_roles(x_admin_secret, roles=("owner", "marketer"))
     secret = secrets.token_urlsafe(24)
     cfg = json.dumps(payload.config or {}, ensure_ascii=False)
     db = get_db()
@@ -109,7 +109,7 @@ def get_integration(
     integration_id: int,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_admin(x_admin_secret)
+    require_roles(x_admin_secret, roles=("owner", "marketer"))
     db = get_db()
     conn = db.connect()
     try:
@@ -141,7 +141,7 @@ def update_integration(
     payload: IntegrationIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_admin(x_admin_secret)
+    require_roles(x_admin_secret, roles=("owner", "marketer"))
     cfg = json.dumps(payload.config or {}, ensure_ascii=False)
     db = get_db()
     conn = db.connect()
@@ -163,7 +163,7 @@ def rotate_secret(
     integration_id: int,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_admin(x_admin_secret)
+    require_roles(x_admin_secret, roles=("owner", "marketer"))
     secret = secrets.token_urlsafe(24)
     db = get_db()
     conn = db.connect()
@@ -185,7 +185,7 @@ def delete_integration(
     integration_id: int,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_admin(x_admin_secret)
+    require_roles(x_admin_secret, roles=("owner", "marketer"))
     db = get_db()
     conn = db.connect()
     try:
@@ -203,7 +203,7 @@ def list_deliveries(
     integration_id: int,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_admin(x_admin_secret)
+    require_roles(x_admin_secret, roles=("owner", "marketer"))
     db = get_db()
     conn = db.connect()
     try:

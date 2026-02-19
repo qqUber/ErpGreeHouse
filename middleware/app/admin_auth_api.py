@@ -31,6 +31,7 @@ def _bootstrap_default_admin() -> None:
     username = os.getenv("ADMIN_DEFAULT_USERNAME", "admin").strip() or "admin"
     password = os.getenv("ADMIN_DEFAULT_PASSWORD", "admin").strip() or "admin"
     iterations = int(os.getenv("ADMIN_PBKDF2_ITER", "200000"))
+    role = os.getenv("ADMIN_DEFAULT_ROLE", "owner").strip() or "owner"
 
     db = get_db()
     conn = db.connect()
@@ -41,13 +42,46 @@ def _bootstrap_default_admin() -> None:
         salt = new_salt()
         ph = hash_password(password, salt=salt, iterations=iterations)
         conn.execute(
-            "INSERT INTO admin_users(username, password_hash, password_salt, password_iter, must_change_password) VALUES(?,?,?,?,1)",
-            (username, ph, salt, iterations),
+            "INSERT INTO admin_users(username, password_hash, password_salt, password_iter, role, disabled, must_change_password) VALUES(?,?,?,?,?,?,1)",
+            (username, ph, salt, iterations, role, 0),
         )
         conn.commit()
     finally:
         conn.close()
 
+
+def _bootstrap_demo_users() -> None:
+    enabled = os.getenv("ADMIN_BOOTSTRAP_DEMO_USERS", "true").lower() in ("1", "true", "yes")
+    if not enabled:
+        return
+
+    iterations = int(os.getenv("ADMIN_PBKDF2_ITER", "200000"))
+    operator_username = os.getenv("ADMIN_OPERATOR_USERNAME", "operator").strip() or "operator"
+    operator_password = os.getenv("ADMIN_OPERATOR_PASSWORD", "operator").strip() or "operator"
+    marketer_username = os.getenv("ADMIN_MARKETER_USERNAME", "manager").strip() or "manager"
+    marketer_password = os.getenv("ADMIN_MARKETER_PASSWORD", "manager").strip() or "manager"
+
+    db = get_db()
+    conn = db.connect()
+    try:
+        for username, password, role in (
+            (operator_username, operator_password, "operator"),
+            (marketer_username, marketer_password, "marketer"),
+        ):
+            if not username:
+                continue
+            row = conn.execute("SELECT id FROM admin_users WHERE username=?", (username,)).fetchone()
+            if row:
+                continue
+            salt = new_salt()
+            ph = hash_password(password, salt=salt, iterations=iterations)
+            conn.execute(
+                "INSERT INTO admin_users(username, password_hash, password_salt, password_iter, role, disabled, must_change_password) VALUES(?,?,?,?,?,?,0)",
+                (username, ph, salt, iterations, role, 0),
+            )
+        conn.commit()
+    finally:
+        conn.close()
 
 def _issue_token(admin_user_id: int) -> str:
     token = secrets.token_urlsafe(32)
@@ -73,13 +107,13 @@ def _get_admin_by_token(token: str) -> dict[str, Any] | None:
     conn = db.connect()
     try:
         row = conn.execute(
-            "SELECT t.token, t.expires_at, u.id as user_id, u.username, u.must_change_password, u.password_hash, u.password_salt, u.password_iter "
+            "SELECT t.token, t.expires_at, u.id as user_id, u.username, u.role, u.disabled, u.must_change_password, u.password_hash, u.password_salt, u.password_iter "
             "FROM admin_tokens t JOIN admin_users u ON u.id=t.admin_user_id WHERE t.token=?",
             (_hash_token(token),),
         ).fetchone()
         if not row:
             row = conn.execute(
-                "SELECT t.token, t.expires_at, u.id as user_id, u.username, u.must_change_password, u.password_hash, u.password_salt, u.password_iter "
+                "SELECT t.token, t.expires_at, u.id as user_id, u.username, u.role, u.disabled, u.must_change_password, u.password_hash, u.password_salt, u.password_iter "
                 "FROM admin_tokens t JOIN admin_users u ON u.id=t.admin_user_id WHERE t.token=?",
                 (token,),
             ).fetchone()
@@ -95,7 +129,7 @@ def _get_admin_by_token(token: str) -> dict[str, Any] | None:
 def require_admin_token_or_env(x_admin_secret: str | None) -> dict[str, Any]:
     expected = os.getenv("ADMIN_SECRET", "").strip()
     if expected and x_admin_secret and constant_time_equals(x_admin_secret, expected):
-        return {"user_id": 0, "username": "env"}
+        return {"user_id": 0, "username": "env", "role": "owner"}
 
     token = x_admin_secret or get_admin_session_token()
     if not token:
@@ -104,6 +138,8 @@ def require_admin_token_or_env(x_admin_secret: str | None) -> dict[str, Any]:
     admin = _get_admin_by_token(token)
     if not admin:
         raise HTTPException(status_code=401, detail="Unauthorized")
+    if int(admin.get("disabled") or 0) == 1:
+        raise HTTPException(status_code=403, detail="User disabled")
     return admin
 
 
@@ -142,16 +178,19 @@ def login(payload: LoginIn, response: Response, request: Request) -> LoginOut:
     require_rate_limit(request, scope="auth_login", limit=20, window_sec=60)
     require_bruteforce_guard(request, username=payload.username, max_attempts=8, window_sec=900, lock_sec=900)
     _bootstrap_default_admin()
+    _bootstrap_demo_users()
     db = get_db()
     conn = db.connect()
     try:
         row = conn.execute(
-            "SELECT id, username, password_hash, password_salt, password_iter, must_change_password FROM admin_users WHERE username=?",
+            "SELECT id, username, password_hash, password_salt, password_iter, must_change_password, disabled FROM admin_users WHERE username=?",
             (payload.username.strip(),),
         ).fetchone()
         if not row:
             register_bruteforce_failure(request, username=payload.username, max_attempts=8, window_sec=900, lock_sec=900)
             raise HTTPException(status_code=401, detail="Invalid credentials")
+        if int(row["disabled"]) == 1:
+            raise HTTPException(status_code=403, detail="User disabled")
         ph = hash_password(payload.password, salt=str(row["password_salt"]), iterations=int(row["password_iter"]))
         if not constant_time_equals(ph, str(row["password_hash"])):
             register_bruteforce_failure(request, username=payload.username, max_attempts=8, window_sec=900, lock_sec=900)
@@ -232,6 +271,14 @@ def logout(
 
     response.delete_cookie(_ADMIN_COOKIE_NAME, path="/")
     return {"logged_out": True}
+
+
+@router.get("/me")
+def me(
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+) -> dict[str, Any]:
+    admin = require_admin_token_or_env(x_admin_secret)
+    return {"user_id": int(admin.get("user_id") or 0), "username": str(admin.get("username") or ""), "role": str(admin.get("role") or "")}
 
 
 class RecoverIn(BaseModel):

@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from .auth import require_admin
+from .auth import require_admin, require_roles
 from .db import get_db
 from .erp_client import ERPClient
 from .identify import generate_qr_token, normalize_name, normalize_phone
@@ -213,7 +213,7 @@ def identify_phone(
     payload: IdentifyPhoneIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_admin(x_admin_secret)
+    require_roles(x_admin_secret, roles=("owner", "operator"))
     phone = normalize_phone(payload.phone)
     if not phone:
         raise HTTPException(status_code=400, detail="Invalid phone")
@@ -241,7 +241,7 @@ def identify_name(
     payload: IdentifyNameIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_admin(x_admin_secret)
+    require_roles(x_admin_secret, roles=("owner", "operator"))
     name = normalize_name(payload.name)
     if not name:
         raise HTTPException(status_code=400, detail="Invalid name")
@@ -263,7 +263,7 @@ def identify_qr(
     payload: IdentifyQrIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_admin(x_admin_secret)
+    require_roles(x_admin_secret, roles=("owner", "operator"))
     token = payload.qr.strip()
     if not token:
         raise HTTPException(status_code=400, detail="Invalid qr")
@@ -284,7 +284,7 @@ def create_sale(
     payload: CreateSaleIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_admin(x_admin_secret)
+    require_roles(x_admin_secret, roles=("owner", "operator"))
     if not payload.items:
         raise HTTPException(status_code=400, detail="items required")
 

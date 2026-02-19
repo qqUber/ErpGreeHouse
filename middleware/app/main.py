@@ -4,14 +4,16 @@ from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, RedirectResponse
 
 from .config import get_settings
 from .db import init_db
 from .admin_api import router as admin_router, public_router as public_router
 from .admin_auth_api import public_router as auth_public_router, router as auth_router
-from .admin_auth_api import _bootstrap_default_admin
+from .admin_auth_api import _bootstrap_default_admin, _bootstrap_demo_users
 from .integrations_api import router as integrations_router, public_router as integrations_public_router
+from .products_api import router as products_router
+from .test_api import router as test_router
 from .request_context import reset_admin_session_token, set_admin_session_token
 from .runtime import is_debug
 from .worker import process_telegram_update
@@ -110,10 +112,21 @@ app.include_router(auth_public_router)
 app.include_router(auth_router)
 app.include_router(integrations_router)
 app.include_router(integrations_public_router)
+app.include_router(products_router)
+if os.getenv("E2E_TEST_MODE", "false").lower() in ("1", "true", "yes"):
+    app.include_router(test_router)
 
-admin_dist = Path(__file__).resolve().parents[2] / "admin-ui" / "dist"
+admin_dist_override = os.getenv("ADMIN_UI_DIST", "").strip()
+admin_dist = Path(admin_dist_override) if admin_dist_override else (Path(__file__).resolve().parents[2] / "admin-ui" / "dist")
 if admin_dist.exists():
-    app.mount("/", StaticFiles(directory=str(admin_dist), html=True), name="admin-ui")
+    app.mount("/admin", StaticFiles(directory=str(admin_dist), html=True), name="admin-ui")
+
+
+@app.get("/", status_code=307, include_in_schema=False)
+async def _root() -> RedirectResponse:
+    if admin_dist.exists():
+        return RedirectResponse(url="/admin/")
+    return RedirectResponse(url="/docs")
 
 
 @app.on_event("startup")
@@ -121,6 +134,7 @@ async def _startup() -> None:
     get_settings()
     init_db()
     _bootstrap_default_admin()
+    _bootstrap_demo_users()
 
 
 def verify_webhook_secret(secret_header: str | None, expected: str) -> None:

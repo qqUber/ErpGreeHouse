@@ -102,6 +102,19 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_integrations_kind ON integrations(kind);
             CREATE INDEX IF NOT EXISTS idx_integrations_enabled ON integrations(enabled);
 
+            CREATE TABLE IF NOT EXISTS products (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                price INTEGER NOT NULL DEFAULT 0,
+                active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_products_active ON products(active);
+            CREATE INDEX IF NOT EXISTS idx_products_kind ON products(kind);
+
             CREATE TABLE IF NOT EXISTS integration_deliveries (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 integration_id INTEGER NOT NULL,
@@ -120,6 +133,8 @@ def init_db() -> None:
                 password_hash TEXT NOT NULL,
                 password_salt TEXT NOT NULL,
                 password_iter INTEGER NOT NULL,
+                role TEXT NOT NULL DEFAULT 'owner',
+                disabled INTEGER NOT NULL DEFAULT 0,
                 must_change_password INTEGER NOT NULL DEFAULT 1,
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -141,6 +156,13 @@ def init_db() -> None:
         if "pos_receipt_id" not in cols:
             conn.execute("ALTER TABLE transactions ADD COLUMN pos_receipt_id TEXT")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_transactions_pos_receipt_id ON transactions(pos_receipt_id)")
+            conn.commit()
+        admin_cols = [r["name"] for r in conn.execute("PRAGMA table_info(admin_users)").fetchall()]
+        if "role" not in admin_cols:
+            conn.execute("ALTER TABLE admin_users ADD COLUMN role TEXT NOT NULL DEFAULT 'owner'")
+            conn.commit()
+        if "disabled" not in admin_cols:
+            conn.execute("ALTER TABLE admin_users ADD COLUMN disabled INTEGER NOT NULL DEFAULT 0")
             conn.commit()
     finally:
         conn.close()

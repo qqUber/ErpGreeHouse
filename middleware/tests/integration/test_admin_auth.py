@@ -1,4 +1,5 @@
 import importlib
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -13,6 +14,7 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.setenv("ADMIN_BOOTSTRAP_DEFAULT", "true")
     monkeypatch.setenv("ADMIN_DEFAULT_USERNAME", "admin")
     monkeypatch.setenv("ADMIN_DEFAULT_PASSWORD", "ChangeMe123!")
+    monkeypatch.setenv("ADMIN_BOOTSTRAP_DEMO_USERS", "false")
     monkeypatch.setenv("ADMIN_RECOVERY_SECRET", "RecoverMe123!")
     monkeypatch.setenv("CORS_ORIGINS", "http://localhost:5173")
 
@@ -31,6 +33,11 @@ def test_login_and_change_password(client: TestClient) -> None:
     r = client.post("/api/v1/public/auth/login", json={"username": "admin", "password": "ChangeMe123!"})
     assert r.status_code == 200
     token = r.json()["token"]
+
+    me = client.get("/api/v1/auth/me", headers={"x-admin-secret": token})
+    assert me.status_code == 200
+    assert me.json()["username"] == "admin"
+    assert me.json()["role"] == "owner"
 
     d = client.get("/api/v1/dashboard", headers={"x-admin-secret": token})
     assert d.status_code == 200
@@ -56,3 +63,30 @@ def test_recover_password(client: TestClient) -> None:
 
     r = client.post("/api/v1/public/auth/login", json={"username": "admin", "password": "Recovered123!"})
     assert r.status_code == 200
+
+
+def test_disabled_user_cannot_login(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    db_path = tmp_path / "crm_test.db"
+    monkeypatch.setenv("CRM_DB_PATH", str(db_path))
+    monkeypatch.setenv("ADMIN_SECRET", "")
+    monkeypatch.setenv("ADMIN_BOOTSTRAP_DEFAULT", "true")
+    monkeypatch.setenv("ADMIN_DEFAULT_USERNAME", "admin")
+    monkeypatch.setenv("ADMIN_DEFAULT_PASSWORD", "ChangeMe123!")
+    monkeypatch.setenv("ADMIN_BOOTSTRAP_DEMO_USERS", "false")
+    monkeypatch.setenv("ADMIN_RECOVERY_SECRET", "RecoverMe123!")
+    monkeypatch.setenv("CORS_ORIGINS", "http://localhost:5173")
+
+    from app import main as main_module
+
+    importlib.reload(main_module)
+
+    with TestClient(main_module.app) as c:
+        conn = sqlite3.connect(str(db_path))
+        try:
+            conn.execute("UPDATE admin_users SET disabled=1 WHERE username='admin'")
+            conn.commit()
+        finally:
+            conn.close()
+
+        r = c.post("/api/v1/public/auth/login", json={"username": "admin", "password": "ChangeMe123!"})
+        assert r.status_code == 403
