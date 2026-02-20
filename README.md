@@ -7,6 +7,27 @@
 [![aiogram](https://img.shields.io/badge/aiogram-3.13+-blue.svg)](https://docs.aiogram.dev/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+---
+
+## 📁 Структура проекта
+
+```
+ErpGreeHouse/
+├── middleware/          # Backend (FastAPI + aiogram) - разработка
+├── admin-ui/            # Frontend (React + TypeScript) - разработка
+├── prod/                # Production конфигурация
+│   ├── docker-compose.yml
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   └── .env.production.example
+├── docs/                # Документация
+└── scripts/             # Вспомогательные скрипты
+```
+
+**Разработка vs Production:**
+- **`middleware/` + `admin-ui/`** — для локальной разработки (без Docker, нативный запуск)
+- **`prod/`** — для production развёртывания (Docker, PostgreSQL, Nginx, SSL)
+
 ## 📋 Project Overview
 
 **Telegram CRM MVP** is a high-performance customer relationship management system that integrates Telegram messaging with ERPNext through a comprehensive loyalty program. Built with async Python and modern web technologies, it provides seamless customer registration, order processing, and loyalty point management.
@@ -36,68 +57,89 @@ graph TD
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| **Middleware** | Python 3.11, FastAPI, aiogram | Async Telegram bot and API |
+| **Middleware (Dev)** | Python 3.14, FastAPI, aiogram | Async Telegram bot and API |
 | **Worker** | Celery, Redis | Background task processing |
 | **Integration** | Python, httpx, REST API | ERPNext integration with mock mode |
-| **Database** | PostgreSQL | Primary data storage |
-| **Cache** | Redis | Session management, caching |
-| **Testing** | pytest, pytest-asyncio | Unit and integration tests |
+| **Database (Dev)** | SQLite | Local development |
+| **Database (Prod)** | PostgreSQL 15 | Production data storage |
+| **Cache** | Redis 7 | Session management, caching |
+| **Frontend** | React 18, TypeScript, Vite | Admin UI |
+| **Testing** | pytest, Playwright | Unit, integration, E2E tests |
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### 🔧 Разработка (локально, без Docker)
 
-- Python 3.11+
-- Redis 6.0+
-- PostgreSQL 12+
-- Telegram Bot Token
-- ERPNext Instance (optional, mock mode available)
-- Telegram Bot Token
-- ERPNext Instance (optional, mock mode available)
+**Предварительные требования:**
+- Python 3.11+ (рекомендуется 3.14)
+- Redis / Memurai (Windows)
+- Node.js 18+
+- SQLite (встроен в Python)
 
-### Installation
+**Быстрый старт:**
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/qqUber/ErpGreeHouse.git
-   cd ErpGreeHouse
-   ```
+```bash
+# 1. Backend (middleware)
+cd middleware
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+pip install -r requirements.txt
+python -m app.main
 
-2. **Set up Python environment**
-   python -m venv venv
-   source venv/bin/activate  # Linux/Mac
-   # or
-   venv\Scripts\activate  # Windows
-   source venv/bin/activate  # Linux/Mac
-   # or
-   venv\Scripts\activate  # Windows
-   ```
+# 2. Frontend (admin-ui)
+cd admin-ui
+npm install
+npm run dev
 
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+# 3. Проверка
+# Backend: http://localhost:8000/health
+# Frontend: http://localhost:5173
+```
 
-4. **Configure environment**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-   # Cross-platform setup
-   bash setup_test_env.sh  # Linux/Mac
-   # or
-   powershell -ExecutionPolicy Bypass -File setup_test_env.ps1  # Windows
-   
-   # Run tests
-   bash run_tests.sh  # Linux/Mac
-   # or
-   powershell -ExecutionPolicy Bypass -File run_tests.ps1  # Windows
-5. **Run tests**
-   ```bash
-   # Cross-platform setup
-   bash setup_test_env.sh  # Linux/Mac
-   python -m app.main
-   ```
+📖 **Подробная инструкция**: [middleware/DEPLOYMENT.md](middleware/DEPLOYMENT.md)
+
+---
+
+### 🚀 Production (Docker)
+
+**Предварительные требования:**
+- Docker 20.10+
+- Docker Compose 2.0+
+- Linux server (Ubuntu 20.04+)
+
+**Быстрый старт:**
+
+```bash
+cd prod
+
+# 1. Создать .env файл
+cp .env.production.example .env
+
+# 2. Отредактировать секреты
+nano .env
+
+# 3. Запустить стек
+docker compose up -d
+
+# 4. Проверить статус
+docker compose ps
+```
+
+📖 **Подробная инструкция**: [prod/README.md](prod/README.md)
+
+---
+
+### 🧪 Тестирование
+
+```bash
+# Cross-platform setup
+bash setup_test_env.sh  # Linux/Mac
+powershell -ExecutionPolicy Bypass -File setup_test_env.ps1  # Windows
+
+# Run tests
+bash run_tests.sh  # Linux/Mac
+powershell -ExecutionPolicy Bypass -File run_tests.ps1  # Windows
+```
 
 ### Admin UI (dev)
 

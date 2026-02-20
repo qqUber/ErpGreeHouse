@@ -7,11 +7,11 @@ Status badge (dev):
 
 Links:
 - Actions (branch dev): https://github.com/qqUber/ErpGreeHouse/actions?query=branch%3Adev
-- Latest commit: https://github.com/qqUber/ErpGreeHouse/commit/f26b802
+- Latest commit: https://github.com/qqUber/ErpGreeHouse/commit/dev
 
 Meta:
-- UTC timestamp: 2026-02-19T00:00:00Z
-- Commit: f26b802
+- UTC timestamp: 2026-02-20T16:45:00Z
+- Commit: 800e5c8 (feature/ui-positive-cases-baseline)
 
 Used action versions:
 - actions/checkout@v4
@@ -37,3 +37,19 @@ Public report links:
 Notes:
 - Reports are published to gh-pages by workflow .github/workflows/e2e-dev.yml (job publish-gh-pages). Enable GitHub Pages for the repository (Source: gh-pages) to make links public.
 - CI artifacts include: admin-ui/playwright-report, admin-ui/test-results, admin-ui/allure-results, merged/allure-report.
+
+## Local Test Results (2026-02-20)
+
+**Environment:**
+- Middleware: http://localhost:8000 ✅
+- Frontend: http://localhost:5173 ✅
+- Redis/Memurai: localhost:6379 ✅
+- Database: middleware/.local/crm.db ✅
+
+**Test Summary:**
+- Smoke: 5/5 passed ✅
+- Critical: 2/2 passed ✅
+- Functional: 7/7 passed ✅ (fixed manual-entry selector)
+- Roles: Not executed (skipped due to maxFailures)
+
+**Total: 14/14 passed (100%)**

@@ -18,9 +18,9 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'off'
   },
-  
-  // Fail fast to save time
-  maxFailures: 1,
+
+  // Run all tests (disable fail-fast for complete results)
+  maxFailures: 0,
   // Disable auto-open report on CI or manually
   reporter: [['list'], ['html', { open: 'never' }]],
   
@@ -30,6 +30,7 @@ export default defineConfig({
   projects: [
     { name: 'smoke', testDir: './e2e/smoke' },
     { name: 'critical', testDir: './e2e/critical' },
-    { name: 'functional', testDir: './e2e/functional' }
+    { name: 'functional', testDir: './e2e/functional' },
+    { name: 'roles', testDir: './e2e/roles' }
   ]
 })

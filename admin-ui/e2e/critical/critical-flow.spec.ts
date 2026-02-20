@@ -100,7 +100,10 @@ test('operator registers client and makes sale from catalog (verify UI + DB)', a
   expect(optValue).toBeTruthy()
   await select.selectOption(optValue)
   await page.getByRole('button', { name: 'Добавить в чек' }).click()
-  await expect(page.getByText(code)).toBeVisible()
+  
+  // Wait for item to appear in cart table using data-testid
+  await expect(page.getByTestId(`cart-item-${code}`)).toBeVisible({ timeout: 5000 })
+  await expect(page.getByTestId(`cart-item-code-${code}`)).toBeVisible()
 
   await page.getByRole('button', { name: 'Провести' }).click()
   await expect(page.getByText(/Операция выполнена\./)).toBeVisible()

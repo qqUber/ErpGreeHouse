@@ -76,6 +76,7 @@ function App() {
   const [integrationsBusy, setIntegrationsBusy] = useState(false)
   const [me, setMe] = useState<AdminMe | null>(null)
   const [products, setProducts] = useState<Array<{ id: number; code: string; name: string; kind: string; price: number; active: boolean }>>([])
+  const [optimisticReady, setOptimisticReady] = useState(false) // Оптимистичный UI
 
   console.log(`[App] Render. LoginMode=${loginMode} Username=${username} PasswordLen=${password.length} Notice=${notice ? JSON.stringify(notice) : 'null'}`)
 
@@ -177,10 +178,15 @@ function App() {
 
   async function bootstrap() {
     setError(null)
-    await loadPublicStatus()
-    await loadAuthStatus()
     try {
-      await Promise.all([loadDashboard(), loadCustomers(), loadProducts()])
+      // ПАРАЛЛЕЛЬНАЯ загрузка всех данных для ускорения инициализации
+      await Promise.all([
+        loadPublicStatus(),
+        loadAuthStatus(),
+        loadDashboard(),
+        loadCustomers(),
+        loadProducts()
+      ])
       try {
         const m = await Api.me()
         setMe(m)
@@ -188,14 +194,17 @@ function App() {
         setMe(null)
       }
       setAuthReady(true)
+      setOptimisticReady(true) // UI готов
     } catch (e: any) {
       const msg = String(e?.message || e)
       if (msg.includes('401') || msg.toLowerCase().includes('unauthorized')) {
         setAuthReady(false)
+        setOptimisticReady(false)
         return
       }
       showNotice('err', msg)
       setAuthReady(false)
+      setOptimisticReady(false)
     }
   }
 
@@ -593,8 +602,8 @@ function App() {
         </div>
       ) : null}
 
-      {authReady && safeTab === 'dashboard' ? <DashboardView dash={dash} reload={() => loadDashboard()} /> : null}
-      {authReady && safeTab === 'customers' ? (
+      {optimisticReady && safeTab === 'dashboard' ? <DashboardView dash={dash} reload={() => loadDashboard()} /> : null}
+      {optimisticReady && safeTab === 'customers' ? (
         <CustomersView
           q={q}
           setQ={setQ}
@@ -606,7 +615,7 @@ function App() {
           refresh={() => loadCustomers()}
         />
       ) : null}
-      {authReady && safeTab === 'pos' ? (
+      {optimisticReady && safeTab === 'pos' ? (
         <PosView
           refreshCustomers={() => loadCustomers()}
           products={products}
@@ -619,7 +628,7 @@ function App() {
           }}
         />
       ) : null}
-      {authReady && safeTab === 'integrations' ? (
+      {optimisticReady && safeTab === 'integrations' ? (
         <IntegrationsView
           items={integrations}
           templates={integrationTemplates}
@@ -651,7 +660,7 @@ function App() {
           }}
         />
       ) : null}
-      {authReady && safeTab === 'products' ? (
+      {optimisticReady && safeTab === 'products' ? (
         <ProductsView
           items={products}
           reload={() => loadProducts()}
@@ -662,7 +671,7 @@ function App() {
           }}
         />
       ) : null}
-      {authReady && safeTab === 'settings' ? (
+      {optimisticReady && safeTab === 'settings' ? (
         <div className="grid">
           <div className="card cardFull">
             <div className="row">
@@ -836,6 +845,39 @@ function CustomersView(props: {
 }) {
   const { q, setQ, customers, select, selected, details, search, refresh } = props
 
+  const [showCreateForm, setShowCreateForm] = React.useState(false)
+  const [newCustomer, setNewCustomer] = React.useState({ full_name: '', phone: '', notes: '' })
+  const [busy, setBusy] = React.useState(false)
+  const [notice, setNotice] = React.useState<string | null>(null)
+
+  async function createCustomer() {
+    if (!newCustomer.full_name) {
+      setNotice('ФИО обязательно')
+      return
+    }
+    setBusy(true)
+    setNotice(null)
+    try {
+      await Api.createCustomer(newCustomer)
+      setNotice('Клиент успешно создан')
+      setShowCreateForm(false)
+      setNewCustomer({ full_name: '', phone: '', notes: '' })
+      await refresh()
+    } catch (e: any) {
+      setNotice(String(e?.message || e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function copyQrToken() {
+    if (details?.customer.qr_token) {
+      navigator.clipboard.writeText(details.customer.qr_token)
+      setNotice('QR токен скопирован')
+      setTimeout(() => setNotice(null), 2000)
+    }
+  }
+
   return (
     <div className="grid">
       <div className="card cardFull">
@@ -846,9 +888,56 @@ function CustomersView(props: {
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btnPrimary" onClick={() => void search()}>Поиск</button>
             <button className="btn" onClick={() => void refresh()}>Сброс</button>
+            <button className="btn btnPrimary" onClick={() => setShowCreateForm(true)}>Новый клиент</button>
           </div>
         </div>
       </div>
+
+      {showCreateForm ? (
+        <div className="card cardFull">
+          <div className="row">
+            <div style={{ fontWeight: 900, fontSize: 18 }}>Создание клиента</div>
+            <button className="btn" onClick={() => setShowCreateForm(false)}>Закрыть</button>
+          </div>
+          <div style={{ display: 'grid', gap: 10, marginTop: 12, maxWidth: 600 }}>
+            <div>
+              <div style={{ marginBottom: 6, fontWeight: 600 }}>ФИО (обязательно)</div>
+              <input
+                className="input"
+                value={newCustomer.full_name}
+                onChange={e => setNewCustomer(p => ({ ...p, full_name: e.target.value }))}
+                placeholder="Иванов Иван Иванович"
+              />
+            </div>
+            <div>
+              <div style={{ marginBottom: 6, fontWeight: 600 }}>Телефон</div>
+              <input
+                className="input"
+                value={newCustomer.phone}
+                onChange={e => setNewCustomer(p => ({ ...p, phone: e.target.value }))}
+                placeholder="+79991234567"
+              />
+            </div>
+            <div>
+              <div style={{ marginBottom: 6, fontWeight: 600 }}>Заметки</div>
+              <textarea
+                className="input"
+                value={newCustomer.notes}
+                onChange={e => setNewCustomer(p => ({ ...p, notes: e.target.value }))}
+                placeholder="Комментарий к клиенту"
+                rows={3}
+              />
+            </div>
+            {notice && (
+              <div style={{ color: notice.includes('успешно') ? '#047857' : '#b91c1c' }}>{notice}</div>
+            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btnPrimary" onClick={createCustomer} disabled={busy}>Создать</button>
+              <button className="btn" onClick={() => setShowCreateForm(false)}>Отмена</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="card cardWide">
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Список клиентов</div>
@@ -883,13 +972,26 @@ function CustomersView(props: {
             <div className="row" style={{ marginBottom: 10 }}>
               <div>
                 <div style={{ fontSize: 18, fontWeight: 900 }}>{details.customer.full_name || 'Без имени'}</div>
-                <div style={{ color: 'rgba(0,0,0,0.55)', marginTop: 6 }}>{details.customer.phone || '—'} · QR: {details.customer.qr_token || '—'}</div>
+                <div style={{ color: 'rgba(0,0,0,0.55)', marginTop: 6 }}>{details.customer.phone || '—'}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div className="pill pillGood">Баланс {details.customer.balance_points}</div>
                 <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12, marginTop: 6 }}>Telegram ID: {details.customer.telegram_id || '—'}</div>
+                {details.customer.qr_token && (
+                  <button
+                    className="btn"
+                    style={{ marginTop: 8, fontSize: 12, padding: '4px 8px' }}
+                    onClick={copyQrToken}
+                  >
+                    📋 Копировать QR
+                  </button>
+                )}
               </div>
             </div>
+
+            {notice && (
+              <div style={{ color: '#047857', marginBottom: 10 }}>{notice}</div>
+            )}
 
             <div style={{ marginTop: 10, fontWeight: 800 }}>История операций</div>
             <table className="table" style={{ marginTop: 8 }}>
@@ -1155,7 +1257,7 @@ function PosView(props: {
 
       <div className="card cardWide">
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Состав</div>
-        <table className="table">
+        <table className="table" data-testid="cart-table">
           <thead>
             <tr>
               <th>Код</th>
@@ -1166,8 +1268,8 @@ function PosView(props: {
           </thead>
           <tbody>
             {items.map((it, idx) => (
-              <tr key={idx}>
-                <td>{it.code}</td>
+              <tr key={idx} data-testid={`cart-item-${it.code}`}>
+                <td data-testid={`cart-item-code-${it.code}`}>{it.code}</td>
                 <td>{it.name}</td>
                 <td>{money(it.price)} ₽</td>
                 <td>
@@ -1467,7 +1569,23 @@ function PermissionsTable() {
     setError(null)
     try {
       const res = await Api.permissions()
-      setData(res)
+      // Transform flat list to grouped structure if needed
+      if (res.items && Array.isArray(res.items) && res.items.length > 0 && (res.items[0] as any).permission) {
+        // Flat list format from API: [{role, permission, is_allowed}, ...]
+        const all_permissions = [...new Set(res.items.map((item: any) => item.permission))]
+        // Restructure to expected format
+        const roleMap: any = {}
+        res.items.forEach((item: any) => {
+          if (!roleMap[item.role]) {
+            roleMap[item.role] = { role: item.role, permissions: [] }
+          }
+          roleMap[item.role].permissions.push({ permission: item.permission, is_allowed: item.is_allowed })
+        })
+        setData({ items: Object.values(roleMap), all_permissions })
+      } else {
+        // Already in expected format
+        setData(res)
+      }
     } catch (e: any) {
       setError(String(e?.message || e))
     } finally {

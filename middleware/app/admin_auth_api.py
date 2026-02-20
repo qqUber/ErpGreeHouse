@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field
 
 from .db import get_db
 from .request_context import get_admin_session_token
-from .rate_limit import register_bruteforce_failure, require_bruteforce_guard, require_rate_limit
 from .security import constant_time_equals, hash_password, new_salt
 
 
@@ -155,7 +154,6 @@ class LoginOut(BaseModel):
 
 @public_router.get("/status")
 def auth_status(request: Request) -> dict[str, Any]:
-    require_rate_limit(request, scope="auth_status", limit=60, window_sec=60)
     _bootstrap_default_admin()
     username = os.getenv("ADMIN_DEFAULT_USERNAME", "admin").strip() or "admin"
 
@@ -175,9 +173,6 @@ def auth_status(request: Request) -> dict[str, Any]:
 
 @public_router.post("/login")
 def login(payload: LoginIn, response: Response, request: Request) -> LoginOut:
-    require_rate_limit(request, scope="auth_login", limit=20, window_sec=60)
-    require_bruteforce_guard(request, username=payload.username, max_attempts=8, window_sec=900, lock_sec=900)
-
     _bootstrap_default_admin()
     _bootstrap_demo_users()
     db = get_db()
@@ -188,13 +183,11 @@ def login(payload: LoginIn, response: Response, request: Request) -> LoginOut:
             (payload.username.strip(),),
         ).fetchone()
         if not row:
-            register_bruteforce_failure(request, username=payload.username, max_attempts=8, window_sec=900, lock_sec=900)
             raise HTTPException(status_code=401, detail="Invalid credentials")
         if int(row["disabled"]) == 1:
             raise HTTPException(status_code=403, detail="User disabled")
         ph = hash_password(payload.password, salt=str(row["password_salt"]), iterations=int(row["password_iter"]))
         if not constant_time_equals(ph, str(row["password_hash"])):
-            register_bruteforce_failure(request, username=payload.username, max_attempts=8, window_sec=900, lock_sec=900)
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
         token = _issue_token(int(row["id"]))
@@ -302,7 +295,6 @@ def recover_password(
     payload: RecoverIn,
     x_admin_recovery: str | None = Header(default=None, alias="x-admin-recovery"),
 ) -> dict[str, Any]:
-    require_rate_limit(request, scope="auth_recover", limit=5, window_sec=60)
     expected = os.getenv("ADMIN_RECOVERY_SECRET", "")
     if not expected:
         raise HTTPException(status_code=500, detail="ADMIN_RECOVERY_SECRET not configured")

@@ -1,0 +1,16 @@
+{
+	"mcpServers": {},
+	"traeComponents": {
+		"rules": [
+			"docs/trae/rules/environment.md",
+			"docs/trae/rules/apigo.md",
+			"docs/trae/rules/howtowork.md",
+			"docs/trae/rules/nextjs.md",
+			"docs/trae/rules/testing_workflow.md"
+		],
+		"skills": [
+			"docs/trae/skills/task-close-checklist/SKILL.md"
+		],
+		"documentation": "docs/trae/README.md"
+	}
+}

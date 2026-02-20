@@ -66,7 +66,8 @@ test('owner sees all tabs', async ({ page }) => {
   await expect(page.getByText('Операции')).toBeVisible()
   await expect(page.getByText('Интеграции')).toBeVisible()
   await expect(page.getByText('Товары')).toBeVisible()
-  await expect(page.getByText('Настройки')).toBeVisible()
+  // Use exact match for Settings tab (not "Settings access")
+  await expect(page.getByText('Настройки', { exact: true })).toBeVisible()
   await expect(page.getByText(/Роль:\s*Админ/)).toBeVisible()
 })
 

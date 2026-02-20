@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 from starlette.responses import JSONResponse, RedirectResponse
@@ -13,6 +14,7 @@ from .admin_auth_api import public_router as auth_public_router, router as auth_
 from .admin_auth_api import _bootstrap_default_admin, _bootstrap_demo_users
 from .integrations_api import router as integrations_router, public_router as integrations_public_router
 from .products_api import router as products_router
+from .marketing_api import router as marketing_router
 from .test_api import router as test_router
 from .request_context import reset_admin_session_token, set_admin_session_token
 from .runtime import is_debug
@@ -105,6 +107,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# GZip сжатие для ответов больше 1KB
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.include_router(admin_router)
 app.include_router(public_router)

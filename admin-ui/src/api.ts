@@ -120,7 +120,15 @@ function baseUrl() {
   return (import.meta as any).env.VITE_API_BASE_URL || ''
 }
 
+const TOKEN_STORAGE_KEY = 'admin_session_token'
 let _adminSecret = ''
+
+// Восстанавливаем токен из localStorage при загрузке страницы
+const cachedToken = typeof localStorage !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null
+if (cachedToken) {
+  _adminSecret = cachedToken
+  console.log('[Api] Token restored from localStorage')
+}
 
 export function getAdminSecret() {
   return _adminSecret
@@ -128,6 +136,14 @@ export function getAdminSecret() {
 
 export function setAdminSecret(v: string) {
   _adminSecret = String(v || '')
+  // Сохраняем токен в localStorage для сохранения сессии
+  if (typeof localStorage !== 'undefined') {
+    if (v) {
+      localStorage.setItem(TOKEN_STORAGE_KEY, v)
+    } else {
+      localStorage.removeItem(TOKEN_STORAGE_KEY)
+    }
+  }
 }
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -215,9 +231,9 @@ export const Api = {
       body: formData
     })
   },
-  permissions: () => api<{ items: RolePermissions[]; all_permissions: string[] }>('/api/v1/permissions'),
+  permissions: () => api<{ items: RolePermissions[]; all_permissions: string[] }>('/api/v1/roles/permissions'),
   updatePermission: (role: string, permission: string, is_allowed: boolean) =>
-    api<{ success: boolean }>('/api/v1/permissions', {
+    api<{ success: boolean }>('/api/v1/roles/permissions', {
       method: 'POST',
       body: JSON.stringify({ role, permission, is_allowed })
     }),
