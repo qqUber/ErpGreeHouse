@@ -83,6 +83,37 @@ export type AdminMe = {
   user_id: number
   username: string
   role: string
+  permissions: string[]
+}
+
+export type PermissionItem = {
+  permission: string
+  is_allowed: boolean
+}
+
+export type RolePermissions = {
+  role: string
+  permissions: PermissionItem[]
+}
+
+export type MarketingSegment = {
+  id: number
+  name: string
+  criteria: Record<string, any>
+  created_at: string
+}
+
+export type MarketingCampaign = {
+  id: number
+  name: string
+  segment_id: number | null
+  type: string
+  content: string
+  status: string
+  scheduled_at: string | null
+  sent_at: string | null
+  stats: Record<string, any> | null
+  created_at: string
 }
 
 function baseUrl() {
@@ -103,7 +134,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const secret = getAdminSecret()
   const headers: Record<string, string> = { ...(init?.headers as any) }
   if (secret) headers['x-admin-secret'] = secret
-  if (!headers['content-type']) headers['content-type'] = 'application/json'
+  if (!headers['content-type'] && !(init?.body instanceof FormData)) headers['content-type'] = 'application/json'
 
   const res = await fetch(`${baseUrl()}${path}`, {
     ...init,
@@ -156,6 +187,8 @@ export const Api = {
   customers: (q?: string, signal?: AbortSignal) =>
     api<{ items: CustomerListItem[] }>(`/api/v1/customers${q ? `?q=${encodeURIComponent(q)}` : ''}`, { signal }),
   customer: (id: number) => api<CustomerDetails>(`/api/v1/customers/${id}`),
+  createCustomer: (payload: { full_name: string; phone?: string; notes?: string }) =>
+    api<{ id: number; qr_token: string }>('/api/v1/customers', { method: 'POST', body: JSON.stringify(payload) }),
   identifyPhone: (phone: string) => api<{ customer_id: number }>('/api/v1/identify/phone', { method: 'POST', body: JSON.stringify({ phone }) }),
   identifyQr: (qr: string) => api<{ customer_id: number }>('/api/v1/identify/qr', { method: 'POST', body: JSON.stringify({ qr }) }),
   identifyName: (name: string) => api<{ items: CustomerListItem[] }>('/api/v1/identify/name', { method: 'POST', body: JSON.stringify({ name }) }),
@@ -173,5 +206,26 @@ export const Api = {
   integrationDeliveries: (id: number) => api<{ items: IntegrationDelivery[] }>(`/api/v1/integrations/${id}/deliveries`, { method: 'GET', headers: {} }),
   products: (q?: string) => api<{ items: Product[] }>(`/api/v1/products${q ? `?q=${encodeURIComponent(q)}` : ''}`, { method: 'GET', headers: {} }),
   createProduct: (payload: { code: string; name: string; kind: string; price: number; active: boolean }) =>
-    api<{ id: number }>('/api/v1/products', { method: 'POST', body: JSON.stringify(payload) })
+    api<{ id: number }>('/api/v1/products', { method: 'POST', body: JSON.stringify(payload) }),
+  importProducts: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api<{ processed: number; inserted: number; updated: number; errors: string[] }>('/api/v1/products/import', {
+      method: 'POST',
+      body: formData
+    })
+  },
+  permissions: () => api<{ items: RolePermissions[]; all_permissions: string[] }>('/api/v1/permissions'),
+  updatePermission: (role: string, permission: string, is_allowed: boolean) =>
+    api<{ success: boolean }>('/api/v1/permissions', {
+      method: 'POST',
+      body: JSON.stringify({ role, permission, is_allowed })
+    }),
+  marketingSegments: () => api<{ items: MarketingSegment[] }>('/api/v1/marketing/segments'),
+  createMarketingSegment: (payload: { name: string; criteria: any }) =>
+    api<{ id: number }>('/api/v1/marketing/segments', { method: 'POST', body: JSON.stringify(payload) }),
+  marketingCampaigns: () => api<{ items: MarketingCampaign[] }>('/api/v1/marketing/campaigns'),
+  createMarketingCampaign: (payload: { name: string; segment_id: number | null; type: string; content: string; scheduled_at?: string }) =>
+    api<{ id: number }>('/api/v1/marketing/campaigns', { method: 'POST', body: JSON.stringify(payload) }),
+  sendMarketingCampaign: (id: number) => api<{ success: boolean }>(`/api/v1/marketing/campaigns/${id}/send`, { method: 'POST' })
 }

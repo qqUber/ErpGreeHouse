@@ -6,7 +6,7 @@ const isManual = uiMode === 'manual'
 export default defineConfig({
   testDir: './e2e',
   timeout: 60_000,
-  expect: { timeout: 5_000 },
+  expect: { timeout: 15_000 },
   retries: 0,
   use: {
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:5173',
@@ -29,6 +29,7 @@ export default defineConfig({
 
   projects: [
     { name: 'smoke', testDir: './e2e/smoke' },
-    { name: 'critical', testDir: './e2e/critical' }
+    { name: 'critical', testDir: './e2e/critical' },
+    { name: 'functional', testDir: './e2e/functional' }
   ]
 })

@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { AdminMe, Api, CustomerDetails, CustomerListItem, Dashboard, Integration, IntegrationDelivery, IntegrationTemplate, getAdminSecret, setAdminSecret } from './api'
+import { MarketingView } from './MarketingView'
+import { AdminMe, Api, CustomerDetails, CustomerListItem, Dashboard, Integration, IntegrationDelivery, IntegrationTemplate, RolePermissions, getAdminSecret, setAdminSecret } from './api'
 
-type Tab = 'dashboard' | 'customers' | 'pos' | 'integrations' | 'products' | 'settings'
+type Tab = 'dashboard' | 'customers' | 'pos' | 'integrations' | 'products' | 'settings' | 'marketing'
 
 type PublicStatus = {
   api: string
@@ -411,12 +412,25 @@ function App() {
   }
 
   const allowedTabs: Tab[] = useMemo(() => {
-    const role = String(me?.role || '').toLowerCase()
     if (!authReady) return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings']
-    if (role === 'operator') return ['dashboard', 'customers', 'pos', 'products', 'settings']
-    if (role === 'marketer') return ['dashboard', 'customers', 'integrations', 'products', 'settings']
-    return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings']
-  }, [authReady, me?.role])
+    const role = String(me?.role || '').toLowerCase()
+    if (role === 'owner') return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings']
+
+    const perms = new Set(me?.permissions || [])
+    // If user has '*' permission, they see everything (though owner check above covers this usually)
+    if (perms.has('*')) return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings']
+
+    const tabs: Tab[] = []
+    if (perms.has('dashboard.read')) tabs.push('dashboard')
+    if (perms.has('customer.list') || perms.has('customer.read')) tabs.push('customers')
+    if (perms.has('pos.sale')) tabs.push('pos')
+    if (perms.has('integration.read')) tabs.push('integrations')
+    if (perms.has('product.read')) tabs.push('products')
+    // Settings is always available for password change, but content inside depends on permissions
+    tabs.push('settings')
+
+    return tabs
+  }, [authReady, me?.role, me?.permissions])
 
   const safeTab: Tab = useMemo(() => {
     if (!authReady) return tab
@@ -640,7 +654,7 @@ function App() {
         <ProductsView
           items={products}
           reload={() => loadProducts()}
-          canEdit={String(me?.role || '').toLowerCase() !== 'operator'}
+          canEdit={(me?.permissions || []).includes('product.create')}
           create={async p => {
             await Api.createProduct(p)
             await loadProducts()
@@ -708,6 +722,8 @@ function App() {
               </div>
             </div>
           </div>
+          
+          {me?.role === 'owner' || (me?.permissions || []).includes('settings.access') ? <PermissionsTable /> : null}
         </div>
       ) : null}
 
@@ -1432,6 +1448,106 @@ function IntegrationsView(props: {
           </div>
         </div>
       ) : null}
+    </div>
+  )
+}
+
+function PermissionsTable() {
+  const [data, setData] = useState<{ items: Array<{ role: string; permissions: Array<{ permission: string; is_allowed: boolean }> }>; all_permissions: string[] } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    load()
+  }, [])
+
+  async function load() {
+    setBusy(true)
+    setError(null)
+    try {
+      const res = await Api.permissions()
+      setData(res)
+    } catch (e: any) {
+      setError(String(e?.message || e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function toggle(role: string, perm: string, current: boolean) {
+    if (busy) return
+    const next = !current
+    // Optimistic update
+    setData(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        items: prev.items.map(r => {
+          if (r.role !== role) return r
+          return {
+            ...r,
+            permissions: r.permissions.map(p => (p.permission === perm ? { ...p, is_allowed: next } : p))
+          }
+        })
+      }
+    })
+
+    try {
+      await Api.updatePermission(role, perm, next)
+    } catch (e: any) {
+      setError(String(e?.message || e))
+      await load() // Revert
+    }
+  }
+
+  if (!data) return <div style={{ padding: 20 }}>Загрузка прав доступа...</div>
+
+  return (
+    <div className="card cardFull">
+      <div className="row">
+        <div style={{ fontWeight: 800 }}>Управление доступом (Роли)</div>
+        <button className="btn" onClick={() => void load()} disabled={busy}>
+          Обновить
+        </button>
+      </div>
+      <div style={{ overflowX: 'auto', marginTop: 12 }}>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Разрешение</th>
+              {data.items.map(r => (
+                <th key={r.role} style={{ textAlign: 'center' }}>
+                  {roleLabel(r.role)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.all_permissions.map(perm => (
+              <tr key={perm}>
+                <td style={{ fontSize: 13, fontFamily: 'monospace', color: '#555' }}>{perm}</td>
+                {data.items.map(roleGroup => {
+                  const p = roleGroup.permissions.find(x => x.permission === perm)
+                  const allowed = p?.is_allowed || false
+                  const isOwner = roleGroup.role === 'owner'
+                  return (
+                    <td key={roleGroup.role} style={{ textAlign: 'center' }}>
+                      <input
+                        type="checkbox"
+                        checked={allowed}
+                        onChange={() => void toggle(roleGroup.role, perm, allowed)}
+                        disabled={busy || isOwner}
+                        style={{ cursor: isOwner ? 'default' : 'pointer', transform: 'scale(1.2)' }}
+                      />
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {error ? <div style={{ marginTop: 10, color: '#8b0000' }}>{error}</div> : null}
     </div>
   )
 }
