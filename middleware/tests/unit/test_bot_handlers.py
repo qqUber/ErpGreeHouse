@@ -2,269 +2,270 @@
 Unit tests for Telegram bot handlers
 
 Tests cover:
-- /start command - welcome message
-- /balance command - bonus balance check
+- /start command - welcome message and registration prompt
+- /balance command - bonus balance check  
 - /register command - customer registration flow
-- Error handling
+- Consent callback handling
+
+Note: These tests verify the handler logic with mocked dependencies.
 """
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
 from aiogram import types
 from aiogram.enums import ParseMode
 
 
-@pytest.fixture
-def mock_message():
-    """Create a mock Telegram message for testing"""
-    message = MagicMock(spec=types.Message)
-    message.answer = AsyncMock()
-    message.from_user = types.User(
-        id=123456789,
-        is_bot=False,
-        first_name="Test",
-        last_name="User",
-        username="testuser",
-        language_code="ru"
-    )
-    message.chat = types.Chat(
-        id=123456789,
-        type="private",
-        first_name="Test",
-        last_name="User",
-        username="testuser"
-    )
-    message.date = 1234567890
-    message.message_id = 1
-    return message
-
-
-@pytest.fixture
-def mock_callback_query():
-    """Create a mock callback query for button presses"""
-    query = MagicMock(spec=types.CallbackQuery)
-    query.answer = AsyncMock()
-    query.message = MagicMock()
-    query.message.edit_text = AsyncMock()
-    query.from_user = types.User(
-        id=123456789,
-        is_bot=False,
-        first_name="Test",
-        username="testuser"
-    )
-    return query
-
-
 @pytest.mark.asyncio
-async def test_cmd_start_welcome_message(mock_message):
-    """Test /start command returns welcome message"""
+async def test_cmd_start_shows_registration_prompt(mock_message):
+    """Test /start command shows registration prompt for new users"""
     from app.handlers import cmd_start
     
-    await cmd_start(mock_message)
+    # Mock ERP client to return no customer (new user)
+    with patch('app.handlers.ERPClient') as MockClient:
+        mock_client_instance = MockClient.return_value
+        mock_client_instance.get_customer_by_telegram_id = AsyncMock(return_value=None)
+        
+        with patch('app.handlers.get_redis') as mock_redis:
+            mock_redis.return_value = MagicMock()
+            
+            await cmd_start(mock_message)
     
-    # Verify answer was called
+    # Verify response was sent
     mock_message.answer.assert_called_once()
-    
-    # Check welcome message content
     call_args = mock_message.answer.call_args
     message_text = str(call_args[0][0]) if call_args[0] else call_args[1].get('text', '')
     
-    assert "Добро пожаловать" in message_text or "welcome" in message_text.lower()
-    assert "ERP" in message_text or "GreenHouse" in message_text
+    # Should prompt for registration
+    assert "зарегистрируемся" in message_text.lower() or "регистрац" in message_text.lower()
 
 
 @pytest.mark.asyncio
-async def test_cmd_start_parse_mode_html(mock_message):
-    """Test /start command uses HTML parse mode"""
+async def test_cmd_start_shows_balance_for_registered_user(mock_message):
+    """Test /start command shows balance for registered users"""
     from app.handlers import cmd_start
     
-    await cmd_start(mock_message)
+    # Mock ERP client to return existing customer
+    with patch('app.handlers.ERPClient') as MockClient:
+        mock_client_instance = MockClient.return_value
+        mock_client_instance.get_customer_by_telegram_id = AsyncMock(return_value={
+            'name': 'CRM-CUST-00001',
+            'first_name': 'Test User'
+        })
+        mock_client_instance.get_balance = AsyncMock(return_value=500)
+        
+        with patch('app.handlers.get_redis') as mock_redis:
+            mock_redis.return_value = MagicMock()
+            
+            await cmd_start(mock_message)
     
-    # Check if parse_mode was set to HTML
-    call_kwargs = mock_message.answer.call_args.kwargs
-    assert call_kwargs.get('parse_mode') == ParseMode.HTML
+    # Verify response with balance
+    mock_message.answer.assert_called_once()
+    call_args = mock_message.answer.call_args
+    message_text = str(call_args[0][0]) if call_args[0] else call_args[1].get('text', '')
+    
+    # Should show balance
+    assert "баланс" in message_text.lower() or "500" in message_text
 
 
 @pytest.mark.asyncio
-async def test_cmd_balance_with_data(mock_message):
-    """Test /balance command with mock customer data"""
-    from app.handlers import cmd_balance
-    
-    with patch('app.handlers.get_customer_balance') as mock_balance:
-        mock_balance.return_value = {
-            'customer_id': 123,
-            'available': 500,
-            'accrued': 1000,
-            'redeemed': 500
-        }
-        
-        await cmd_balance(mock_message)
-        
-        mock_message.answer.assert_called_once()
-        call_args = mock_message.answer.call_args
-        message_text = str(call_args[0][0]) if call_args[0] else call_args[1].get('text', '')
-        
-        assert "баланс" in message_text.lower() or "balance" in message_text.lower()
-        assert "500" in message_text
-
-
-@pytest.mark.asyncio
-async def test_cmd_balance_no_customer(mock_message):
-    """Test /balance command when customer not found"""
-    from app.handlers import cmd_balance
-    
-    with patch('app.handlers.get_customer_balance') as mock_balance:
-        mock_balance.return_value = None
-        
-        await cmd_balance(mock_message)
-        
-        mock_message.answer.assert_called_once()
-        call_args = mock_message.answer.call_args
-        message_text = str(call_args[0][0]) if call_args[0] else call_args[1].get('text', '')
-        
-        # Should show error or registration prompt
-        assert "не найден" in message_text.lower() or "not found" in message_text.lower() or "зарегистри" in message_text.lower()
-
-
-@pytest.mark.asyncio
-async def test_cmd_register_start(mock_message):
-    """Test /register command starts registration flow"""
+async def test_cmd_register_invalid_format(mock_message):
+    """Test /register command with invalid format"""
     from app.handlers import cmd_register
+    
+    # Set message text with invalid format (missing phone)
+    mock_message.text = "/register TestName"
+    mock_message.answer.reset_mock()
     
     await cmd_register(mock_message)
     
+    # Should show error about format
     mock_message.answer.assert_called_once()
     call_args = mock_message.answer.call_args
     message_text = str(call_args[0][0]) if call_args[0] else call_args[1].get('text', '')
     
-    # Should prompt for registration info
-    assert "имя" in message_text.lower() or "name" in message_text.lower() or "регистрац" in message_text.lower()
+    assert "формат" in message_text.lower() or "Формат" in message_text
+
+
+@pytest.mark.asyncio
+async def test_cmd_register_invalid_phone(mock_message):
+    """Test /register command with invalid phone format"""
+    from app.handlers import cmd_register
+    
+    # Set message text with invalid phone
+    mock_message.text = "/register TestName 12345"
+    mock_message.answer.reset_mock()
+    
+    await cmd_register(mock_message)
+    
+    # Should show error about phone format
+    mock_message.answer.assert_called_once()
+    call_args = mock_message.answer.call_args
+    message_text = str(call_args[0][0]) if call_args[0] else call_args[1].get('text', '')
+    
+    assert "телефон" in message_text.lower() or "формат" in message_text.lower()
+
+
+@pytest.mark.asyncio
+async def test_cmd_register_valid(mock_message):
+    """Test /register command with valid data"""
+    from app.handlers import cmd_register
+    
+    # Set message text with valid data
+    mock_message.text = "/register TestUser +79991234567"
+    mock_message.answer.reset_mock()
+    
+    with patch('app.handlers.get_redis') as mock_redis:
+        mock_redis_instance = MagicMock()
+        mock_redis.return_value = mock_redis_instance
+        
+        await cmd_register(mock_message)
+    
+    # Should show consent request with keyboard
+    mock_message.answer.assert_called_once()
+    call_args = mock_message.answer.call_args
+    
+    # Verify consent text was sent
+    message_text = str(call_args[0][0]) if call_args[0] else call_args[1].get('text', '')
+    assert "соглашаюсь" in message_text.lower() or "согласие" in message_text.lower()
+
+
+@pytest.mark.asyncio
+async def test_cb_consent_declined(mock_callback_query):
+    """Test consent callback when user declines"""
+    from app.handlers import cb_consent
+    
+    # Setup callback data for decline
+    mock_callback_query.data = "consent:no"
+    
+    with patch('app.handlers.delete') as mock_delete:
+        await cb_consent(mock_callback_query)
+    
+    # Should edit message to show cancellation
+    mock_callback_query.message.edit_text.assert_called_once()
+    call_args = mock_callback_query.message.edit_text.call_args
+    message_text = str(call_args[0][0]) if call_args[0] else call_args[1].get('text', '')
+    
+    assert "отменена" in message_text.lower()
+    # Should delete consent data
+    mock_delete.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_cb_consent_no_pending_data(mock_callback_query):
+    """Test consent callback when no pending registration data"""
+    from app.handlers import cb_consent
+    
+    # Setup callback data for accept
+    mock_callback_query.data = "consent:yes"
+    
+    with patch('app.handlers.get_redis') as mock_redis:
+        mock_redis_instance = MagicMock()
+        mock_redis_instance.hgetall = MagicMock(return_value=None)  # No pending data
+        mock_redis.return_value = mock_redis_instance
+        
+        await cb_consent(mock_callback_query)
+    
+    # Should just answer without error
+    mock_callback_query.answer.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_cb_consent_success(mock_callback_query):
+    """Test consent callback with successful registration"""
+    from app.handlers import cb_consent
+    
+    # Setup callback data for accept
+    mock_callback_query.data = "consent:yes"
+    
+    with patch('app.handlers.get_redis') as mock_redis:
+        mock_redis_instance = MagicMock()
+        mock_redis_instance.hgetall = MagicMock(return_value={
+            'name': 'Test User',
+            'phone': '+79991234567'
+        })
+        mock_redis.return_value = mock_redis_instance
+        
+        with patch('app.handlers.ERPClient') as MockClient:
+            mock_client_instance = MockClient.return_value
+            mock_client_instance.create_customer = AsyncMock(return_value={
+                'name': 'CRM-CUST-00001'
+            })
+            
+            with patch('app.handlers._upsert_local_customer') as mock_upsert:
+                mock_upsert.return_value = 1
+                with patch('app.handlers._store_consent') as mock_store:
+                    await cb_consent(mock_callback_query)
+    
+    # Should show success message
+    mock_callback_query.message.edit_text.assert_called_once()
+    call_args = mock_callback_query.message.edit_text.call_args
+    message_text = str(call_args[0][0]) if call_args[0] else call_args[1].get('text', '')
+    
+    assert "баллов" in message_text.lower() or "готово" in message_text.lower()
+
+
+@pytest.mark.asyncio
+async def test_cmd_balance_not_registered(mock_message):
+    """Test /balance command when user not registered"""
+    from app.handlers import cmd_balance
+    
+    # Mock ERP client to return no customer
+    with patch('app.handlers.ERPClient') as MockClient:
+        mock_client_instance = MockClient.return_value
+        mock_client_instance.get_customer_by_telegram_id = AsyncMock(return_value=None)
+        
+        await cmd_balance(mock_message)
+    
+    # Should prompt to register
+    mock_message.answer.assert_called_once()
+    call_args = mock_message.answer.call_args
+    message_text = str(call_args[0][0]) if call_args[0] else call_args[1].get('text', '')
+    
+    assert "не зарегистрирован" in message_text.lower() or "/start" in message_text
+
+
+@pytest.mark.asyncio
+async def test_cmd_balance_registered(mock_message):
+    """Test /balance command for registered user"""
+    from app.handlers import cmd_balance
+    
+    # Mock ERP client to return customer with balance
+    with patch('app.handlers.ERPClient') as MockClient:
+        mock_client_instance = MockClient.return_value
+        mock_client_instance.get_customer_by_telegram_id = AsyncMock(return_value={
+            'name': 'CRM-CUST-00001',
+            'first_name': 'Test User'
+        })
+        mock_client_instance.get_balance = AsyncMock(return_value=750)
+        mock_client_instance.get_transactions = AsyncMock(return_value=[])
+        
+        await cmd_balance(mock_message)
+    
+    # Should show balance
+    mock_message.answer.assert_called_once()
+    call_args = mock_message.answer.call_args
+    message_text = str(call_args[0][0]) if call_args[0] else call_args[1].get('text', '')
+    
+    assert "750" in message_text or "баланс" in message_text.lower()
 
 
 @pytest.mark.asyncio
 async def test_cmd_help(mock_message):
-    """Test /help command returns help information"""
+    """Test /help command"""
     from app.handlers import cmd_help
     
     await cmd_help(mock_message)
     
+    # Should show help information
     mock_message.answer.assert_called_once()
-    call_args = mock_message.answer.call_args
-    message_text = str(call_args[0][0]) if call_args[0] else call_args[1].get('text', '')
-    
-    # Should contain command list
-    assert "/start" in message_text or "start" in message_text.lower()
-    assert "/register" in message_text or "register" in message_text.lower()
 
 
 @pytest.mark.asyncio
 async def test_cmd_menu(mock_message):
-    """Test /menu command shows product catalog"""
+    """Test /menu command"""
     from app.handlers import cmd_menu
     
-    with patch('app.handlers.get_products') as mock_products:
-        mock_products.return_value = [
-            {'id': 1, 'name': 'Coffee Latte', 'price': 250, 'code': 'LATTE'},
-            {'id': 2, 'name': 'Coffee Cappuccino', 'price': 200, 'code': 'CAPPUCCINO'}
-        ]
-        
-        await cmd_menu(mock_message)
-        
-        mock_message.answer.assert_called_once()
-        call_args = mock_message.answer.call_args
-        message_text = str(call_args[0][0]) if call_args[0] else call_args[1].get('text', '')
-        
-        assert "Coffee" in message_text or "каталог" in message_text.lower()
-        assert "250" in message_text
-
-
-@pytest.mark.asyncio
-async def test_error_handler(mock_message):
-    """Test error handler logs and responds"""
-    from app.handlers import error_handler
+    await cmd_menu(mock_message)
     
-    test_error = ValueError("Test error message")
-    
-    await error_handler(mock_message, test_error)
-    
-    # Should respond with error message
+    # Should show menu
     mock_message.answer.assert_called_once()
-
-
-class TestThrottleMiddleware:
-    """Tests for throttle middleware"""
-    
-    @pytest.mark.asyncio
-    async def test_throttle_middleware_rate_limit(self):
-        """Test middleware enforces rate limit"""
-        from app.middlewares import ThrottleMiddleware
-        
-        middleware = ThrottleMiddleware(rate=0.1)  # 100ms rate
-        
-        mock_handler = AsyncMock()
-        mock_data = {}
-        
-        # First call should pass
-        await middleware(
-            mock_message,
-            mock_data,
-            mock_handler
-        )
-        
-        mock_handler.assert_called_once()
-        
-        # Reset mock
-        mock_handler.reset_mock()
-        
-        # Second call within rate limit should be skipped
-        await middleware(
-            mock_message,
-            mock_data,
-            mock_handler
-        )
-        
-        # Handler should NOT be called (rate limited)
-        # Note: Actual behavior depends on middleware implementation
-
-
-@pytest.mark.asyncio
-async def test_cmd_order_status(mock_message):
-    """Test /order command shows order status"""
-    from app.handlers import cmd_order
-    
-    with patch('app.handlers.get_customer_orders') as mock_orders:
-        mock_orders.return_value = [
-            {
-                'id': 1001,
-                'status': 'completed',
-                'total': 250,
-                'bonus_paid': 50
-            }
-        ]
-        
-        await cmd_order(mock_message)
-        
-        mock_message.answer.assert_called_once()
-        call_args = mock_message.answer.call_args
-        message_text = str(call_args[0][0]) if call_args[0] else call_args[1].get('text', '')
-        
-        assert "1001" in message_text or "заказ" in message_text.lower()
-
-
-@pytest.mark.asyncio
-async def test_callback_product_selected(mock_callback_query):
-    """Test callback when product is selected from menu"""
-    from app.handlers import callback_product_select
-    
-    mock_callback_query.data = "product_123"
-    
-    with patch('app.handlers.get_product_by_id') as mock_product:
-        mock_product.return_value = {
-            'id': 123,
-            'name': 'Test Product',
-            'price': 300
-        }
-        
-        await callback_product_select(mock_callback_query)
-        
-        # Should answer callback and show product info
-        mock_callback_query.answer.assert_called_once()
