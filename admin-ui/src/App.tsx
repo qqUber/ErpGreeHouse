@@ -311,6 +311,7 @@ function App() {
       const res = await Api.login(username.trim(), password, signal)
       setMustChangePassword(Boolean(res.must_change_password))
       setPassword('')
+      setAdminSecret(res.token)
       markAuthStepDone(1)
 
       setAuthStep(2, 'Создание сессии...')

@@ -280,7 +280,15 @@ def me(
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
     admin = require_admin_token_or_env(x_admin_secret)
-    return {"user_id": int(admin.get("user_id") or 0), "username": str(admin.get("username") or ""), "role": str(admin.get("role") or "")}
+    role = str(admin.get("role") or "")
+    from .auth import get_role_permissions
+    perms = get_role_permissions(role)
+    return {
+        "user_id": int(admin.get("user_id") or 0),
+        "username": str(admin.get("username") or ""),
+        "role": role,
+        "permissions": perms,
+    }
 
 
 class RecoverIn(BaseModel):

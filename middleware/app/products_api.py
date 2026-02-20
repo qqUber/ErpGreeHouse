@@ -1,9 +1,12 @@
 from typing import Any
+import csv
+import io
+import openpyxl
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, UploadFile, File
 from pydantic import BaseModel, Field
 
-from .auth import require_roles
+from .auth import require_permission
 from .db import get_db
 
 
@@ -24,7 +27,7 @@ def list_products(
     active: bool | None = True,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "operator", "marketer"))
+    require_permission(x_admin_secret, "product.read")
     qv = (q or "").strip()
     db = get_db()
     conn = db.connect()
@@ -67,7 +70,7 @@ def create_product(
     payload: ProductIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    require_permission(x_admin_secret, "product.create")
     db = get_db()
     conn = db.connect()
     try:
@@ -90,7 +93,7 @@ def update_product(
     payload: ProductIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    require_permission(x_admin_secret, "product.update")
     db = get_db()
     conn = db.connect()
     try:
@@ -111,7 +114,7 @@ def archive_product(
     product_id: int,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    require_permission(x_admin_secret, "product.update")
     db = get_db()
     conn = db.connect()
     try:
@@ -120,5 +123,111 @@ def archive_product(
         if cur.rowcount == 0:
             raise HTTPException(status_code=404, detail="Product not found")
         return {"archived": True}
+    finally:
+        conn.close()
+
+
+@router.post("/import")
+def import_products(
+    file: UploadFile = File(...),
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+) -> dict[str, Any]:
+    require_permission(x_admin_secret, "product.import")
+    
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No filename")
+    
+    ext = file.filename.lower().split(".")[-1]
+    if ext not in ("csv", "xlsx"):
+        raise HTTPException(status_code=400, detail="Only .csv and .xlsx files are supported")
+
+    content = file.file.read()
+    rows = []
+
+    try:
+        if ext == "csv":
+            # Detect encoding? Assume utf-8 for now
+            text = content.decode("utf-8")
+            reader = csv.DictReader(io.StringIO(text), delimiter=";")
+            # If delimiter is wrong, try comma
+            if not reader.fieldnames or "code" not in reader.fieldnames:
+                reader = csv.DictReader(io.StringIO(text), delimiter=",")
+            
+            for row in reader:
+                rows.append(row)
+        else:
+            # Excel
+            wb = openpyxl.load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+            ws = wb.active
+            if not ws:
+                raise HTTPException(status_code=400, detail="Empty excel file")
+            
+            headers = []
+            for i, row in enumerate(ws.iter_rows(values_only=True)):
+                if i == 0:
+                    headers = [str(h).lower() for h in row if h]
+                    continue
+                
+                # Map headers to values
+                item = {}
+                for h, v in zip(headers, row):
+                    item[h] = v
+                if item:
+                    rows.append(item)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse file: {str(e)}")
+
+    # Process rows
+    processed = 0
+    updated = 0
+    inserted = 0
+    errors = []
+
+    db = get_db()
+    conn = db.connect()
+    try:
+        for idx, r in enumerate(rows):
+            try:
+                # Normalize keys
+                code = str(r.get("code") or r.get("articul") or "").strip()
+                name = str(r.get("name") or r.get("title") or "").strip()
+                kind = str(r.get("kind") or r.get("type") or "Import").strip()
+                price_raw = r.get("price") or 0
+                
+                if not code or not name:
+                    continue
+
+                try:
+                    price = int(float(str(price_raw).replace(",", ".").replace(" ", "")))
+                except ValueError:
+                    price = 0
+
+                # Check if exists
+                cur = conn.execute("SELECT id FROM products WHERE code=?", (code,))
+                row = cur.fetchone()
+                
+                if row:
+                    conn.execute(
+                        "UPDATE products SET name=?, kind=?, price=?, active=1, updated_at=datetime('now') WHERE id=?",
+                        (name, kind, price, row[0]),
+                    )
+                    updated += 1
+                else:
+                    conn.execute(
+                        "INSERT INTO products(code, name, kind, price, active) VALUES(?,?,?,?,1)",
+                        (code, name, kind, price),
+                    )
+                    inserted += 1
+                processed += 1
+            except Exception as e:
+                errors.append(f"Row {idx+1}: {str(e)}")
+        
+        conn.commit()
+        return {
+            "processed": processed,
+            "inserted": inserted,
+            "updated": updated,
+            "errors": errors[:10]  # Limit errors
+        }
     finally:
         conn.close()

@@ -2,10 +2,19 @@ import { expect, test } from '@playwright/test'
 import * as fs from 'fs'
 import * as path from 'path'
 
+async function ensureEnvReady() {
+  const health = await fetch('http://localhost:8000/health')
+  expect(health.ok).toBeTruthy()
+  const status = await fetch('http://localhost:5173/api/v1/public/status')
+  expect(status.ok).toBeTruthy()
+}
+
 test('manual client creation', async ({ page }) => {
+  test.setTimeout(120000)
   const phone = '7999' + Math.floor(Math.random() * 10000000).toString().padStart(7, '0')
   const name = 'Manual Client ' + Date.now()
 
+  await ensureEnvReady()
   await page.goto('/')
   await page.getByPlaceholder('Логин').fill('admin')
   await page.getByPlaceholder('Пароль').fill('admin')
@@ -13,6 +22,8 @@ test('manual client creation', async ({ page }) => {
   
   // Wait for dashboard to load
   await expect(page.getByText('Сводка')).toBeVisible()
+  // Wait until auth overlay finishes
+  await page.waitForSelector('.overlay', { state: 'hidden', timeout: 60000 })
   
   // Check role - wait for it to load
   // await expect(page.getByText(/Роль:/)).toBeVisible({ timeout: 10000 })
@@ -35,6 +46,7 @@ test('manual client creation', async ({ page }) => {
 })
 
 test.only('product import from csv', async ({ page }) => {
+  test.setTimeout(120000)
   page.on('console', msg => console.log(`BROWSER: ${msg.text()}`))
   const csvContent = `code;name;price;kind
 IMP_001;Imported Product 1;150;goods
@@ -43,6 +55,7 @@ IMP_002;Imported Product 2;250;service`
   fs.writeFileSync(csvPath, csvContent)
 
   try {
+    await ensureEnvReady()
     await page.goto('/')
     await page.getByPlaceholder('Логин').fill('admin')
     await page.getByPlaceholder('Пароль').fill('admin')
@@ -50,6 +63,7 @@ IMP_002;Imported Product 2;250;service`
 
     // Wait for login to complete
     await expect(page.getByText('Сводка')).toBeVisible()
+    await page.waitForSelector('.overlay', { state: 'hidden', timeout: 60000 })
     await page.waitForTimeout(1000)
 
     // Verify Customers tab first

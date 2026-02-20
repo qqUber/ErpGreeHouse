@@ -113,6 +113,7 @@ app.include_router(auth_router)
 app.include_router(integrations_router)
 app.include_router(integrations_public_router)
 app.include_router(products_router)
+app.include_router(marketing_router)
 if os.getenv("E2E_TEST_MODE", "false").lower() in ("1", "true", "yes"):
     app.include_router(test_router)
 

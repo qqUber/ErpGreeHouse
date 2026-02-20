@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from .auth import require_admin, require_roles
+from .auth import require_admin, require_roles, require_permission, ALL_PERMISSIONS, get_default_permissions
 from .db import get_db
 from .erp_client import ERPClient
 from .identify import generate_qr_token, normalize_name, normalize_phone
@@ -74,6 +74,12 @@ class IdentifyQrIn(BaseModel):
     qr: str
 
 
+class CreateCustomerIn(BaseModel):
+    full_name: str
+    phone: str | None = None
+    notes: str | None = None
+
+
 class SaleItem(BaseModel):
     code: str = Field(min_length=1)
     name: str = Field(min_length=1)
@@ -87,11 +93,85 @@ class CreateSaleIn(BaseModel):
     requested_bonus: int = Field(default=0, ge=0)
 
 
+class PermissionUpdate(BaseModel):
+    role: str
+    permission: str
+    is_allowed: bool
+
+
+@router.get("/roles/permissions")
+def list_permissions(
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+) -> dict[str, Any]:
+    # Owner only for managing permissions
+    require_roles(x_admin_secret, roles=("owner",))
+    
+    db = get_db()
+    conn = db.connect()
+    try:
+        # Get all configured permissions
+        cur = conn.execute("SELECT role, permission, is_allowed FROM role_permissions ORDER BY role, permission")
+        items = [dict(r) for r in cur.fetchall()]
+        
+        # Ensure we return a structure that includes defaults if not in DB?
+        # For now, let's just return what's in DB. The UI can handle "undefined means default false/true based on role".
+        # But actually, the UI needs to know the full list of available permissions to show checkboxes.
+        
+        # Use the single source of truth from auth.py
+        known_permissions = ALL_PERMISSIONS
+        
+        known_roles = ["operator", "manager", "marketer"] # Owner has all
+        
+        # Build a complete matrix
+        matrix = []
+        configured = {(r["role"], r["permission"]): bool(r["is_allowed"]) for r in items}
+        
+        for role in known_roles:
+            role_defaults = get_default_permissions(role)
+            for perm in known_permissions:
+                is_allowed = configured.get((role, perm), False)
+                # Apply defaults for operator if not configured
+                if (role, perm) not in configured:
+                    if perm in role_defaults:
+                        is_allowed = True
+                
+                matrix.append({
+                    "role": role,
+                    "permission": perm,
+                    "is_allowed": is_allowed
+                })
+                
+        return {"items": matrix}
+    finally:
+        conn.close()
+
+
+@router.post("/roles/permissions")
+def update_permission(
+    payload: PermissionUpdate,
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+) -> dict[str, Any]:
+    require_roles(x_admin_secret, roles=("owner",))
+    
+    db = get_db()
+    conn = db.connect()
+    try:
+        cur = conn.execute(
+            "INSERT INTO role_permissions(role, permission, is_allowed, updated_at) VALUES(?,?,?, datetime('now')) "
+            "ON CONFLICT(role, permission) DO UPDATE SET is_allowed=excluded.is_allowed, updated_at=excluded.updated_at",
+            (payload.role, payload.permission, 1 if payload.is_allowed else 0)
+        )
+        conn.commit()
+        return {"status": "ok"}
+    finally:
+        conn.close()
+
+
 @router.get("/dashboard")
 def dashboard(
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_admin(x_admin_secret)
+    require_permission(x_admin_secret, "dashboard.read")
     today = datetime.now().strftime("%Y-%m-%d")
     cache_key = f"crm:cache:dashboard:{today}"
     cached = _cache_get_json(cache_key)
@@ -124,31 +204,64 @@ def dashboard(
 @router.get("/customers")
 def list_customers(
     q: str | None = None,
+    min_balance: int | None = None,
+    max_balance: int | None = None,
+    has_orders: bool | None = None,
+    created_after: str | None = None,
+    created_before: str | None = None,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_admin(x_admin_secret)
-    q_norm = (normalize_name(q) or normalize_phone(q) or "").strip() if q else ""
-    cache_key = f"crm:cache:customers:{q_norm}" if q_norm else "crm:cache:customers:all"
+    require_permission(x_admin_secret, "customer.list")
+    
+    # Cache key depends on all filters
+    filters_key = f"{q or ''}:{min_balance}:{max_balance}:{has_orders}:{created_after}:{created_before}"
+    cache_key = f"crm:cache:customers:filter:{filters_key}"
+    
     cached = _cache_get_json(cache_key)
     if isinstance(cached, dict) and isinstance(cached.get("items"), list):
         return cached
+
     db = get_db()
     conn = db.connect()
     try:
+        where = []
+        args = []
+
         if q:
             qs = normalize_name(q)
             qp = normalize_phone(q)
-            like = f"%{qs}%" if qs else "%%"
-            cur = conn.execute(
-                "SELECT id, phone, full_name, telegram_id, qr_token, balance_points, created_at FROM customers WHERE full_name LIKE ? OR phone=? ORDER BY id DESC LIMIT 200",
-                (like, qp),
-            )
-        else:
-            cur = conn.execute(
-                "SELECT id, phone, full_name, telegram_id, qr_token, balance_points, created_at FROM customers ORDER BY id DESC LIMIT 200"
-            )
+            where.append("(full_name LIKE ? OR phone LIKE ?)")
+            args.extend([f"%{qs}%", f"%{qp}%"])
+        
+        if min_balance is not None:
+            where.append("balance_points >= ?")
+            args.append(min_balance)
+        
+        if max_balance is not None:
+            where.append("balance_points <= ?")
+            args.append(max_balance)
+            
+        if created_after:
+            where.append("date(created_at) >= ?")
+            args.append(created_after)
+            
+        if created_before:
+            where.append("date(created_at) <= ?")
+            args.append(created_before)
+
+        if has_orders:
+            where.append("EXISTS (SELECT 1 FROM transactions WHERE transactions.customer_id = customers.id)")
+            
+        sql = "SELECT id, phone, full_name, telegram_id, qr_token, balance_points, created_at FROM customers"
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        sql += " ORDER BY id DESC LIMIT 200"
+        
+        cur = conn.execute(sql, tuple(args))
         items = [dict(r) for r in cur.fetchall()]
         data = {"items": items}
+        
+        # Cache for shorter time if filtered
         _cache_set_json(cache_key, data, ttl_seconds=5)
         return data
     finally:
@@ -160,7 +273,7 @@ def get_customer(
     customer_id: int,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_admin(x_admin_secret)
+    require_permission(x_admin_secret, "customer.read")
     db = get_db()
     conn = db.connect()
     try:
@@ -187,12 +300,45 @@ def get_customer(
         conn.close()
 
 
+@router.post("/customers")
+def create_customer(
+    payload: CreateCustomerIn,
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+) -> dict[str, Any]:
+    require_permission(x_admin_secret, "customer.create")
+    if not payload.full_name:
+        raise HTTPException(status_code=400, detail="Name required")
+    
+    db = get_db()
+    conn = db.connect()
+    try:
+        phone = normalize_phone(payload.phone) if payload.phone else None
+        if phone:
+            cur = conn.execute("SELECT id FROM customers WHERE phone=?", (phone,))
+            if cur.fetchone():
+                raise HTTPException(status_code=400, detail="Customer with this phone already exists")
+        
+        token = generate_qr_token()
+        prefs = json.dumps({"notes": payload.notes} if payload.notes else {})
+        
+        cur = conn.execute(
+            "INSERT INTO customers(full_name, phone, qr_token, preferences_json, balance_points) VALUES(?,?,?,?,0)",
+            (payload.full_name, phone, token, prefs)
+        )
+        conn.commit()
+        cid = cur.lastrowid
+        _cache_del_prefix("crm:cache:customers:")
+        return {"id": cid, "qr_token": token}
+    finally:
+        conn.close()
+
+
 @router.get("/transactions/{transaction_id}/receipt")
 def get_receipt(
     transaction_id: int,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> FileResponse:
-    require_admin(x_admin_secret)
+    require_permission(x_admin_secret, "transaction.read")
     db = get_db()
     conn = db.connect()
     try:
@@ -213,7 +359,7 @@ def identify_phone(
     payload: IdentifyPhoneIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "operator"))
+    require_permission(x_admin_secret, "customer.create")
     phone = normalize_phone(payload.phone)
     if not phone:
         raise HTTPException(status_code=400, detail="Invalid phone")
@@ -241,7 +387,7 @@ def identify_name(
     payload: IdentifyNameIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "operator"))
+    require_permission(x_admin_secret, "customer.search")
     name = normalize_name(payload.name)
     if not name:
         raise HTTPException(status_code=400, detail="Invalid name")
@@ -263,7 +409,7 @@ def identify_qr(
     payload: IdentifyQrIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "operator"))
+    require_permission(x_admin_secret, "customer.search")
     token = payload.qr.strip()
     if not token:
         raise HTTPException(status_code=400, detail="Invalid qr")
@@ -284,7 +430,7 @@ def create_sale(
     payload: CreateSaleIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "operator"))
+    require_permission(x_admin_secret, "pos.sale")
     if not payload.items:
         raise HTTPException(status_code=400, detail="items required")
 
@@ -413,7 +559,7 @@ def _maybe_sync_to_erpnext(telegram_id: int, items: list[SaleItem], bonus_used: 
 def export_transactions_csv(
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> StreamingResponse:
-    require_admin(x_admin_secret)
+    require_permission(x_admin_secret, "report.export")
     db = get_db()
     conn = db.connect()
     try:

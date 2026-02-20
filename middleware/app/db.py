@@ -149,6 +149,47 @@ def init_db() -> None:
                 FOREIGN KEY(admin_user_id) REFERENCES admin_users(id) ON DELETE CASCADE
             );
             CREATE INDEX IF NOT EXISTS idx_admin_tokens_admin_user_id ON admin_tokens(admin_user_id);
+
+            CREATE TABLE IF NOT EXISTS role_permissions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                role TEXT NOT NULL,
+                permission TEXT NOT NULL,
+                is_allowed INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+                UNIQUE(role, permission)
+            );
+            CREATE INDEX IF NOT EXISTS idx_role_permissions_role ON role_permissions(role);
+
+            CREATE TABLE IF NOT EXISTS marketing_segments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                criteria_json TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+
+            CREATE TABLE IF NOT EXISTS marketing_campaigns (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                segment_id INTEGER,
+                type TEXT NOT NULL,
+                content TEXT NOT NULL,
+                status TEXT DEFAULT 'draft',
+                scheduled_at TEXT,
+                sent_at TEXT,
+                stats_json TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(segment_id) REFERENCES marketing_segments(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS marketing_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                campaign_id INTEGER,
+                user_id INTEGER,
+                event_type TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(campaign_id) REFERENCES marketing_campaigns(id)
+            );
             """
         )
         conn.commit()
