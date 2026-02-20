@@ -1,0 +1,245 @@
+{
+  "workbench.colorTheme": "Deep Blue",
+  "redhat.telemetry.enabled": true,
+  "explorer.confirmDelete": false,
+  "github.copilot.nextEditSuggestions.enabled": true,
+  "github.copilot.chat.executeWithoutConfirmation": true,
+  "git.autofetch": true,
+  "github.copilot.enable": {
+    "*": true,
+    "plaintext": false,
+    "markdown": false,
+    "scminput": false
+  },
+  "git.confirmSync": false,
+  "chat.mcp.autostart": "newAndOutdated",
+  "chat.mcp.serverSampling": {
+
+    "Cursor (Global): context7": {
+      "allowedModels": [
+        "copilot/gpt-4.1",
+        "copilot/claude-sonnet-4",
+        "copilot/gpt-5"
+      ]
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "chat.agent.maxRequests": 45,
+  "github.copilot.chat.agent.thinkingTool": true,
+  "github.copilot.chat.codesearch.enabled": true,
+  "chat.tools.autoApprove": true,
+  "editor.linkedEditing": true,
+  "editor.rulers": [
+    {
+      "column": 80,
+      "color": "#00FF0010"
+    },
+    {
+      "column": 100,
+      "color": "#BDB76B15"
+    },
+    {
+      "column": 120,
+      "color": "#FA807219"
+    }
+  ],
+  "editor.unicodeHighlight.includeComments": true,
+  "workbench.editor.revealIfOpen": true,
+  "files.eol": "\n",
+  "[bat]": {
+    "files.eol": "\r\n"
+  },
+  "emmet.variables": {
+    "lang": "en"
+  },
+  "cSpell.diagnosticLevel": "Hint",
+  "trailing-spaces.backgroundColor": "rgba(255,0,0,0.1)",
+  "trailing-spaces.includeEmptyLines": false,
+  "terminal.integrated.tabs.hideCondition": "never",
+  "terminal.integrated.enablePersistentSessions": false,
+  "java.compile.nullAnalysis.mode": "automatic",
+  "java.configuration.detectJdksAtStart": false,
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.debug.settings.hotCodeReplace": "auto",
+  "java.dependency.packagePresentation": "hierarchical",
+  "java.maxConcurrentBuilds": 8,
+  "java.sources.organizeImports.staticStarThreshold": 1,
+  "java.configuration.runtimes": [
+    {
+      "name": "JavaSE-1.8",
+      "path": "C:\\Users\\vuser\\AppData\\Roaming\\Code\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\java\\8"
+    },
+    {
+      "name": "JavaSE-11",
+      "path": "C:\\Users\\vuser\\AppData\\Roaming\\Code\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\java\\11"
+    },
+    {
+      "name": "JavaSE-17",
+      "path": "C:\\Program Files\\OpenLogic\\jdk-17.0.14.7-hotspot",
+      "default": true
+    },
+    {
+      "name": "JavaSE-21",
+      "path": "C:\\Program Files\\Amazon Corretto\\jdk21.0.10_7"
+    },
+    {
+      "name": "JavaSE-25",
+      "path": "C:\\Users\\vuser\\AppData\\Roaming\\Code\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\java\\latest"
+    }
+  ],
+  "terminal.integrated.profiles.windows": {
+    "PowerShell": {
+      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
+    },
+    "Command Prompt": {
+      "path": [
+        "${env:windir}\\Sysnative\\cmd.exe",
+        "${env:windir}\\System32\\cmd.exe"
+      ],
+      "args": [],
+      "icon": "terminal-cmd"
+    },
+    "Git Bash": {
+      "source": "Git Bash",
+      "icon": "terminal-git-bash"
+    },
+    "JavaSE-1.8 LTS": {
+      "overrideName": true,
+      "env": {
+        "PATH": "C:\\Users\\vuser\\AppData\\Roaming\\Code\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\java\\8\\bin;${env:PATH}",
+        "JAVA_HOME": "C:\\Users\\vuser\\AppData\\Roaming\\Code\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\java\\8"
+      },
+      "path": "cmd"
+    },
+    "JavaSE-11 LTS": {
+      "overrideName": true,
+      "env": {
+        "PATH": "C:\\Users\\vuser\\AppData\\Roaming\\Code\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\java\\11\\bin;${env:PATH}",
+        "JAVA_HOME": "C:\\Users\\vuser\\AppData\\Roaming\\Code\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\java\\11"
+      },
+      "path": "cmd"
+    },
+    "JavaSE-17": {
+      "path": "C:\\Windows\\system32\\cmd.EXE",
+      "args": [
+        "/k",
+        "chcp",
+        "65001"
+      ],
+      "env": {
+        "PATH": "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.6.7-hotspot\\bin;${env:PATH}",
+        "JAVA_TOOL_OPTIONS": "-Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8",
+        "JAVA_HOME": "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.6.7-hotspot"
+      }
+    },
+    "JavaSE-17 LTS": {
+      "overrideName": true,
+      "env": {
+        "PATH": "C:\\Program Files\\OpenLogic\\jdk-17.0.14.7-hotspot\\bin;${env:PATH}",
+        "JAVA_HOME": "C:\\Program Files\\OpenLogic\\jdk-17.0.14.7-hotspot"
+      },
+      "path": "cmd"
+    },
+    "JavaSE-21 LTS": {
+      "overrideName": true,
+      "env": {
+        "PATH": "C:\\Program Files\\Amazon Corretto\\jdk21.0.10_7\\bin;${env:PATH}",
+        "JAVA_TOOL_OPTIONS": "-Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8",
+        "JAVA_HOME": "C:\\Program Files\\Amazon Corretto\\jdk21.0.10_7"
+      },
+      "path": "cmd",
+      "args": [
+        "/k",
+        "chcp",
+        "65001"
+      ]
+    },
+    "JavaSE-25 LTS": {
+      "overrideName": true,
+      "env": {
+        "PATH": "C:\\Users\\vuser\\AppData\\Roaming\\Code\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\java\\latest\\bin;${env:PATH}",
+        "JAVA_TOOL_OPTIONS": "-Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8",
+        "JAVA_HOME": "C:\\Users\\vuser\\AppData\\Roaming\\Code\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\java\\latest"
+      },
+      "path": "cmd",
+      "args": [
+        "/k",
+        "chcp",
+        "65001"
+      ]
+    }
+  },
+  "terminal.integrated.automationProfile.windows": {
+    "path": "cmd"
+  },
+  "java.test.config": {
+    "vmArgs": [
+      "-Dstdout.encoding=UTF-8",
+      "-Dstderr.encoding=UTF-8"
+    ]
+  },
+  "terminal.integrated.env.windows": {
+    "JAVA_HOME": "C:\\Program Files\\OpenLogic\\jdk-17.0.14.7-hotspot",
+    "PATH": "C:\\Program Files\\OpenLogic\\jdk-17.0.14.7-hotspot\\bin;${env:PATH}"
+  },
+  "maven.terminal.customEnv": [
+    {
+      "environmentVariable": "JAVA_HOME",
+      "value": "C:\\Program Files\\OpenLogic\\jdk-17.0.14.7-hotspot"
+    }
+  ],
+  "java.import.gradle.java.home": "C:\\Program Files\\OpenLogic\\jdk-17.0.14.7-hotspot",
+  "maven.executable.path": "C:\\Users\\vuser\\AppData\\Roaming\\Code\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\maven\\latest\\bin\\mvn",
+  "xml.server.preferBinary": true,
+  "java.import.gradle.home": "C:\\Users\\vuser\\AppData\\Roaming\\Code\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\gradle\\latest",
+  "editor.largeFileOptimizations": false,
+  "terminal.integrated.stickyScroll.enabled": true,
+  "yaml.schemas": {
+    "file:///c%3A/Users/vuser/.vscode/extensions/continue.continue-1.2.10-win32-x64/config-yaml-schema.json": [
+      ".continue/**/*.yaml"
+    ],
+    "file:///c%3A/Users/vuser/.vscode/extensions/continue.continue-1.2.14-win32-x64/config-yaml-schema.json": [
+      ".continue/**/*.yaml"
+    ],
+    "file:///c%3A/Users/vuser/.trae/extensions/continue.continue-1.2.14-win32-x64/config-yaml-schema.json": [
+      ".continue/**/*.yaml"
+    ],
+    "file:///c%3A/Users/vuser/.trae/extensions/continue.continue-1.2.16-win32-x64/config-yaml-schema.json": [
+      ".continue/**/*.yaml"
+    ]
+  },
+  "[dockercompose]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.autoIndent": "advanced",
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "[github-actions-workflow]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "chat.tools.terminal.autoApprove": {
+    "set PATH=C:\\zig-windows-x86_64-0.10.1;%PATH% && zig --version": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "export": true,
+    "zig": true,
+    "timeout": true,
+    "rm": false,
+    "/dev/null": true
+  },
+  "AI.toolcall.v2.ide.mcp.autoRun": "alwaysRun",
+  "AI.toolcall.v2.solo.command.mode": "alwaysRun",
+  "AI.rules.importClaudeMd": true,
+  "AI.toolcall.v2.command.allowList": "[\"npx\",\"cd\",\"C:/Python313/python.exe\",\"rm\",\"py\",\"kill\",\"C:\\\\Users\\\\vuser\\\\AppData\\\\Local\\\\Python\\\\pythoncore-3.14-64\\\\python.exe\",\"git\"]",
+  "chat.tools.global.autoApprove": true,
+  "trae.mcp.beta.enableWorkspaceMcp": true,
+  "chat.mcp.discovery.enabled": {
+    "cursor-workspace": true,
+    "cursor-global": true,
+    "windsurf": true,
+    "claude-desktop": true
+  },
+  "chat.mcp.gallery.enabled": true,
+  "terminal.integrated.enableMultiLinePasteWarning": "never"
+}
