@@ -5,19 +5,25 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
-from starlette.responses import JSONResponse, RedirectResponse
+from starlette.responses import JSONResponse, RedirectResponse, FileResponse
 
 # Environment variables are loaded from .env in project root by uvicorn
 # or set explicitly in shell before running
 
 from .config import get_settings
 from .db import init_db
+import mimetypes
+
+# Fix MIME types for Windows
+mimetypes.add_type('application/javascript', '.js')
+mimetypes.add_type('text/css', '.css')
 from .admin_api import router as admin_router, public_router as public_router
 from .admin_auth_api import public_router as auth_public_router, router as auth_router
 from .admin_auth_api import _bootstrap_default_admin, _bootstrap_demo_users
 from .integrations_api import router as integrations_router, public_router as integrations_public_router
 from .products_api import router as products_router
 from .marketing_api import router as marketing_router
+from .tma_api import router as tma_router
 from .test_api import router as test_router
 from .request_context import reset_admin_session_token, set_admin_session_token
 from .runtime import is_debug
@@ -122,14 +128,12 @@ app.include_router(integrations_router)
 app.include_router(integrations_public_router)
 app.include_router(products_router)
 app.include_router(marketing_router)
+app.include_router(tma_router)
 if os.getenv("E2E_TEST_MODE", "false").lower() in ("1", "true", "yes"):
     app.include_router(test_router)
 
 admin_dist_override = os.getenv("ADMIN_UI_DIST", "").strip()
 admin_dist = Path(admin_dist_override) if admin_dist_override else (Path(__file__).resolve().parents[2] / "admin-ui" / "dist")
-if admin_dist.exists():
-    app.mount("/admin", StaticFiles(directory=str(admin_dist), html=True), name="admin-ui")
-
 
 @app.get("/", status_code=307, include_in_schema=False)
 async def _root() -> RedirectResponse:
@@ -193,3 +197,32 @@ async def admin_broadcast(
         raise HTTPException(status_code=400, detail="text required")
     send_broadcast.delay(text)
     return {"queued": True}
+
+
+# Mount Admin UI at the end to avoid shadowing explicit routes
+if admin_dist.exists():
+    @app.get("/admin/{rest_of_path:path}", include_in_schema=False)
+    async def serve_admin_ui(request: Request, rest_of_path: str = ""):
+        # Normalize path
+        if not rest_of_path:
+            return FileResponse(str(admin_dist / "index.html"))
+
+        file_path = admin_dist / rest_of_path
+        if file_path.is_file():
+             return FileResponse(str(file_path))
+        
+        # SPA fallback: if it's not a file but looks like a route (no extension)
+        # or if it's just /admin/something
+        if "." not in rest_of_path:
+             return FileResponse(str(admin_dist / "index.html"))
+             
+        # Otherwise it's a missing asset
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    # Important: mount is NOT used here because the catch-all route above handles it
+    # including the SPA fallback.
+else:
+    print(f"WARNING: Admin UI distribution not found at {admin_dist}")
+
+
+

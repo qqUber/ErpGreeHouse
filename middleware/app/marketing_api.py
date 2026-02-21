@@ -18,6 +18,13 @@ class CampaignCreate(BaseModel):
     content: str
     scheduled_at: Optional[str] = None
 
+class TriggerCreate(BaseModel):
+    name: str
+    event_source: str
+    criteria: dict[str, Any]
+    delay_hours: int
+    message_text: str
+
 @router.get("/marketing/segments")
 def list_segments(
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret")
@@ -84,3 +91,31 @@ def send_campaign(
     conn.execute("UPDATE marketing_campaigns SET status = 'sent', sent_at = datetime('now') WHERE id = ?", (id,))
     conn.commit()
     return {"status": "sent"}
+
+@router.get("/marketing/triggers")
+def list_triggers(
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret")
+):
+    require_permission(x_admin_secret, "marketing.campaigns")
+    db = get_db()
+    conn = db.connect()
+    rows = conn.execute("SELECT * FROM marketing_triggers ORDER BY created_at DESC").fetchall()
+    return [dict(r) for r in rows]
+
+@router.post("/marketing/triggers")
+def create_trigger(
+    trigger: TriggerCreate,
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret")
+):
+    require_permission(x_admin_secret, "marketing.campaigns")
+    db = get_db()
+    conn = db.connect()
+    cursor = conn.execute(
+        """
+        INSERT INTO marketing_triggers (name, event_source, criteria_json, delay_hours, message_text)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (trigger.name, trigger.event_source, json.dumps(trigger.criteria), trigger.delay_hours, trigger.message_text)
+    )
+    conn.commit()
+    return {"id": cursor.lastrowid, "status": 'active'}

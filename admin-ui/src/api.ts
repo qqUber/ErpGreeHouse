@@ -5,6 +5,14 @@ export type Dashboard = {
   bonus_earned: number
   bonus_used: number
   customers_total: number
+  recent_activity: {
+    transactions: Array<{ id: number; created_at: string; total_amount: number; bonus_earned: number; bonus_used: number }>
+    marketing_events: Array<{ id: number; created_at: string; status: string; trigger_name: string }>
+  }
+}
+
+export type SalesStats = {
+  stats: Array<{ day: string; cnt: number; total: number }>
 }
 
 export type CustomerListItem = {
@@ -113,6 +121,17 @@ export type MarketingCampaign = {
   scheduled_at: string | null
   sent_at: string | null
   stats: Record<string, any> | null
+  created_at: string
+}
+
+export type MarketingTrigger = {
+  id: number
+  name: string
+  event_source: string
+  criteria_json: Record<string, any>
+  delay_hours: number
+  message_text: string
+  active: boolean
   created_at: string
 }
 
@@ -243,5 +262,10 @@ export const Api = {
   marketingCampaigns: () => api<{ items: MarketingCampaign[] }>('/api/v1/marketing/campaigns'),
   createMarketingCampaign: (payload: { name: string; segment_id: number | null; type: string; content: string; scheduled_at?: string }) =>
     api<{ id: number }>('/api/v1/marketing/campaigns', { method: 'POST', body: JSON.stringify(payload) }),
-  sendMarketingCampaign: (id: number) => api<{ success: boolean }>(`/api/v1/marketing/campaigns/${id}/send`, { method: 'POST' })
+  sendMarketingCampaign: (id: number) => api<{ success: boolean }>(`/api/v1/marketing/campaigns/${id}/send`, { method: 'POST' }),
+
+  marketingTriggers: () => api<{ items: MarketingTrigger[] }>('/api/v1/marketing/triggers'),
+  createMarketingTrigger: (payload: { name: string; event_source: string; criteria: Record<string, any>; delay_hours: number; message_text: string }) =>
+    api<{ id: number }>('/api/v1/marketing/triggers', { method: 'POST', body: JSON.stringify(payload) }),
+  salesStats: (days: number) => api<SalesStats>(`/api/v1/stats/sales?days=${days}`)
 }

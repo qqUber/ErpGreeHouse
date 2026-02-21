@@ -1,12 +1,13 @@
 import asyncio
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, WebAppInfo
 from .erp_client import ERPClient
 from .menu import MENU, find_item
 from .db import get_db
 from .identify import generate_qr_token, normalize_name, normalize_phone
 from .storage import get_redis, get_json, set_json, delete
+from .config import get_settings
 
 
 router = Router()
@@ -19,7 +20,7 @@ def _cart_key(tg_id: int) -> str:
 def _consent_key(tg_id: int) -> str:
     return f"crm:consent:{tg_id}"
 
-def _upsert_local_customer(telegram_id: int, full_name: str, phone: str) -> int:
+def _upsert_local_customer(telegram_id: int, full_name: str, phone: str, marketing_allowed: int = 1, data_processing_allowed: int = 1) -> int:
     db = get_db()
     conn = db.connect()
     try:
@@ -30,14 +31,23 @@ def _upsert_local_customer(telegram_id: int, full_name: str, phone: str) -> int:
         if row:
             existing_qr = row["qr_token"] or qr_token
             conn.execute(
-                "UPDATE customers SET phone=?, full_name=?, telegram_id=?, qr_token=?, updated_at=datetime('now') WHERE id=?",
-                (phone, name_norm, telegram_id, existing_qr, int(row["id"])),
+                """
+                UPDATE customers SET 
+                    phone=?, full_name=?, telegram_id=?, qr_token=?, 
+                    marketing_allowed=?, data_processing_allowed=?, 
+                    updated_at=datetime('now') 
+                WHERE id=?
+                """,
+                (phone, name_norm, telegram_id, existing_qr, marketing_allowed, data_processing_allowed, int(row["id"])),
             )
             conn.commit()
             return int(row["id"])
         cur2 = conn.execute(
-            "INSERT INTO customers(phone, full_name, telegram_id, qr_token) VALUES(?,?,?,?)",
-            (phone, name_norm, telegram_id, qr_token),
+            """
+            INSERT INTO customers(phone, full_name, telegram_id, qr_token, marketing_allowed, data_processing_allowed) 
+            VALUES(?,?,?,?,?,?)
+            """,
+            (phone, name_norm, telegram_id, qr_token, marketing_allowed, data_processing_allowed),
         )
         conn.commit()
         return int(cur2.lastrowid)
@@ -123,16 +133,22 @@ async def cb_consent(cb: CallbackQuery) -> None:
         await cb.answer()
         return
     client = ERPClient()
-    consent_text = "Я соглашаюсь на обработку персональных данных."
-    consent_version = "1.0"
+    consent_version = "1.1 (MVP)"
+    consent_text = "Я ознакомлен с Политикой конфиденциальности и даю согласие на обработку персональных данных и получение рекламных рассылок в соответствии с 152-ФЗ."
     try:
         created = await client.create_customer(
             telegram_id=cb.from_user.id,
             name=data.get("name", ""),
             phone=data.get("phone", ""),
-            consent_text="Согласие принято",
+            consent_text="Согласие принято (152-ФЗ)",
         )
-        customer_id = _upsert_local_customer(cb.from_user.id, data.get("name", ""), data.get("phone", ""))
+        customer_id = _upsert_local_customer(
+            cb.from_user.id, 
+            data.get("name", ""), 
+            data.get("phone", ""),
+            marketing_allowed=1,
+            data_processing_allowed=1
+        )
         _store_consent(customer_id, consent_text, consent_version)
         delete(_consent_key(cb.from_user.id))
         await cb.message.edit_text(f"Готово. Начислено 100 приветственных баллов.")
@@ -171,11 +187,14 @@ async def cmd_balance(message: Message) -> None:
 
 @router.message(Command("menu"))
 async def cmd_menu(message: Message) -> None:
-    kb_rows = []
-    for it in MENU:
-        kb_rows.append([InlineKeyboardButton(text=f"{it['name']} {it['price']} ₽", callback_data=f"addcb:{it['code']}")])
-    kb = InlineKeyboardMarkup(inline_keyboard=kb_rows)
-    await message.answer("Выбери напиток", reply_markup=kb)
+    settings = get_settings()
+    tma_url = f"{settings.base_web_url}/tma"
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Открыть каталог", web_app=WebAppInfo(url=tma_url))]
+        ]
+    )
+    await message.answer("Каталог и акции теперь доступны в приложении:", reply_markup=kb)
 
 
 @router.message(Command("add"))
@@ -278,8 +297,16 @@ async def cb_delete(cb: CallbackQuery) -> None:
         await cb.answer()
         return
     client = ERPClient()
-    await client.delete_telegram_client(cb.from_user.id)
-    await cb.message.edit_text("Данные удалены")
+    try:
+        await client.delete_telegram_client(cb.from_user.id)
+        db = get_db()
+        conn = db.connect()
+        conn.execute("DELETE FROM customers WHERE telegram_id=?", (cb.from_user.id,))
+        conn.commit()
+        conn.close()
+        await cb.message.edit_text("Ваш профиль и все данные удалены в соответствии с 152-ФЗ.")
+    except Exception as e:
+        await cb.message.edit_text(f"Ошибка при удалении: {e}")
     await cb.answer()
 
 
@@ -311,6 +338,14 @@ async def cmd_qr(message: Message) -> None:
         if not row or not row["qr_token"]:
             await message.answer("Сначала зарегистрируйся: /start")
             return
-        await message.answer(f"Твой QR-код для идентификации на кассе:\n{row['qr_token']}")
+            
+        settings = get_settings()
+        tma_url = f"{settings.base_web_url}/tma"
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="Моя карта лояльности", web_app=WebAppInfo(url=tma_url))]
+            ]
+        )
+        await message.answer("Ваша карта лояльности и QR-код доступны в приложении:", reply_markup=kb)
     finally:
         conn.close()

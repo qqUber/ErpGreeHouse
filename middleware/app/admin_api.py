@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -19,6 +19,7 @@ from .pdfgen import ReceiptLine, write_simple_receipt_pdf
 from .storage import get_redis
 from .worker import send_customer_message
 from .integration_events import dispatch_event
+from .trigger_engine import evaluate_and_queue_triggers
 
 
 router = APIRouter(prefix="/api/v1")
@@ -78,6 +79,9 @@ class CreateCustomerIn(BaseModel):
     full_name: str
     phone: str | None = None
     notes: str | None = None
+    birthday: str | None = None # YYYY-MM-DD
+    marketing_allowed: int = 1
+    data_processing_allowed: int = 1
 
 
 class SaleItem(BaseModel):
@@ -187,6 +191,21 @@ def dashboard(
         row = cur.fetchone()
         cur2 = conn.execute("SELECT COUNT(*) as cnt FROM customers")
         customers_total = int(cur2.fetchone()[0])
+        # Recent Activity (Transactions)
+        cur_tx = conn.execute(
+            "SELECT id, created_at, total_amount, bonus_earned, bonus_used FROM transactions ORDER BY created_at DESC LIMIT 10"
+        )
+        txs = [dict(r) for r in cur_tx.fetchall()]
+        
+        # Recent Marketing Triggers (Events)
+        cur_tr = conn.execute(
+            "SELECT e.id, e.created_at, e.status, t.name as trigger_name "
+            "FROM marketing_trigger_events e "
+            "JOIN marketing_triggers t ON e.trigger_id = t.id "
+            "ORDER BY e.created_at DESC LIMIT 5"
+        )
+        trevents = [dict(r) for r in cur_tr.fetchall()]
+
         data = {
             "today": today,
             "sales_count": int(row["cnt"]),
@@ -194,9 +213,39 @@ def dashboard(
             "bonus_earned": int(row["sum_earned"]),
             "bonus_used": int(row["sum_used"]),
             "customers_total": customers_total,
+            "recent_activity": {
+                "transactions": txs,
+                "marketing_events": trevents
+            }
         }
-        _cache_set_json(cache_key, data, ttl_seconds=2)
+        _cache_set_json(cache_key, data, ttl_seconds=300) 
         return data
+    finally:
+        conn.close()
+
+
+@router.get("/stats/sales")
+def sales_stats(
+    days: int = 7,
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+) -> dict[str, Any]:
+    require_permission(x_admin_secret, "dashboard.read")
+    db = get_db()
+    conn = db.connect()
+    try:
+        # Aggregate daily sales for the trend line
+        cur = conn.execute(
+            """
+            SELECT date(created_at) as day, COUNT(*) as cnt, COALESCE(SUM(total_amount), 0) as total
+            FROM transactions
+            WHERE created_at >= date('now', ?)
+            GROUP BY day
+            ORDER BY day ASC
+            """,
+            (f"-{days} days",),
+        )
+        stats = [dict(r) for r in cur.fetchall()]
+        return {"stats": stats}
     finally:
         conn.close()
 
@@ -322,8 +371,11 @@ def create_customer(
         prefs = json.dumps({"notes": payload.notes} if payload.notes else {})
         
         cur = conn.execute(
-            "INSERT INTO customers(full_name, phone, qr_token, preferences_json, balance_points) VALUES(?,?,?,?,0)",
-            (payload.full_name, phone, token, prefs)
+            """
+            INSERT INTO customers(full_name, phone, qr_token, preferences_json, balance_points, birthday, marketing_allowed, data_processing_allowed) 
+            VALUES(?,?,?,?,0,?,?,?)
+            """,
+            (payload.full_name, phone, token, prefs, payload.birthday, payload.marketing_allowed, payload.data_processing_allowed)
         )
         conn.commit()
         cid = cur.lastrowid
@@ -428,6 +480,7 @@ def identify_qr(
 @router.post("/pos/sale")
 def create_sale(
     payload: CreateSaleIn,
+    background_tasks: BackgroundTasks,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
     require_permission(x_admin_secret, "pos.sale")
@@ -449,10 +502,13 @@ def create_sale(
         if not cust:
             raise HTTPException(status_code=404, detail="Customer not found")
 
+        spent_row = conn.execute("SELECT SUM(total_amount) FROM transactions WHERE customer_id=?", (payload.customer_id,)).fetchone()
+        spent_amount = int(spent_row[0]) if spent_row and spent_row[0] else 0
+
         rules = LoyaltyRules()
-        bonus_used = clamp_redeem_points(total, payload.requested_bonus, int(cust["balance_points"]), rules)
+        bonus_used = clamp_redeem_points(total, spent_amount, payload.requested_bonus, int(cust["balance_points"]), rules)
         payable = total - bonus_used
-        bonus_earned = calc_earned_points(payable, rules)
+        bonus_earned = calc_earned_points(payable, spent_amount, rules)
 
         receipt_dir = os.getenv("RECEIPTS_DIR", "receipts")
         receipt_name = f"receipt_{payload.customer_id}_{int(datetime.now().timestamp())}.pdf"
@@ -483,6 +539,15 @@ def create_sale(
         tx_id = int(cur2.lastrowid)
         _cache_del_prefix("crm:cache:dashboard:")
         _cache_del_prefix("crm:cache:customers:")
+        
+        # Evaluate triggers
+        event_data = {
+            "transaction_id": tx_id,
+            "total_amount": total,
+            "bonus_used": bonus_used,
+            "bonus_earned": bonus_earned,
+        }
+        background_tasks.add_task(evaluate_and_queue_triggers, payload.customer_id, "pos.sale", event_data)
 
         tg_id = cust["telegram_id"]
         if tg_id:

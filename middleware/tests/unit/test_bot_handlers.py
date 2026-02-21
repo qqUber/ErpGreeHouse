@@ -194,7 +194,8 @@ async def test_cb_consent_success(mock_callback_query):
             with patch('app.handlers._upsert_local_customer') as mock_upsert:
                 mock_upsert.return_value = 1
                 with patch('app.handlers._store_consent') as mock_store:
-                    await cb_consent(mock_callback_query)
+                    with patch('app.handlers.delete') as mock_delete:
+                        await cb_consent(mock_callback_query)
     
     # Should show success message
     mock_callback_query.message.edit_text.assert_called_once()

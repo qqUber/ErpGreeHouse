@@ -10,6 +10,19 @@ class DB:
 
     def connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.path, check_same_thread=False)
+        # Migration for compliance fields
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN marketing_allowed INTEGER NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError: # Column already exists
+            pass
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN data_processing_allowed INTEGER NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError: pass
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN birthday TEXT")
+        except sqlite3.OperationalError: pass
+        conn.commit()
+
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
         conn.execute("PRAGMA journal_mode = WAL")
@@ -50,6 +63,9 @@ def init_db() -> None:
                 qr_token TEXT UNIQUE,
                 balance_points INTEGER NOT NULL DEFAULT 0,
                 preferences_json TEXT NOT NULL DEFAULT '{}',
+                marketing_allowed INTEGER NOT NULL DEFAULT 0,
+                data_processing_allowed INTEGER NOT NULL DEFAULT 0,
+                birthday TEXT, -- YYYY-MM-DD
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
             );
@@ -189,6 +205,30 @@ def init_db() -> None:
                 event_type TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 FOREIGN KEY(campaign_id) REFERENCES marketing_campaigns(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS marketing_triggers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                event_source TEXT NOT NULL,
+                criteria_json TEXT NOT NULL DEFAULT '{}',
+                delay_hours INTEGER NOT NULL DEFAULT 0,
+                message_text TEXT NOT NULL,
+                active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+
+            CREATE TABLE IF NOT EXISTS marketing_trigger_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                trigger_id INTEGER NOT NULL,
+                customer_id INTEGER NOT NULL,
+                source_tx_id INTEGER,
+                status TEXT NOT NULL DEFAULT 'pending',
+                scheduled_for TEXT NOT NULL,
+                sent_at TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(trigger_id) REFERENCES marketing_triggers(id),
+                FOREIGN KEY(customer_id) REFERENCES customers(id)
             );
             """
         )

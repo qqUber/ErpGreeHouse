@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { MarketingView } from './MarketingView'
-import { AdminMe, Api, CustomerDetails, CustomerListItem, Dashboard, Integration, IntegrationDelivery, IntegrationTemplate, RolePermissions, getAdminSecret, setAdminSecret } from './api'
+import { AdminMe, Api, CustomerDetails, CustomerListItem, Dashboard, Integration, IntegrationDelivery, IntegrationTemplate, SalesStats, getAdminSecret, setAdminSecret } from './api'
 
 type Tab = 'dashboard' | 'customers' | 'pos' | 'integrations' | 'products' | 'settings' | 'marketing'
 
@@ -793,6 +792,76 @@ function StatusBar({ notice }: { notice: Notice }) {
   )
 }
 
+function SalesTrend() {
+  const [stats, setStats] = useState<SalesStats | null>(null)
+  
+  useEffect(() => {
+    Api.salesStats(14)
+      .then(res => setStats(res))
+      .catch(console.error)
+  }, [])
+
+  if (!stats || stats.stats.length < 2) {
+    return <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontSize: 12 }}>Аналитика собирается...</div>
+  }
+
+  const maxTotal = Math.max(...stats.stats.map(s => s.total), 1)
+  const width = 600
+  const height = 160
+  const padding = 20
+  
+  const points = stats.stats.map((s, i) => {
+    const x = padding + (i / (stats.stats.length - 1)) * (width - 2 * padding)
+    const y = (height - padding) - (s.total / maxTotal) * (height - 2 * padding)
+    return `${x},${y}`
+  }).join(' ')
+
+  return (
+    <div className="card cardFull glass" style={{ marginTop: 20 }}>
+      <div className="flex justify-between items-center mb-4">
+        <div style={{ fontWeight: 800 }}>Тренд выручки (14 дней)</div>
+        <div className="pill pillGood">+{Math.round((stats.stats[stats.stats.length-1].total / (stats.stats[0].total || 1) - 1) * 100)}%</div>
+      </div>
+      <div style={{ height: height, position: 'relative' }}>
+        <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="100%" style={{ overflow: 'visible' }} preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="chartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style={{ stopColor: '#3b82f6', stopOpacity: 0.3 }} />
+              <stop offset="100%" style={{ stopColor: '#3b82f6', stopOpacity: 0 }} />
+            </linearGradient>
+          </defs>
+          <path
+            d={`M ${padding},${height} L ${points} L ${width - padding},${height} Z`}
+            fill="url(#chartGrad)"
+          />
+          <polyline
+            fill="none"
+            stroke="#3b82f6"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            points={points}
+          />
+          {stats.stats.map((s, i) => {
+            const x = padding + (i / (stats.stats.length - 1)) * (width - 2 * padding)
+            const y = (height - padding) - (s.total / maxTotal) * (height - 2 * padding)
+            return (
+              <g key={i} className="chart-dot-group">
+                <circle cx={x} cy={y} r="4" fill="#3b82f6" stroke="white" strokeWidth="2" />
+                <title>{s.day}: {s.total} ₽</title>
+              </g>
+            )
+          })}
+        </svg>
+      </div>
+      <div className="flex justify-between text-[10px] text-muted mt-2 uppercase font-bold px-2">
+        <span>{stats.stats[0].day}</span>
+        <span>{stats.stats[stats.stats.length-1].day}</span>
+      </div>
+    </div>
+  )
+}
+
 function DashboardView({ dash, reload }: { dash: Dashboard | null; reload: () => Promise<void> }) {
   return (
     <div className="grid">
@@ -815,6 +884,47 @@ function DashboardView({ dash, reload }: { dash: Dashboard | null; reload: () =>
         <div className="kpiLabel">Чистое начисление</div>
         <div className="kpiValue">{dash ? Math.max(0, dash.bonus_earned - dash.bonus_used) : '—'}</div>
         <div className="kpiSub">Итог за день</div>
+      </div>
+
+      <SalesTrend />
+
+      <div className="card cardWide glass">
+        <div style={{ fontWeight: 800 }}>Последние продажи</div>
+        <div className="activity-list">
+          {dash?.recent_activity.transactions.map(tx => (
+            <div key={tx.id} className="activity-item">
+              <div>
+                <div style={{ fontWeight: 600 }}>#{tx.id}</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)' }}>{new Date(tx.created_at).toLocaleTimeString()}</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontWeight: 700 }}>{money(tx.total_amount)} ₽</div>
+                <div style={{ fontSize: 11, color: 'var(--good)' }}>+{tx.bonus_earned} / -{tx.bonus_used}</div>
+              </div>
+            </div>
+          ))}
+          {(!dash || dash.recent_activity.transactions.length === 0) && <div style={{ color: 'var(--muted)', fontSize: 13, padding: 10 }}>Нет недавних операций</div>}
+        </div>
+      </div>
+
+      <div className="card cardWide glass">
+        <div style={{ fontWeight: 800 }}>Маркетинговые события</div>
+        <div className="activity-list">
+          {dash?.recent_activity.marketing_events.map(ev => (
+            <div key={ev.id} className="activity-item">
+              <div>
+                <div style={{ fontWeight: 600 }}>{ev.trigger_name}</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)' }}>{new Date(ev.created_at).toLocaleTimeString()}</div>
+              </div>
+              <div>
+                <span className={`pill ${ev.status === 'processed' ? 'pillGood' : ev.status === 'failed' ? 'pillBad' : 'pillWarn'}`}>
+                  {ev.status}
+                </span>
+              </div>
+            </div>
+          ))}
+          {(!dash || dash.recent_activity.marketing_events.length === 0) && <div style={{ color: 'var(--muted)', fontSize: 13, padding: 10 }}>Нет недавних событий</div>}
+        </div>
       </div>
 
       <div className="card cardFull">

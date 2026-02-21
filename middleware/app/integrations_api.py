@@ -14,6 +14,7 @@ from .loyalty import LoyaltyRules, calc_earned_points, clamp_redeem_points
 from .pos_templates import list_integration_templates
 from .storage import get_redis
 from .worker import send_customer_message
+from .trigger_engine import evaluate_and_queue_triggers
 
 
 router = APIRouter(prefix="/api/v1/integrations")
@@ -274,12 +275,15 @@ def ingest_pos_receipt(
         if total is None:
             total = sum(i.price * i.qty for i in payload.items)
 
+        spent_row = conn.execute("SELECT SUM(total_amount) FROM transactions WHERE customer_id=?", (cust_id,)).fetchone()
+        spent_amount = int(spent_row[0]) if spent_row and spent_row[0] else 0
+
         rules = LoyaltyRules()
         available = int(cust["balance_points"])
         requested_used = int(payload.bonus_used or 0)
-        bonus_used = clamp_redeem_points(int(total), requested_used, available, rules)
+        bonus_used = clamp_redeem_points(int(total), spent_amount, requested_used, available, rules)
         payable = int(total) - bonus_used
-        bonus_earned = int(payload.bonus_earned) if payload.bonus_earned is not None else calc_earned_points(payable, rules)
+        bonus_earned = int(payload.bonus_earned) if payload.bonus_earned is not None else calc_earned_points(payable, spent_amount, rules)
         new_balance = available - bonus_used + bonus_earned
 
         items_json = json.dumps([i.model_dump() for i in payload.items], ensure_ascii=False)

@@ -14,8 +14,10 @@
     "report:allure": "allure generate allure-results --clean -o allure-report"
   },
   "dependencies": {
+    "@twa-dev/sdk": "^8.0.2",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "react-qr-code": "^2.0.18"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",

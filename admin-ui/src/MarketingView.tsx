@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react'
-import { Api, MarketingCampaign, MarketingSegment } from './api'
+import { useEffect, useState } from 'react'
+import { Api, MarketingCampaign, MarketingSegment, MarketingTrigger } from './api'
 
 export function MarketingView() {
-  const [tab, setTab] = useState<'campaigns' | 'segments'>('campaigns')
+  const [tab, setTab] = useState<'campaigns' | 'segments' | 'triggers'>('campaigns')
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([])
   const [segments, setSegments] = useState<MarketingSegment[]>([])
+  const [triggers, setTriggers] = useState<MarketingTrigger[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -14,12 +15,14 @@ export function MarketingView() {
   async function loadData() {
     setLoading(true)
     try {
-      const [c, s] = await Promise.all([
+      const [c, s, t] = await Promise.all([
         Api.marketingCampaigns().then(r => r.items),
-        Api.marketingSegments().then(r => r.items)
+        Api.marketingSegments().then(r => r.items),
+        Api.marketingTriggers().then(r => r.items)
       ])
       setCampaigns(c)
       setSegments(s)
+      setTriggers(t)
     } catch (e) {
       console.error(e)
     } finally {
@@ -47,6 +50,12 @@ export function MarketingView() {
         >
           Сегменты и Аудитория
         </button>
+        <button 
+          className={`pb-2 px-1 ${tab === 'triggers' ? 'border-b-2 border-blue-600 font-medium text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          onClick={() => setTab('triggers')}
+        >
+          Триггеры
+        </button>
       </div>
 
       {loading && <div className="text-gray-500">Загрузка...</div>}
@@ -57,6 +66,10 @@ export function MarketingView() {
 
       {!loading && tab === 'segments' && (
         <SegmentsManager segments={segments} onUpdate={loadData} />
+      )}
+
+      {!loading && tab === 'triggers' && (
+        <TriggersManager triggers={triggers} onUpdate={loadData} />
       )}
     </div>
   )
@@ -289,6 +302,169 @@ function SegmentsManager({ segments, onUpdate }: { segments: MarketingSegment[],
             {segments.length === 0 && (
               <tr>
                 <td colSpan={4} className="p-4 text-center text-gray-500">Нет сегментов</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function TriggersManager({ triggers, onUpdate }: { triggers: MarketingTrigger[], onUpdate: () => void }) {
+  const [isCreating, setIsCreating] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [eventSource, setEventSource] = useState('pos.sale')
+  const [newDelay, setNewDelay] = useState('24')
+  const [minAmount, setMinAmount] = useState('')
+  const [daysInactive, setDaysInactive] = useState('')
+  const [newMessage, setNewMessage] = useState('')
+  const [error, setError] = useState('')
+
+  async function handleCreate() {
+    if (!newName || !newMessage) {
+      setError('Введите название и текст сообщения')
+      return
+    }
+    try {
+      const criteria: any = {}
+      if (eventSource === 'pos.sale' && minAmount) criteria.min_amount = Number(minAmount)
+      if (eventSource === 'customer.inactive' && daysInactive) criteria.days_inactive = Number(daysInactive)
+
+      await Api.createMarketingTrigger({
+        name: newName,
+        event_source: eventSource,
+        criteria,
+        delay_hours: Number(newDelay),
+        message_text: newMessage
+      })
+      setIsCreating(false)
+      setNewName('')
+      setEventSource('pos.sale')
+      setNewDelay('24')
+      setMinAmount('')
+      setDaysInactive('')
+      setNewMessage('')
+      onUpdate()
+    } catch (e) {
+      setError(String(e))
+    }
+  }
+
+  return (
+    <div className="grid gap-6">
+      {isCreating ? (
+        <div className="card p-4 grid gap-4 max-w-lg">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-bold text-lg">Конструктор триггера</h3>
+            <div className="pill pillGood">Visual Builder v2</div>
+          </div>
+          {error && <div className="text-red-600 text-sm p-2 bg-red-50 rounded">{error}</div>}
+          
+          <div className="grid gap-4 bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300">
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Название триггера</label>
+              <input className="input w-full bg-white" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Например: VIP Поздравление" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Событие-источник</label>
+                <select className="input w-full bg-white font-medium" value={eventSource} onChange={e => setEventSource(e.target.value)}>
+                  <option value="pos.sale">🛒 Покупка на кассе</option>
+                  <option value="customer.birthday">🎂 День Рождения</option>
+                  <option value="customer.inactive">💤 Клиент "остыл"</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Задержка (ч)</label>
+                <input className="input w-full bg-white" type="number" value={newDelay} onChange={e => setNewDelay(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm relative overflow-hidden">
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+              <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
+                <span>⚙️ Условие срабатывания</span>
+              </h4>
+              
+              {eventSource === 'pos.sale' && (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">Сумма заказа ≥</span>
+                  <input className="input w-32" type="number" value={minAmount} onChange={e => setMinAmount(e.target.value)} placeholder="5000" />
+                  <span className="text-sm text-gray-600">₽</span>
+                </div>
+              )}
+              {eventSource === 'customer.inactive' && (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">Неактивен более</span>
+                  <input className="input w-24" type="number" value={daysInactive} onChange={e => setDaysInactive(e.target.value)} placeholder="30" />
+                  <span className="text-sm text-gray-600">дней</span>
+                </div>
+              )}
+              {eventSource === 'customer.birthday' && (
+                <div className="text-xs text-blue-600 italic bg-blue-50 p-2 rounded">
+                  Автоматическое срабатывание в 09:00 по местному времени в день рождения.
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Шаблон сообщения (Telegram)</label>
+              <textarea 
+                className="input w-full h-24 bg-white font-mono text-sm" 
+                value={newMessage} 
+                onChange={e => setNewMessage(e.target.value)} 
+                placeholder="Привет! Рады видеть тебя снова. Вот твой бонус..." 
+              />
+              <div className="mt-1 text-[10px] text-gray-400">Доступные теги: {'{name}'}, {'{points}'}, {'{tier}'}</div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 justify-end mt-2">
+            <button className="btn btn-secondary" onClick={() => setIsCreating(false)}>Отмена</button>
+            <button className="btn btn-primary px-8" onClick={handleCreate}>Запустить триггер</button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between">
+            <button className="btn btn-primary shadow-lg hover:scale-[1.02] transition-transform" onClick={() => setIsCreating(true)}>
+                + Добавить новый триггер
+            </button>
+            <div className="text-xs text-gray-400">Активных триггеров: {triggers.filter(t => t.active).length}</div>
+        </div>
+      )}
+
+      <div className="card">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="p-2">ID</th>
+              <th className="p-2">Название</th>
+              <th className="p-2">Условие</th>
+              <th className="p-2">Задержка</th>
+              <th className="p-2">Статус</th>
+            </tr>
+          </thead>
+          <tbody>
+            {triggers.map(t => (
+              <tr key={t.id} className="border-b last:border-0 hover:bg-gray-50">
+                <td className="p-2 text-gray-500">#{t.id}</td>
+                <td className="p-2 font-medium">{t.name}</td>
+                <td className="p-2 text-xs text-gray-600 font-mono">
+                  {Object.keys(t.criteria_json).length > 0 ? JSON.stringify(t.criteria_json) : 'Без условий'}
+                </td>
+                <td className="p-2">{t.delay_hours} ч.</td>
+                <td className="p-2">
+                  <span className={`px-2 py-0.5 rounded text-xs ${t.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {t.active ? 'Активен' : 'Отключен'}
+                  </span>
+                </td>
+              </tr>
+            ))}
+            {triggers.length === 0 && (
+              <tr>
+                <td colSpan={5} className="p-4 text-center text-gray-500">Нет триггеров</td>
               </tr>
             )}
           </tbody>

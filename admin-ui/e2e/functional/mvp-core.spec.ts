@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 /**
  * MVP Core Functional Tests - Verified Working Tests
@@ -69,6 +69,32 @@ test.describe('MVP Core Tests', () => {
       await expect(page.getByText('Операции')).toBeVisible()
       await expect(page.getByText('Товары')).toBeVisible()
       await expect(page.getByText('Интеграции')).toBeVisible()
+    })
+
+    test('admin can see Sales Trend chart on dashboard', async ({ page }) => {
+      // Mock stats response to ensure chart renders
+      await page.route('**/api/v1/stats/sales*', async route => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            stats: [
+              { day: '2026-02-01', cnt: 10, total: 1000 },
+              { day: '2026-02-02', cnt: 15, total: 2000 },
+            ]
+          })
+        });
+      });
+
+      await login(page, 'admin', 'admin')
+      
+      // Wait for the specific container that holds the chart
+      const chartContainer = page.locator('div:has-text("Тренд выручки (14 дней)")').first();
+      await expect(chartContainer).toBeVisible({ timeout: 15000 });
+      
+      // Verify SVG is present inside the container
+      const svg = chartContainer.locator('svg');
+      await expect(svg).toBeVisible({ timeout: 5000 });
     })
   })
 
