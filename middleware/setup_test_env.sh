@@ -20,21 +20,78 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Function to find Python executable (excludes WindowsApps stub on Windows)
+find_python() {
+    if [[ "$OS" == "windows" ]]; then
+        # On Windows, check specific paths first
+        local python_paths=(
+            "$LOCALAPPDATA/Programs/Python/Python314/python.exe"
+            "$LOCALAPPDATA/Programs/Python/Python313/python.exe"
+            "$LOCALAPPDATA/Programs/Python/Python312/python.exe"
+            "$LOCALAPPDATA/Programs/Python/Python311/python.exe"
+            "$LOCALAPPDATA/Python/Python314/Scripts/python.exe"
+            "$LOCALAPPDATA/Python/Python313/Scripts/python.exe"
+            "$LOCALAPPDATA/Python/Python312/Scripts/python.exe"
+            "$LOCALAPPDATA/Python/Python311/Scripts/python.exe"
+        )
+        
+        for path in "${python_paths[@]}"; do
+            if [[ -x "$path" ]]; then
+                echo "$path"
+                return 0
+            fi
+        done
+        
+        # Fallback: check PATH but verify it's not WindowsApps stub
+        local py_cmd
+        for cmd in python3.14 python3.13 python3.12 python3.11 python3 python; do
+            if command_exists "$cmd"; then
+                py_cmd=$(command -v "$cmd")
+                # Skip WindowsApps stub (contains WindowsApps in path)
+                if [[ "$py_cmd" != *"WindowsApps"* ]]; then
+                    echo "$py_cmd"
+                    return 0
+                fi
+            fi
+        done
+        
+        return 1
+    else
+        # Linux/Mac: use standard python3
+        if command_exists python3.14; then
+            echo "$(command -v python3.14)"
+        elif command_exists python3.13; then
+            echo "$(command -v python3.13)"
+        elif command_exists python3.12; then
+            echo "$(command -v python3.12)"
+        elif command_exists python3.11; then
+            echo "$(command -v python3.11)"
+        elif command_exists python3; then
+            echo "$(command -v python3)"
+        else
+            return 1
+        fi
+    fi
+}
+
 # 1. Python Installation Check
 echo "📦 Checking Python installation..."
-if command_exists python3.11; then
-    PYTHON_CMD="python3.11"
-elif command_exists python3; then
-    PYTHON_CMD="python3"
-elif command_exists python; then
-    PYTHON_CMD="python"
-else
-    echo "❌ Python not found. Please install Python 3.11+"
+PYTHON_CMD=$(find_python)
+
+if [[ -z "$PYTHON_CMD" ]]; then
+    echo "❌ Python 3.11+ not found. Please install from python.org"
+    if [[ "$OS" == "windows" ]]; then
+        echo "   Expected locations:"
+        echo "   - %LOCALAPPDATA%\\Programs\\Python\\Python314\\python.exe"
+        echo "   - %LOCALAPPDATA%\\Programs\\Python\\Python313\\python.exe"
+        echo "   - %LOCALAPPDATA%\\Programs\\Python\\Python312\\python.exe"
+        echo "   - %LOCALAPPDATA%\\Programs\\Python\\Python311\\python.exe"
+    fi
     exit 1
 fi
 
 echo "✅ Using Python: $PYTHON_CMD"
-$PYTHON_CMD --version
+"$PYTHON_CMD" --version
 
 # 2. Redis Installation Check
 echo "🔧 Checking Redis installation..."

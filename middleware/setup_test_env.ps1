@@ -9,17 +9,49 @@ function Test-CommandExists {
     return $?
 }
 
+# Function to find Python executable (excludes WindowsApps stub)
+function Get-PythonExecutable {
+    $pythonPaths = @(
+        "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe",
+        "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe",
+        "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe",
+        "$env:LOCALAPPDATA\Programs\Python\Python311\python.exe",
+        "$env:LOCALAPPDATA\Python\Python314\Scripts\python.exe",
+        "$env:LOCALAPPDATA\Python\Python313\Scripts\python.exe",
+        "$env:LOCALAPPDATA\Python\Python312\Scripts\python.exe",
+        "$env:LOCALAPPDATA\Python\Python311\Scripts\python.exe"
+    )
+    
+    foreach ($path in $pythonPaths) {
+        if (Test-Path $path) {
+            return $path
+        }
+    }
+    
+    # Fallback: check PATH but exclude WindowsApps
+    $pythonCmd = Get-Command python, python3, python3.14, python3.13, python3.12, python3.11 -ErrorAction SilentlyContinue | 
+        Where-Object { $_.Source -notlike "*WindowsApps*" } | 
+        Select-Object -First 1
+    
+    if ($pythonCmd) {
+        return $pythonCmd.Source
+    }
+    
+    return $null
+}
+
 # 1. Python Installation Check
 Write-Host "📦 Checking Python installation..." -ForegroundColor Yellow
 
-if (Test-CommandExists "python3.11") {
-    $PYTHON_CMD = "python3.11"
-} elseif (Test-CommandExists "python3") {
-    $PYTHON_CMD = "python3"
-} elseif (Test-CommandExists "python") {
-    $PYTHON_CMD = "python"
-} else {
-    Write-Host "❌ Python not found. Please install Python 3.11+ from python.org" -ForegroundColor Red
+$PYTHON_CMD = Get-PythonExecutable
+
+if (-not $PYTHON_CMD) {
+    Write-Host "❌ Python 3.11+ not found. Please install from python.org or Microsoft Store" -ForegroundColor Red
+    Write-Host "   Expected locations:" -ForegroundColor Yellow
+    Write-Host "   - %LOCALAPPDATA%\Programs\Python\Python314\python.exe" -ForegroundColor Gray
+    Write-Host "   - %LOCALAPPDATA%\Programs\Python\Python313\python.exe" -ForegroundColor Gray
+    Write-Host "   - %LOCALAPPDATA%\Programs\Python\Python312\python.exe" -ForegroundColor Gray
+    Write-Host "   - %LOCALAPPDATA%\Programs\Python\Python311\python.exe" -ForegroundColor Gray
     exit 1
 }
 

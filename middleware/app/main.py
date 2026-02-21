@@ -7,6 +7,9 @@ from fastapi.staticfiles import StaticFiles
 from starlette.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 from starlette.responses import JSONResponse, RedirectResponse
 
+# Environment variables are loaded from .env in project root by uvicorn
+# or set explicitly in shell before running
+
 from .config import get_settings
 from .db import init_db
 from .admin_api import router as admin_router, public_router as public_router

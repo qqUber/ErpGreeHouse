@@ -142,6 +142,13 @@ def require_admin_token_or_env(x_admin_secret: str | None) -> dict[str, Any]:
     return admin
 
 
+def require_roles(x_admin_secret: str | None, roles: tuple[str, ...]) -> None:
+    """Require that the user has one of the specified roles. Raises HTTPException if not authorized."""
+    admin = require_admin_token_or_env(x_admin_secret)
+    if admin.get("role") not in roles:
+        raise HTTPException(status_code=403, detail=f"Insufficient permissions. Required one of: {roles}")
+
+
 class LoginIn(BaseModel):
     username: str = Field(min_length=1, max_length=80)
     password: str = Field(min_length=1, max_length=200)

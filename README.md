@@ -1,11 +1,59 @@
 # 🚀 Telegram CRM MVP + ERPNext Loyalty Integration
 
-> **Modern Customer Relationship Management System with Telegram Integration and ERPNext Loyalty Program**
+> **Modern Customer Relationship Management System with Telegram Integration and Loyalty Program**
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
-[![aiogram](https://img.shields.io/badge/aiogram-3.13+-blue.svg)](https://docs.aiogram.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.129+-green.svg)](https://fastapi.tiangolo.com/)
+[![aiogram](https://img.shields.io/badge/aiogram-3.25+-blue.svg)](https://docs.aiogram.dev/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+---
+
+## ⚡ Быстрый старт (Разработка)
+
+### 1. Подготовка
+
+```bash
+# Backend
+cd middleware
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+# source .venv/bin/activate  # Linux/Mac
+pip install -r requirements.txt
+
+# Frontend
+cd ../admin-ui
+npm install
+```
+
+### 2. Запуск
+
+```bash
+# Terminal 1 - Backend (порт 8000)
+cd middleware
+.\.venv\Scripts\activate
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Terminal 2 - Frontend (сборка)
+cd admin-ui
+npm run build
+# Frontend будет доступен на http://localhost:8000/admin/
+```
+
+### 3. Доступ
+
+- **Admin UI**: http://localhost:8000/admin/
+- **API Docs**: http://localhost:8000/docs
+- **Login**: admin / admin
+
+### 4. Тесты
+
+```bash
+cd middleware
+.\.venv\Scripts\activate
+pip install pytest pytest-asyncio pytest-cov
+python -m pytest tests/unit/ -v
+```
 
 ---
 

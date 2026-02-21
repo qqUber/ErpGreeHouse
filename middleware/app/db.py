@@ -205,5 +205,11 @@ def init_db() -> None:
         if "disabled" not in admin_cols:
             conn.execute("ALTER TABLE admin_users ADD COLUMN disabled INTEGER NOT NULL DEFAULT 0")
             conn.commit()
+        if "password_salt" not in admin_cols:
+            conn.execute("ALTER TABLE admin_users ADD COLUMN password_salt TEXT NOT NULL DEFAULT ''")
+            conn.commit()
+        if "password_iter" not in admin_cols:
+            conn.execute("ALTER TABLE admin_users ADD COLUMN password_iter INTEGER NOT NULL DEFAULT 200000")
+            conn.commit()
     finally:
         conn.close()

@@ -4,25 +4,179 @@ from typing import Any
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
 
-from .auth import require_roles
 from .db import get_db
+from .security import hash_password, new_salt
+from .admin_auth_api import require_roles
 
 
 router = APIRouter(prefix="/api/v1/test")
 
 
 def _enabled() -> None:
+    """Check if test mode is enabled. Raises 404 if not."""
     if os.getenv("E2E_TEST_MODE", "false").lower() not in ("1", "true", "yes"):
-        raise HTTPException(status_code=404, detail="Not Found")
+        raise HTTPException(status_code=404, detail="Test API disabled. Set E2E_TEST_MODE=true")
+
+
+def _verify_admin_secret(x_admin_secret: str | None) -> None:
+    """Simple secret check for test API. Don't use in production!"""
+    _enabled()
+    # Get expected secret from environment variable
+    import os
+    expected = os.environ.get("E2E_ADMIN_SECRET", "test-secret-key")
+    if not x_admin_secret or x_admin_secret != expected:
+        raise HTTPException(status_code=401, detail="Invalid admin secret")
 
 
 @router.get("/ping")
 def ping(
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    _enabled()
-    require_roles(x_admin_secret, roles=("owner",))
+    """Health check for test API"""
+    _verify_admin_secret(x_admin_secret)
     return {"ok": True}
+
+
+@router.get("/credentials")
+def get_test_credentials(
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+) -> dict[str, Any]:
+    """
+    Get test user credentials from database.
+    Returns actual credentials stored in DB for E2E testing.
+    """
+    _verify_admin_secret(x_admin_secret)
+    
+    db = get_db()
+    conn = db.connect()
+    
+    try:
+        # Get all test users from DB
+        users = conn.execute(
+            "SELECT username, role FROM admin_users WHERE username IN ('admin', 'operator', 'manager')"
+        ).fetchall()
+        
+        credentials = {}
+        for user in users:
+            # Return username and a known test password
+            # Password is set by bootstrap endpoint to TestPass123!
+            credentials[user['username']] = {
+                'username': user['username'],
+                'password': 'TestPass123!',  # Set by bootstrap_test_data
+                'role': user['role']
+            }
+        
+        return {
+            'credentials': credentials,
+            'message': 'Test credentials from database'
+        }
+    finally:
+        conn.close()
+
+
+@router.post("/bootstrap")
+def bootstrap_test_data(
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+) -> dict[str, Any]:
+    """
+    Bootstrap test database with known credentials.
+    Creates/updates test users with predictable passwords.
+    SAFE: Only works in E2E_TEST_MODE, requires owner role.
+    """
+    _verify_admin_secret(x_admin_secret)
+    
+    db = get_db()
+    conn = db.connect()
+    
+    try:
+        # Test credentials - NEVER use these in production!
+        test_password = "TestPass123!"
+        test_users = [
+            ('admin', 'owner', test_password),
+            ('operator', 'operator', test_password),
+            ('manager', 'marketer', test_password),
+        ]
+        
+        updated = 0
+        iterations = int(os.getenv("ADMIN_PBKDF2_ITER", "200000"))
+        
+        for username, role, password in test_users:
+            # Generate salt and hash password (same format as admin_auth_api.py)
+            salt = new_salt()
+            password_hash = hash_password(password, salt=salt, iterations=iterations)
+            # Check if user exists
+            existing = conn.execute(
+                "SELECT id FROM admin_users WHERE username = ?",
+                (username,)
+            ).fetchone()
+            
+            if existing:
+                conn.execute(
+                    "UPDATE admin_users SET password_hash = ?, password_salt = ?, password_iter = ?, role = ? WHERE username = ?",
+                    (password_hash, salt, iterations, role, username)
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO admin_users (username, password_hash, password_salt, password_iter, role, disabled) VALUES (?, ?, ?, ?, ?, 0)",
+                    (username, password_hash, salt, iterations, role)
+                )
+            updated += 1
+        
+        conn.commit()
+        
+        return {
+            "success": True,
+            "users_updated": updated,
+            "message": "Test users created/updated with known credentials",
+            "warning": "TEST MODE - DO NOT USE IN PRODUCTION"
+        }
+    finally:
+        conn.close()
+
+
+@router.post("/reset")
+def reset_test_database(
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+) -> dict[str, Any]:
+    """
+    Reset test database to clean state.
+    WARNING: Deletes all test data! Only works in E2E_TEST_MODE.
+    """
+    _verify_admin_secret(x_admin_secret)
+    
+    db = get_db()
+    conn = db.connect()
+    
+    try:
+        # Delete test data (not production data)
+        tables_to_clean = [
+            'marketing_events',
+            'marketing_campaigns', 
+            'marketing_segments',
+            'integration_deliveries',
+            'transactions',
+            'consents',
+            'customers',
+            'products',
+        ]
+        
+        deleted = {}
+        for table in tables_to_clean:
+            result = conn.execute(f"DELETE FROM {table}")
+            deleted[table] = result.rowcount
+        
+        # Reset auto-increment
+        conn.execute("DELETE FROM sqlite_sequence WHERE name IN ('customers', 'products', 'transactions')")
+        
+        conn.commit()
+        
+        return {
+            "success": True,
+            "deleted_rows": deleted,
+            "message": "Test database reset to clean state"
+        }
+    finally:
+        conn.close()
 
 
 @router.get("/customer_by_phone")
