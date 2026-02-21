@@ -108,4 +108,4 @@ jobs:
 
       - name: compose config validate
         run: |
-          docker compose -f docker-compose.yml config >/dev/null
+          docker compose -f prod/docker-compose.yml config >/dev/null
