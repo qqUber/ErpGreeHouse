@@ -19,7 +19,6 @@ build/
 
 .env
 .env.*
-!.env.qwen.example
 
 node_modules/
 admin-ui/test-results/

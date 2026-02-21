@@ -69,7 +69,7 @@ services:
       retries: 3
 
   redis-cache:
-    image: redis:7-alpine
+    image: redis:8-alpine
     restart: always
     command: ["redis-server", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000"]
     volumes:
@@ -83,7 +83,7 @@ services:
       retries: 3
 
   redis-queue:
-    image: redis:7-alpine
+    image: redis:8-alpine
     restart: always
     command: ["redis-server", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000"]
     volumes:
@@ -97,7 +97,7 @@ services:
       retries: 3
 
   redis-socketio:
-    image: redis:7-alpine
+    image: redis:8-alpine
     restart: always
     networks:
       - erp_net
