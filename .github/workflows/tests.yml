@@ -16,15 +16,10 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
-    services:
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
     steps:
       - uses: actions/checkout@v4
       
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -53,14 +48,14 @@ jobs:
           REDIS_URL: 'redis://localhost:6379/1'
       
       - name: Upload unit test report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: unit-test-report
           path: middleware/reports/unit_report.html
       
       - name: Upload coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           file: ./middleware/reports/coverage.xml
           flags: unittests
@@ -80,7 +75,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -107,7 +102,7 @@ jobs:
           DATABASE_URL: 'sqlite:///test_telegram_crm.db'
       
       - name: Upload integration test report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: integration-test-report
@@ -123,7 +118,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -145,7 +140,7 @@ jobs:
           safety check --json --output reports/safety_report.json || true
       
       - name: Upload security reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: security-reports
@@ -202,7 +197,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - uses: actions/setup-node@v4
         with:
@@ -241,7 +236,7 @@ jobs:
     
     steps:
       - name: Download all reports
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: reports
       
