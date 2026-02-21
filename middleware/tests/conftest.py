@@ -17,6 +17,22 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 from typing import Generator, Dict, Any
 
+# ---------------------------------------------------------------------------
+# 1. Stub out aiogram & celery BEFORE any app module is imported.
+#    This must happen at module (collection) time, not inside fixtures.
+# ---------------------------------------------------------------------------
+_aiogram_mock = MagicMock()
+_aiogram_types_mock = MagicMock()
+_celery_mock = MagicMock()
+
+for _mod in [
+    "aiogram", "aiogram.types", "aiogram.filters", "aiogram.fsm",
+    "aiogram.fsm.context", "aiogram.fsm.storage", "aiogram.fsm.storage.redis",
+    "aiogram.utils", "aiogram.utils.keyboard",
+    "celery", "celery.app",
+]:
+    sys.modules.setdefault(_mod, MagicMock())
+
 # Add app to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
