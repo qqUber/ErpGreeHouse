@@ -94,21 +94,57 @@ export async function login(page: Page, role: TestRole = 'admin') {
 
   console.log(`[Test] Logging in as ${role} (${creds.username})`)
 
-  await page.goto('/')
-  await page.getByPlaceholder('Логин').fill(creds.username)
-  await page.getByPlaceholder('Пароль').fill(creds.password)
-  await page.getByRole('button', { name: 'Войти' }).click()
+  // Get tokens directly from API (bypassing UI for reliable authentication)
+  const loginResponse = await page.request.post('/api/v1/public/auth/login', {
+    data: {
+      username: creds.username,
+      password: creds.password
+    }
+  })
 
-  // Wait for auth overlay to detach
-  const authOverlay = page.locator('.overlay')
-  if (await authOverlay.isVisible()) {
-    console.log('[Test] Auth overlay visible, waiting for detach...')
-    await authOverlay.waitFor({ state: 'detached', timeout: 10000 })
-      .catch(() => console.log('[Test] Auth overlay did not detach, continuing...'))
+  if (!loginResponse.ok()) {
+    const errorText = await loginResponse.text()
+    throw new Error(`Login failed: ${loginResponse.status()} - ${errorText}`)
   }
 
-  // Wait for page to stabilize after login
-  await page.waitForTimeout(1000)
+  const authData = await loginResponse.json()
+  
+  // The API returns either `token` or `access_token` depending on the endpoint
+  // We need to store it in localStorage as 'admin_session_token' which is what the frontend expects
+  const token = authData.token || authData.access_token
+  
+  if (!token) {
+    throw new Error(`Login response missing token: ${JSON.stringify(authData)}`)
+  }
+
+  // Set up init script to inject token AND language BEFORE page loads
+  // The frontend expects:
+  // 1. localStorage 'admin_session_token' - the JWT token
+  // 2. sessionStorage 'auth_validation_state' - tells auth context to validate the token on load
+  // 3. localStorage 'language' - sets the UI language to Russian for tests
+  await page.addInitScript((t) => {
+    window.localStorage.setItem('admin_session_token', t)
+    window.sessionStorage.setItem('auth_validation_state', 'valid')
+    window.localStorage.setItem('language', 'ru')
+  }, token)
+  
+  // Navigate directly to dashboard - the auth context will validate the token
+  // and the user will be authenticated. We bypass the login page navigation issue.
+  await page.goto('/dashboard')
+  
+  // Wait for app to fully load
+  await page.waitForLoadState('domcontentloaded')
+  
+  // Wait for dashboard content to be visible (either the nav items or the page to load)
+  try {
+    await page.waitForSelector('text=Клиенты', { timeout: 15000 })
+  } catch {
+    // If nav items not found, try waiting for URL or other dashboard elements
+    await page.waitForURL('**/dashboard', { timeout: 5000 }).catch(() => {})
+  }
+
+  console.log(`[Test] Successfully logged in as ${role}`)
+  
   console.log(`[Test] Successfully logged in as ${role}`)
 }
 

@@ -1,5 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { AdminMe, Api, CustomerDetails, CustomerListItem, Dashboard, Integration, IntegrationDelivery, IntegrationTemplate, SalesStats, getAdminSecret, setAdminSecret } from './api'
+import { useAuth } from './stores/auth'
+import { IntegrationSettings } from './components/IntegrationSettings'
+import { ProductImport } from './components/ProductImport'
+import { LanguageSwitcher } from './components/LanguageSwitcher'
 
 type Tab = 'dashboard' | 'customers' | 'pos' | 'integrations' | 'products' | 'settings' | 'marketing'
 
@@ -40,6 +45,10 @@ function money(n: number) {
 }
 
 function App() {
+  // Use auth context for authentication state
+  const { t } = useTranslation()
+  const { isAuthenticated, isLoading: authLoading, user, mustChangePassword: authMustChangePassword, login: authLogin, logout: authLogout, setUser: setAuthUser, validateToken } = useAuth()
+  
   const [tab, setTab] = useState<Tab>('dashboard')
   const [dash, setDash] = useState<Dashboard | null>(null)
   const [customers, setCustomers] = useState<CustomerListItem[]>([])
@@ -73,17 +82,54 @@ function App() {
   const [selectedIntegrationId, setSelectedIntegrationId] = useState<number | null>(null)
   const [integrationDeliveries, setIntegrationDeliveries] = useState<IntegrationDelivery[]>([])
   const [integrationsBusy, setIntegrationsBusy] = useState(false)
+  const [integrationSubTab, setIntegrationSubTab] = useState<'settings' | 'webhooks'>('settings')
   const [me, setMe] = useState<AdminMe | null>(null)
   const [products, setProducts] = useState<Array<{ id: number; code: string; name: string; kind: string; price: number; active: boolean }>>([])
+  const [showProductImport, setShowProductImport] = useState(false)
   const [optimisticReady, setOptimisticReady] = useState(false) // Оптимистичный UI
 
-  console.log(`[App] Render. LoginMode=${loginMode} Username=${username} PasswordLen=${password.length} Notice=${notice ? JSON.stringify(notice) : 'null'}`)
+  // Use auth context values
+  const effectiveAuthReady = !authLoading && (isAuthenticated || authReady)
+  const effectiveMe = user || me
+  const effectiveMustChangePassword = authMustChangePassword || mustChangePassword
+
+  console.log(`[App] Render. LoginMode=${loginMode} Username=${username} PasswordLen=${password.length} Notice=${notice ? JSON.stringify(notice) : 'null'} AuthLoading=${authLoading} IsAuth=${isAuthenticated}`)
+
+  // Session restoration: check auth context on mount
+  useEffect(() => {
+    console.log('[App] Auth context check:', { authLoading, isAuthenticated, user: !!user })
+    if (!authLoading) {
+      if (isAuthenticated && user) {
+        console.log('[App] Session restored from JWT cookies')
+        setMe(user)
+        setAuthReady(true)
+        setOptimisticReady(true)
+      } else {
+        console.log('[App] No valid session, showing login')
+        setAuthReady(false)
+        setOptimisticReady(true)
+      }
+    }
+  }, [authLoading, isAuthenticated, user])
 
   const selected = useMemo(() => customers.find(c => c.id === selectedId) || null, [customers, selectedId])
   const selectedIntegration = useMemo(
     () => integrations.find(i => i.id === selectedIntegrationId) || null,
     [integrations, selectedIntegrationId]
   )
+
+  // Navigation function for deep linking
+  function navigateTo(tabName: string, params?: Record<string, string | number>) {
+    let hash = `#${tabName}`
+    if (params) {
+      const searchParams = new URLSearchParams()
+      Object.entries(params).forEach(([key, value]) => {
+        searchParams.set(key, String(value))
+      })
+      hash += `?${searchParams.toString()}`
+    }
+    window.location.hash = hash
+  }
 
   function clipMessage(s: string) {
     const t = String(s || '').replace(/\s+/g, ' ').trim()
@@ -231,6 +277,55 @@ function App() {
     }
   }, [selectedId, authReady])
 
+  // Hash-based navigation handler
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1) // Remove leading '#'
+      if (!hash) return
+      
+      const [tabName, queryString] = hash.split('?')
+      const params = new URLSearchParams(queryString || '')
+      
+      // Map hash to tab
+      const tabMap: Record<string, Tab> = {
+        'dashboard': 'dashboard',
+        'customers': 'customers',
+        'pos': 'pos',
+        'integrations': 'integrations',
+        'products': 'products',
+        'settings': 'settings',
+        'marketing': 'marketing'
+      }
+      
+      if (tabMap[tabName]) {
+        setTab(tabMap[tabName])
+      }
+      
+      // Handle query parameters
+      const customerId = params.get('customer')
+      if (customerId) {
+        const id = parseInt(customerId, 10)
+        if (!isNaN(id)) {
+          setSelectedId(id)
+        }
+      }
+      
+      const orderId = params.get('order')
+      if (orderId) {
+        // For now, just show in notification - could navigate to order details
+        console.log('Order ID:', orderId)
+      }
+    }
+    
+    // Handle initial hash
+    if (window.location.hash) {
+      handleHashChange()
+    }
+    
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
   useEffect(() => {
     if (!authReady) return
     if (tab === 'integrations') {
@@ -316,16 +411,17 @@ function App() {
       markAuthStepDone(0)
 
       setAuthStep(1, 'Проверка учетных данных...')
-      const res = await Api.login(username.trim(), password, signal)
-      setMustChangePassword(Boolean(res.must_change_password))
+      // Use auth context login which handles JWT cookies automatically
+      await authLogin(username.trim(), password)
+      setMustChangePassword(authMustChangePassword)
       setPassword('')
-      setAdminSecret(res.token)
+      // Note: JWT tokens are in httpOnly cookies, no need to setAdminSecret
       markAuthStepDone(1)
 
       setAuthStep(2, 'Создание сессии...')
       await bootstrap()
       markAuthStepDone(2)
-      if (res.must_change_password) {
+      if (authMustChangePassword || mustChangePassword) {
         setTab('settings')
       }
       showNotice('ok', 'Вход выполнен.')
@@ -407,7 +503,8 @@ function App() {
   async function doLogout() {
     setError(null)
     try {
-      await Api.logout()
+      // Use auth context logout which clears JWT cookies automatically
+      await authLogout()
     } catch {
     } finally {
       setAdminSecret('')
@@ -421,11 +518,15 @@ function App() {
   }
 
   const allowedTabs: Tab[] = useMemo(() => {
-    if (!authReady) return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings']
-    const role = String(me?.role || '').toLowerCase()
+    if (!effectiveAuthReady) return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings']
+    const effectiveUser = user || me
+    // If authenticated but user data not yet loaded, show all tabs temporarily
+    // This prevents race condition where effectiveAuthReady=true but me is still null
+    if (!effectiveUser) return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings']
+    const role = String(effectiveUser?.role || '').toLowerCase()
     if (role === 'owner') return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings']
 
-    const perms = new Set(me?.permissions || [])
+    const perms = new Set(effectiveUser?.permissions || [])
     // If user has '*' permission, they see everything (though owner check above covers this usually)
     if (perms.has('*')) return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings']
 
@@ -439,17 +540,17 @@ function App() {
     tabs.push('settings')
 
     return tabs
-  }, [authReady, me?.role, me?.permissions])
+  }, [effectiveAuthReady, user, me?.role, me?.permissions])
 
   const safeTab: Tab = useMemo(() => {
-    if (!authReady) return tab
+    if (!effectiveAuthReady) return tab
     return allowedTabs.includes(tab) ? tab : allowedTabs[0] || 'dashboard'
-  }, [tab, authReady, allowedTabs])
+  }, [tab, effectiveAuthReady, allowedTabs])
 
   useEffect(() => {
-    if (!authReady) return
+    if (!effectiveAuthReady) return
     if (tab !== safeTab) setTab(safeTab)
-  }, [safeTab, tab, authReady])
+  }, [safeTab, tab, effectiveAuthReady])
 
   return (
     <div className="container">
@@ -459,25 +560,26 @@ function App() {
         </div>
         <div className="tabs">
           {allowedTabs.includes('dashboard') ? (
-            <div className={`tab ${safeTab === 'dashboard' ? 'tabActive' : ''}`} onClick={() => setTab('dashboard')}>Сводка</div>
+            <div className={`tab ${safeTab === 'dashboard' ? 'tabActive' : ''}`} onClick={() => setTab('dashboard')}>{t('menu.dashboard')}</div>
           ) : null}
           {allowedTabs.includes('customers') ? (
-            <div className={`tab ${safeTab === 'customers' ? 'tabActive' : ''}`} onClick={() => setTab('customers')}>Клиенты</div>
+            <div className={`tab ${safeTab === 'customers' ? 'tabActive' : ''}`} onClick={() => setTab('customers')}>{t('menu.clients')}</div>
           ) : null}
           {allowedTabs.includes('pos') ? (
-            <div className={`tab ${safeTab === 'pos' ? 'tabActive' : ''}`} onClick={() => setTab('pos')}>Операции</div>
+            <div className={`tab ${safeTab === 'pos' ? 'tabActive' : ''}`} onClick={() => setTab('pos')}>{t('sales.title')}</div>
           ) : null}
           {allowedTabs.includes('integrations') ? (
-            <div className={`tab ${safeTab === 'integrations' ? 'tabActive' : ''}`} onClick={() => setTab('integrations')}>Интеграции</div>
+            <div className={`tab ${safeTab === 'integrations' ? 'tabActive' : ''}`} onClick={() => setTab('integrations')}>{t('menu.integrations')}</div>
           ) : null}
           {allowedTabs.includes('products') ? (
-            <div className={`tab ${safeTab === 'products' ? 'tabActive' : ''}`} onClick={() => setTab('products')}>Товары</div>
+            <div className={`tab ${safeTab === 'products' ? 'tabActive' : ''}`} onClick={() => setTab('products')}>{t('menu.products')}</div>
           ) : null}
           {allowedTabs.includes('settings') ? (
-            <div className={`tab ${safeTab === 'settings' ? 'tabActive' : ''}`} onClick={() => setTab('settings')}>Настройки</div>
+            <div className={`tab ${safeTab === 'settings' ? 'tabActive' : ''}`} onClick={() => setTab('settings')}>{t('menu.settings')}</div>
           ) : null}
         </div>
         {authReady ? <div className="pill">Роль: {roleLabel(me?.role || '')}</div> : null}
+        <LanguageSwitcher />
       </div>
 
       {notice ? (
@@ -601,7 +703,7 @@ function App() {
         </div>
       ) : null}
 
-      {optimisticReady && safeTab === 'dashboard' ? <DashboardView dash={dash} reload={() => loadDashboard()} /> : null}
+      {optimisticReady && safeTab === 'dashboard' ? <DashboardView dash={dash} reload={() => loadDashboard()} onNavigate={navigateTo} /> : null}
       {optimisticReady && safeTab === 'customers' ? (
         <CustomersView
           q={q}
@@ -628,36 +730,59 @@ function App() {
         />
       ) : null}
       {optimisticReady && safeTab === 'integrations' ? (
-        <IntegrationsView
-          items={integrations}
-          templates={integrationTemplates}
-          busy={integrationsBusy}
-          selected={selectedIntegration}
-          deliveries={integrationDeliveries}
-          select={id => setSelectedIntegrationId(id)}
-          reload={() => loadIntegrations()}
-          create={async p => {
-            await Api.createIntegration(p)
-            await loadIntegrations()
-          }}
-          update={async (id, p) => {
-            await Api.updateIntegration(id, p)
-            await loadIntegrations()
-          }}
-          rotate={async id => {
-            await Api.rotateIntegrationSecret(id)
-            await loadIntegrations()
-            setSelectedIntegrationId(id)
-          }}
-          remove={async id => {
-            await Api.deleteIntegration(id)
-            setSelectedIntegrationId(null)
-            await loadIntegrations()
-          }}
-          refreshDeliveries={async id => {
-            await loadDeliveries(id)
-          }}
-        />
+        <div className="grid">
+          <div className="card cardWide">
+            <div className="tabs" style={{ marginBottom: 15 }}>
+              <div
+                className={`tab ${integrationSubTab === 'settings' ? 'tabActive' : ''}`}
+                onClick={() => setIntegrationSubTab('settings')}
+              >
+                Настройки ботов
+              </div>
+              <div
+                className={`tab ${integrationSubTab === 'webhooks' ? 'tabActive' : ''}`}
+                onClick={() => setIntegrationSubTab('webhooks')}
+              >
+                Подключения
+              </div>
+            </div>
+            
+            {integrationSubTab === 'settings' ? (
+              <IntegrationSettings />
+            ) : (
+              <IntegrationsView
+                items={integrations}
+                templates={integrationTemplates}
+                busy={integrationsBusy}
+                selected={selectedIntegration}
+                deliveries={integrationDeliveries}
+                select={id => setSelectedIntegrationId(id)}
+                reload={() => loadIntegrations()}
+                create={async p => {
+                  await Api.createIntegration(p)
+                  await loadIntegrations()
+                }}
+                update={async (id, p) => {
+                  await Api.updateIntegration(id, p)
+                  await loadIntegrations()
+                }}
+                rotate={async id => {
+                  await Api.rotateIntegrationSecret(id)
+                  await loadIntegrations()
+                  setSelectedIntegrationId(id)
+                }}
+                remove={async id => {
+                  await Api.deleteIntegration(id)
+                  setSelectedIntegrationId(null)
+                  await loadIntegrations()
+                }}
+                refreshDeliveries={async id => {
+                  await loadDeliveries(id)
+                }}
+              />
+            )}
+          </div>
+        </div>
       ) : null}
       {optimisticReady && safeTab === 'products' ? (
         <ProductsView
@@ -668,6 +793,7 @@ function App() {
             await Api.createProduct(p)
             await loadProducts()
           }}
+          setShowProductImport={setShowProductImport}
         />
       ) : null}
       {optimisticReady && safeTab === 'settings' ? (
@@ -862,7 +988,7 @@ function SalesTrend() {
   )
 }
 
-function DashboardView({ dash, reload }: { dash: Dashboard | null; reload: () => Promise<void> }) {
+function DashboardView({ dash, reload, onNavigate }: { dash: Dashboard | null; reload: () => Promise<void>; onNavigate: (tab: string, params?: Record<string, string | number>) => void }) {
   return (
     <div className="grid">
       <div className="card">
@@ -894,8 +1020,28 @@ function DashboardView({ dash, reload }: { dash: Dashboard | null; reload: () =>
           {dash?.recent_activity.transactions.map(tx => (
             <div key={tx.id} className="activity-item">
               <div>
-                <div style={{ fontWeight: 600 }}>#{tx.id}</div>
+                <div 
+                  style={{ fontWeight: 600, cursor: 'pointer', color: 'var(--primary)' }} 
+                  onClick={() => onNavigate('customers', { customer: tx.customer_id })}
+                  title="Открыть заказ"
+                >
+                  #{tx.id}
+                </div>
                 <div style={{ fontSize: 11, color: 'var(--muted)' }}>{new Date(tx.created_at).toLocaleTimeString()}</div>
+                <div 
+                  style={{ fontSize: 12, cursor: 'pointer', color: 'var(--primary)', textDecoration: 'underline' }}
+                  onClick={() => onNavigate('customers', { customer: tx.customer_id })}
+                  title="Открыть профиль клиента"
+                >
+                  {tx.customer_name || 'Клиент'}
+                </div>
+                <div 
+                  style={{ fontSize: 11, cursor: 'pointer', color: 'var(--muted)' }}
+                  onClick={() => onNavigate('products', { product: tx.id })}
+                  title="Открыть товар"
+                >
+                  {tx.product_names || 'Товары'}
+                </div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontWeight: 700 }}>{money(tx.total_amount)} ₽</div>
@@ -1103,12 +1249,20 @@ function CustomersView(props: {
               <div style={{ color: '#047857', marginBottom: 10 }}>{notice}</div>
             )}
 
-            <div style={{ marginTop: 10, fontWeight: 800 }}>История операций</div>
+            <div style={{ marginTop: 10, fontWeight: 800 }}>
+              История операций
+              {details.transactions.length > 0 && (
+                <span style={{ fontWeight: 400, color: 'var(--muted)', marginLeft: 8 }}>
+                  ({details.transactions.length} {details.transactions.length === 1 ? 'покупка' : details.transactions.length < 5 ? 'покупки' : 'покупок'})
+                </span>
+              )}
+            </div>
             <table className="table" style={{ marginTop: 8 }}>
               <thead>
                 <tr>
                   <th>ID</th>
                   <th>Дата</th>
+                  <th>Товары</th>
                   <th>Сумма</th>
                   <th>Списано</th>
                   <th>Начислено</th>
@@ -1118,8 +1272,21 @@ function CustomersView(props: {
               <tbody>
                 {details.transactions.map(t => (
                   <tr key={t.id}>
-                    <td>{t.id}</td>
+                    <td>
+                      <a 
+                        href={`#orders?order=${t.id}`}
+                        style={{ cursor: 'pointer', color: 'var(--primary)', textDecoration: 'underline' }}
+                        title="Открыть детали заказа"
+                      >
+                        #{t.id}
+                      </a>
+                    </td>
                     <td>{t.created_at}</td>
+                    <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {t.items && t.items.length > 0 
+                        ? t.items.map(i => i.name).join(', ')
+                        : '—'}
+                    </td>
                     <td>{money(t.total_amount)} ₽</td>
                     <td>{t.bonus_used}</td>
                     <td>{t.bonus_earned}</td>
@@ -1142,8 +1309,9 @@ function ProductsView(props: {
   reload: () => Promise<void>
   canEdit: boolean
   create: (p: { code: string; name: string; kind: string; price: number; active: boolean }) => Promise<void>
+  setShowProductImport?: (show: boolean) => void
 }) {
-  const { items, reload, canEdit, create } = props
+  const { items, reload, canEdit, create, setShowProductImport } = props
   const [code, setCode] = useState('')
   const [name, setName] = useState('')
   const [kind, setKind] = useState('goods')
@@ -1177,6 +1345,9 @@ function ProductsView(props: {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn" onClick={() => void reload()} disabled={busy}>Обновить</button>
+            {canEdit && (
+              <button className="btn btnPrimary" onClick={() => setShowProductImport?.(true)}>Импорт</button>
+            )}
           </div>
         </div>
       </div>
