@@ -6,13 +6,38 @@ export type Dashboard = {
   bonus_used: number
   customers_total: number
   recent_activity: {
-    transactions: Array<{ id: number; created_at: string; total_amount: number; bonus_earned: number; bonus_used: number }>
+    transactions: Array<{
+      id: number
+      created_at: string
+      total_amount: number
+      bonus_earned: number
+      bonus_used: number
+      customer_id: number
+      customer_name: string
+      product_names: string
+    }>
     marketing_events: Array<{ id: number; created_at: string; status: string; trigger_name: string }>
   }
 }
 
 export type SalesStats = {
   stats: Array<{ day: string; cnt: number; total: number }>
+}
+
+export type SalesByDay = {
+  sales_by_day: Array<{ date: string; transactions_count: number; total_amount: number; bonus_earned: number }>
+}
+
+export type TopProduct = {
+  top_products: Array<{ name: string; qty: number; revenue: number }>
+}
+
+export type CategoryDistribution = {
+  category_distribution: Array<{ name: string; qty: number; revenue: number }>
+}
+
+export type RecalculateAnalytics = {
+  recalculated: number
 }
 
 export type CustomerListItem = {
@@ -31,6 +56,9 @@ export type TransactionItem = {
   total_amount: number
   bonus_used: number
   bonus_earned: number
+  customer_id?: number
+  customer_name?: string
+  product_names?: string
   receipt_pdf_path?: string | null
   external_erp_ref?: string | null
   items: Array<{ code: string; name: string; price: number; qty: number }>
@@ -87,6 +115,27 @@ export type Product = {
   updated_at: string
 }
 
+export type ImportResult = {
+  total: number
+  created: number
+  updated: number
+  errors: string[]
+  preview: Array<{ name: string; sku: string; category: string; price: number }>
+}
+
+export type ImportPreview = {
+  headers: string[]
+  rows: Array<{
+    row: number | string
+    name: string
+    sku: string
+    category: string
+    price: string
+    description: string
+  }>
+  total_rows: number
+}
+
 export type AdminMe = {
   user_id: number
   username: string
@@ -135,6 +184,228 @@ export type MarketingTrigger = {
   created_at: string
 }
 
+// Request queue for token refresh
+let isRefreshing = false
+let pendingRequests: Array<() => void> = []
+
+// Event listener for aborting requests on navigation
+const AbortControllers = new Map<string, AbortController>()
+
+/**
+ * Process queued requests after token refresh
+ */
+function processQueue(success: boolean) {
+  pendingRequests.forEach((resolve) => {
+    resolve()
+  })
+  pendingRequests = []
+}
+
+/**
+ * Clear all pending requests (e.g., on logout or navigation)
+ */
+export function clearPendingRequests() {
+  AbortControllers.forEach((controller) => {
+    controller.abort()
+  })
+  AbortControllers.clear()
+  pendingRequests.forEach((resolve) => {
+    resolve()
+  })
+  pendingRequests = []
+}
+
+/**
+ * Abort a specific request by ID
+ */
+export function abortRequest(requestId: string) {
+  const controller = AbortControllers.get(requestId)
+  if (controller) {
+    controller.abort()
+    AbortControllers.delete(requestId)
+  }
+}
+
+/**
+ * Create an AbortController and track it
+ */
+function createTrackedAbortController(requestId: string): AbortController {
+  const controller = new AbortController()
+  AbortControllers.set(requestId, controller)
+  
+  // Clean up when aborted
+  controller.signal.addEventListener('abort', () => {
+    AbortControllers.delete(requestId)
+  })
+  
+  return controller
+}
+
+/**
+ * Fetch wrapper with auth interceptors - similar to Axios interceptors
+ * - Request interceptor: adds auth headers
+ * - Response interceptor: handles 401 errors and token refresh
+ */
+export async function fetchWithAuth(
+  url: string,
+  options: RequestInit & { requestId?: string } = {}
+): Promise<Response> {
+  const {
+    requestId,
+    ...fetchOptions
+  } = options
+  
+  // Generate request ID if not provided
+  const id = requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  
+  // Create abort controller for this request
+  let controller: AbortController | undefined
+  if (!fetchOptions.signal) {
+    controller = createTrackedAbortController(id)
+    fetchOptions.signal = controller.signal
+  }
+  
+  // Request interceptor: add auth headers
+  const headers: Record<string, string> = {
+    ...(fetchOptions.headers as Record<string, string> || {}),
+  }
+  const secret = getAdminSecret()
+  if (secret) {
+    headers['x-admin-secret'] = secret
+  }
+  if (!headers['content-type'] && !(fetchOptions.body instanceof FormData)) {
+    headers['content-type'] = 'application/json'
+  }
+  
+  // Ensure credentials are included for cookies
+  fetchOptions.credentials = fetchOptions.credentials || 'include'
+  fetchOptions.headers = headers
+  
+  const makeRequest = async (): Promise<Response> => {
+    const response = await fetch(`${baseUrl()}${url}`, fetchOptions)
+    
+    // Response interceptor: handle 401 errors
+    if (response.status === 401) {
+      console.log(`[fetchWithAuth] Received 401 for ${url}, attempting token refresh...`)
+      
+      // If already refreshing, queue this request
+      if (isRefreshing) {
+        console.log('[fetchWithAuth] Token refresh in progress, queuing request...')
+        return new Promise((resolve, reject) => {
+          pendingRequests.push(async () => {
+            try {
+              // Retry the request with new token
+              const retryResponse = await fetch(`${baseUrl()}${url}`, fetchOptions)
+              if (!retryResponse.ok) {
+                const error = await parseError(retryResponse)
+                reject(error)
+              } else {
+                resolve(retryResponse)
+              }
+            } catch (err) {
+              reject(err)
+            }
+          })
+        })
+      }
+      
+      // Start token refresh
+      isRefreshing = true
+      
+      try {
+        // Call refresh endpoint
+        const refreshResult = await refreshTokenInternal()
+        
+        if (refreshResult) {
+          console.log('[fetchWithAuth] Token refreshed successfully, retrying request...')
+          // Process queue with success
+          processQueue(true)
+          
+          // Retry the original request
+          const retryResponse = await fetch(`${baseUrl()}${url}`, fetchOptions)
+          
+          if (!retryResponse.ok) {
+            throw await parseError(retryResponse)
+          }
+          
+          return retryResponse
+        } else {
+          console.log('[fetchWithAuth] Token refresh failed, redirecting to login...')
+          processQueue(false)
+          // Redirect to login
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login'
+          }
+          throw new Error('Session expired. Please log in again.')
+        }
+      } catch (refreshError) {
+        console.log('[fetchWithAuth] Token refresh error:', refreshError)
+        processQueue(false)
+        // Redirect to login on refresh failure
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login'
+        }
+        throw refreshError
+      } finally {
+        isRefreshing = false
+      }
+    }
+    
+    return response
+  }
+  
+  try {
+    return await makeRequest()
+  } finally {
+    // Clean up abort controller reference
+    if (controller) {
+      AbortControllers.delete(id)
+    }
+  }
+}
+
+/**
+ * Internal refresh token function (used by interceptor)
+ */
+async function refreshTokenInternal(): Promise<boolean> {
+  try {
+    const response = await fetch(`${baseUrl()}/api/v1/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'content-type': 'application/json',
+      },
+    })
+    
+    if (response.ok) {
+      console.log('[fetchWithAuth] Refresh token successful')
+      return true
+    } else if (response.status === 401) {
+      console.log('[fetchWithAuth] Refresh token expired')
+      return false
+    } else {
+      console.log('[fetchWithAuth] Refresh token failed with status:', response.status)
+      return false
+    }
+  } catch (error) {
+    console.log('[fetchWithAuth] Refresh token network error:', error)
+    return false
+  }
+}
+
+/**
+ * Parse error response
+ */
+async function parseError(response: Response): Promise<Error> {
+  const text = await response.text()
+  let errorMsg = `HTTP ${response.status}`
+  try {
+    const j = JSON.parse(text)
+    if (j?.detail) errorMsg = String(j.detail)
+  } catch {}
+  return new Error(errorMsg)
+}
+
 function baseUrl() {
   return (import.meta as any).env.VITE_API_BASE_URL || ''
 }
@@ -171,7 +442,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   if (secret) headers['x-admin-secret'] = secret
   if (!headers['content-type'] && !(init?.body instanceof FormData)) headers['content-type'] = 'application/json'
 
-  const res = await fetch(`${baseUrl()}${path}`, {
+  const res = await fetchWithAuth(path, {
     ...init,
     headers,
     credentials: 'include'
@@ -206,7 +477,9 @@ export const Api = {
       signal
     }),
   login: (username: string, password: string, signal?: AbortSignal) =>
-    api<{ token: string; must_change_password: boolean }>('/api/v1/public/auth/login', { method: 'POST', body: JSON.stringify({ username, password }), signal }),
+    api<{ token: string; must_change_password: boolean; access_token?: string; refresh_token?: string }>('/api/v1/public/auth/login', { method: 'POST', body: JSON.stringify({ username, password }), signal }),
+  refreshToken: (signal?: AbortSignal) =>
+    api<{ access_token: string; refresh_token: string }>('/api/v1/auth/refresh', { method: 'POST', signal }),
   changePassword: (old_password: string, new_password: string, signal?: AbortSignal) =>
     api<{ changed: boolean }>('/api/v1/auth/change-password', { method: 'POST', body: JSON.stringify({ old_password, new_password }), signal }),
   logout: (signal?: AbortSignal) => api<{ logged_out: boolean }>('/api/v1/auth/logout', { method: 'POST', headers: {}, signal }),
@@ -245,8 +518,21 @@ export const Api = {
   importProducts: (file: File) => {
     const formData = new FormData()
     formData.append('file', file)
-    return api<{ processed: number; inserted: number; updated: number; errors: string[] }>('/api/v1/products/import', {
+    return api<ImportResult>('/api/v1/products/import/file', {
       method: 'POST',
+      body: formData
+    })
+  },
+  importProductsUrl: (url: string, format: 'json' | 'xml' = 'json') =>
+    api<ImportResult>('/api/v1/products/import/url', {
+      method: 'POST',
+      body: JSON.stringify({ url, format })
+    }),
+  previewProductsImport: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api<ImportPreview>('/api/v1/products/import/preview', {
+      method: 'GET',
       body: formData
     })
   },
@@ -267,5 +553,46 @@ export const Api = {
   marketingTriggers: () => api<{ items: MarketingTrigger[] }>('/api/v1/marketing/triggers'),
   createMarketingTrigger: (payload: { name: string; event_source: string; criteria: Record<string, any>; delay_hours: number; message_text: string }) =>
     api<{ id: number }>('/api/v1/marketing/triggers', { method: 'POST', body: JSON.stringify(payload) }),
-  salesStats: (days: number) => api<SalesStats>(`/api/v1/stats/sales?days=${days}`)
+  salesStats: (days: number) => api<SalesStats>(`/api/v1/stats/sales?days=${days}`),
+
+  // Analytics endpoints
+  salesByDay: (days: number = 30) => api<SalesByDay>(`/api/v1/analytics/sales-by-day?days=${days}`),
+  topProducts: (days: number = 30, limit: number = 10) => api<TopProduct>(`/api/v1/analytics/top-products?days=${days}&limit=${limit}`),
+  categoryDistribution: (days: number = 30) => api<CategoryDistribution>(`/api/v1/analytics/category-distribution?days=${days}`),
+  recalculateAnalytics: () => api<RecalculateAnalytics>('/api/v1/analytics/recalculate', { method: 'POST' }),
+
+  // Integration Settings API
+  getIntegrationsStatus: () => api<{ telegram: any; vk: any }>('/api/v1/admin/integrations/status'),
+  getTelegramStatus: () => api<{ enabled: boolean; configured: boolean; bot_token_set: boolean; config: any }>('/api/v1/admin/integrations/telegram/status'),
+  validateTelegramToken: (bot_token: string, enabled: boolean) =>
+    api<{ valid: boolean; bot_id?: number; bot_username?: string; bot_first_name?: string; error?: string }>('/api/v1/admin/integrations/telegram/validate', {
+      method: 'POST',
+      body: JSON.stringify({ bot_token, enabled })
+    }),
+  saveTelegramSettings: (bot_token: string, enabled: boolean) =>
+    api<{ saved: boolean }>('/api/v1/admin/integrations/telegram/save', {
+      method: 'POST',
+      body: JSON.stringify({ bot_token, enabled })
+    }),
+  setTelegramWebhook: (webhook_url?: string, secret?: string) =>
+    api<{ webhook_set: boolean; url: string; secret: string }>('/api/v1/admin/integrations/telegram/set_webhook', {
+      method: 'POST',
+      body: JSON.stringify({ webhook_url, secret })
+    }),
+  getVkStatus: () => api<{ enabled: boolean; configured: boolean; group_id: number | null; api_version: string }>('/api/v1/admin/integrations/vk/status'),
+  validateVkToken: (access_token: string, group_id: number, api_version: string, enabled: boolean) =>
+    api<{ valid: boolean; group_name?: string; group_id?: number; error?: string }>('/api/v1/admin/integrations/vk/validate', {
+      method: 'POST',
+      body: JSON.stringify({ access_token, group_id, api_version, enabled })
+    }),
+  saveVkSettings: (access_token: string, group_id: number, api_version: string, enabled: boolean) =>
+    api<{ saved: boolean }>('/api/v1/admin/integrations/vk/save', {
+      method: 'POST',
+      body: JSON.stringify({ access_token, group_id, api_version, enabled })
+    }),
+  setVkWebhook: (webhook_url?: string, secret?: string) =>
+    api<{ webhook_set: boolean; url: string; secret: string; note: string }>('/api/v1/admin/integrations/vk/set_webhook', {
+      method: 'POST',
+      body: JSON.stringify({ webhook_url, secret })
+    }),
 }
