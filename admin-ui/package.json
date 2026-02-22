@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "lint": "biome lint .",
+    "format": "biome format . --write",
+    "check": "biome check --write .",
+    "ci:check": "biome check .",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
@@ -15,11 +19,17 @@
   },
   "dependencies": {
     "@twa-dev/sdk": "^8.0.2",
+    "echarts": "^6.0.0",
+    "echarts-for-react": "^3.0.6",
+    "i18next": "^25.8.13",
+    "i18next-browser-languagedetector": "^8.2.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-i18next": "^16.5.4",
     "react-qr-code": "^2.0.18"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.4",
     "@playwright/test": "^1.58.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

@@ -1,0 +1,265 @@
+{
+  "description": "Date format expectations per locale for the ERP GreenHouse system",
+  "reference_date": "2024-01-15T14:30:00Z",
+  "formats": {
+    "ru": {
+      "locale_code": "ru-RU",
+      "display_name": "Русский",
+      "date_only": {
+        "format": "DD.MM.YYYY",
+        "example": "15.01.2024",
+        "placeholder": "ДД.ММ.ГГГГ"
+      },
+      "time_only": {
+        "format": "HH:mm",
+        "example": "14:30",
+        "placeholder": "ЧЧ:ММ",
+        "note": "24-hour format"
+      },
+      "datetime": {
+        "format": "DD.MM.YYYY HH:mm",
+        "example": "15.01.2024 14:30",
+        "placeholder": "ДД.ММ.ГГГГ ЧЧ:ММ"
+      },
+      "datetime_with_seconds": {
+        "format": "DD.MM.YYYY HH:mm:ss",
+        "example": "15.01.2024 14:30:00",
+        "placeholder": "ДД.ММ.ГГГГ ЧЧ:ММ:СС"
+      },
+      "short_date": {
+        "format": "DD.MM.YY",
+        "example": "15.01.24"
+      },
+      "month_year": {
+        "format": "MMMM YYYY",
+        "example": "Январь 2024"
+      },
+      "day_month": {
+        "format": "D MMMM",
+        "example": "15 января"
+      },
+      "relative_dates": {
+        "today": "Сегодня",
+        "yesterday": "Вчера",
+        "tomorrow": "Завтра",
+        "this_week": "На этой неделе",
+        "last_week": "На прошлой неделе",
+        "next_week": "На следующей неделе"
+      },
+      "days_of_week": [
+        "Понедельник",
+        "Вторник",
+        "Среда",
+        "Четверг",
+        "Пятница",
+        "Суббота",
+        "Воскресенье"
+      ],
+      "months": [
+        "Январь",
+        "Февраль",
+        "Март",
+        "Апрель",
+        "Май",
+        "Июнь",
+        "Июль",
+        "Август",
+        "Сентябрь",
+        "Октябрь",
+        "Ноябрь",
+        "Декабрь"
+      ],
+      "months_genitive": [
+        "Января",
+        "Февраля",
+        "Марта",
+        "Апреля",
+        "Мая",
+        "Июня",
+        "Июля",
+        "Августа",
+        "Сентября",
+        "Октября",
+        "Ноября",
+        "Декабря"
+      ]
+    },
+    "en": {
+      "locale_code": "en-US",
+      "display_name": "English",
+      "date_only": {
+        "format": "MM/DD/YYYY",
+        "example": "01/15/2024",
+        "placeholder": "MM/DD/YYYY"
+      },
+      "time_only": {
+        "format": "h:mm A",
+        "example": "2:30 PM",
+        "placeholder": "h:mm A",
+        "note": "12-hour format with AM/PM"
+      },
+      "datetime": {
+        "format": "MM/DD/YYYY h:mm A",
+        "example": "01/15/2024 2:30 PM",
+        "placeholder": "MM/DD/YYYY h:mm A"
+      },
+      "datetime_with_seconds": {
+        "format": "MM/DD/YYYY h:mm:ss A",
+        "example": "01/15/2024 2:30:00 PM",
+        "placeholder": "MM/DD/YYYY h:mm:ss A"
+      },
+      "short_date": {
+        "format": "M/D/YY",
+        "example": "1/15/24"
+      },
+      "month_year": {
+        "format": "MMMM YYYY",
+        "example": "January 2024"
+      },
+      "day_month": {
+        "format": "MMMM D",
+        "example": "January 15"
+      },
+      "relative_dates": {
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "tomorrow": "Tomorrow",
+        "this_week": "This week",
+        "last_week": "Last week",
+        "next_week": "Next week"
+      },
+      "days_of_week": [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday"
+      ],
+      "months": [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+      ]
+    },
+    "srb": {
+      "locale_code": "sr-RS",
+      "display_name": "Српски",
+      "date_only": {
+        "format": "DD.MM.YYYY",
+        "example": "15.01.2024",
+        "placeholder": "ДД.ММ.ГГГГ"
+      },
+      "time_only": {
+        "format": "HH:mm",
+        "example": "14:30",
+        "placeholder": "ЧЧ:ММ",
+        "note": "24-hour format"
+      },
+      "datetime": {
+        "format": "DD.MM.YYYY HH:mm",
+        "example": "15.01.2024 14:30",
+        "placeholder": "ДД.ММ.ГГГГ ЧЧ:ММ"
+      },
+      "datetime_with_seconds": {
+        "format": "DD.MM.YYYY HH:mm:ss",
+        "example": "15.01.2024 14:30:00",
+        "placeholder": "ДД.ММ.ГГГГ ЧЧ:ММ:СС"
+      },
+      "short_date": {
+        "format": "DD.MM.YY",
+        "example": "15.01.24"
+      },
+      "month_year": {
+        "format": "MMMM YYYY",
+        "example": "Јануар 2024"
+      },
+      "day_month": {
+        "format": "D. MMMM",
+        "example": "15. јануар"
+      },
+      "relative_dates": {
+        "today": "Данас",
+        "yesterday": "Јуче",
+        "tomorrow": "Сутра",
+        "this_week": "Ове недеље",
+        "last_week": "Прошле недеље",
+        "next_week": "Следеће недеље"
+      },
+      "days_of_week": [
+        "Недеља",
+        "Понедељак",
+        "Уторак",
+        "Среда",
+        "Четвртак",
+        "Петак",
+        "Субота"
+      ],
+      "months": [
+        "Јануар",
+        "Фебруар",
+        "Март",
+        "Април",
+        "Мај",
+        "Јун",
+        "Јул",
+        "Август",
+        "Септембар",
+        "Октобар",
+        "Новембар",
+        "Децембар"
+      ]
+    }
+  },
+  "test_cases": {
+    "date_parsing": [
+      {
+        "locale": "ru",
+        "input": "15.01.2024",
+        "expected_date": "2024-01-15"
+      },
+      {
+        "locale": "en",
+        "input": "01/15/2024",
+        "expected_date": "2024-01-15"
+      },
+      {
+        "locale": "srb",
+        "input": "15.01.2024",
+        "expected_date": "2024-01-15"
+      }
+    ],
+    "invalid_dates": [
+      {
+        "locale": "ru",
+        "input": "32.01.2024",
+        "expected_error": "Invalid date"
+      },
+      {
+        "locale": "en",
+        "input": "13/01/2024",
+        "expected_error": "Invalid month"
+      }
+    ]
+  },
+  "timezone": {
+    "default": "Europe/Moscow",
+    "supported": [
+      "Europe/Moscow",
+      "Europe/Belgrade",
+      "Europe/London",
+      "America/New_York",
+      "Asia/Dubai"
+    ]
+  }
+}

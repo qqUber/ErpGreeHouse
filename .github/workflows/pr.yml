@@ -85,6 +85,9 @@ jobs:
       - name: audit
         working-directory: admin-ui
         run: npm audit --audit-level=high
+      - name: Biome Check
+        working-directory: admin-ui
+        run: npm run ci:check
       - name: build
         working-directory: admin-ui
         run: npm run build

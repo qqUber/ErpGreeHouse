@@ -1,0 +1,193 @@
+{
+  "app": {
+    "title": "ERP Greenhouse - Admin Panel"
+  },
+  "roles": {
+    "administrator": "Administrator",
+    "manager": "Manager",
+    "observer": "Observer"
+  },
+  "menu": {
+    "dashboard": "Dashboard",
+    "sales": "Sales",
+    "clients": "Clients",
+    "products": "Products",
+    "marketing": "Marketing",
+    "integrations": "Integrations",
+    "settings": "Settings"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "username": "Username",
+    "password": "Password",
+    "loginButton": "Sign In",
+    "loggingIn": "Signing in...",
+    "loginError": "Login Error",
+    "invalidCredentials": "Invalid username or password",
+    "sessionExpired": "Session expired. Please log in again."
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "refresh": "Refresh",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "yes": "Yes",
+    "no": "No",
+    "loading": "Loading...",
+    "noData": "No data"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalSales": "Total Sales",
+    "totalClients": "Total Clients",
+    "totalOrders": "Total Orders",
+    "averageCheck": "Average Check",
+    "recentSales": "Recent Sales",
+    "topProducts": "Top Products"
+  },
+  "sales": {
+    "title": "Sales",
+    "newSale": "New Sale",
+    "orders": "Orders",
+    "receipts": "Receipts",
+    "todaySales": "Today's Sales",
+    "monthlySales": "Monthly Sales",
+    "orderNumber": "Order Number",
+    "orderDate": "Order Date",
+    "orderStatus": "Order Status",
+    "orderTotal": "Total"
+  },
+  "clients": {
+    "title": "Clients",
+    "addClient": "Add Client",
+    "editClient": "Edit Client",
+    "clientName": "Client Name",
+    "clientPhone": "Phone",
+    "clientEmail": "Email",
+    "clientAddress": "Address",
+    "clientBonus": "Bonuses",
+    "clientTier": "Tier",
+    "totalSpent": "Total Spent",
+    "visitCount": "Visit Count",
+    "lastVisit": "Last Visit"
+  },
+  "products": {
+    "title": "Products",
+    "addProduct": "Add Product",
+    "editProduct": "Edit Product",
+    "productName": "Product Name",
+    "productPrice": "Price",
+    "productCategory": "Category",
+    "productStock": "Stock",
+    "productDescription": "Description",
+    "importProducts": "Import Products",
+    "exportProducts": "Export Products"
+  },
+  "marketing": {
+    "title": "Marketing",
+    "campaigns": "Campaigns",
+    "promotions": "Promotions",
+    "loyalty": "Loyalty Program",
+    "createCampaign": "Create Campaign",
+    "campaignName": "Campaign Name",
+    "campaignType": "Campaign Type",
+    "campaignStatus": "Status",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "targetAudience": "Target Audience",
+    "discount": "Discount",
+    "bonusPoints": "Bonus Points"
+  },
+  "integrations": {
+    "title": "Integrations",
+    "telegram": "Telegram",
+    "vk": "VKontakte",
+    "pos": "POS System",
+    "webhooks": "Webhooks",
+    "settings": "Settings",
+    "enable": "Enable",
+    "disable": "Disable",
+    "configure": "Configure",
+    "apiKey": "API Key",
+    "webhookUrl": "Webhook URL",
+    "botToken": "Bot Token",
+    "chatId": "Chat ID"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "users": "Users",
+    "roles": "Roles",
+    "notifications": "Notifications",
+    "language": "Language",
+    "currency": "Currency",
+    "timezone": "Timezone",
+    "companyName": "Company Name",
+    "companyAddress": "Company Address"
+  },
+  "notifications": {
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information",
+    "saved": "Saved",
+    "deleted": "Deleted",
+    "updated": "Updated",
+    "created": "Created",
+    "sent": "Sent"
+  },
+  "errors": {
+    "required": "Required field",
+    "invalidEmail": "Invalid email",
+    "invalidPhone": "Invalid phone",
+    "minLength": "Minimum {{count}} characters",
+    "maxLength": "Maximum {{count}} characters",
+    "networkError": "Network error",
+    "serverError": "Server error",
+    "notFound": "Not found",
+    "unauthorized": "Unauthorized",
+    "forbidden": "Forbidden",
+    "validationError": "Validation error"
+  },
+  "forms": {
+    "placeholder": {
+      "search": "Search...",
+      "username": "Enter username",
+      "password": "Enter password",
+      "name": "Enter name",
+      "email": "Enter email",
+      "phone": "Enter phone",
+      "address": "Enter address"
+    },
+    "labels": {
+      "rememberMe": "Remember me",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password"
+    }
+  },
+  "table": {
+    "actions": "Actions",
+    "noResults": "Nothing found",
+    "showing": "Showing {{start}} to {{end}} of {{total}}",
+    "rowsPerPage": "Rows per page"
+  },
+  "date": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "thisWeek": "This week",
+    "thisMonth": "This month",
+    "lastMonth": "Last month"
+  }
+}

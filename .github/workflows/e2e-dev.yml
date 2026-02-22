@@ -75,6 +75,9 @@ jobs:
       - name: admin-ui deps
         working-directory: admin-ui
         run: npm ci
+      - name: Biome Check
+        working-directory: admin-ui
+        run: npm run ci:check
       - name: install browsers
         working-directory: admin-ui
         run: npx playwright install --with-deps chromium

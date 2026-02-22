@@ -1,0 +1,193 @@
+{
+  "app": {
+    "title": "ERP Greenhouse - Админ панел"
+  },
+  "roles": {
+    "administrator": "Администратор",
+    "manager": "Менаџер",
+    "observer": "Посматрач"
+  },
+  "menu": {
+    "dashboard": "Главна",
+    "sales": "Продаја",
+    "clients": "Клијенти",
+    "products": "Производи",
+    "marketing": "Маркетинг",
+    "integrations": "Интеграције",
+    "settings": "Подешавања"
+  },
+  "auth": {
+    "login": "Пријава",
+    "logout": "Одјава",
+    "username": "Корисничко име",
+    "password": "Лозинка",
+    "loginButton": "Пријави се",
+    "loggingIn": "Пријављивање...",
+    "loginError": "Грешка при пријави",
+    "invalidCredentials": "Погрешно корисничко име или лозинка",
+    "sessionExpired": "Сесија је истекла. Молим вас пријавите се поново."
+  },
+  "common": {
+    "save": "Сачувај",
+    "cancel": "Откажи",
+    "delete": "Обриши",
+    "edit": "Измени",
+    "add": "Додај",
+    "search": "Претрага",
+    "filter": "Фитер",
+    "export": "Експорт",
+    "import": "Импорт",
+    "refresh": "Освежи",
+    "close": "Затвори",
+    "confirm": "Потврди",
+    "back": "Назад",
+    "next": "Даље",
+    "previous": "Претходно",
+    "yes": "Да",
+    "no": "Не",
+    "loading": "Учитавање...",
+    "noData": "Нема података"
+  },
+  "dashboard": {
+    "title": "Главна",
+    "totalSales": "Укупна продаја",
+    "totalClients": "Укупни клијенти",
+    "totalOrders": "Укупне наруџбине",
+    "averageCheck": "Просечан рачун",
+    "recentSales": "Недавна продаја",
+    "topProducts": "Најпродаванији производи"
+  },
+  "sales": {
+    "title": "Продаја",
+    "newSale": "Нова продаја",
+    "orders": "Наруџбине",
+    "receipts": "Рачуни",
+    "todaySales": "Данашња продаја",
+    "monthlySales": "Месечна продаја",
+    "orderNumber": "Број наруџбине",
+    "orderDate": "Датум наруџбине",
+    "orderStatus": "Статус наруџбине",
+    "orderTotal": "Укупно"
+  },
+  "clients": {
+    "title": "Клијенти",
+    "addClient": "Додај клијента",
+    "editClient": "Измени клијента",
+    "clientName": "Име клијента",
+    "clientPhone": "Телефон",
+    "clientEmail": "Емаил",
+    "clientAddress": "Адреса",
+    "clientBonus": "Бонуси",
+    "clientTier": "Ниво",
+    "totalSpent": "Укупно потрошено",
+    "visitCount": "Број посета",
+    "lastVisit": "Последња посета"
+  },
+  "products": {
+    "title": "Производи",
+    "addProduct": "Додај производ",
+    "editProduct": "Измени производ",
+    "productName": "Назив производа",
+    "productPrice": "Цена",
+    "productCategory": "Категориа",
+    "productStock": "Залихе",
+    "productDescription": "Опис",
+    "importProducts": "Импорт производа",
+    "exportProducts": "Експорт производа"
+  },
+  "marketing": {
+    "title": "Маркетинг",
+    "campaigns": "Кампање",
+    "promotions": "Акције",
+    "loyalty": "Програм лојалности",
+    "createCampaign": "Креирај кампању",
+    "campaignName": "Назив кампање",
+    "campaignType": "Тип кампање",
+    "campaignStatus": "Статус",
+    "startDate": "Почетни датум",
+    "endDate": "Крајњи датум",
+    "targetAudience": "Циљна група",
+    "discount": "Попуст",
+    "bonusPoints": "Бонус поени"
+  },
+  "integrations": {
+    "title": "Интеграције",
+    "telegram": "Telegram",
+    "vk": "VKontakte",
+    "pos": "POS систем",
+    "webhooks": "Вебхукови",
+    "settings": "Подешавања",
+    "enable": "Омогући",
+    "disable": "Онемогући",
+    "configure": "Конфигуриши",
+    "apiKey": "API кључ",
+    "webhookUrl": "URL вебхука",
+    "botToken": "Токен бота",
+    "chatId": "ID чата"
+  },
+  "settings": {
+    "title": "Подешавања",
+    "general": "Опште",
+    "users": "Корисници",
+    "roles": "Улоге",
+    "notifications": "Обавештења",
+    "language": "Језик",
+    "currency": "Валута",
+    "timezone": "Временска зона",
+    "companyName": "Назив компаније",
+    "companyAddress": "Адреса компаније"
+  },
+  "notifications": {
+    "success": "Успешно",
+    "error": "Грешка",
+    "warning": "Упозорење",
+    "info": "Информација",
+    "saved": "Сачувано",
+    "deleted": "Обрисано",
+    "updated": "Ажурирано",
+    "created": "Креирано",
+    "sent": "Послато"
+  },
+  "errors": {
+    "required": "Обавезно поље",
+    "invalidEmail": "Неважећи емаил",
+    "invalidPhone": "Неважећи телефон",
+    "minLength": "Минимум {{count}} карактера",
+    "maxLength": "Максимум {{count}} карактера",
+    "networkError": "Грешка мреже",
+    "serverError": "Грешка сервера",
+    "notFound": "Није пронађено",
+    "unauthorized": "Неовлашћено",
+    "forbidden": "Забрањено",
+    "validationError": "Грешка валидације"
+  },
+  "forms": {
+    "placeholder": {
+      "search": "Претрага...",
+      "username": "Унесите корисничко име",
+      "password": "Унесите лозинку",
+      "name": "Унесите име",
+      "email": "Унесите емаил",
+      "phone": "Унесите телефон",
+      "address": "Унесите адресу"
+    },
+    "labels": {
+      "rememberMe": "Запамти ме",
+      "showPassword": "Прикажи лозинку",
+      "hidePassword": "Сакриј лозинку"
+    }
+  },
+  "table": {
+    "actions": "Акције",
+    "noResults": "Ништа није пронађено",
+    "showing": "Приказано од {{start}} до {{end}} од {{total}}",
+    "rowsPerPage": "Редова по страници"
+  },
+  "date": {
+    "today": "Данас",
+    "yesterday": "Јуче",
+    "thisWeek": "Ове недеље",
+    "thisMonth": "Овог месеца",
+    "lastMonth": "Прошлог месеца"
+  }
+}
