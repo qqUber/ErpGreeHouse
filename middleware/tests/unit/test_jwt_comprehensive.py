@@ -119,9 +119,9 @@ class TestJWTTokenCreation:
         refresh_exp = datetime.fromtimestamp(refresh_payload["exp"], timezone.utc)
         now = datetime.now(timezone.utc)
         
-        # Access token should expire in ~15-30 minutes
+        # Access token should expire in ~30 minutes
         access_delta = access_exp - now
-        assert timedelta(minutes=14) < access_delta < timedelta(minutes=31)
+        assert timedelta(minutes=29) < access_delta < timedelta(minutes=31)
         
         # Refresh token should expire in ~30 days
         refresh_delta = refresh_exp - now

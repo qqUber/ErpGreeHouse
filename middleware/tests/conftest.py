@@ -57,6 +57,7 @@ os.environ['TEST_MODE'] = 'true'
 os.environ['ERP_MOCK_MODE'] = 'true'
 os.environ['REDIS_URL'] = 'redis://localhost:6379/1'
 os.environ['DATABASE_URL'] = 'sqlite:///test_telegram_crm.db'
+os.environ['CRM_DB_PATH'] = 'test_telegram_crm.db'
 os.environ['JWT_SECRET_KEY'] = 'test_jwt_secret_key_for_testing_only_12345'
 os.environ['TELEGRAM_BOT_TOKEN'] = 'test_token_123456789:AABBccDDeeFFggHHiiJJkkLLmmNNooP'
 
@@ -71,38 +72,49 @@ def test_db_path() -> str:
     return 'sqlite:///test_telegram_crm.db'
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='function', autouse=True)
 def clean_database(test_db_path: str) -> Generator[str, None, None]:
     """
-    Create a clean test database for each test function.
-    Automatically cleans up after test completes.
-    """
-    from app.db import get_db, init_db
+    Unified function-scoped fixture that ensures every test starts with a clean database.
+    This combines the database initialization and path restoration logic.
     
-    # Delete existing test database file to ensure clean state
+    - Resets CRM_DB_PATH environment variable before each test
+    - Deletes existing test database to ensure clean state
+    - Initializes fresh database with all tables
+    - Seeds role_permissions with Admin Role and Permissions
+    """
+    import sqlite3
+    import os
+    from pathlib import Path
+    
+    # Step 1: Restore the test database path before each test
+    # This ensures tests that change CRM_DB_PATH don't affect other tests
+    db_path = str((Path(__file__).parent.parent / 'test_telegram_crm.db').resolve())
+    os.environ['CRM_DB_PATH'] = db_path
+    
+    # Step 2: Get the database connection
+    from app.db import get_db, init_db
     db = get_db()
     db_path = db.path
-    import sqlite3
     
-    # Close any existing connections and delete the file
+    # Step 3: Close any existing connections and delete the file for clean state
     try:
         conn = sqlite3.connect(db_path)
         conn.close()
     except:
         pass
     
-    import os
     if os.path.exists(db_path):
         os.remove(db_path)
     
-    # Initialize fresh test database (this creates all tables)
+    # Step 4: Initialize fresh test database (this creates all tables)
     init_db()
     
-    # Get a fresh connection after init_db
+    # Step 5: Get a fresh connection after init_db
     db = get_db()
     conn = db.connect()
     
-    # Seed default role_permissions data
+    # Step 6: Seed default role_permissions data (Admin Role and Permissions)
     _seed_role_permissions(conn)
     
     try:
@@ -138,6 +150,29 @@ def _seed_role_permissions(conn: sqlite3.Connection) -> None:
     """
     # Default permissions matching app/auth.py get_default_permissions()
     default_permissions = [
+        # admin role - full access
+        ("admin", "dashboard.read", 1),
+        ("admin", "customer.create", 1),
+        ("admin", "customer.search", 1),
+        ("admin", "customer.list", 1),
+        ("admin", "customer.read", 1),
+        ("admin", "customer.update", 1),
+        ("admin", "customer.delete", 1),
+        ("admin", "pos.sale", 1),
+        ("admin", "transaction.read", 1),
+        ("admin", "product.read", 1),
+        ("admin", "product.create", 1),
+        ("admin", "product.update", 1),
+        ("admin", "product.delete", 1),
+        ("admin", "product.import", 1),
+        ("admin", "marketing.campaigns", 1),
+        ("admin", "marketing.users", 1),
+        ("admin", "integration.read", 1),
+        ("admin", "integration.update", 1),
+        ("admin", "integration.create", 1),
+        ("admin", "integration.delete", 1),
+        ("admin", "report.export", 1),
+        ("admin", "admin.access", 1),
         # operator role
         ("operator", "dashboard.read", 1),
         ("operator", "customer.create", 1),
