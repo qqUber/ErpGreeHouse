@@ -44,6 +44,12 @@ class Settings:
     base_web_url: str
     erp_mock_mode: bool
     
+    # Rate limiting settings for password recovery
+    # RECOVERY_RATE_LIMIT_ATTEMPTS: Max attempts per window
+    recovery_rate_limit_attempts: int
+    # RECOVERY_RATE_LIMIT_WINDOW_SECONDS: Time window in seconds
+    recovery_rate_limit_window_seconds: int
+    
     # JWT configuration
     # JWT_SECRET_KEY: Primary key for signing JWT tokens
     # Fallback chain: JWT_SECRET_KEY -> JWT_SECRET -> ADMIN_SECRET -> dev-default
@@ -112,6 +118,10 @@ def get_settings() -> Settings:
         webhook_secret=os.getenv("WEBHOOK_SECRET", ""),
         base_web_url=os.getenv("BASE_WEB_URL", ""),
         erp_mock_mode=os.getenv("ERP_MOCK_MODE", "true").lower() in ("1", "true", "yes"),
+        
+        # Rate limiting settings for password recovery
+        recovery_rate_limit_attempts=int(os.getenv("RECOVERY_RATE_LIMIT_ATTEMPTS", "5")),
+        recovery_rate_limit_window_seconds=int(os.getenv("RECOVERY_RATE_LIMIT_WINDOW_SECONDS", "60")),
         
         # JWT configuration
         # PRODUCTION: JWT_SECRET_KEY MUST be set (enforced above)

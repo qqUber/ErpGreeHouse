@@ -2,6 +2,7 @@ import os
 import secrets
 import hashlib
 import logging
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -23,6 +24,7 @@ from .auth import (
     get_role_permissions
 )
 from .config import get_settings
+from .storage import get_redis
 
 
 public_router = APIRouter(prefix="/api/v1/public/auth")
@@ -36,6 +38,104 @@ _ADMIN_COOKIE_NAME = "admin_session"  # Legacy cookie
 
 def _hash_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _check_rate_limit(client_ip: str) -> tuple[bool, int]:
+    """
+    Check if the client has exceeded the rate limit for password recovery.
+    Returns (is_allowed, remaining_attempts).
+    """
+    settings = get_settings()
+    r = get_redis()
+    key = f"rate_limit:recovery:{client_ip}"
+    
+    current_count = int(r.get(key) or "0")
+    remaining = max(0, settings.recovery_rate_limit_attempts - current_count - 1)
+    
+    if current_count >= settings.recovery_rate_limit_attempts:
+        return False, 0
+    
+    # Increment the counter
+    pipe = r.pipeline()
+    pipe.incr(key)
+    pipe.expire(key, settings.recovery_rate_limit_window_seconds)
+    pipe.execute()
+    
+    return True, remaining
+
+
+def _log_password_reset_audit(
+    target_username: str,
+    client_ip: str,
+    user_agent: str,
+    reset_by: str,
+    success: bool
+) -> None:
+    """
+    Log password reset events for audit purposes.
+    
+    Args:
+        target_username: The username whose password was reset
+        client_ip: IP address of the client making the request
+        user_agent: User-Agent header from the request
+        reset_by: How the reset was performed ('admin_recovery' or 'recovery_token')
+        success: Whether the reset was successful
+    """
+    timestamp = datetime.now(timezone.utc).isoformat()
+    
+    if success:
+        logger.info(
+            f"[AUDIT] Password reset SUCCESS | "
+            f"Target user: '{target_username}' | "
+            f"Reset by: {reset_by} | "
+            f"IP: {client_ip} | "
+            f"User-Agent: {user_agent} | "
+            f"Timestamp: {timestamp}"
+        )
+    else:
+        logger.warning(
+            f"[AUDIT] Password reset FAILED | "
+            f"Target user: '{target_username}' | "
+            f"Reset by: {reset_by} | "
+            f"IP: {client_ip} | "
+            f"User-Agent: {user_agent} | "
+            f"Timestamp: {timestamp}"
+        )
+
+
+def _notify_password_reset(username: str) -> None:
+    """
+    Send notification about password reset to the user.
+    Logs the notification and attempts to send via available channels.
+    """
+    # Log notification message
+    logger.info(
+        f"[NOTIFICATION] Password reset notification for user '{username}'. "
+        f"User should be informed that their password was changed."
+    )
+    
+    # TODO: Implement actual notification channels (email, telegram, etc.)
+    # For now, we log to console as per requirements
+    print(f"🔐 PASSWORD RESET NOTIFICATION: User '{username}' - Your password has been reset by an administrator.")
+    
+    # Attempt to get user contact info and notify via available channels
+    db = get_db()
+    conn = db.connect()
+    try:
+        # Check for telegram notification
+        tg_user = conn.execute(
+            "SELECT telegram_id FROM telegram_users WHERE username=?", 
+            (username,)
+        ).fetchone()
+        
+        if tg_user and tg_user["telegram_id"]:
+            # Log that we would send a telegram notification
+            logger.info(f"[NOTIFICATION] Would send Telegram notification to user '{username}' (telegram_id: {tg_user['telegram_id']})")
+    except Exception as e:
+        # Log but don't fail - notification is a best-effort feature
+        logger.debug(f"Could not send notification: {e}")
+    finally:
+        conn.close()
 
 
 def _get_jwt_cookie_settings() -> dict[str, Any]:
@@ -639,10 +739,54 @@ def recover_password(
     payload: RecoverIn,
     x_admin_recovery: str | None = Header(default=None, alias="x-admin-recovery"),
 ) -> dict[str, Any]:
+    """
+    Recover password for a user using the admin recovery secret.
+    
+    This endpoint is rate-limited to prevent brute-force attacks.
+    All password reset attempts are logged for audit purposes.
+    """
+    # Get client information for rate limiting and logging
+    client_ip = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent", "unknown")
+    
+    # Check rate limit before processing
+    is_allowed, remaining = _check_rate_limit(client_ip)
+    if not is_allowed:
+        _log_password_reset_audit(
+            target_username=payload.username,
+            client_ip=client_ip,
+            user_agent=user_agent,
+            reset_by="rate_limited",
+            success=False
+        )
+        raise HTTPException(
+            status_code=429,
+            detail="Too many password recovery attempts. Please try again later."
+        )
+    
+    # Log rate limit info for debugging
+    logger.info(f"Password recovery attempt for '{payload.username}' from {client_ip} (remaining: {remaining})")
+    
     expected = os.getenv("ADMIN_RECOVERY_SECRET", "")
     if not expected:
+        _log_password_reset_audit(
+            target_username=payload.username,
+            client_ip=client_ip,
+            user_agent=user_agent,
+            reset_by="admin_recovery",
+            success=False
+        )
+        logger.critical("Password recovery attempted but ADMIN_RECOVERY_SECRET not configured")
         raise HTTPException(status_code=500, detail="ADMIN_RECOVERY_SECRET not configured")
+    
     if not x_admin_recovery or not constant_time_equals(x_admin_recovery, expected):
+        _log_password_reset_audit(
+            target_username=payload.username,
+            client_ip=client_ip,
+            user_agent=user_agent,
+            reset_by="admin_recovery",
+            success=False
+        )
         raise HTTPException(status_code=401, detail="Invalid recovery secret")
 
     db = get_db()
@@ -650,6 +794,13 @@ def recover_password(
     try:
         row = conn.execute("SELECT id FROM admin_users WHERE username=?", (payload.username.strip(),)).fetchone()
         if not row:
+            _log_password_reset_audit(
+                target_username=payload.username,
+                client_ip=client_ip,
+                user_agent=user_agent,
+                reset_by="admin_recovery",
+                success=False
+            )
             raise HTTPException(status_code=404, detail="User not found")
 
         salt = new_salt()
@@ -661,6 +812,19 @@ def recover_password(
         )
         conn.execute("DELETE FROM admin_tokens WHERE admin_user_id=?", (int(row["id"]),))
         conn.commit()
+        
+        # Log successful password reset for audit
+        _log_password_reset_audit(
+            target_username=payload.username,
+            client_ip=client_ip,
+            user_agent=user_agent,
+            reset_by="admin_recovery",
+            success=True
+        )
+        
+        # Send notification to user about password reset
+        _notify_password_reset(payload.username)
+        
         return {"recovered": True}
     finally:
         conn.close()
