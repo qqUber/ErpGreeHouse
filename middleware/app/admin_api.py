@@ -282,7 +282,8 @@ def sales_stats(
 
 
 @router.get("/analytics/sales-by-day")
-def analytics_sales_by_day(\n    days: int = Query(default=30, ge=1, le=365),
+def analytics_sales_by_day(
+    days: int = Query(default=30, ge=1, le=365),
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     """Get sales dynamics by day for charts"""
@@ -311,7 +312,9 @@ def analytics_sales_by_day(\n    days: int = Query(default=30, ge=1, le=365),
 
 
 @router.get("/analytics/top-products")
-def analytics_top_products(\n    days: int = Query(default=30, ge=1, le=365),\n    limit: int = Query(default=10, ge=1, le=100),
+def analytics_top_products(
+    days: int = Query(default=30, ge=1, le=365),
+    limit: int = Query(default=10, ge=1, le=100),
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     """Get top products by sales for bar chart"""
@@ -356,7 +359,8 @@ def analytics_top_products(\n    days: int = Query(default=30, ge=1, le=365),\n 
 
 
 @router.get("/analytics/category-distribution")
-def analytics_category_distribution(\n    days: int = Query(default=30, ge=1, le=365),
+def analytics_category_distribution(
+    days: int = Query(default=30, ge=1, le=365),
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     """Get category distribution for pie/donut chart"""

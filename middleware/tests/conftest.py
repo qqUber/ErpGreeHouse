@@ -79,27 +79,106 @@ def clean_database(test_db_path: str) -> Generator[str, None, None]:
     """
     from app.db import get_db, init_db
     
-    # Initialize fresh test database
+    # Delete existing test database file to ensure clean state
+    db = get_db()
+    db_path = db.path
+    import sqlite3
+    
+    # Close any existing connections and delete the file
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.close()
+    except:
+        pass
+    
+    import os
+    if os.path.exists(db_path):
+        os.remove(db_path)
+    
+    # Initialize fresh test database (this creates all tables)
+    init_db()
+    
+    # Get a fresh connection after init_db
     db = get_db()
     conn = db.connect()
     
+    # Seed default role_permissions data
+    _seed_role_permissions(conn)
+    
     try:
-        # Create all tables
-        init_db()
-        conn.commit()
-        
         yield test_db_path
         
     finally:
-        # Cleanup: Drop all tables
+        # Cleanup: Drop all tables created by init_db()
+        # Order matters due to foreign key constraints
+        conn.execute("DROP TABLE IF EXISTS marketing_trigger_events")
         conn.execute("DROP TABLE IF EXISTS marketing_events")
-        conn.execute("DROP TABLE IF EXISTS loyalty_transactions")
-        conn.execute("DROP TABLE IF EXISTS orders")
+        conn.execute("DROP TABLE IF EXISTS marketing_campaigns")
+        conn.execute("DROP TABLE IF EXISTS marketing_triggers")
+        conn.execute("DROP TABLE IF EXISTS marketing_segments")
+        conn.execute("DROP TABLE IF EXISTS integration_deliveries")
+        conn.execute("DROP TABLE IF EXISTS vk_settings")
+        conn.execute("DROP TABLE IF EXISTS admin_tokens")
+        conn.execute("DROP TABLE IF EXISTS admin_users")
+        conn.execute("DROP TABLE IF EXISTS role_permissions")
+        conn.execute("DROP TABLE IF EXISTS products")
+        conn.execute("DROP TABLE IF EXISTS integrations")
+        conn.execute("DROP TABLE IF EXISTS sync_log")
+        conn.execute("DROP TABLE IF EXISTS transactions")
+        conn.execute("DROP TABLE IF EXISTS consents")
         conn.execute("DROP TABLE IF EXISTS customers")
-        conn.execute("DROP TABLE IF EXISTS audit_log")
-        conn.execute("DROP TABLE IF EXISTS sessions")
         conn.commit()
         conn.close()
+
+
+def _seed_role_permissions(conn: sqlite3.Connection) -> None:
+    """
+    Seed the role_permissions table with default role data.
+    This ensures JWT tests work correctly.
+    """
+    # Default permissions matching app/auth.py get_default_permissions()
+    default_permissions = [
+        # operator role
+        ("operator", "dashboard.read", 1),
+        ("operator", "customer.create", 1),
+        ("operator", "customer.search", 1),
+        ("operator", "customer.list", 1),
+        ("operator", "customer.read", 1),
+        ("operator", "pos.sale", 1),
+        ("operator", "transaction.read", 1),
+        ("operator", "product.read", 1),
+        # manager/marketer role
+        ("manager", "dashboard.read", 1),
+        ("manager", "customer.read", 1),
+        ("manager", "customer.list", 1),
+        ("manager", "product.read", 1),
+        ("manager", "product.create", 1),
+        ("manager", "product.update", 1),
+        ("manager", "product.import", 1),
+        ("manager", "marketing.campaigns", 1),
+        ("manager", "marketing.users", 1),
+        ("manager", "integration.read", 1),
+        ("manager", "integration.update", 1),
+        ("manager", "report.export", 1),
+        ("marketer", "dashboard.read", 1),
+        ("marketer", "customer.read", 1),
+        ("marketer", "customer.list", 1),
+        ("marketer", "product.read", 1),
+        ("marketer", "product.create", 1),
+        ("marketer", "product.update", 1),
+        ("marketer", "product.import", 1),
+        ("marketer", "marketing.campaigns", 1),
+        ("marketer", "marketing.users", 1),
+        ("marketer", "integration.read", 1),
+        ("marketer", "integration.update", 1),
+        ("marketer", "report.export", 1),
+    ]
+    
+    conn.executemany(
+        "INSERT OR IGNORE INTO role_permissions (role, permission, is_allowed) VALUES (?, ?, ?)",
+        default_permissions
+    )
+    conn.commit()
 
 
 # =============================================================================
