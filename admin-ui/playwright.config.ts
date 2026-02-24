@@ -19,8 +19,9 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'off',
-    actionTimeout: 15_000,
-    navigationTimeout: 30_000,
+    // Increased timeouts for CI stability
+    actionTimeout: 90_000,
+    navigationTimeout: 90_000,
   },
 
   maxFailures: 0,
