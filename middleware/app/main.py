@@ -6,6 +6,42 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 from starlette.responses import JSONResponse, RedirectResponse, FileResponse
+import logging
+import logging.config
+
+# Configure logging
+logging.config.dictConfig({
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard',
+            'level': 'INFO',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'middleware': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    }
+})
+
+logger = logging.getLogger(__name__)
+
+# Environment variables are loaded from .env in project root by uvicorn
 
 # Environment variables are loaded from .env in project root by uvicorn
 # or set explicitly in shell before running
@@ -21,6 +57,7 @@ from .admin_api import router as admin_router, public_router as public_router
 from .admin_auth_api import public_router as auth_public_router, router as auth_router
 from .admin_auth_api import _bootstrap_default_admin, _bootstrap_demo_users
 from .integrations_api import router as integrations_router, public_router as integrations_public_router
+from .integration_settings_api import router as integration_settings_router
 from .products_api import router as products_router
 from .marketing_api import router as marketing_router
 from .tma_api import router as tma_router
@@ -34,14 +71,113 @@ from .worker import send_broadcast
 
 app = FastAPI(title="Telegram CRM Middleware")
 
+# Define public paths that should bypass authentication
+PUBLIC_PATHS = frozenset([
+    "/",  # Root
+    "/favicon.ico",
+    "/docs",
+    "/redoc",
+    "/openapi.json",
+    "/health",
+])
+
+# Prefixes for public API endpoints
+PUBLIC_PREFIXES = (
+    "/api/v1/public/",
+    "/api/v1/test/",
+    "/telegram/",
+    "/vk/",
+    "/admin/broadcast",
+)
+
+
+def _is_public_path(path: str) -> bool:
+    """Check if the path is public and should bypass authentication."""
+    # Check exact matches
+    if path in PUBLIC_PATHS:
+        return True
+    
+    # Check exact admin path (static files)
+    if path == "/admin" or path.startswith("/admin/"):
+        return True
+    
+    # Check public API prefixes
+    for prefix in PUBLIC_PREFIXES:
+        if path.startswith(prefix):
+            return True
+    
+    return False
+
 
 @app.middleware("http")
-async def _admin_session_context(request: Request, call_next):
-    tok = set_admin_session_token(request.cookies.get("admin_session"))
+async def _auth_protection(request: Request, call_next):
+    """Middleware to protect routes and handle authentication properly."""
+    from fastapi import HTTPException
+    from .auth import validate_access_token
+    from .request_context import get_admin_session_token
+    
     try:
-        return await call_next(request)
-    finally:
-        reset_admin_session_token(tok)
+        # Get the path
+        path = request.url.path
+        method = request.method
+        
+        # Skip auth for public paths
+        if _is_public_path(path):
+            logger.info(f"[AUTH] Skipping auth for public path: {path}")
+            return await call_next(request)
+        
+        # Skip auth for GET / (root) - redirect to /admin/
+        if method == "GET" and path == "/":
+            logger.info(f"[AUTH] Root path request, allowing: {path}")
+            return await call_next(request)
+        
+        # Get token from cookies or headers
+        access_token = request.cookies.get("access_token")
+        if not access_token:
+            access_token = request.headers.get("x-admin-secret")
+        if not access_token:
+            access_token = get_admin_session_token()
+        
+        # Try JWT first, then fall back to legacy token
+        payload = None
+        if access_token:
+            # Check if it's a JWT token (has 2 dots)
+            if access_token.count('.') == 2:
+                payload = validate_access_token(access_token)
+            else:
+                # Legacy token - will be validated by the endpoint
+                pass
+        
+        # If we have a valid JWT payload, add user info to request state
+        if payload:
+            request.state.user = {
+                "is_authenticated": True,
+                "user_id": int(payload.get("sub", 0)),
+                "username": payload.get("username", ""),
+                "role": payload.get("role", ""),
+                "permissions": payload.get("permissions", []),
+            }
+        else:
+            # No valid token - let the endpoint handle auth (will return 401)
+            logger.info(f"[AUTH] No valid token for protected route: {path}")
+        
+        # Continue processing the request
+        response = await call_next(request)
+        return response
+        
+    except HTTPException as e:
+        # Return proper HTTP exceptions as JSON
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"detail": e.detail}
+        )
+    except Exception as e:
+        # Log the error and return 500 instead of letting it propagate
+        logger.error(f"[AUTH] Middleware error: {type(e).__name__}: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error in auth middleware"}
+        )
 
 
 @app.middleware("http")
@@ -107,12 +243,18 @@ async def _http_exception_handler(request: Request, exc: HTTPException):
         msg = "Ошибка запроса."
     return JSONResponse(status_code=status, content={"detail": msg})
 
-origins_raw = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:5174")
-origins = [o.strip() for o in origins_raw.split(",") if o.strip()]
+origins = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000")
+if origins == "*":
+    origins = ["*"]
+else:
+    origins = [o.strip() for o in origins.split(",") if o.strip()]
+    
+# If using wildcard, we can't use credentials
+allow_credentials = "*" not in origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -126,6 +268,7 @@ app.include_router(auth_public_router)
 app.include_router(auth_router)
 app.include_router(integrations_router)
 app.include_router(integrations_public_router)
+app.include_router(integration_settings_router)
 app.include_router(products_router)
 app.include_router(marketing_router)
 app.include_router(tma_router)
@@ -184,6 +327,20 @@ async def set_webhook(
     return {"webhook_set": True, "url": url}
 
 
+@app.post("/vk/webhook", status_code=HTTP_200_OK)
+async def vk_webhook(
+    request: Request,
+    x_webhook_secret: str | None = Header(default=None, convert_underscores=False),
+) -> dict:
+    """Handle VK Callback API webhooks"""
+    settings = get_settings()
+    verify_webhook_secret(x_webhook_secret, settings.webhook_secret)
+    payload = await request.json()
+    # Process VK events here
+    # For now, just acknowledge receipt
+    return {"accepted": True}
+
+
 @app.post("/admin/broadcast", status_code=HTTP_200_OK)
 async def admin_broadcast(
     request: Request,
@@ -201,6 +358,11 @@ async def admin_broadcast(
 
 # Mount Admin UI at the end to avoid shadowing explicit routes
 if admin_dist.exists():
+    # Explicit route for /admin/ to ensure trailing slash is handled correctly
+    @app.get("/admin/", include_in_schema=False)
+    async def serve_admin_index(request: Request):
+        return FileResponse(str(admin_dist / "index.html"))
+
     @app.get("/admin/{rest_of_path:path}", include_in_schema=False)
     async def serve_admin_ui(request: Request, rest_of_path: str = ""):
         # Normalize path
@@ -223,6 +385,17 @@ if admin_dist.exists():
     # including the SPA fallback.
 else:
     print(f"WARNING: Admin UI distribution not found at {admin_dist}")
+
+
+# Catch-all for SPA routing (Vue Router history mode)
+# Returns index.html for any non-API path
+@app.get("/{path:path}", include_in_schema=False)
+async def catch_all_spa(path: str):
+    if path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="Not found")
+    if (admin_dist / "index.html").is_file():
+        return FileResponse(str(admin_dist / "index.html"))
+    raise HTTPException(status_code=404, detail="Not found")
 
 
 
