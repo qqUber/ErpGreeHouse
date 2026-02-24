@@ -48,7 +48,7 @@ export function LoyaltyTmaView() {
     }
 
     // Fetch data using initData
-    api('/api/v1/tma/me', {
+    api<{ error?: string } & TmaCustomerData>('/api/v1/tma/me', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

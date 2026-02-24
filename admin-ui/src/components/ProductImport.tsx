@@ -70,7 +70,7 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
       const formData = new FormData();
       formData.append('file', file);
 
-      const data = await api('/api/v1/products/import/preview', {
+      const data = await api<ImportPreview>('/api/v1/products/import/preview', {
         method: 'POST',
         body: formData,
       });

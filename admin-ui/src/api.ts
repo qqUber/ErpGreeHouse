@@ -546,7 +546,7 @@ function injectAuthHeaders(headers: Record<string, string> = {}): Record<string,
   }
 
   // Check if token is JWT format (exactly two dots)
-  const isJwtFormat = secret.count('.') === 2;
+  const isJwtFormat = (secret.match(/\./g) || []).length === 2;
   
   if (isJwtFormat) {
     // JWT token - use Authorization Bearer header ONLY

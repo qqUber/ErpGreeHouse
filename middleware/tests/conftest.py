@@ -11,6 +11,7 @@ This module provides:
 """
 import os
 import sys
+import sqlite3
 import pytest
 import asyncio
 from pathlib import Path
