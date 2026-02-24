@@ -175,8 +175,11 @@ class TestJWTIntegration:
         
         assert login_resp.status_code == 200
         cookies = login_resp.cookies
-        access_token = login_resp.json()["access_token"]
-        refresh_token = login_resp.json()["refresh_token"]
+        # JWT tokens are delivered via HTTPOnly cookies, not in JSON response
+        access_token = cookies.get("access_token")
+        refresh_token = cookies.get("refresh_token")
+        assert access_token is not None, "access_token should be in cookies"
+        assert refresh_token is not None, "refresh_token should be in cookies"
 
         # 2. Access protected route with cookies
         # Note: We need a real protected route. /api/v1/auth/me is a good candidate
@@ -192,10 +195,12 @@ class TestJWTIntegration:
             refresh_resp = client.post("/api/v1/public/auth/refresh", cookies=cookies)
             
         assert refresh_resp.status_code == 200
-        new_tokens = refresh_resp.json()
-        assert "access_token" in new_tokens
+        # Refresh returns tokens in cookies, not in JSON body
+        new_cookies = refresh_resp.cookies
+        new_access_token = new_cookies.get("access_token")
+        assert new_access_token is not None, "access_token should be in cookies after refresh"
         # Token should be different because 'iat' changed
-        assert new_tokens["access_token"] != access_token
+        assert new_access_token != access_token
 
         # 4. Access protected route with new cookie
         new_cookies = refresh_resp.cookies

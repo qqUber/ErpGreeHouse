@@ -4,6 +4,53 @@
 
 ## 1. Безопасность (Security)
 
+### Гибридная Аутентификация (Hybrid Auth Flow)
+
+Проект использует гибридную систему аутентификации, которая поддерживает два механизма:
+
+1. **JWT Cookie** - основной механизм для веб-клиентов
+2. **x-admin-secret header** - резервный механизм для API клиентов и скриптов
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Server
+    Note over Client,Server: Hybrid Auth Flow
+    Client->>Server: Request with JWT Cookie
+    alt JWT Cookie Valid
+        Server->>Server: Validate JWT
+        Server->>Client: 200 OK
+    else JWT Cookie Missing/Invalid
+        Client->>Server: Request with x-admin-secret header
+        Server->>Server: Validate header
+        Server->>Client: 200 OK
+    end
+```
+
+### DFD Level 1: Аналитические Эндпоинты (Analytics Endpoints)
+
+Поток данных для аналитических эндпоинтов с валидацией параметров `days` и `limit`:
+
+```mermaid
+flowchart TD
+    A[Клиент] -->|GET /analytics| B{Валидация JWT}
+    B -->|Недействителен| C{x-admin-secret header}
+    B -->|Действителен| D[Проверка прав]
+    C -->|Отсутствует| E[401 Unauthorized]
+    C -->|Действителен| D
+    D -->|Нет доступа| F[403 Forbidden]
+    D -->|Есть доступ| G{Валидация параметров}
+    G -->|days отсутствует| H[days = 30 по умолчанию]
+    G -->|days = значение| I{days в диапазоне 1-365?}
+    I -->|Нет| J[400 Bad Request]
+    I -->|Да| K{limit в диапазоне 1-1000?}
+    K -->|Нет| J
+    K -->|Да| L[Запрос к БД]
+    H --> L
+    L --> M[Формирование ответа]
+    M --> A
+```
+
 ### Управление секретами
 -   **Текущее состояние**: Использование `.env` файлов.
 -   **Проблема**: Риск компрометации API-ключей и паролей БД при попадании файлов в Git.

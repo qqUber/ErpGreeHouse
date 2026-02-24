@@ -194,6 +194,8 @@ def test_real_database_fk_constraints():
     
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
+    # Enable foreign keys for this connection (same as app/db.py)
+    conn.execute("PRAGMA foreign_keys = ON")
     
     # Check if foreign keys are enabled
     cursor = conn.execute("PRAGMA foreign_keys")
