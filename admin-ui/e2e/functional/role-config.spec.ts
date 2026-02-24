@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import {expect, test} from '@playwright/test';
 
 test.describe('Role Configuration', () => {
   test('Owner can configure operator permissions', async ({ page }) => {
@@ -8,7 +8,9 @@ test.describe('Role Configuration', () => {
     await page.fill('input[placeholder="Пароль"]', 'admin');
     await page.click('button:has-text("Войти")');
     // Wait for login to complete by checking for username in the header
-    await expect(page.locator('.font-medium.text-gray-900:has-text("admin")')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.font-medium.text-gray-900:has-text("admin")')).toBeVisible({
+      timeout: 15000,
+    });
 
     // 2. Go to Settings
     await page.click('.tab:has-text("Настройки")');
@@ -34,7 +36,7 @@ test.describe('Role Configuration', () => {
     // Note: The first column is "Разрешение", so if operatorColIndex is 1 (0-based index of headers),
     // it corresponds to the same index in row cells (td).
     const checkbox = row.locator('td').nth(operatorColIndex).locator('input[type="checkbox"]');
-    
+
     // Ensure it is checked initially (default)
     await expect(checkbox).toBeChecked();
 
@@ -67,27 +69,27 @@ test.describe('Role Configuration', () => {
     await page.fill('input[placeholder="Логин"]', 'admin');
     await page.fill('input[placeholder="Пароль"]', 'admin');
     await page.click('button:has-text("Войти")');
-    
+
     await page.click('.tab:has-text("Настройки")');
-    
+
     // Re-locate elements as page reloaded
     const headers2 = page.locator('table thead th');
     // Assuming index is stable, but let's be safe
     // ... skipping re-calculation for brevity if we assume stability, but in test code better be explicit or reuse variable if we are sure
     // We can reuse operatorColIndex if column order is deterministic (it is based on DB query order).
-    
+
     const row2 = page.locator('tr:has-text("product.read")');
     const checkbox2 = row2.locator('td').nth(operatorColIndex).locator('input[type="checkbox"]');
-    
+
     await checkbox2.check();
     await expect(checkbox2).toBeChecked();
-    
+
     // 10. Logout and verify operator access restored
     await page.click('button:has-text("Выйти")');
     await page.fill('input[placeholder="Логин"]', 'operator');
     await page.fill('input[placeholder="Пароль"]', 'operator');
     await page.click('button:has-text("Войти")');
-    
+
     await expect(page.locator('.tab:has-text("Товары")')).toBeVisible();
   });
 });

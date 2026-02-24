@@ -5,12 +5,13 @@ import os
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Header, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Header, HTTPException, BackgroundTasks, Depends, Query
 from fastapi.responses import FileResponse
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from .auth import require_admin, require_roles, require_permission, ALL_PERMISSIONS, get_default_permissions
+from .auth import ALL_PERMISSIONS, get_default_permissions, check_permission, check_roles
+from .admin_auth_api import require_jwt_auth
 from .db import get_db
 from .erp_client import ERPClient
 from .identify import generate_qr_token, normalize_name, normalize_phone
@@ -24,6 +25,27 @@ from .trigger_engine import evaluate_and_queue_triggers
 
 router = APIRouter(prefix="/api/v1")
 public_router = APIRouter(prefix="/api/v1/public")
+
+
+def _parse_items_json(items_json: str | None) -> list[dict]:
+    """Parse items_json field safely"""
+    if not items_json:
+        return []
+    try:
+        return json.loads(items_json)
+    except (json.JSONDecodeError, TypeError):
+        return []
+
+
+def _get_product_names(items_json: str | None, max_items: int = 2) -> str:
+    """Extract product names from items_json"""
+    items = _parse_items_json(items_json)
+    if not items:
+        return "—"
+    names = [item.get("name", "Товар") for item in items[:max_items]]
+    if len(items) > max_items:
+        return f"{', '.join(names)} +{len(items) - max_items}"
+    return ', '.join(names)
 
 
 @public_router.get("/status")
@@ -105,10 +127,10 @@ class PermissionUpdate(BaseModel):
 
 @router.get("/roles/permissions")
 def list_permissions(
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     # Owner only for managing permissions
-    require_roles(x_admin_secret, roles=("owner",))
+    check_roles(auth_result, roles=("owner",))
     
     db = get_db()
     conn = db.connect()
@@ -153,9 +175,9 @@ def list_permissions(
 @router.post("/roles/permissions")
 def update_permission(
     payload: PermissionUpdate,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner",))
+    check_roles(auth_result, roles=("owner",))
     
     db = get_db()
     conn = db.connect()
@@ -173,9 +195,9 @@ def update_permission(
 
 @router.get("/dashboard")
 def dashboard(
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_permission(x_admin_secret, "dashboard.read")
+    check_permission(auth_result, "dashboard.read")
     today = datetime.now().strftime("%Y-%m-%d")
     cache_key = f"crm:cache:dashboard:{today}"
     cached = _cache_get_json(cache_key)
@@ -191,11 +213,20 @@ def dashboard(
         row = cur.fetchone()
         cur2 = conn.execute("SELECT COUNT(*) as cnt FROM customers")
         customers_total = int(cur2.fetchone()[0])
-        # Recent Activity (Transactions)
+        # Recent Activity (Transactions) with customer name and product names
         cur_tx = conn.execute(
-            "SELECT id, created_at, total_amount, bonus_earned, bonus_used FROM transactions ORDER BY created_at DESC LIMIT 10"
+            "SELECT t.id, t.created_at, t.total_amount, t.bonus_earned, t.bonus_used, t.items_json, c.full_name as customer_name, t.customer_id "
+            "FROM transactions t "
+            "JOIN customers c ON t.customer_id = c.id "
+            "ORDER BY t.created_at DESC LIMIT 10"
         )
-        txs = [dict(r) for r in cur_tx.fetchall()]
+        txs = []
+        for r in cur_tx.fetchall():
+            tx = dict(r)
+            tx["customer_name"] = tx.get("customer_name") or "Клиент"
+            tx["product_names"] = _get_product_names(tx.get("items_json"))
+            tx.pop("items_json", None)  # Remove raw JSON from response
+            txs.append(tx)
         
         # Recent Marketing Triggers (Events)
         cur_tr = conn.execute(
@@ -227,9 +258,9 @@ def dashboard(
 @router.get("/stats/sales")
 def sales_stats(
     days: int = 7,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_permission(x_admin_secret, "dashboard.read")
+    check_permission(auth_result, "dashboard.read")
     db = get_db()
     conn = db.connect()
     try:
@@ -250,6 +281,188 @@ def sales_stats(
         conn.close()
 
 
+@router.get("/analytics/sales-by-day")
+def analytics_sales_by_day(\n    days: int = Query(default=30, ge=1, le=365),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Get sales dynamics by day for charts"""
+    check_permission(auth_result, "dashboard.read")
+    db = get_db()
+    conn = db.connect()
+    try:
+        cur = conn.execute(
+            """
+            SELECT 
+                date(created_at) as date, 
+                COUNT(*) as transactions_count,
+                COALESCE(SUM(total_amount), 0) as total_amount,
+                COALESCE(SUM(bonus_earned), 0) as bonus_earned
+            FROM transactions
+            WHERE created_at >= date('now', ?)
+            GROUP BY date(created_at)
+            ORDER BY date ASC
+            """,
+            (f"-{days} days",),
+        )
+        data = [dict(r) for r in cur.fetchall()]
+        return {"sales_by_day": data}
+    finally:
+        conn.close()
+
+
+@router.get("/analytics/top-products")
+def analytics_top_products(\n    days: int = Query(default=30, ge=1, le=365),\n    limit: int = Query(default=10, ge=1, le=100),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Get top products by sales for bar chart"""
+    check_permission(auth_result, "dashboard.read")
+    db = get_db()
+    conn = db.connect()
+    try:
+        # Parse items_json to extract product info
+        cur = conn.execute(
+            """
+            SELECT 
+                t.items_json
+            FROM transactions t
+            WHERE t.created_at >= date('now', ?)
+            """,
+            (f"-{days} days",),
+        )
+        
+        # Aggregate product sales
+        product_sales = {}
+        for row in cur.fetchall():
+            items = json.loads(row["items_json"] or "[]")
+            for item in items:
+                name = item.get("name", "Unknown")
+                qty = item.get("qty", 1)
+                price = item.get("price", 0)
+                if name in product_sales:
+                    product_sales[name]["qty"] += qty
+                    product_sales[name]["revenue"] += price * qty
+                else:
+                    product_sales[name] = {"qty": qty, "revenue": price * qty}
+        
+        # Sort by revenue and take top N
+        sorted_products = sorted(product_sales.items(), key=lambda x: x[1]["revenue"], reverse=True)[:limit]
+        data = [
+            {"name": name, "qty": stats["qty"], "revenue": stats["revenue"]}
+            for name, stats in sorted_products
+        ]
+        return {"top_products": data}
+    finally:
+        conn.close()
+
+
+@router.get("/analytics/category-distribution")
+def analytics_category_distribution(\n    days: int = Query(default=30, ge=1, le=365),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Get category distribution for pie/donut chart"""
+    check_permission(auth_result, "dashboard.read")
+    db = get_db()
+    conn = db.connect()
+    try:
+        # Get products to map codes to categories
+        cur_products = conn.execute("SELECT code, kind FROM products WHERE active = 1")
+        product_categories = {row["code"]: row["kind"] for row in cur_products.fetchall()}
+        
+        # Get transactions
+        cur = conn.execute(
+            """
+            SELECT items_json
+            FROM transactions
+            WHERE created_at >= date('now', ?)
+            """,
+            (f"-{days} days",),
+        )
+        
+        # Aggregate by category
+        category_sales = {}
+        for row in cur.fetchall():
+            items = json.loads(row["items_json"] or "[]")
+            for item in items:
+                code = item.get("code", "")
+                category = product_categories.get(code, "Other")
+                qty = item.get("qty", 1)
+                price = item.get("price", 0)
+                if category in category_sales:
+                    category_sales[category]["qty"] += qty
+                    category_sales[category]["revenue"] += price * qty
+                else:
+                    category_sales[category] = {"qty": qty, "revenue": price * qty}
+        
+        data = [
+            {"name": cat, "qty": stats["qty"], "revenue": stats["revenue"]}
+            for cat, stats in category_sales.items()
+        ]
+        return {"category_distribution": data}
+    finally:
+        conn.close()
+
+
+@router.post("/analytics/recalculate")
+def analytics_recalculate(
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Recalculate customer analytics (LTV, average_check, etc.)"""
+    check_permission(auth_result, "dashboard.read")
+
+    db = get_db()
+    conn = db.connect()
+    try:
+        # Get all customers with transactions
+        cur = conn.execute(
+            """
+            SELECT 
+                c.id,
+                COALESCE(SUM(t.total_amount), 0) as ltv,
+                COUNT(t.id) as purchase_count,
+                MAX(t.created_at) as last_purchase_date,
+                MIN(t.created_at) as first_purchase_date
+            FROM customers c
+            LEFT JOIN transactions t ON c.id = t.customer_id
+            GROUP BY c.id
+            """
+        )
+        
+        updated = 0
+        for row in cur.fetchall():
+            customer_id = row["id"]
+            ltv = row["ltv"] or 0
+            purchase_count = row["purchase_count"] or 0
+            last_purchase_date = row["last_purchase_date"]
+            first_purchase_date = row["first_purchase_date"]
+            
+            # Calculate average check
+            average_check = ltv / purchase_count if purchase_count > 0 else 0
+            
+            # Get cohort month from first purchase
+            cohort_month = None
+            if first_purchase_date:
+                cohort_month = first_purchase_date[:7]  # YYYY-MM
+            
+            conn.execute(
+                """
+                UPDATE customers SET 
+                    ltv = ?,
+                    average_check = ?,
+                    purchase_frequency = ?,
+                    last_purchase_date = ?,
+                    cohort_month = ?
+                WHERE id = ?
+                """,
+                (ltv, average_check, purchase_count, last_purchase_date, cohort_month, customer_id)
+            )
+            updated += 1
+        
+        conn.commit()
+        return {"recalculated": updated}
+    finally:
+        conn.close()
+
+
 @router.get("/customers")
 def list_customers(
     q: str | None = None,
@@ -258,9 +471,9 @@ def list_customers(
     has_orders: bool | None = None,
     created_after: str | None = None,
     created_before: str | None = None,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_permission(x_admin_secret, "customer.list")
+    check_permission(auth_result, "customer.list")
     
     # Cache key depends on all filters
     filters_key = f"{q or ''}:{min_balance}:{max_balance}:{has_orders}:{created_after}:{created_before}"
@@ -320,9 +533,9 @@ def list_customers(
 @router.get("/customers/{customer_id}")
 def get_customer(
     customer_id: int,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_permission(x_admin_secret, "customer.read")
+    check_permission(auth_result, "customer.read")
     db = get_db()
     conn = db.connect()
     try:
@@ -352,9 +565,9 @@ def get_customer(
 @router.post("/customers")
 def create_customer(
     payload: CreateCustomerIn,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_permission(x_admin_secret, "customer.create")
+    check_permission(auth_result, "customer.create")
     if not payload.full_name:
         raise HTTPException(status_code=400, detail="Name required")
     
@@ -388,9 +601,9 @@ def create_customer(
 @router.get("/transactions/{transaction_id}/receipt")
 def get_receipt(
     transaction_id: int,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> FileResponse:
-    require_permission(x_admin_secret, "transaction.read")
+    check_permission(auth_result, "transaction.read")
     db = get_db()
     conn = db.connect()
     try:
@@ -409,9 +622,9 @@ def get_receipt(
 @router.post("/identify/phone")
 def identify_phone(
     payload: IdentifyPhoneIn,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_permission(x_admin_secret, "customer.create")
+    check_permission(auth_result, "customer.create")
     phone = normalize_phone(payload.phone)
     if not phone:
         raise HTTPException(status_code=400, detail="Invalid phone")
@@ -437,9 +650,9 @@ def identify_phone(
 @router.post("/identify/name")
 def identify_name(
     payload: IdentifyNameIn,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_permission(x_admin_secret, "customer.search")
+    check_permission(auth_result, "customer.search")
     name = normalize_name(payload.name)
     if not name:
         raise HTTPException(status_code=400, detail="Invalid name")
@@ -459,9 +672,9 @@ def identify_name(
 @router.post("/identify/qr")
 def identify_qr(
     payload: IdentifyQrIn,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_permission(x_admin_secret, "customer.search")
+    check_permission(auth_result, "customer.search")
     token = payload.qr.strip()
     if not token:
         raise HTTPException(status_code=400, detail="Invalid qr")
@@ -481,9 +694,9 @@ def identify_qr(
 def create_sale(
     payload: CreateSaleIn,
     background_tasks: BackgroundTasks,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_permission(x_admin_secret, "pos.sale")
+    check_permission(auth_result, "pos.sale")
     if not payload.items:
         raise HTTPException(status_code=400, detail="items required")
 
@@ -622,9 +835,9 @@ def _maybe_sync_to_erpnext(telegram_id: int, items: list[SaleItem], bonus_used: 
 
 @router.get("/exports/transactions.csv")
 def export_transactions_csv(
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> StreamingResponse:
-    require_permission(x_admin_secret, "report.export")
+    check_permission(auth_result, "report.export")
     db = get_db()
     conn = db.connect()
     try:
@@ -644,3 +857,7 @@ def export_transactions_csv(
         )
     finally:
         conn.close()
+
+
+
+

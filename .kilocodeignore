@@ -1,0 +1,45 @@
+# --- Зависимости (Самое тяжелое) ---
+node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+
+# --- Артефакты тестирования (Критично для твоего случая!) ---
+# Мы не хотим, чтобы AI читал тысячи строк логов и бинарные скриншоты как код
+tests/artifacts/
+test-results/
+playwright-report/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Сборка и дистрибутивы ---
+dist/
+build/
+.nuxt/
+.output/
+
+# --- Базы данных и секреты ---
+# Игнорируем саму базу (бинарный файл), но AI сможет работать с ней через SQL команды
+*.db
+*.sqlite3
+*.sqlite-journal
+.env
+.env.*
+!.env.example
+
+# --- Системные и IDE файлы ---
+.idea/
+.vscode/
+.DS_Store
+*.log
+*.tmp
+
+# --- Документация и медиа (по желанию) ---
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.pdf

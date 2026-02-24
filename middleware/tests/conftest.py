@@ -23,15 +23,31 @@ from typing import Generator, Dict, Any
 # ---------------------------------------------------------------------------
 _aiogram_mock = MagicMock()
 _aiogram_types_mock = MagicMock()
+_aiogram_client_mock = MagicMock()
+_aiogram_enums_mock = MagicMock()
 _celery_mock = MagicMock()
 
 for _mod in [
     "aiogram", "aiogram.types", "aiogram.filters", "aiogram.fsm",
     "aiogram.fsm.context", "aiogram.fsm.storage", "aiogram.fsm.storage.redis",
     "aiogram.utils", "aiogram.utils.keyboard",
+    "aiogram.client", "aiogram.client.default", "aiogram.enums",
     "celery", "celery.app",
 ]:
     sys.modules.setdefault(_mod, MagicMock())
+
+# Configure specific mocks for aiogram components that are imported
+# aiogram.client.default.DefaultBotProperties
+sys.modules["aiogram.client.default"].DefaultBotProperties = MagicMock()
+
+# aiogram.enums.ParseMode
+sys.modules["aiogram.enums"].ParseMode = MagicMock()
+sys.modules["aiogram.enums"].ParseMode.HTML = "HTML"
+sys.modules["aiogram.enums"].ParseMode.Markdown = "Markdown"
+
+# aiogram.Bot and aiogram.Dispatcher are accessed from the main aiogram module
+sys.modules["aiogram"].Bot = MagicMock()
+sys.modules["aiogram"].Dispatcher = MagicMock()
 
 # Add app to path
 sys.path.insert(0, str(Path(__file__).parent.parent))

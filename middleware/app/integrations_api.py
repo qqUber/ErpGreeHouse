@@ -3,10 +3,11 @@ import secrets
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Depends
 from pydantic import BaseModel, Field
 
-from .auth import require_integration_secret, require_roles
+from .admin_auth_api import require_jwt_auth
+from .auth import check_roles, require_integration_secret
 from .db import get_db
 from .identify import generate_qr_token, normalize_phone
 from .integration_events import dispatch_event
@@ -48,9 +49,9 @@ class IntegrationOut(BaseModel):
 
 @router.get("")
 def list_integrations(
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
-) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> list[IntegrationOut]:
+    check_roles(auth_result, roles=("owner", "marketer"))
     db = get_db()
     conn = db.connect()
     try:
@@ -78,18 +79,18 @@ def list_integrations(
 
 @router.get("/templates")
 def list_templates(
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
     return {"items": list_integration_templates()}
 
 
 @router.post("")
 def create_integration(
     payload: IntegrationIn,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
     secret = secrets.token_urlsafe(24)
     cfg = json.dumps(payload.config or {}, ensure_ascii=False)
     db = get_db()
@@ -108,9 +109,9 @@ def create_integration(
 @router.get("/{integration_id}")
 def get_integration(
     integration_id: int,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
     db = get_db()
     conn = db.connect()
     try:
@@ -140,9 +141,9 @@ def get_integration(
 def update_integration(
     integration_id: int,
     payload: IntegrationIn,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
     cfg = json.dumps(payload.config or {}, ensure_ascii=False)
     db = get_db()
     conn = db.connect()
@@ -162,9 +163,9 @@ def update_integration(
 @router.post("/{integration_id}/rotate-secret")
 def rotate_secret(
     integration_id: int,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
     secret = secrets.token_urlsafe(24)
     db = get_db()
     conn = db.connect()
@@ -184,9 +185,9 @@ def rotate_secret(
 @router.delete("/{integration_id}")
 def delete_integration(
     integration_id: int,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
     db = get_db()
     conn = db.connect()
     try:
@@ -202,9 +203,9 @@ def delete_integration(
 @router.get("/{integration_id}/deliveries")
 def list_deliveries(
     integration_id: int,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
     db = get_db()
     conn = db.connect()
     try:

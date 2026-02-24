@@ -194,10 +194,8 @@ npm install
 ```bash
 cd middleware
 
-# Copy example environment file
-cp .env.example .env  # Linux/Mac
-copy .env.example .env  # Windows
-
+# example environment file
+ .env  
 # Edit .env with your configuration
 # Required settings:
 # - TELEGRAM_BOT_TOKEN
@@ -209,7 +207,7 @@ copy .env.example .env  # Windows
 
 ```bash
 # Docker (recommended)
-docker run -d -p 6379:6379 --name erp_redis redis:7-alpine
+docker run -d -p 6379:6379 --name erp_redis redis:8-alpine
 
 # OR native Redis
 # Windows: Start Redis service

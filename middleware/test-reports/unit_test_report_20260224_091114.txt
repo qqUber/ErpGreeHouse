@@ -1,0 +1,2218 @@
+================================================================================
+UNIT TEST COMPREHENSIVE REPORT
+Generated at: 2026-02-24 09:11:20
+================================================================================
+
+STDOUT:
+--------------------------------------------------------------------------------
+============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.0.2, pluggy-1.6.0 -- c:\Users\AASS\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+metadata: {'Python': '3.14.3', 'Platform': 'Windows-11-10.0.22631-SP0', 'Packages': {'pytest': '9.0.2', 'pluggy': '1.6.0'}, 'Plugins': {'anyio': '4.12.1', 'asyncio': '1.3.0', 'cov': '7.0.0', 'html': '4.2.0', 'metadata': '3.1.1', 'mock': '3.15.1'}, 'JAVA_HOME': 'C:\\Program Files\\OpenJDK\\jdk-22.0.2'}
+rootdir: c:\Users\AASS\IdeaProjects\ErpGreeHouse\middleware
+configfile: pytest.ini
+plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, html-4.2.0, metadata-3.1.1, mock-3.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 111 items
+
+tests/unit/test_analytics.py::test_sales_stats_no_auth PASSED            [  0%]
+tests/unit/test_analytics.py::test_sales_stats_with_secret SKIPPED (...) [  1%]
+tests/unit/test_bot_handlers.py::test_cmd_start_shows_registration_prompt SKIPPED [  2%]
+tests/unit/test_bot_handlers.py::test_cmd_start_shows_balance_for_registered_user SKIPPED [  3%]
+tests/unit/test_bot_handlers.py::test_cmd_register_invalid_format SKIPPED [  4%]
+tests/unit/test_bot_handlers.py::test_cmd_register_invalid_phone SKIPPED [  5%]
+tests/unit/test_bot_handlers.py::test_cmd_register_valid SKIPPED (Bo...) [  6%]
+tests/unit/test_bot_handlers.py::test_cb_consent_declined SKIPPED (B...) [  7%]
+tests/unit/test_bot_handlers.py::test_cb_consent_no_pending_data SKIPPED [  8%]
+tests/unit/test_bot_handlers.py::test_cb_consent_success SKIPPED (Bo...) [  9%]
+tests/unit/test_bot_handlers.py::test_cmd_balance_not_registered SKIPPED [  9%]
+tests/unit/test_bot_handlers.py::test_cmd_balance_registered SKIPPED     [ 10%]
+tests/unit/test_bot_handlers.py::test_cmd_help SKIPPED (Bot handlers...) [ 11%]
+tests/unit/test_bot_handlers.py::test_cmd_menu SKIPPED (Bot handlers...) [ 12%]
+tests/unit/test_foreign_key_constraints.py::TestForeignKeyConstraints::test_fk_constraint_enforced PASSED [ 13%]
+tests/unit/test_foreign_key_constraints.py::TestForeignKeyConstraints::test_fk_constraint_with_valid_customer PASSED [ 14%]
+tests/unit/test_foreign_key_constraints.py::TestForeignKeyConstraints::test_fk_constraint_violation_without_fk_enabled PASSED [ 15%]
+tests/unit/test_foreign_key_constraints.py::TestForeignKeyConstraints::test_cascade_delete PASSED [ 16%]
+tests/unit/test_foreign_key_constraints.py::test_real_database_fk_constraints SKIPPED [ 17%]
+tests/unit/test_identify.py::test_normalize_phone_ru_8_prefix PASSED     [ 18%]
+tests/unit/test_identify.py::test_normalize_phone_ru_10_digits PASSED    [ 18%]
+tests/unit/test_identify.py::test_normalize_phone_invalid PASSED         [ 19%]
+tests/unit/test_identify.py::test_normalize_name PASSED                  [ 20%]
+tests/unit/test_jwt_comprehensive.py::TestJWTTokenCreation::test_create_access_token_basic FAILED [ 21%]
+tests/unit/test_jwt_comprehensive.py::TestJWTTokenCreation::test_create_access_token_with_permissions PASSED [ 22%]
+tests/unit/test_jwt_comprehensive.py::TestJWTTokenCreation::test_create_access_token_missing_fields FAILED [ 23%]
+tests/unit/test_jwt_comprehensive.py::TestJWTTokenCreation::test_create_refresh_token_basic PASSED [ 24%]
+tests/unit/test_jwt_comprehensive.py::TestJWTTokenCreation::test_token_expiration_times FAILED [ 25%]
+tests/unit/test_jwt_comprehensive.py::TestJWTTokenValidation::test_validate_access_token_valid FAILED [ 26%]
+tests/unit/test_jwt_comprehensive.py::TestJWTTokenValidation::test_validate_access_token_invalid_type PASSED [ 27%]
+tests/unit/test_jwt_comprehensive.py::TestJWTTokenValidation::test_validate_access_token_expired PASSED [ 27%]
+tests/unit/test_jwt_comprehensive.py::TestJWTTokenValidation::test_validate_access_token_invalid_signature FAILED [ 28%]
+tests/unit/test_jwt_comprehensive.py::TestJWTTokenValidation::test_validate_refresh_token_valid PASSED [ 29%]
+tests/unit/test_jwt_comprehensive.py::TestJWTTokenValidation::test_validate_refresh_token_invalid_type FAILED [ 30%]
+tests/unit/test_jwt_comprehensive.py::TestJWTTokenValidation::test_validate_tokens_empty_string PASSED [ 31%]
+tests/unit/test_jwt_comprehensive.py::TestJWTTokenValidation::test_validate_tokens_none PASSED [ 32%]
+tests/unit/test_jwt_comprehensive.py::TestJWTTokenValidation::test_validate_tokens_invalid_format PASSED [ 33%]
+tests/unit/test_jwt_comprehensive.py::TestJWTDecode::test_decode_token_valid FAILED [ 34%]
+tests/unit/test_jwt_comprehensive.py::TestJWTDecode::test_decode_token_expired PASSED [ 35%]
+tests/unit/test_jwt_comprehensive.py::TestJWTDecode::test_decode_token_invalid_signature FAILED [ 36%]
+tests/unit/test_jwt_comprehensive.py::TestJWTDecode::test_decode_token_invalid_format PASSED [ 36%]
+tests/unit/test_jwt_comprehensive.py::TestGetAdminFromJWT::test_get_admin_from_jwt_complete PASSED [ 37%]
+tests/unit/test_jwt_comprehensive.py::TestGetAdminFromJWT::test_get_admin_from_jwt_missing_fields PASSED [ 38%]
+tests/unit/test_jwt_comprehensive.py::TestGetAdminFromJWT::test_get_admin_from_jwt_none_values FAILED [ 39%]
+tests/unit/test_jwt_comprehensive.py::TestRolePermissions::test_get_role_permissions_owner PASSED [ 40%]
+tests/unit/test_jwt_comprehensive.py::TestRolePermissions::test_get_role_permissions_from_db FAILED [ 41%]
+tests/unit/test_jwt_comprehensive.py::TestRolePermissions::test_get_role_permissions_fallback_to_default FAILED [ 42%]
+tests/unit/test_jwt_comprehensive.py::TestRolePermissions::test_get_default_permissions FAILED [ 43%]
+tests/unit/test_jwt_comprehensive.py::TestSecurityEdgeCases::test_timing_attack_protection FAILED [ 44%]
+tests/unit/test_jwt_comprehensive.py::TestSecurityEdgeCases::test_token_tampering_detection FAILED [ 45%]
+tests/unit/test_jwt_comprehensive.py::TestSecurityEdgeCases::test_algorithm_confusion_attack_prevention PASSED [ 45%]
+tests/unit/test_jwt_comprehensive.py::TestSecurityEdgeCases::test_empty_and_malformed_tokens PASSED [ 46%]
+tests/unit/test_jwt_comprehensive.py::TestJWTIntegration::test_complete_access_token_lifecycle FAILED [ 47%]
+tests/unit/test_jwt_comprehensive.py::TestJWTIntegration::test_complete_refresh_token_lifecycle PASSED [ 48%]
+tests/unit/test_jwt_comprehensive.py::TestJWTIntegration::test_token_type_separation FAILED [ 49%]
+tests/unit/test_jwt_comprehensive.py::TestJWTIntegration::test_token_expiration_edge_cases FAILED [ 50%]
+tests/unit/test_jwt_comprehensive.py::TestJWTErrorHandling::test_validation_logging PASSED [ 51%]
+tests/unit/test_jwt_comprehensive.py::TestJWTErrorHandling::test_decode_error_logging FAILED [ 52%]
+tests/unit/test_jwt_comprehensive.py::TestJWTErrorHandling::test_secret_key_validation PASSED [ 53%]
+tests/unit/test_jwt_comprehensive.py::test_role_permissions_parametrized[owner-expected_permissions0] PASSED [ 54%]
+tests/unit/test_jwt_comprehensive.py::test_role_permissions_parametrized[admin-expected_permissions1] FAILED [ 54%]
+tests/unit/test_jwt_comprehensive.py::test_role_permissions_parametrized[user-expected_permissions2] FAILED [ 55%]
+tests/unit/test_jwt_comprehensive.py::test_role_permissions_parametrized[guest-expected_permissions3] FAILED [ 56%]
+tests/unit/test_jwt_comprehensive.py::test_role_permissions_parametrized[unknown-expected_permissions4] FAILED [ 57%]
+tests/unit/test_jwt_comprehensive.py::test_role_permissions_parametrized[-expected_permissions5] FAILED [ 58%]
+tests/unit/test_jwt_comprehensive.py::test_role_permissions_parametrized[None-expected_permissions6] FAILED [ 59%]
+tests/unit/test_jwt_comprehensive.py::test_token_type_validation_parametrized[access-validate_access_token] FAILED [ 60%]
+tests/unit/test_jwt_comprehensive.py::test_token_type_validation_parametrized[refresh-validate_refresh_token] PASSED [ 61%]
+tests/unit/test_jwt_comprehensive.py::test_invalid_tokens_parametrized[] PASSED [ 62%]
+tests/unit/test_jwt_comprehensive.py::test_invalid_tokens_parametrized[invalid] PASSED [ 63%]
+tests/unit/test_jwt_comprehensive.py::test_invalid_tokens_parametrized[header.payload.signature.extra] PASSED [ 63%]
+tests/unit/test_jwt_comprehensive.py::test_invalid_tokens_parametrized[..] PASSED [ 64%]
+tests/unit/test_jwt_comprehensive.py::test_invalid_tokens_parametrized[None] PASSED [ 65%]
+tests/unit/test_jwt_security.py::TestJWTTimingAttacks::test_token_validation_timing_consistency FAILED [ 66%]
+tests/unit/test_jwt_security.py::TestJWTTimingAttacks::test_constant_time_equals_timing PASSED [ 67%]
+tests/unit/test_jwt_security.py::TestJWTTimingAttacks::test_secret_validation_timing FAILED [ 68%]
+tests/unit/test_jwt_security.py::TestJWTAlgorithmAttacks::test_none_algorithm_rejection PASSED [ 69%]
+tests/unit/test_jwt_security.py::TestJWTAlgorithmAttacks::test_algorithm_confusion_prevention FAILED [ 70%]
+tests/unit/test_jwt_security.py::TestJWTAlgorithmAttacks::test_key_confusion_attack_prevention FAILED [ 71%]
+tests/unit/test_jwt_security.py::TestJWTPayloadInjection::test_payload_tampering_detection FAILED [ 72%]
+tests/unit/test_jwt_security.py::TestJWTPayloadInjection::test_role_escalation_prevention FAILED [ 72%]
+tests/unit/test_jwt_security.py::TestJWTPayloadInjection::test_payload_injection_prevention FAILED [ 73%]
+tests/unit/test_jwt_security.py::TestJWTReplayAttacks::test_token_reuse_detection FAILED [ 74%]
+tests/unit/test_jwt_security.py::TestJWTReplayAttacks::test_expired_token_rejection FAILED [ 75%]
+tests/unit/test_jwt_security.py::TestJWTReplayAttacks::test_concurrent_token_validation FAILED [ 76%]
+tests/unit/test_jwt_security.py::TestJWTCryptographicStrength::test_secret_key_strength PASSED [ 77%]
+tests/unit/test_jwt_security.py::TestJWTCryptographicStrength::test_signature_uniqueness PASSED [ 78%]
+tests/unit/test_jwt_security.py::TestJWTCryptographicStrength::test_token_uniqueness FAILED [ 79%]
+tests/unit/test_jwt_security.py::TestJWTErrorInformationLeakage::test_error_messages_dont_leak_secrets FAILED [ 80%]
+tests/unit/test_jwt_security.py::TestJWTErrorInformationLeakage::test_validation_failures_dont_exploit_structure FAILED [ 81%]
+tests/unit/test_loyalty.py::test_calc_earned_points_min_threshold PASSED [ 81%]
+tests/unit/test_loyalty.py::test_clamp_redeem_points_limits PASSED       [ 82%]
+tests/unit/test_loyalty_advanced.py::test_get_tier_boundaries PASSED     [ 83%]
+tests/unit/test_loyalty_advanced.py::test_calc_earned_points_all_tiers PASSED [ 84%]
+tests/unit/test_loyalty_advanced.py::test_clamp_redeem_points_per_tier PASSED [ 85%]
+tests/unit/test_loyalty_advanced.py::test_clamp_redeem_points_insufficient_available PASSED [ 86%]
+tests/unit/test_loyalty_advanced.py::test_clamp_redeem_points_negative_values PASSED [ 87%]
+tests/unit/test_loyalty_next_tier.py::test_get_next_tier_logic PASSED    [ 88%]
+tests/unit/test_loyalty_next_tier.py::test_get_next_tier_custom_rules PASSED [ 89%]
+tests/unit/test_search_cyrillic_serbian.py::TestSearchCyrillicSerbian::test_like_search_basic_ascii PASSED [ 90%]
+tests/unit/test_search_cyrillic_serbian.py::TestSearchCyrillicSerbian::test_like_search_cyrillic_exact PASSED [ 90%]
+tests/unit/test_search_cyrillic_serbian.py::TestSearchCyrillicSerbian::test_like_search_cyrillic_case_insensitive_fails PASSED [ 91%]
+tests/unit/test_search_cyrillic_serbian.py::TestSearchCyrillicSerbian::test_like_search_serbian_latin PASSED [ 92%]
+tests/unit/test_search_cyrillic_serbian.py::TestSearchCyrillicSerbian::test_like_search_with_collation PASSED [ 93%]
+tests/unit/test_search_cyrillic_serbian.py::TestSearchCyrillicSerbian::test_ilike_alternative PASSED [ 94%]
+tests/unit/test_search_cyrillic_serbian.py::test_real_search_functionality FAILED [ 95%]
+tests/unit/test_trigger_engine.py::test_check_criteria_empty PASSED      [ 96%]
+tests/unit/test_trigger_engine.py::test_check_criteria_min_amount_success PASSED [ 97%]
+tests/unit/test_trigger_engine.py::test_check_criteria_min_amount_fail PASSED [ 98%]
+tests/unit/test_trigger_engine.py::test_check_criteria_min_amount_missing_event_data PASSED [ 99%]
+tests/unit/test_trigger_worker.py::test_worker_module_imports PASSED     [100%]
+
+================================== FAILURES ===================================
+_____________ TestJWTTokenCreation.test_create_access_token_basic _____________
+
+self = <test_jwt_comprehensive.TestJWTTokenCreation object at 0x0000016CF0BB20D0>
+
+    def test_create_access_token_basic(self):
+        """Test basic access token creation"""
+        admin = {
+            "user_id": 1,
+            "username": "test_user",
+            "role": "admin"
+        }
+    
+>       token = create_access_token(admin)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = 'admin'
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:17,594 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+________ TestJWTTokenCreation.test_create_access_token_missing_fields _________
+
+self = <test_jwt_comprehensive.TestJWTTokenCreation object at 0x0000016CF0BDE3F0>
+
+    def test_create_access_token_missing_fields(self):
+        """Test access token creation with missing optional fields"""
+        admin = {"user_id": 1}  # Minimal admin dict
+    
+>       token = create_access_token(admin)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:17,741 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+______________ TestJWTTokenCreation.test_token_expiration_times _______________
+
+self = <test_jwt_comprehensive.TestJWTTokenCreation object at 0x0000016CF0C0A330>
+
+    def test_token_expiration_times(self):
+        """Test that tokens have correct expiration times"""
+        admin = {"user_id": 1}
+    
+>       access_token = create_access_token(admin)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:17,767 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+___________ TestJWTTokenValidation.test_validate_access_token_valid ___________
+
+self = <test_jwt_comprehensive.TestJWTTokenValidation object at 0x0000016CF0BB2350>
+
+    def test_validate_access_token_valid(self):
+        """Test validation of valid access token"""
+        admin = {
+            "user_id": 1,
+            "username": "test_user",
+            "role": "admin"
+        }
+    
+>       token = create_access_token(admin)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = 'admin'
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:17,788 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+_____ TestJWTTokenValidation.test_validate_access_token_invalid_signature _____
+
+self = <test_jwt_comprehensive.TestJWTTokenValidation object at 0x0000016CF0BDE780>
+
+    def test_validate_access_token_invalid_signature(self):
+        """Test validation fails for tampered token"""
+        admin = {"user_id": 1}
+>       token = create_access_token(admin)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:178: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:17,816 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+_______ TestJWTTokenValidation.test_validate_refresh_token_invalid_type _______
+
+self = <test_jwt_comprehensive.TestJWTTokenValidation object at 0x0000016CF0BD5D00>
+
+    def test_validate_refresh_token_invalid_type(self):
+        """Test validation fails for access token used as refresh token"""
+        admin = {"user_id": 1}
+>       access_token = create_access_token(admin)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:200: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:17,841 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+____________________ TestJWTDecode.test_decode_token_valid ____________________
+
+self = <test_jwt_comprehensive.TestJWTDecode object at 0x0000016CF0BB2710>
+
+    def test_decode_token_valid(self):
+        """Test decoding valid token"""
+        admin = {"user_id": 1}
+>       token = create_access_token(admin)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:227: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:17,874 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+______________ TestJWTDecode.test_decode_token_invalid_signature ______________
+
+self = <test_jwt_comprehensive.TestJWTDecode object at 0x0000016CF0BDE8B0>
+
+    def test_decode_token_invalid_signature(self):
+        """Test decoding tampered token raises exception"""
+        admin = {"user_id": 1}
+>       token = create_access_token(admin)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:257: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:17,899 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+___________ TestGetAdminFromJWT.test_get_admin_from_jwt_none_values ___________
+
+self = <test_jwt_comprehensive.TestGetAdminFromJWT object at 0x0000016CF0BDEB10>
+
+    def test_get_admin_from_jwt_none_values(self):
+        """Test converting JWT payload with None values"""
+        payload = {
+            "sub": None,
+            "username": None,
+            "role": None,
+            "permissions": None
+        }
+    
+>       admin = get_admin_from_jwt(payload)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:319: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+payload = {'permissions': None, 'role': None, 'sub': None, 'username': None}
+
+    def get_admin_from_jwt(payload: dict[str, Any]) -> dict[str, Any]:
+        """Convert JWT payload to admin dict format for compatibility."""
+        return {
+            "is_authenticated": True,
+>           "user_id": int(payload.get("sub", 0)),
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "username": payload.get("username", ""),
+            "role": payload.get("role", ""),
+            "permissions": payload.get("permissions", []),
+        }
+E       TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+app\auth.py:108: TypeError
+____________ TestRolePermissions.test_get_role_permissions_from_db ____________
+
+args = (<test_jwt_comprehensive.TestRolePermissions object at 0x0000016CF0BB2C10>,)
+keywargs = {}
+
+    @wraps(func)
+    def patched(*args, **keywargs):
+>       with self.decoration_helper(patched,
+                                    args,
+                                    keywargs) as (newargs, newkeywargs):
+
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py:1429: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\contextlib.py:141: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py:1411: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\contextlib.py:530: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py:1503: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <unittest.mock._patch object at 0x0000016CF0BBB3F0>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <module 'app.auth' from 'c:\\Users\\AASS\\IdeaProjects\\ErpGreeHouse\\middleware\\app\\auth.py'> does not have the attribute '_get_role_permissions_from_db'
+
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py:1473: AttributeError
+______ TestRolePermissions.test_get_role_permissions_fallback_to_default ______
+
+args = (<test_jwt_comprehensive.TestRolePermissions object at 0x0000016CF0BDEC40>,)
+keywargs = {}
+
+    @wraps(func)
+    def patched(*args, **keywargs):
+>       with self.decoration_helper(patched,
+                                    args,
+                                    keywargs) as (newargs, newkeywargs):
+
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py:1429: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\contextlib.py:141: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py:1411: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\contextlib.py:530: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py:1503: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <unittest.mock._patch object at 0x0000016CF0BBACF0>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <module 'app.auth' from 'c:\\Users\\AASS\\IdeaProjects\\ErpGreeHouse\\middleware\\app\\auth.py'> does not have the attribute '_get_role_permissions_from_db'
+
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py:1473: AttributeError
+______________ TestRolePermissions.test_get_default_permissions _______________
+
+self = <test_jwt_comprehensive.TestRolePermissions object at 0x0000016CF0BDED70>
+
+    def test_get_default_permissions(self):
+        """Test default permission mappings"""
+>       assert _get_default_permissions("owner") == ["*"]
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       NameError: name '_get_default_permissions' is not defined
+
+tests\unit\test_jwt_comprehensive.py:357: NameError
+_____________ TestSecurityEdgeCases.test_timing_attack_protection _____________
+
+self = <test_jwt_comprehensive.TestSecurityEdgeCases object at 0x0000016CF0BB2D50>
+
+    def test_timing_attack_protection(self):
+        """Test that token validation timing is consistent"""
+        # This is more of a conceptual test - in practice we'd use constant_time_equals
+        admin = {"user_id": 1}
+>       valid_token = create_access_token(admin)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:370: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,228 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+____________ TestSecurityEdgeCases.test_token_tampering_detection _____________
+
+self = <test_jwt_comprehensive.TestSecurityEdgeCases object at 0x0000016CF0BB2E90>
+
+    def test_token_tampering_detection(self):
+        """Test detection of various token tampering methods"""
+        admin = {"user_id": 1}
+>       original_token = create_access_token(admin)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:389: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,259 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+___________ TestJWTIntegration.test_complete_access_token_lifecycle ___________
+
+self = <test_jwt_comprehensive.TestJWTIntegration object at 0x0000016CF0BB2FD0>
+
+    def test_complete_access_token_lifecycle(self):
+        """Test complete lifecycle of access token creation and validation"""
+        # Create admin data
+        original_admin = {
+            "user_id": 42,
+            "username": "integration_test",
+            "role": "admin"
+        }
+    
+        # Create token
+>       token = create_access_token(original_admin)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:464: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = 'admin'
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,289 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+________________ TestJWTIntegration.test_token_type_separation ________________
+
+self = <test_jwt_comprehensive.TestJWTIntegration object at 0x0000016CF0BDF100>
+
+    def test_token_type_separation(self):
+        """Test that access and refresh tokens are properly separated"""
+        admin = {"user_id": 1}
+    
+>       access_token = create_access_token(admin)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:500: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,314 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+_____________ TestJWTIntegration.test_token_expiration_edge_cases _____________
+
+self = <test_jwt_comprehensive.TestJWTIntegration object at 0x0000016CF0BDF230>
+mock_datetime = <MagicMock name='datetime' id='1567435884256'>
+
+    @patch('app.auth.datetime')
+    def test_token_expiration_edge_cases(self, mock_datetime):
+        """Test token expiration edge cases"""
+        settings = get_settings()
+    
+        # Set up mock time
+        base_time = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_datetime.now.return_value = base_time
+        mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)
+    
+        admin = {"user_id": 1}
+    
+        # Create token
+>       token = create_access_token(admin)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:522: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,339 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+_______________ TestJWTErrorHandling.test_decode_error_logging ________________
+
+self = <jwt.api_jws.PyJWS object at 0x0000016CF0B0A660>
+jwt = b'invalid.token.here'
+
+    def _load(self, jwt: str | bytes) -> tuple[bytes, bytes, dict[str, Any], bytes]:
+        if isinstance(jwt, str):
+            jwt = jwt.encode("utf-8")
+    
+        if not isinstance(jwt, bytes):
+            raise DecodeError(f"Invalid token type. Token must be a {bytes}")
+    
+        try:
+            signing_input, crypto_segment = jwt.rsplit(b".", 1)
+            header_segment, payload_segment = signing_input.split(b".", 1)
+        except ValueError as err:
+            raise DecodeError("Not enough segments") from err
+    
+        try:
+            header_data = base64url_decode(header_segment)
+        except (TypeError, binascii.Error) as err:
+            raise DecodeError("Invalid header padding") from err
+    
+        try:
+>           header = json.loads(header_data)
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jws.py:268: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+s = b"\x8a{\xda\x96'", cls = None, object_hook = None, parse_float = None
+parse_int = None, parse_constant = None, object_pairs_hook = None, kw = {}
+
+    def loads(s, *, cls=None, object_hook=None, parse_float=None,
+            parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
+        """Deserialize ``s`` (a ``str``, ``bytes`` or ``bytearray`` instance
+        containing a JSON document) to a Python object.
+    
+        ``object_hook`` is an optional function that will be called with the
+        result of any object literal decode (a ``dict``). The return value of
+        ``object_hook`` will be used instead of the ``dict``. This feature
+        can be used to implement custom decoders (e.g. JSON-RPC class hinting).
+    
+        ``object_pairs_hook`` is an optional function that will be called with
+        the result of any object literal decoded with an ordered list of pairs.
+        The return value of ``object_pairs_hook`` will be used instead of the
+        ``dict``.  This feature can be used to implement custom decoders.  If
+        ``object_hook`` is also defined, the ``object_pairs_hook`` takes
+        priority.
+    
+        ``parse_float``, if specified, will be called with the string
+        of every JSON float to be decoded. By default this is equivalent to
+        float(num_str). This can be used to use another datatype or parser
+        for JSON floats (e.g. decimal.Decimal).
+    
+        ``parse_int``, if specified, will be called with the string
+        of every JSON int to be decoded. By default this is equivalent to
+        int(num_str). This can be used to use another datatype or parser
+        for JSON integers (e.g. float).
+    
+        ``parse_constant``, if specified, will be called with one of the
+        following strings: -Infinity, Infinity, NaN.
+        This can be used to raise an exception if invalid JSON numbers
+        are encountered.
+    
+        To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
+        kwarg; otherwise ``JSONDecoder`` is used.
+        """
+        if isinstance(s, str):
+            if s.startswith('\ufeff'):
+                raise JSONDecodeError("Unexpected UTF-8 BOM (decode using utf-8-sig)",
+                                      s, 0)
+        else:
+            if not isinstance(s, (bytes, bytearray)):
+                raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+                                f'not {s.__class__.__name__}')
+>           s = s.decode(detect_encoding(s), 'surrogatepass')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           UnicodeDecodeError: 'utf-8' codec can't decode byte 0x8a in position 0: invalid start byte
+
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py:347: UnicodeDecodeError
+
+The above exception was the direct cause of the following exception:
+
+token = 'invalid.token.here'
+
+    def decode_token(token: str) -> dict[str, Any]:
+        """Decode and validate a JWT token."""
+        settings = get_settings()
+        logger.info(f"Decoding token with JWT_SECRET_KEY length: {len(settings.jwt_secret_key)}, algorithm: {settings.jwt_algorithm}")
+        try:
+>           payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+app\auth.py:58: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jwt.py:210: in decode
+    decoded = self.decode_complete(
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jwt.py:151: in decode_complete
+    decoded = api_jws.decode_complete(
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jws.py:198: in decode_complete
+    payload, signing_input, header, signature = self._load(jwt)
+                                                ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <jwt.api_jws.PyJWS object at 0x0000016CF0B0A660>
+jwt = b'invalid.token.here'
+
+    def _load(self, jwt: str | bytes) -> tuple[bytes, bytes, dict[str, Any], bytes]:
+        if isinstance(jwt, str):
+            jwt = jwt.encode("utf-8")
+    
+        if not isinstance(jwt, bytes):
+            raise DecodeError(f"Invalid token type. Token must be a {bytes}")
+    
+        try:
+            signing_input, crypto_segment = jwt.rsplit(b".", 1)
+            header_segment, payload_segment = signing_input.split(b".", 1)
+        except ValueError as err:
+            raise DecodeError("Not enough segments") from err
+    
+        try:
+            header_data = base64url_decode(header_segment)
+        except (TypeError, binascii.Error) as err:
+            raise DecodeError("Invalid header padding") from err
+    
+        try:
+            header = json.loads(header_data)
+        except ValueError as e:
+>           raise DecodeError(f"Invalid header string: {e}") from e
+E           jwt.exceptions.DecodeError: Invalid header string: 'utf-8' codec can't decode byte 0x8a in position 0: invalid start byte
+
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jws.py:270: DecodeError
+
+During handling of the above exception, another exception occurred:
+
+self = <test_jwt_comprehensive.TestJWTErrorHandling object at 0x0000016CF0BB3390>
+mock_logger = <MagicMock name='logger' id='1567435886608'>
+
+    @patch('app.auth.logger')
+    def test_decode_error_logging(self, mock_logger):
+        """Test that decode errors are properly logged"""
+        try:
+>           decode_token("invalid.token.here")
+
+tests\unit\test_jwt_comprehensive.py:566: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+token = 'invalid.token.here'
+
+    def decode_token(token: str) -> dict[str, Any]:
+        """Decode and validate a JWT token."""
+        settings = get_settings()
+        logger.info(f"Decoding token with JWT_SECRET_KEY length: {len(settings.jwt_secret_key)}, algorithm: {settings.jwt_algorithm}")
+        try:
+            payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+            return payload
+        except jwt.ExpiredSignatureError:
+            logger.warning("JWT validation failed: Token has expired")
+            raise HTTPException(status_code=401, detail="Token has expired")
+        except jwt.InvalidTokenError as e:
+            logger.warning(f"JWT validation failed: Invalid token - {type(e).__name__}: {str(e)}")
+>           raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
+E           fastapi.exceptions.HTTPException: 401: Invalid token: Invalid header string: 'utf-8' codec can't decode byte 0x8a in position 0: invalid start byte
+
+app\auth.py:65: HTTPException
+
+During handling of the above exception, another exception occurred:
+
+self = <test_jwt_comprehensive.TestJWTErrorHandling object at 0x0000016CF0BB3390>
+mock_logger = <MagicMock name='logger' id='1567435886608'>
+
+    @patch('app.auth.logger')
+    def test_decode_error_logging(self, mock_logger):
+        """Test that decode errors are properly logged"""
+        try:
+            decode_token("invalid.token.here")
+>       except HTTPException:
+               ^^^^^^^^^^^^^
+E       NameError: name 'HTTPException' is not defined
+
+tests\unit\test_jwt_comprehensive.py:567: NameError
+_______ test_role_permissions_parametrized[admin-expected_permissions1] _______
+
+role = 'admin', expected_permissions = ['read', 'write', 'delete']
+
+    @pytest.mark.parametrize("role,expected_permissions", [
+        ("owner", ["*"]),
+        ("admin", ["read", "write", "delete"]),
+        ("user", ["read"]),
+        ("guest", ["read"]),
+        ("unknown", ["read"]),
+        ("", ["read"]),
+        (None, ["read"]),
+    ])
+    def test_role_permissions_parametrized(role, expected_permissions):
+        """Test role permissions with different roles"""
+>       permissions = _get_role_permissions(role)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:597: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = 'admin'
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+_______ test_role_permissions_parametrized[user-expected_permissions2] ________
+
+role = 'user', expected_permissions = ['read']
+
+    @pytest.mark.parametrize("role,expected_permissions", [
+        ("owner", ["*"]),
+        ("admin", ["read", "write", "delete"]),
+        ("user", ["read"]),
+        ("guest", ["read"]),
+        ("unknown", ["read"]),
+        ("", ["read"]),
+        (None, ["read"]),
+    ])
+    def test_role_permissions_parametrized(role, expected_permissions):
+        """Test role permissions with different roles"""
+>       permissions = _get_role_permissions(role)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:597: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = 'user'
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+_______ test_role_permissions_parametrized[guest-expected_permissions3] _______
+
+role = 'guest', expected_permissions = ['read']
+
+    @pytest.mark.parametrize("role,expected_permissions", [
+        ("owner", ["*"]),
+        ("admin", ["read", "write", "delete"]),
+        ("user", ["read"]),
+        ("guest", ["read"]),
+        ("unknown", ["read"]),
+        ("", ["read"]),
+        (None, ["read"]),
+    ])
+    def test_role_permissions_parametrized(role, expected_permissions):
+        """Test role permissions with different roles"""
+>       permissions = _get_role_permissions(role)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:597: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = 'guest'
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+______ test_role_permissions_parametrized[unknown-expected_permissions4] ______
+
+role = 'unknown', expected_permissions = ['read']
+
+    @pytest.mark.parametrize("role,expected_permissions", [
+        ("owner", ["*"]),
+        ("admin", ["read", "write", "delete"]),
+        ("user", ["read"]),
+        ("guest", ["read"]),
+        ("unknown", ["read"]),
+        ("", ["read"]),
+        (None, ["read"]),
+    ])
+    def test_role_permissions_parametrized(role, expected_permissions):
+        """Test role permissions with different roles"""
+>       permissions = _get_role_permissions(role)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:597: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = 'unknown'
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+_________ test_role_permissions_parametrized[-expected_permissions5] __________
+
+role = '', expected_permissions = ['read']
+
+    @pytest.mark.parametrize("role,expected_permissions", [
+        ("owner", ["*"]),
+        ("admin", ["read", "write", "delete"]),
+        ("user", ["read"]),
+        ("guest", ["read"]),
+        ("unknown", ["read"]),
+        ("", ["read"]),
+        (None, ["read"]),
+    ])
+    def test_role_permissions_parametrized(role, expected_permissions):
+        """Test role permissions with different roles"""
+>       permissions = _get_role_permissions(role)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:597: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+_______ test_role_permissions_parametrized[None-expected_permissions6] ________
+
+role = None, expected_permissions = ['read']
+
+    @pytest.mark.parametrize("role,expected_permissions", [
+        ("owner", ["*"]),
+        ("admin", ["read", "write", "delete"]),
+        ("user", ["read"]),
+        ("guest", ["read"]),
+        ("unknown", ["read"]),
+        ("", ["read"]),
+        (None, ["read"]),
+    ])
+    def test_role_permissions_parametrized(role, expected_permissions):
+        """Test role permissions with different roles"""
+>       permissions = _get_role_permissions(role)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:597: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = None
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+____ test_token_type_validation_parametrized[access-validate_access_token] ____
+
+token_type = 'access'
+validation_func = <function validate_access_token at 0x0000016CF0C2E980>
+
+    @pytest.mark.parametrize("token_type,validation_func", [
+        ("access", validate_access_token),
+        ("refresh", validate_refresh_token),
+    ])
+    def test_token_type_validation_parametrized(token_type, validation_func):
+        """Test token validation for different token types"""
+        admin = {"user_id": 1}
+    
+        if token_type == "access":
+>           token = create_access_token(admin)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_comprehensive.py:610: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,556 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+________ TestJWTTimingAttacks.test_token_validation_timing_consistency ________
+
+self = <test_jwt_security.TestJWTTimingAttacks object at 0x0000016CF0BB3750>
+
+    def test_token_validation_timing_consistency(self):
+        """Test that token validation timing is consistent regardless of token validity"""
+        # This is a basic timing test - in production you'd use more sophisticated tools
+    
+        admin = {"user_id": 1}
+>       valid_token = create_access_token(admin)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_security.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,619 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+_____________ TestJWTTimingAttacks.test_secret_validation_timing ______________
+
+self = <test_jwt_security.TestJWTTimingAttacks object at 0x0000016CF0BDF5C0>
+
+    def test_secret_validation_timing(self):
+        """Test that secret validation doesn't leak timing information"""
+        # Create tokens with different secrets
+        settings = get_settings()
+        admin = {"user_id": 1}
+    
+        # Token with correct secret
+>       valid_token = create_access_token(admin)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_security.py:99: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,647 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+_________ TestJWTAlgorithmAttacks.test_algorithm_confusion_prevention _________
+
+self = <test_jwt_security.TestJWTAlgorithmAttacks object at 0x0000016CF0BB3B10>
+
+    def test_algorithm_confusion_prevention(self):
+        """Test prevention of algorithm confusion attacks"""
+        settings = get_settings()
+        admin = {"user_id": 1}
+    
+        # Create token with expected algorithm
+>       valid_token = create_access_token(admin)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_security.py:164: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,672 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+________ TestJWTAlgorithmAttacks.test_key_confusion_attack_prevention _________
+
+self = <test_jwt_security.TestJWTAlgorithmAttacks object at 0x0000016CF0BDF6F0>
+
+    def test_key_confusion_attack_prevention(self):
+        """Test prevention of key confusion attacks"""
+        settings = get_settings()
+    
+        # Create token with correct key
+        admin = {"user_id": 1}
+>       valid_token = create_access_token(admin)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_security.py:203: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,694 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+__________ TestJWTPayloadInjection.test_payload_tampering_detection ___________
+
+self = <test_jwt_security.TestJWTPayloadInjection object at 0x0000016CF0BB3C50>
+
+    def test_payload_tampering_detection(self):
+        """Test detection of tampered payloads"""
+        admin = {"user_id": 1, "role": "user"}
+>       original_token = create_access_token(admin)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_security.py:228: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = 'user'
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,715 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+___________ TestJWTPayloadInjection.test_role_escalation_prevention ___________
+
+self = <test_jwt_security.TestJWTPayloadInjection object at 0x0000016CF0BB3D90>
+
+    def test_role_escalation_prevention(self):
+        """Test prevention of role escalation through token manipulation"""
+        # Create token with normal user role
+        admin = {"user_id": 1, "role": "user"}
+>       user_token = create_access_token(admin)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_security.py:248: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = 'user'
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,734 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+__________ TestJWTPayloadInjection.test_payload_injection_prevention __________
+
+self = <test_jwt_security.TestJWTPayloadInjection object at 0x0000016CF0BDF820>
+
+    def test_payload_injection_prevention(self):
+        """Test prevention of payload injection attacks"""
+        admin = {"user_id": 1}
+>       original_token = create_access_token(admin)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_security.py:280: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,754 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+_______________ TestJWTReplayAttacks.test_token_reuse_detection _______________
+
+self = <test_jwt_security.TestJWTReplayAttacks object at 0x0000016CF0BB3ED0>
+
+    def test_token_reuse_detection(self):
+        """Test that tokens can be reused within their valid timeframe"""
+        # Note: JWT tokens are stateless, so replay protection requires additional mechanisms
+        # This test verifies the current behavior (tokens can be reused)
+    
+        admin = {"user_id": 1}
+>       token = create_access_token(admin)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_security.py:315: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,776 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+______________ TestJWTReplayAttacks.test_expired_token_rejection ______________
+
+self = <test_jwt_security.TestJWTReplayAttacks object at 0x0000016CF0CA8050>
+
+    def test_expired_token_rejection(self):
+        """Test that expired tokens are rejected (basic replay protection)"""
+        # Create token with very short expiration
+        settings = get_settings()
+        admin = {"user_id": 1}
+    
+        # Create token that expires immediately
+        expire = datetime.now(timezone.utc) + timedelta(milliseconds=100)
+    
+        payload = {
+            "sub": "1",
+            "username": "test",
+            "role": "user",
+            "type": "access",
+            "exp": expire,
+            "iat": datetime.now(timezone.utc)
+        }
+    
+        short_lived_token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+    
+        # Should be valid immediately
+        result = validate_access_token(short_lived_token)
+>       assert result is not None
+E       assert None is not None
+
+tests\unit\test_jwt_security.py:345: AssertionError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,796 - app.auth - INFO - Validating access token
+2026-02-24 09:11:18,796 - app.auth - INFO - Decoding token with JWT_SECRET_KEY length: 42, algorithm: HS256
+2026-02-24 09:11:18,796 - app.auth - WARNING - JWT validation failed: Token has expired
+2026-02-24 09:11:18,797 - app.auth - WARNING - Access token validation failed: Token has expired
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:70 Validating access token
+INFO     app.auth:auth.py:56 Decoding token with JWT_SECRET_KEY length: 42, algorithm: HS256
+WARNING  app.auth:auth.py:61 JWT validation failed: Token has expired
+WARNING  app.auth:auth.py:79 Access token validation failed: Token has expired
+____________ TestJWTReplayAttacks.test_concurrent_token_validation ____________
+
+self = <test_jwt_security.TestJWTReplayAttacks object at 0x0000016CF0BDF950>
+
+    def test_concurrent_token_validation(self):
+        """Test concurrent token validation (thread safety)"""
+        import threading
+    
+        admin = {"user_id": 1}
+>       token = create_access_token(admin)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_security.py:359: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,808 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+_____________ TestJWTCryptographicStrength.test_token_uniqueness ______________
+
+self = <test_jwt_security.TestJWTCryptographicStrength object at 0x0000016CF0BDFA80>
+
+    def test_token_uniqueness(self):
+        """Test that tokens are unique even for same payload"""
+        admin = {"user_id": 1, "username": "test", "role": "user"}
+    
+        # Create multiple tokens with same payload
+        tokens = []
+        for _ in range(5):
+            # Small delay to ensure different iat timestamps
+            time.sleep(0.01)
+>           token = create_access_token(admin)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_security.py:438: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = 'user'
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,841 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+____ TestJWTErrorInformationLeakage.test_error_messages_dont_leak_secrets _____
+
+self = <jwt.api_jws.PyJWS object at 0x0000016CF0B0A660>
+jwt = b'invalid.token.format'
+
+    def _load(self, jwt: str | bytes) -> tuple[bytes, bytes, dict[str, Any], bytes]:
+        if isinstance(jwt, str):
+            jwt = jwt.encode("utf-8")
+    
+        if not isinstance(jwt, bytes):
+            raise DecodeError(f"Invalid token type. Token must be a {bytes}")
+    
+        try:
+            signing_input, crypto_segment = jwt.rsplit(b".", 1)
+            header_segment, payload_segment = signing_input.split(b".", 1)
+        except ValueError as err:
+            raise DecodeError("Not enough segments") from err
+    
+        try:
+            header_data = base64url_decode(header_segment)
+        except (TypeError, binascii.Error) as err:
+            raise DecodeError("Invalid header padding") from err
+    
+        try:
+>           header = json.loads(header_data)
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jws.py:268: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+s = b"\x8a{\xda\x96'", cls = None, object_hook = None, parse_float = None
+parse_int = None, parse_constant = None, object_pairs_hook = None, kw = {}
+
+    def loads(s, *, cls=None, object_hook=None, parse_float=None,
+            parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
+        """Deserialize ``s`` (a ``str``, ``bytes`` or ``bytearray`` instance
+        containing a JSON document) to a Python object.
+    
+        ``object_hook`` is an optional function that will be called with the
+        result of any object literal decode (a ``dict``). The return value of
+        ``object_hook`` will be used instead of the ``dict``. This feature
+        can be used to implement custom decoders (e.g. JSON-RPC class hinting).
+    
+        ``object_pairs_hook`` is an optional function that will be called with
+        the result of any object literal decoded with an ordered list of pairs.
+        The return value of ``object_pairs_hook`` will be used instead of the
+        ``dict``.  This feature can be used to implement custom decoders.  If
+        ``object_hook`` is also defined, the ``object_pairs_hook`` takes
+        priority.
+    
+        ``parse_float``, if specified, will be called with the string
+        of every JSON float to be decoded. By default this is equivalent to
+        float(num_str). This can be used to use another datatype or parser
+        for JSON floats (e.g. decimal.Decimal).
+    
+        ``parse_int``, if specified, will be called with the string
+        of every JSON int to be decoded. By default this is equivalent to
+        int(num_str). This can be used to use another datatype or parser
+        for JSON integers (e.g. float).
+    
+        ``parse_constant``, if specified, will be called with one of the
+        following strings: -Infinity, Infinity, NaN.
+        This can be used to raise an exception if invalid JSON numbers
+        are encountered.
+    
+        To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
+        kwarg; otherwise ``JSONDecoder`` is used.
+        """
+        if isinstance(s, str):
+            if s.startswith('\ufeff'):
+                raise JSONDecodeError("Unexpected UTF-8 BOM (decode using utf-8-sig)",
+                                      s, 0)
+        else:
+            if not isinstance(s, (bytes, bytearray)):
+                raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+                                f'not {s.__class__.__name__}')
+>           s = s.decode(detect_encoding(s), 'surrogatepass')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           UnicodeDecodeError: 'utf-8' codec can't decode byte 0x8a in position 0: invalid start byte
+
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py:347: UnicodeDecodeError
+
+The above exception was the direct cause of the following exception:
+
+token = 'invalid.token.format'
+
+    def decode_token(token: str) -> dict[str, Any]:
+        """Decode and validate a JWT token."""
+        settings = get_settings()
+        logger.info(f"Decoding token with JWT_SECRET_KEY length: {len(settings.jwt_secret_key)}, algorithm: {settings.jwt_algorithm}")
+        try:
+>           payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+app\auth.py:58: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jwt.py:210: in decode
+    decoded = self.decode_complete(
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jwt.py:151: in decode_complete
+    decoded = api_jws.decode_complete(
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jws.py:198: in decode_complete
+    payload, signing_input, header, signature = self._load(jwt)
+                                                ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <jwt.api_jws.PyJWS object at 0x0000016CF0B0A660>
+jwt = b'invalid.token.format'
+
+    def _load(self, jwt: str | bytes) -> tuple[bytes, bytes, dict[str, Any], bytes]:
+        if isinstance(jwt, str):
+            jwt = jwt.encode("utf-8")
+    
+        if not isinstance(jwt, bytes):
+            raise DecodeError(f"Invalid token type. Token must be a {bytes}")
+    
+        try:
+            signing_input, crypto_segment = jwt.rsplit(b".", 1)
+            header_segment, payload_segment = signing_input.split(b".", 1)
+        except ValueError as err:
+            raise DecodeError("Not enough segments") from err
+    
+        try:
+            header_data = base64url_decode(header_segment)
+        except (TypeError, binascii.Error) as err:
+            raise DecodeError("Invalid header padding") from err
+    
+        try:
+            header = json.loads(header_data)
+        except ValueError as e:
+>           raise DecodeError(f"Invalid header string: {e}") from e
+E           jwt.exceptions.DecodeError: Invalid header string: 'utf-8' codec can't decode byte 0x8a in position 0: invalid start byte
+
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jws.py:270: DecodeError
+
+During handling of the above exception, another exception occurred:
+
+self = <test_jwt_security.TestJWTErrorInformationLeakage object at 0x0000016CF0CA8410>
+
+    def test_error_messages_dont_leak_secrets(self):
+        """Test that error messages don't contain sensitive information"""
+        # Create various invalid tokens
+        test_cases = [
+            ("invalid.token.format", "malformed token"),
+            ("tampered.signature.token", "signature verification failed"),
+            ("expired.token", "token expired"),
+        ]
+    
+        for token_desc, expected_error in test_cases:
+            # Create appropriate invalid token
+            if "malformed" in token_desc:
+                invalid_token = "header.payload"
+            elif "signature" in token_desc:
+                admin = {"user_id": 1}
+                valid_token = create_access_token(admin)
+                invalid_token = valid_token[:-10] + "tampered123"
+            elif "expired" in token_desc:
+                settings = get_settings()
+                expire = datetime.now(timezone.utc) - timedelta(hours=1)
+                payload = {
+                    "sub": "1",
+                    "type": "access",
+                    "exp": expire,
+                    "iat": datetime.now(timezone.utc) - timedelta(hours=2)
+                }
+                invalid_token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+            else:
+                invalid_token = token_desc
+    
+            try:
+>               decode_token(invalid_token)
+
+tests\unit\test_jwt_security.py:479: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+token = 'invalid.token.format'
+
+    def decode_token(token: str) -> dict[str, Any]:
+        """Decode and validate a JWT token."""
+        settings = get_settings()
+        logger.info(f"Decoding token with JWT_SECRET_KEY length: {len(settings.jwt_secret_key)}, algorithm: {settings.jwt_algorithm}")
+        try:
+            payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+            return payload
+        except jwt.ExpiredSignatureError:
+            logger.warning("JWT validation failed: Token has expired")
+            raise HTTPException(status_code=401, detail="Token has expired")
+        except jwt.InvalidTokenError as e:
+            logger.warning(f"JWT validation failed: Invalid token - {type(e).__name__}: {str(e)}")
+>           raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
+E           fastapi.exceptions.HTTPException: 401: Invalid token: Invalid header string: 'utf-8' codec can't decode byte 0x8a in position 0: invalid start byte
+
+app\auth.py:65: HTTPException
+
+During handling of the above exception, another exception occurred:
+
+self = <test_jwt_security.TestJWTErrorInformationLeakage object at 0x0000016CF0CA8410>
+
+    def test_error_messages_dont_leak_secrets(self):
+        """Test that error messages don't contain sensitive information"""
+        # Create various invalid tokens
+        test_cases = [
+            ("invalid.token.format", "malformed token"),
+            ("tampered.signature.token", "signature verification failed"),
+            ("expired.token", "token expired"),
+        ]
+    
+        for token_desc, expected_error in test_cases:
+            # Create appropriate invalid token
+            if "malformed" in token_desc:
+                invalid_token = "header.payload"
+            elif "signature" in token_desc:
+                admin = {"user_id": 1}
+                valid_token = create_access_token(admin)
+                invalid_token = valid_token[:-10] + "tampered123"
+            elif "expired" in token_desc:
+                settings = get_settings()
+                expire = datetime.now(timezone.utc) - timedelta(hours=1)
+                payload = {
+                    "sub": "1",
+                    "type": "access",
+                    "exp": expire,
+                    "iat": datetime.now(timezone.utc) - timedelta(hours=2)
+                }
+                invalid_token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+            else:
+                invalid_token = token_desc
+    
+            try:
+                decode_token(invalid_token)
+                assert False, f"Expected exception for {token_desc}"
+>           except HTTPException as e:
+                   ^^^^^^^^^^^^^
+E           NameError: name 'HTTPException' is not defined
+
+tests\unit\test_jwt_security.py:481: NameError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,862 - app.auth - INFO - Decoding token with JWT_SECRET_KEY length: 42, algorithm: HS256
+2026-02-24 09:11:18,862 - app.auth - WARNING - JWT validation failed: Invalid token - DecodeError: Invalid header string: 'utf-8' codec can't decode byte 0x8a in position 0: invalid start byte
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:56 Decoding token with JWT_SECRET_KEY length: 42, algorithm: HS256
+WARNING  app.auth:auth.py:64 JWT validation failed: Invalid token - DecodeError: Invalid header string: 'utf-8' codec can't decode byte 0x8a in position 0: invalid start byte
+_ TestJWTErrorInformationLeakage.test_validation_failures_dont_exploit_structure _
+
+self = <test_jwt_security.TestJWTErrorInformationLeakage object at 0x0000016CF0CA8550>
+
+    def test_validation_failures_dont_exploit_structure(self):
+        """Test that validation failures don't reveal token structure"""
+        admin = {"user_id": 1}
+>       valid_token = create_access_token(admin)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_jwt_security.py:491: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\auth.py:25: in create_access_token
+    permissions = _get_role_permissions(role)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app\auth.py:251: in _get_role_permissions
+    return get_role_permissions(role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+role = ''
+
+    def get_role_permissions(role: str) -> list[str]:
+        if role == "owner":
+            return ["*"]
+    
+        db = get_db()
+        conn = db.connect()
+        try:
+>           cur = conn.execute(
+                "SELECT permission, is_allowed FROM role_permissions WHERE role=?",
+                (role,)
+            )
+E           sqlite3.OperationalError: no such table: role_permissions
+
+app\auth.py:230: OperationalError
+---------------------------- Captured stderr call -----------------------------
+2026-02-24 09:11:18,914 - app.auth - INFO - Creating access token with JWT_SECRET_KEY length: 42
+------------------------------ Captured log call ------------------------------
+INFO     app.auth:auth.py:20 Creating access token with JWT_SECRET_KEY length: 42
+_______________________ test_real_search_functionality ________________________
+
+    def test_real_search_functionality():
+        """Test the actual search used in admin_api.py."""
+        print("\n" + "=" * 60)
+        print("Testing Actual Search Functionality")
+        print("=" * 60)
+    
+        # Check what the actual code does
+        from app.db import get_db_path
+        db_path = get_db_path()
+    
+        if not Path(db_path).exists():
+            pytest.skip(f"Database not found at {db_path}")
+    
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+    
+        # Check if there are any customers with Cyrillic/Serbian names
+>       cursor = conn.execute("SELECT full_name FROM customers LIMIT 100")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       sqlite3.OperationalError: no such table: customers
+
+tests\unit\test_search_cyrillic_serbian.py:202: OperationalError
+---------------------------- Captured stdout call -----------------------------
+
+============================================================
+Testing Actual Search Functionality
+============================================================
+============================== warnings summary ===============================
+tests/unit/test_analytics.py::test_sales_stats_no_auth
+  c:\Users\AASS\AppData\Local\Python\pythoncore-3.14-64\Lib\ssl.py:524: UserWarning: Bad certificate in Windows certificate store: not enough data: cadata does not contain a certificate (_ssl.c:4277)
+    warnings.warn(f"Bad certificate in Windows certificate store: {exc!s}")
+
+tests/unit/test_analytics.py::test_sales_stats_no_auth
+tests/unit/test_analytics.py::test_sales_stats_no_auth
+tests/unit/test_analytics.py::test_sales_stats_with_secret
+  c:\Users\AASS\IdeaProjects\ErpGreeHouse\middleware\app\main.py:264: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/unit/test_analytics.py::test_sales_stats_no_auth
+tests/unit/test_analytics.py::test_sales_stats_no_auth
+tests/unit/test_analytics.py::test_sales_stats_with_secret
+  c:\Users\AASS\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\applications.py:4573: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.3-final-0 _______________
+
+Name                              Stmts   Miss  Cover   Missing
+---------------------------------------------------------------
+app\__init__.py                       0      0   100%
+app\admin_api.py                    467    385    18%   32-37, 42-48, 53-54, 62-67, 71-75, 79-85, 133-172, 180-193, 200-255, 263-281, 290-311, 321-358, 367-406, 414-467, 480-534, 542-566, 574-602, 610-623, 631-651, 659-673, 681-694, 703-813, 817-837, 844-863
+app\admin_auth_api.py               373    283    24%   38, 43-54, 59-82, 87-91, 95-118, 122-152, 155-170, 174-194, 199-212, 217-219, 224-254, 274, 282-284, 292, 299, 311-346, 351-356, 374-388, 393-447, 460-488, 496-499, 511-555, 568-572, 587-622, 639-663
+app\auth.py                         152     72    53%   81-83, 92-93, 99-101, 116-120, 125-146, 150-176, 181-198, 234-244, 255-259, 263-267, 271-274, 279-284, 289-294
+app\bot.py                           15      7    53%   11-12, 19-23
+app\config.py                        29     10    66%   17-27, 82-84
+app\db.py                            83     31    63%   62-63, 71-289
+app\erp_client.py                   156    135    13%   15-25, 28, 31-47, 50-66, 69-144, 147-160, 163-186, 189-207, 210-281, 284-293
+app\handlers.py                     233    190    18%   17, 21, 24-55, 59-68, 73-88, 93-94, 99-119, 124-158, 163-185, 190-197, 202-220, 225-235, 240-255, 260-277, 282-290, 295-310, 315-328, 333-351
+app\identify.py                      29      4    86%   16, 23, 31, 38
+app\integration_events.py            20     15    25%   9-26
+app\integration_settings_api.py     136     92    32%   56-81, 90-106, 118-147, 156-175, 185-208, 217-225, 234-260, 269-291, 306-314
+app\integrations_api.py             213    154    28%   26-32, 54-77, 84-85, 93-106, 114-137, 146-160, 168-182, 190-200, 208-218, 250-328, 332-361
+app\loyalty.py                       33      0   100%
+app\main.py                         196     78    60%   98, 102, 107, 122-123, 127-128, 144-153, 199-201, 206-220, 224, 259-261, 266-269, 273-274, 279, 287-291, 298-303, 312-317, 325-332, 340, 345-363, 370-374
+app\marketing_api.py                 64     39    39%   32-36, 43-51, 57-61, 68-80, 87-93, 99-103, 110-121
+app\menu.py                           7      4    43%   13-16
+app\middlewares.py                   23     15    35%   10-11, 19-31
+app\pdfgen.py                        51     41    20%   15, 19-69
+app\pos_templates.py                  3      1    67%   5
+app\products_api.py                 379    329    13%   41-45, 50-105, 110-149, 154-192, 197-268, 273-302, 318-353, 361-375, 384-397, 405-415, 440-473, 482-538, 543-624, 633-669, 683
+app\request_context.py                9      2    78%   10, 14
+app\runtime.py                        3      1    67%   5
+app\security.py                       9      3    67%   6-13, 17
+app\storage.py                       23     13    43%   8-9, 13-14, 18-19, 23-25, 29-30, 34-35
+app\test_api.py                     124     95    23%   16-17, 22-27, 35-36, 47-72, 84-131, 142-176, 184-194, 202-217, 225-236, 250-273
+app\tma_api.py                       62     47    24%   18-39, 43-89
+app\trigger_engine.py                46     29    37%   13-73, 91-93
+app\vk_bot.py                       170    141    17%   32-38, 41-43, 47-49, 53-63, 67-94, 98-100, 104-129, 133-146, 150-188, 192-206, 210-225, 229, 238-252, 256, 271-277, 282, 290-317
+app\worker.py                       145    116    20%   35-41, 45-73, 77-82, 86-123, 126-131, 136-151, 155-190, 195-225, 228
+---------------------------------------------------------------
+TOTAL                              3253   2332    28%
+============================== slowest durations ==============================
+0.88s setup    tests/unit/test_analytics.py::test_sales_stats_no_auth
+0.07s setup    tests/unit/test_analytics.py::test_sales_stats_with_secret
+0.02s call     tests/unit/test_analytics.py::test_sales_stats_no_auth
+0.02s setup    tests/unit/test_search_cyrillic_serbian.py::TestSearchCyrillicSerbian::test_like_search_basic_ascii
+0.01s call     tests/unit/test_jwt_security.py::TestJWTCryptographicStrength::test_token_uniqueness
+0.01s setup    tests/unit/test_search_cyrillic_serbian.py::TestSearchCyrillicSerbian::test_ilike_alternative
+0.01s setup    tests/unit/test_foreign_key_constraints.py::TestForeignKeyConstraints::test_fk_constraint_with_valid_customer
+0.01s setup    tests/unit/test_foreign_key_constraints.py::TestForeignKeyConstraints::test_cascade_delete
+0.01s setup    tests/unit/test_foreign_key_constraints.py::TestForeignKeyConstraints::test_fk_constraint_enforced
+0.01s setup    tests/unit/test_foreign_key_constraints.py::TestForeignKeyConstraints::test_fk_constraint_violation_without_fk_enabled
+0.01s setup    tests/unit/test_search_cyrillic_serbian.py::TestSearchCyrillicSerbian::test_like_search_cyrillic_exact
+0.01s setup    tests/unit/test_search_cyrillic_serbian.py::TestSearchCyrillicSerbian::test_like_search_with_collation
+0.01s setup    tests/unit/test_search_cyrillic_serbian.py::TestSearchCyrillicSerbian::test_like_search_cyrillic_case_insensitive_fails
+0.01s call     tests/unit/test_jwt_comprehensive.py::TestJWTTokenCreation::test_create_access_token_basic
+0.01s setup    tests/unit/test_search_cyrillic_serbian.py::TestSearchCyrillicSerbian::test_like_search_serbian_latin
+
+(306 durations < 0.005s hidden.  Use -vv to show these durations.)
+=========================== short test summary info ===========================
+FAILED tests/unit/test_jwt_comprehensive.py::TestJWTTokenCreation::test_create_access_token_basic
+FAILED tests/unit/test_jwt_comprehensive.py::TestJWTTokenCreation::test_create_access_token_missing_fields
+FAILED tests/unit/test_jwt_comprehensive.py::TestJWTTokenCreation::test_token_expiration_times
+FAILED tests/unit/test_jwt_comprehensive.py::TestJWTTokenValidation::test_validate_access_token_valid
+FAILED tests/unit/test_jwt_comprehensive.py::TestJWTTokenValidation::test_validate_access_token_invalid_signature
+FAILED tests/unit/test_jwt_comprehensive.py::TestJWTTokenValidation::test_validate_refresh_token_invalid_type
+FAILED tests/unit/test_jwt_comprehensive.py::TestJWTDecode::test_decode_token_valid
+FAILED tests/unit/test_jwt_comprehensive.py::TestJWTDecode::test_decode_token_invalid_signature
+FAILED tests/unit/test_jwt_comprehensive.py::TestGetAdminFromJWT::test_get_admin_from_jwt_none_values
+FAILED tests/unit/test_jwt_comprehensive.py::TestRolePermissions::test_get_role_permissions_from_db
+FAILED tests/unit/test_jwt_comprehensive.py::TestRolePermissions::test_get_role_permissions_fallback_to_default
+FAILED tests/unit/test_jwt_comprehensive.py::TestRolePermissions::test_get_default_permissions
+FAILED tests/unit/test_jwt_comprehensive.py::TestSecurityEdgeCases::test_timing_attack_protection
+FAILED tests/unit/test_jwt_comprehensive.py::TestSecurityEdgeCases::test_token_tampering_detection
+FAILED tests/unit/test_jwt_comprehensive.py::TestJWTIntegration::test_complete_access_token_lifecycle
+FAILED tests/unit/test_jwt_comprehensive.py::TestJWTIntegration::test_token_type_separation
+FAILED tests/unit/test_jwt_comprehensive.py::TestJWTIntegration::test_token_expiration_edge_cases
+FAILED tests/unit/test_jwt_comprehensive.py::TestJWTErrorHandling::test_decode_error_logging
+FAILED tests/unit/test_jwt_comprehensive.py::test_role_permissions_parametrized[admin-expected_permissions1]
+FAILED tests/unit/test_jwt_comprehensive.py::test_role_permissions_parametrized[user-expected_permissions2]
+FAILED tests/unit/test_jwt_comprehensive.py::test_role_permissions_parametrized[guest-expected_permissions3]
+FAILED tests/unit/test_jwt_comprehensive.py::test_role_permissions_parametrized[unknown-expected_permissions4]
+FAILED tests/unit/test_jwt_comprehensive.py::test_role_permissions_parametrized[-expected_permissions5]
+FAILED tests/unit/test_jwt_comprehensive.py::test_role_permissions_parametrized[None-expected_permissions6]
+FAILED tests/unit/test_jwt_comprehensive.py::test_token_type_validation_parametrized[access-validate_access_token]
+FAILED tests/unit/test_jwt_security.py::TestJWTTimingAttacks::test_token_validation_timing_consistency
+FAILED tests/unit/test_jwt_security.py::TestJWTTimingAttacks::test_secret_validation_timing
+FAILED tests/unit/test_jwt_security.py::TestJWTAlgorithmAttacks::test_algorithm_confusion_prevention
+FAILED tests/unit/test_jwt_security.py::TestJWTAlgorithmAttacks::test_key_confusion_attack_prevention
+FAILED tests/unit/test_jwt_security.py::TestJWTPayloadInjection::test_payload_tampering_detection
+FAILED tests/unit/test_jwt_security.py::TestJWTPayloadInjection::test_role_escalation_prevention
+FAILED tests/unit/test_jwt_security.py::TestJWTPayloadInjection::test_payload_injection_prevention
+FAILED tests/unit/test_jwt_security.py::TestJWTReplayAttacks::test_token_reuse_detection
+FAILED tests/unit/test_jwt_security.py::TestJWTReplayAttacks::test_expired_token_rejection
+FAILED tests/unit/test_jwt_security.py::TestJWTReplayAttacks::test_concurrent_token_validation
+FAILED tests/unit/test_jwt_security.py::TestJWTCryptographicStrength::test_token_uniqueness
+FAILED tests/unit/test_jwt_security.py::TestJWTErrorInformationLeakage::test_error_messages_dont_leak_secrets
+FAILED tests/unit/test_jwt_security.py::TestJWTErrorInformationLeakage::test_validation_failures_dont_exploit_structure
+FAILED tests/unit/test_search_cyrillic_serbian.py::test_real_search_functionality
+============ 39 failed, 58 passed, 14 skipped, 7 warnings in 3.61s ============
+
+
+STDERR:
+--------------------------------------------------------------------------------
+c:\Users\AASS\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\_pytest\unraisableexception.py:33: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x0000016CF21CB2E0>
+  gc.collect()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+
+
+================================================================================
+END OF REPORT (Exit Code: 1)
+================================================================================

@@ -12,13 +12,14 @@ Use these absolute paths to avoid conflicts with system defaults or Windows Stor
 |------|------|-------|
 | **Node.js** | `/c/Program Files/nodejs/node` | Standard install |
 | **npm** | `/c/Program Files/nodejs/npm` | Standard install |
-| **Python 3.14** | `/c/Users/vuser/AppData/Local/Python/pythoncore-3.14-64/python.exe` | **ALWAYS** use this path. Do not use `python` or `python3` (Windows Store shims). |
+| **Python 3.14** | `/c/Users/vuser/AppData/Local/Python/bin/python.exe` |
+| **Python 3.14** | `/c/Users/AppData/Local/Python/bin/python.exe` |
 | **Redis** | `127.0.0.1:6379` | Service: `memurai` (Memurai for Windows). Running as a service. |
 
 ## 3. Python Execution Rule
 When running Python scripts, always invoke the executable directly:
 ```bash
-/c/Users/vuser/AppData/Local/Python/pythoncore-3.14-64/python.exe path/to/script.py
+python.exe path/to/script.py
 ```
 
 ## 4. Redis / Memurai

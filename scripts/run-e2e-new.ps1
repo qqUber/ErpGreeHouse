@@ -19,6 +19,8 @@ function Write-Step ([string]$msg) { Write-Host "`n[$(Get-Date -Format 'HH:mm:ss
 function Write-Success ([string]$msg) { Write-Host "✅ $msg" -ForegroundColor Green }
 function Write-Error-Custom ([string]$msg) { Write-Host "❌ $msg" -ForegroundColor Red }
 
+$TestExitCode = 0
+
 try {
     Write-Host "========================================" -ForegroundColor Magenta
     Write-Host "🧪 ERP GREENHOUSE: TOTAL REPRESSION" -ForegroundColor Magenta
@@ -88,6 +90,7 @@ try {
 
 } catch {
     Write-Error-Custom "Критическая ошибка скрипта: $($_.Exception.Message)"
+    $TestExitCode = 1
 } finally {
     if (!$KeepRunning) {
         Write-Step "Завершение процессов..."
@@ -95,7 +98,7 @@ try {
         # Финальный taskkill на случай зависших node/python
         lsof -ti:8000,5173 | xargs kill -9 2>$null # Для Linux/macOS
         # Для Windows:
-        # Get-NetTCPConnection -LocalPort 8000,5173 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | Stop-Process -Force
+        Get-NetTCPConnection -LocalPort 8000,5173 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | Stop-Process -Force
     }
 }
 

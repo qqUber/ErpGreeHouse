@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 
 from .db import get_db
 from .security import hash_password, new_salt
-from .admin_auth_api import require_roles
 
 
 router = APIRouter(prefix="/api/v1/test")
@@ -58,11 +57,10 @@ def get_test_credentials(
         
         credentials = {}
         for user in users:
-            # Return username and a known test password
-            # Password is set by bootstrap endpoint to TestPass123!
+            # Return username as password (dev defaults)
             credentials[user['username']] = {
                 'username': user['username'],
-                'password': 'TestPass123!',  # Set by bootstrap_test_data
+                'password': user['username'],
                 'role': user['role']
             }
         
@@ -89,12 +87,11 @@ def bootstrap_test_data(
     conn = db.connect()
     
     try:
-        # Test credentials - NEVER use these in production!
-        test_password = "TestPass123!"
+        # Test credentials - set to match dev defaults for existing tests
         test_users = [
-            ('admin', 'owner', test_password),
-            ('operator', 'operator', test_password),
-            ('manager', 'marketer', test_password),
+            ('admin', 'owner', 'admin'),
+            ('operator', 'operator', 'operator'),
+            ('manager', 'marketer', 'manager'),
         ]
         
         updated = 0
@@ -184,8 +181,7 @@ def customer_by_phone(
     phone: str,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    _enabled()
-    require_roles(x_admin_secret, roles=("owner",))
+    _verify_admin_secret(x_admin_secret)
     db = get_db()
     conn = db.connect()
     try:
@@ -203,8 +199,7 @@ def product_by_code(
     code: str,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    _enabled()
-    require_roles(x_admin_secret, roles=("owner",))
+    _verify_admin_secret(x_admin_secret)
     db = get_db()
     conn = db.connect()
     try:
@@ -227,8 +222,7 @@ def transactions_by_customer(
     customer_id: int,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    _enabled()
-    require_roles(x_admin_secret, roles=("owner",))
+    _verify_admin_secret(x_admin_secret)
     db = get_db()
     conn = db.connect()
     try:
@@ -253,8 +247,7 @@ def cleanup(
     payload: CleanupIn,
     x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
-    _enabled()
-    require_roles(x_admin_secret, roles=("owner",))
+    _verify_admin_secret(x_admin_secret)
     db = get_db()
     conn = db.connect()
     try:

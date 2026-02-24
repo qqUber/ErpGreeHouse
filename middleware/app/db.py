@@ -21,6 +21,22 @@ class DB:
         try:
             conn.execute("ALTER TABLE customers ADD COLUMN birthday TEXT")
         except sqlite3.OperationalError: pass
+        # Analytics fields for customers
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN ltv REAL NOT NULL DEFAULT 0")  # Lifetime Value
+        except sqlite3.OperationalError: pass
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN average_check REAL NOT NULL DEFAULT 0")  # Average transaction amount
+        except sqlite3.OperationalError: pass
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN purchase_frequency INTEGER NOT NULL DEFAULT 0")  # Number of purchases
+        except sqlite3.OperationalError: pass
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN last_purchase_date TEXT")  # Date of last purchase
+        except sqlite3.OperationalError: pass
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN cohort_month TEXT")  # Month of first purchase (YYYY-MM)
+        except sqlite3.OperationalError: pass
         conn.commit()
 
         conn.row_factory = sqlite3.Row
@@ -29,6 +45,13 @@ class DB:
         conn.execute("PRAGMA synchronous = NORMAL")
         conn.execute("PRAGMA temp_store = MEMORY")
         conn.execute("PRAGMA mmap_size = 268435456")
+
+        # Migration for vk_id column
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN vk_id INTEGER UNIQUE")
+        except sqlite3.OperationalError:  # Column already exists
+            pass
+
         return conn
 
 
@@ -229,6 +252,17 @@ def init_db() -> None:
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 FOREIGN KEY(trigger_id) REFERENCES marketing_triggers(id),
                 FOREIGN KEY(customer_id) REFERENCES customers(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS vk_settings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                access_token TEXT NOT NULL,
+                group_id INTEGER NOT NULL,
+                api_version TEXT NOT NULL DEFAULT '5.131',
+                enabled INTEGER NOT NULL DEFAULT 0,
+                webhook_secret TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
             );
             """
         )

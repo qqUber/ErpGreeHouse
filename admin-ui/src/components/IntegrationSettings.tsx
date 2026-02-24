@@ -1,205 +1,206 @@
-import { useEffect, useState } from 'react'
-import { Api } from '../api'
+import { useEffect, useState } from 'react';
+import { Api } from '../api';
 
 type TelegramStatus = {
-  enabled: boolean
-  configured: boolean
-  bot_token_set: boolean
+  enabled: boolean;
+  configured: boolean;
+  bot_token_set: boolean;
   config: {
-    bot_token?: string
-    enabled?: boolean
-  }
-}
+    bot_token?: string;
+    enabled?: boolean;
+  };
+};
 
 type VKStatus = {
-  enabled: boolean
-  configured: boolean
-  group_id: number | null
-  api_version: string
-}
+  enabled: boolean;
+  configured: boolean;
+  group_id: number | null;
+  api_version: string;
+};
 
-type Status = 'idle' | 'loading' | 'success' | 'error'
+type Status = 'idle' | 'loading' | 'success' | 'error';
 
 export function IntegrationSettings() {
-  const [telegramStatus, setTelegramStatus] = useState<TelegramStatus | null>(null)
-  const [vkStatus, setVkStatus] = useState<VKStatus | null>(null)
-  
+  const [telegramStatus, setTelegramStatus] = useState<TelegramStatus | null>(null);
+  const [vkStatus, setVkStatus] = useState<VKStatus | null>(null);
+
   // Telegram form
-  const [telegramToken, setTelegramToken] = useState('')
-  const [telegramEnabled, setTelegramEnabled] = useState(false)
-  const [telegramValidateStatus, setTelegramValidateStatus] = useState<Status>('idle')
-  const [telegramValidationResult, setTelegramValidationResult] = useState<any>(null)
-  const [telegramSaveStatus, setTelegramSaveStatus] = useState<Status>('idle')
-  
+  const [telegramToken, setTelegramToken] = useState('');
+  const [telegramEnabled, setTelegramEnabled] = useState(false);
+  const [telegramValidateStatus, setTelegramValidateStatus] = useState<Status>('idle');
+  const [telegramValidationResult, setTelegramValidationResult] = useState<any>(null);
+  const [telegramSaveStatus, setTelegramSaveStatus] = useState<Status>('idle');
+
   // VK form
-  const [vkToken, setVkToken] = useState('')
-  const [vkGroupId, setVkGroupId] = useState('')
-  const [vkApiVersion, setVkApiVersion] = useState('5.131')
-  const [vkEnabled, setVkEnabled] = useState(false)
-  const [vkValidateStatus, setVkValidateStatus] = useState<Status>('idle')
-  const [vkValidationResult, setVkValidationResult] = useState<any>(null)
-  const [vkSaveStatus, setVkSaveStatus] = useState<Status>('idle')
-  
-  const [info, setInfo] = useState<string | null>(null)
+  const [vkToken, setVkToken] = useState('');
+  const [vkGroupId, setVkGroupId] = useState('');
+  const [vkApiVersion, setVkApiVersion] = useState('5.131');
+  const [vkEnabled, setVkEnabled] = useState(false);
+  const [vkValidateStatus, setVkValidateStatus] = useState<Status>('idle');
+  const [vkValidationResult, setVkValidationResult] = useState<any>(null);
+  const [vkSaveStatus, setVkSaveStatus] = useState<Status>('idle');
+
+  const [info, setInfo] = useState<string | null>(null);
 
   useEffect(() => {
-    loadStatus()
-  }, [])
+    loadStatus();
+  }, []);
 
   async function loadStatus() {
     try {
-      const status = await Api.getIntegrationsStatus()
-      setTelegramStatus(status.telegram)
-      setVkStatus(status.vk)
-      
+      const status = await Api.getIntegrationsStatus();
+      setTelegramStatus(status.telegram);
+      setVkStatus(status.vk);
+
       // Pre-fill form with existing values
       if (status.telegram.config?.bot_token) {
-        setTelegramToken(status.telegram.config.bot_token)
+        setTelegramToken(status.telegram.config.bot_token);
       }
       if (status.telegram.config?.enabled !== undefined) {
-        setTelegramEnabled(status.telegram.config.enabled)
+        setTelegramEnabled(status.telegram.config.enabled);
       }
     } catch (e) {
-      console.error('Failed to load status:', e)
+      console.error('Failed to load status:', e);
     }
   }
 
   async function validateTelegram() {
     if (!telegramToken.trim()) {
-      setInfo('Введите токен бота')
-      return
+      setInfo('Введите токен бота');
+      return;
     }
-    
-    setTelegramValidateStatus('loading')
-    setTelegramValidationResult(null)
-    
+
+    setTelegramValidateStatus('loading');
+    setTelegramValidationResult(null);
+
     try {
-      const result = await Api.validateTelegramToken(telegramToken.trim(), telegramEnabled)
-      setTelegramValidationResult(result)
-      setTelegramValidateStatus(result.valid ? 'success' : 'error')
+      const result = await Api.validateTelegramToken(telegramToken.trim(), telegramEnabled);
+      setTelegramValidationResult(result);
+      setTelegramValidateStatus(result.valid ? 'success' : 'error');
     } catch (e: any) {
-      setTelegramValidationResult({ error: String(e) })
-      setTelegramValidateStatus('error')
+      setTelegramValidationResult({ error: String(e) });
+      setTelegramValidateStatus('error');
     }
   }
 
   async function saveTelegram() {
     if (!telegramToken.trim()) {
-      setInfo('Введите токен бота')
-      return
+      setInfo('Введите токен бота');
+      return;
     }
-    
-    setTelegramSaveStatus('loading')
-    
+
+    setTelegramSaveStatus('loading');
+
     try {
-      await Api.saveTelegramSettings(telegramToken.trim(), telegramEnabled)
-      setTelegramSaveStatus('success')
-      setInfo('Настройки Telegram сохранены')
-      await loadStatus()
+      await Api.saveTelegramSettings(telegramToken.trim(), telegramEnabled);
+      setTelegramSaveStatus('success');
+      setInfo('Настройки Telegram сохранены');
+      await loadStatus();
     } catch (e: any) {
-      setTelegramSaveStatus('error')
-      setInfo(`Ошибка сохранения: ${e.message || e}`)
+      setTelegramSaveStatus('error');
+      setInfo(`Ошибка сохранения: ${e.message || e}`);
     }
   }
 
   async function setupTelegramWebhook() {
     try {
-      const result = await Api.setTelegramWebhook()
-      setInfo(`Webhook установлен: ${result.url}`)
+      const result = await Api.setTelegramWebhook();
+      setInfo(`Webhook установлен: ${result.url}`);
     } catch (e: any) {
-      setInfo(`Ошибка установки webhook: ${e.message || e}`)
+      setInfo(`Ошибка установки webhook: ${e.message || e}`);
     }
   }
 
   async function validateVk() {
     if (!vkToken.trim()) {
-      setInfo('Введите токен VK')
-      return
+      setInfo('Введите токен VK');
+      return;
     }
     if (!vkGroupId.trim()) {
-      setInfo('Введите ID группы VK')
-      return
+      setInfo('Введите ID группы VK');
+      return;
     }
-    
-    setVkValidateStatus('loading')
-    setVkValidationResult(null)
-    
+
+    setVkValidateStatus('loading');
+    setVkValidationResult(null);
+
     try {
       const result = await Api.validateVkToken(
         vkToken.trim(),
         parseInt(vkGroupId, 10),
         vkApiVersion,
         vkEnabled
-      )
-      setVkValidationResult(result)
-      setVkValidateStatus(result.valid ? 'success' : 'error')
+      );
+      setVkValidationResult(result);
+      setVkValidateStatus(result.valid ? 'success' : 'error');
     } catch (e: any) {
-      setVkValidationResult({ error: String(e) })
-      setVkValidateStatus('error')
+      setVkValidationResult({ error: String(e) });
+      setVkValidateStatus('error');
     }
   }
 
   async function saveVk() {
     if (!vkToken.trim()) {
-      setInfo('Введите токен VK')
-      return
+      setInfo('Введите токен VK');
+      return;
     }
     if (!vkGroupId.trim()) {
-      setInfo('Введите ID группы VK')
-      return
+      setInfo('Введите ID группы VK');
+      return;
     }
-    
-    setVkSaveStatus('loading')
-    
+
+    setVkSaveStatus('loading');
+
     try {
-      await Api.saveVkSettings(
-        vkToken.trim(),
-        parseInt(vkGroupId, 10),
-        vkApiVersion,
-        vkEnabled
-      )
-      setVkSaveStatus('success')
-      setInfo('Настройки VK сохранены')
-      await loadStatus()
+      await Api.saveVkSettings(vkToken.trim(), parseInt(vkGroupId, 10), vkApiVersion, vkEnabled);
+      setVkSaveStatus('success');
+      setInfo('Настройки VK сохранены');
+      await loadStatus();
     } catch (e: any) {
-      setVkSaveStatus('error')
-      setInfo(`Ошибка сохранения: ${e.message || e}`)
+      setVkSaveStatus('error');
+      setInfo(`Ошибка сохранения: ${e.message || e}`);
     }
   }
 
   async function setupVkWebhook() {
     try {
-      const result = await Api.setVkWebhook()
-      setInfo(`Webhook настроен: ${result.url}`)
+      const result = await Api.setVkWebhook();
+      setInfo(`Webhook настроен: ${result.url}`);
     } catch (e: any) {
-      setInfo(`Ошибка настройки webhook: ${e.message || e}`)
+      setInfo(`Ошибка настройки webhook: ${e.message || e}`);
     }
   }
 
   function getStatusBadge(status: Status) {
     switch (status) {
       case 'loading':
-        return <span className="pill pillWarn">Загрузка...</span>
+        return <span className="pill pillWarn">Загрузка...</span>;
       case 'success':
-        return <span className="pill pillGood">Успешно</span>
+        return <span className="pill pillGood">Успешно</span>;
       case 'error':
-        return <span className="pill pillErr">Ошибка</span>
+        return <span className="pill pillErr">Ошибка</span>;
       default:
-        return null
+        return null;
     }
   }
 
   return (
     <div className="grid">
       {info && (
-        <div className="card" style={{ backgroundColor: 'var(--info-bg)', padding: '10px', marginBottom: 10 }}>
+        <div
+          className="card"
+          style={{ backgroundColor: 'var(--info-bg)', padding: '10px', marginBottom: 10 }}
+        >
           {info}
-          <button onClick={() => setInfo(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}>
+          <button
+            onClick={() => setInfo(null)}
+            style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}
+          >
             ×
           </button>
         </div>
       )}
-      
+
       {/* Telegram Section */}
       <div className="card cardWide">
         <div className="row" style={{ marginBottom: 15 }}>
@@ -223,7 +224,7 @@ export function IntegrationSettings() {
             </label>
           </div>
         </div>
-        
+
         <div style={{ display: 'grid', gap: 10 }}>
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Bot Token</div>
@@ -235,7 +236,7 @@ export function IntegrationSettings() {
               style={{ width: '100%' }}
             />
           </div>
-          
+
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <button
               className="btn"
@@ -246,15 +247,16 @@ export function IntegrationSettings() {
             </button>
             {getStatusBadge(telegramValidateStatus)}
             {telegramValidationResult && (
-              <span style={{ fontSize: 12, color: telegramValidationResult.valid ? 'green' : 'red' }}>
-                {telegramValidationResult.valid 
+              <span
+                style={{ fontSize: 12, color: telegramValidationResult.valid ? 'green' : 'red' }}
+              >
+                {telegramValidationResult.valid
                   ? `@${telegramValidationResult.bot_username} (ID: ${telegramValidationResult.bot_id})`
-                  : telegramValidationResult.error || 'Ошибка'
-                }
+                  : telegramValidationResult.error || 'Ошибка'}
               </span>
             )}
           </div>
-          
+
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               className="btn btnPrimary"
@@ -264,16 +266,13 @@ export function IntegrationSettings() {
               Сохранить
             </button>
             {getStatusBadge(telegramSaveStatus)}
-            <button
-              className="btn"
-              onClick={setupTelegramWebhook}
-            >
+            <button className="btn" onClick={setupTelegramWebhook}>
               Настроить Webhook
             </button>
           </div>
         </div>
       </div>
-      
+
       {/* VK Section */}
       <div className="card cardWide">
         <div className="row" style={{ marginBottom: 15 }}>
@@ -298,7 +297,7 @@ export function IntegrationSettings() {
             </label>
           </div>
         </div>
-        
+
         <div style={{ display: 'grid', gap: 10 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div>
@@ -323,7 +322,7 @@ export function IntegrationSettings() {
               />
             </div>
           </div>
-          
+
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Access Token</div>
             <input
@@ -334,7 +333,7 @@ export function IntegrationSettings() {
               style={{ width: '100%' }}
             />
           </div>
-          
+
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <button
               className="btn"
@@ -346,14 +345,13 @@ export function IntegrationSettings() {
             {getStatusBadge(vkValidateStatus)}
             {vkValidationResult && (
               <span style={{ fontSize: 12, color: vkValidationResult.valid ? 'green' : 'red' }}>
-                {vkValidationResult.valid 
+                {vkValidationResult.valid
                   ? `${vkValidationResult.group_name} (ID: ${vkValidationResult.group_id})`
-                  : vkValidationResult.error || 'Ошибка'
-                }
+                  : vkValidationResult.error || 'Ошибка'}
               </span>
             )}
           </div>
-          
+
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               className="btn btnPrimary"
@@ -363,20 +361,17 @@ export function IntegrationSettings() {
               Сохранить
             </button>
             {getStatusBadge(vkSaveStatus)}
-            <button
-              className="btn"
-              onClick={setupVkWebhook}
-            >
+            <button className="btn" onClick={setupVkWebhook}>
               Настроить Webhook
             </button>
           </div>
         </div>
       </div>
-      
+
       {/* Instructions */}
       <div className="card cardWide">
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Инструкции по настройке</div>
-        
+
         <div style={{ fontSize: 13, color: 'var(--muted)' }}>
           <div style={{ marginBottom: 15 }}>
             <strong>Telegram:</strong>
@@ -388,7 +383,7 @@ export function IntegrationSettings() {
               <li>Нажмите "Настроить Webhook" для установки webhook</li>
             </ol>
           </div>
-          
+
           <div>
             <strong>VK (VKontakte):</strong>
             <ol style={{ marginTop: 5, paddingLeft: 20 }}>
@@ -403,5 +398,5 @@ export function IntegrationSettings() {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -16,7 +16,7 @@ __dist__/
 dist/
 build/
 *.egg-info/
-
+.pdf
 .env
 .env.*
 
@@ -37,3 +37,6 @@ middleware/.pytest_cache/
 .coverage
 coverage.xml
 .roo/mcp.json
+admin-ui/e2e/.test-credentials.json
+  
+cookies.txt 

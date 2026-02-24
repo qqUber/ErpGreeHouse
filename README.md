@@ -177,6 +177,162 @@ docker compose ps
 
 ---
 
+## 🔐 JWT Authentication Configuration
+
+This section covers JWT authentication setup, environment variables, and troubleshooting for the Admin UI and API.
+
+### Environment Variables
+
+Configure the following environment variables in your `.env` file (see [`middleware/.env.example`](middleware/.env.example)):
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `JWT_SECRET_KEY` | Main secret key for signing tokens | Required (auto-generated in dev) |
+| `JWT_ALGORITHM` | Signing algorithm | `HS256` |
+| `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | Access token lifetime | `30` minutes |
+| `JWT_REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token lifetime | `30` days |
+
+Example `.env` configuration:
+```bash
+# JWT Authentication
+JWT_SECRET_KEY=your-secure-secret-key-change-in-production
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+JWT_REFRESH_TOKEN_EXPIRE_DAYS=30
+
+# Development mode (auto-generates JWT_SECRET_KEY if not set)
+ENVIRONMENT=development
+```
+
+### Quick Start for Development
+
+#### Option 1: Using start_dev.ps1 Script (Recommended for Windows)
+
+```powershell
+# From project root
+cd middleware
+.\start_dev.ps1
+```
+
+This script automatically:
+- Creates `.env` file if missing
+- Sets `ENVIRONMENT=development`
+- Installs dependencies
+- Starts the backend server
+
+#### Option 2: Manual Setup
+
+```bash
+# Set environment variable
+# Windows (PowerShell)
+$env:ENVIRONMENT="development"
+
+# Windows (CMD)
+set ENVIRONMENT=development
+
+# Linux/Mac
+export ENVIRONMENT=development
+
+# Start the server
+cd middleware
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+In development mode (`ENVIRONMENT=development`):
+- JWT secret key is auto-generated if not provided
+- Debug logging is enabled
+- CORS is more permissive
+
+### Troubleshooting
+
+#### Common 401 Errors and Causes
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `401 Unauthorized` | Token expired | Wait for auto-refresh or re-login |
+| `401 Invalid token` | Malformed JWT | Clear cookies and re-login |
+| `401 Signature verification failed` | JWT_SECRET mismatch | See below |
+| `401 Token has been revoked` | Logged out elsewhere | Re-login |
+
+#### How to Clear Cookies/Cache
+
+**Browser:**
+1. Open DevTools (F12)
+2. Go to Application → Cookies
+3. Delete `access_token` and `refresh_token` cookies
+4. Refresh the page
+
+**Programmatically (API):**
+```bash
+# Call logout to clear tokens
+curl -X POST http://localhost:8000/api/v1/auth/logout
+```
+
+#### JWT_SECRET Mismatch Issue
+
+**Problem:** You get `401 Signature verification failed` errors after:
+- Restarting the server
+- Switching between branches
+- Deploying to a new environment
+
+**Causes:**
+1. Server restarted without preserving the secret key
+2. Different `JWT_SECRET_KEY` values across instances
+3. Browser has old token from previous server instance
+
+**Solutions:**
+
+```bash
+# Option 1: Set a consistent JWT_SECRET_KEY in .env
+JWT_SECRET_KEY=my-consistent-secret-key-do-not-change
+
+# Option 2: Clear tokens and re-login
+# 1. Clear browser cookies
+# 2. Restart the server with the same JWT_SECRET_KEY
+# 3. Re-login
+
+# Option 3: For development, use ENVIRONMENT=development
+# This provides a consistent deterministic secret based on a seed
+```
+
+### Token Flow
+
+```
+┌─────────┐    ┌──────────────┐    ┌─────────────────┐
+│  Login  │───▶│ Generate     │───▶│ Set cookies:    │
+│ /login  │    │ Tokens       │    │ - access_token  │
+└─────────┘    └──────────────┘    │ - refresh_token │
+                                   └─────────────────┘
+                                         │
+                                         ▼
+┌─────────┐    ┌──────────────┐    ┌─────────────────┐
+│  API    │◀───│ Validate     │◀───│ Include token   │
+│ Request │    │ JWT          │    │ in Authorization│
+└─────────┘    └──────────────┘    └─────────────────┘
+      │
+      │ (if expired)
+      ▼
+┌─────────┐    ┌──────────────┐    ┌─────────────────┐
+│ Refresh │───▶│ Validate     │───▶│ Generate new    │
+│ /refresh│    │ Refresh      │    │ Access token    │
+└─────────┘    └──────────────┘    └─────────────────┘
+      │
+      │ (on logout or invalid)
+      ▼
+┌─────────┐    ┌──────────────┐    ┌─────────────────┐
+│ Logout  │───▶│ Blacklist    │───▶│ Clear cookies   │
+│ /logout │    │ Tokens       │    │ (access/refresh)│
+└─────────┘    └──────────────┘    └─────────────────┘
+```
+
+**Flow Steps:**
+1. **Login**: User authenticates → Server generates access + refresh tokens → Tokens stored in HTTP-only cookies
+2. **Token Generation**: Access token (short-lived, 30min) + Refresh token (long-lived, 30 days)
+3. **Refresh**: When access token expires, client uses refresh token to get new access token (automatic)
+4. **Logout**: Tokens are blacklisted and cookies are cleared
+
+---
+
 ### 🧪 Тестирование
 
 ```bash

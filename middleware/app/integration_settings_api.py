@@ -6,10 +6,11 @@ import json
 import secrets
 from typing import Any, Optional
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Depends
 from pydantic import BaseModel, Field
 
-from .auth import require_roles
+from .admin_auth_api import require_jwt_auth
+from .auth import check_roles
 from .bot import create_bot
 from .config import get_settings
 from .db import get_db
@@ -49,10 +50,10 @@ class IntegrationStatus(BaseModel):
 
 @router.get("/telegram/status")
 def get_telegram_status(
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     """Get current Telegram bot status"""
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
     settings = get_settings()
 
     db = get_db()
@@ -83,10 +84,10 @@ def get_telegram_status(
 @router.post("/telegram/validate")
 async def validate_telegram_token(
     payload: TelegramSettingsIn,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     """Validate Telegram bot token"""
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
 
     try:
         bot = create_bot()

@@ -8,6 +8,8 @@ httpx==0.28.1
 python-dotenv==1.2.1
 openpyxl==3.1.5
 python-multipart==0.0.22
+lxml==5.3.0
+PyJWT==2.8.0
 
 # Testing (optional)
 # pip install pytest pytest-asyncio pytest-cov pytest-html pytest-mock fakeredis

@@ -1,58 +1,59 @@
-import { attachConsole, expect, login, retryBackoff, test, TEST_CREDENTIALS } from '../_shared'
-import type { Page } from '@playwright/test'
-import * as fs from 'fs'
+import {attachConsole, expect, login, retryBackoff, test} from '../_shared';
 
-test.beforeEach(async ({ page }) => {
-  page.on('console', msg => console.log(`[Browser] ${msg.type()}: ${msg.text()}`))
-  page.on('pageerror', err => console.error(`[Browser] Uncaught exception: ${err.message}`))
-})
-
-const consoleFlush = new Map<string, () => Promise<void>>()
+const consoleFlush = new Map<string, () => Promise<void>>();
 
 test.beforeEach(async ({ page }, testInfo) => {
-  consoleFlush.set(testInfo.testId, attachConsole(page, testInfo))
-  await retryBackoff(testInfo)
-})
+  page.on('console', (msg) => console.log(`[Browser] ${msg.type()}: ${msg.text()}`));
+  page.on('pageerror', (err) => console.error(`[Browser] Uncaught exception: ${err.message}`));
+  consoleFlush.set(testInfo.testId, attachConsole(page, testInfo));
+  await retryBackoff(testInfo);
+});
 
 test.afterEach(async ({}, testInfo) => {
-  const flush = consoleFlush.get(testInfo.testId)
-  if (flush) await flush()
-  consoleFlush.delete(testInfo.testId)
-})
+  const flush = consoleFlush.get(testInfo.testId);
+  if (flush) await flush();
+  consoleFlush.delete(testInfo.testId);
+});
 
 test('owner sees all tabs', async ({ page }) => {
   // Use TEST_CREDENTIALS instead of hardcoded passwords
-  await login(page, 'admin')
-  await page.waitForTimeout(2000)
+  await login(page, 'admin');
+  await page.waitForTimeout(2000);
   // Owner should see all tabs: Клиенты, Продажи, Товары, Маркетинг, Интеграции, Настройки
-  await expect(page.getByText('Клиенты', { exact: true })).toBeVisible()
-  await expect(page.getByText('Продажи', { exact: true })).toBeVisible()
-  await expect(page.getByText('Товары', { exact: true })).toBeVisible()
-  await expect(page.getByText('Интеграции', { exact: true })).toBeVisible()
+  await expect(page.getByText('Клиенты', { exact: true })).toBeVisible();
+  await expect(page.getByText('Продажи', { exact: true })).toBeVisible();
+  await expect(page.getByText('Товары', { exact: true })).toBeVisible();
+  await expect(page.getByText('Интеграции', { exact: true })).toBeVisible();
   // Use exact match for Settings tab (not "Settings access")
-  await expect(page.getByText('Настройки', { exact: true })).toBeVisible()
-})
+  await expect(page.getByText('Настройки', { exact: true })).toBeVisible();
+});
 
 test('operator cannot see integrations', async ({ page }) => {
-  await login(page, 'operator')
-  await page.waitForTimeout(2000)
+  await login(page, 'operator');
+  await page.waitForTimeout(2000);
   // Operator sees Продажи (Sales) tab but not Интеграции (Integrations)
-  await expect(page.getByText('Продажи', { exact: true })).toBeVisible()
-  await expect(page.getByText('Интеграции', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('Продажи', { exact: true })).toBeVisible();
+  await expect(page.getByText('Интеграции', { exact: true })).toHaveCount(0);
 
-  const resp = await page.request.get('/api/v1/integrations')
+  const resp = await page.request.get('/api/v1/integrations');
   // API returns 401 when user is authenticated but lacks permission
-  expect([401, 403]).toContain(resp.status())
-})
+  expect([401, 403]).toContain(resp.status());
+});
 
 test('manager cannot see pos operations', async ({ page }) => {
-  await login(page, 'manager')
-  await page.waitForTimeout(2000)
+  await login(page, 'manager');
+  await page.waitForTimeout(2000);
   // Manager sees Интеграции but not Продажи (POS operations)
-  await expect(page.getByText('Интеграции', { exact: true })).toBeVisible()
-  await expect(page.getByText('Продажи', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('Интеграции', { exact: true })).toBeVisible();
+  await expect(page.getByText('Продажи', { exact: true })).toHaveCount(0);
 
-  const resp = await page.request.post('/api/v1/pos/sale', { data: { customer_id: 1, items: [{ code: 'X', name: 'X', price: 1, qty: 1 }], requested_bonus: 0 } })
+  const resp = await page.request.post('/api/v1/pos/sale', {
+    data: {
+      customer_id: 1,
+      items: [{ code: 'X', name: 'X', price: 1, qty: 1 }],
+      requested_bonus: 0,
+    },
+  });
   // API returns 401 when user is authenticated but lacks permission
-  expect([401, 403]).toContain(resp.status())
-})
+  expect([401, 403]).toContain(resp.status());
+});
