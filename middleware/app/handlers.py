@@ -8,14 +8,129 @@ from aiogram.types import (
     CallbackQuery,
     WebAppInfo,
 )
-from .erp_client import ERPClient
+from .integrations.pos.erpnext_client import ERPClient
+from fastapi import HTTPException
 from .menu import MENU, find_item
 from .db import get_db
 from .identify import generate_qr_token, normalize_name, normalize_phone
 from .storage import get_redis, get_json, set_json, delete
 from .config import get_settings
+from typing import Literal, Tuple, Dict, Any
 
 router = Router()
+
+
+def register_or_link_user(
+    phone: str, social_id: str, channel: Literal["tg", "vk"]
+) -> Tuple[Dict[str, Any], bool]:
+    """
+    Unified customer registration/linking for Telegram and VK channels.
+
+    Args:
+        phone: Raw phone number input
+        social_id: The Telegram or VK user ID
+        channel: Source channel - "tg" for Telegram, "vk" for VK
+
+    Returns:
+        Tuple of (customer_dict, is_new) where is_new=True if customer was created
+    """
+    # Normalize phone number
+    normalized_phone = normalize_phone(phone)
+    if not normalized_phone:
+        raise ValueError("Invalid phone number format")
+
+    db = get_db()
+    conn = db.connect()
+    try:
+        # Check for existing customer by phone
+        cur = conn.execute(
+            "SELECT * FROM customers WHERE phone = ?", (normalized_phone,)
+        )
+        existing = cur.fetchone()
+
+        if existing:
+            # Customer exists - link the social account if not already linked
+            updates = []
+            params = []
+
+            if channel == "tg":
+                # Update telegram_id if currently empty
+                if existing["telegram_id"] is None:
+                    updates.append("telegram_id = ?")
+                    params.append(int(social_id))
+                # Also update tg_id if it exists as a separate column
+                if "tg_id" in existing.keys() and existing["tg_id"] is None:
+                    updates.append("tg_id = ?")
+                    params.append(int(social_id))
+            elif channel == "vk":
+                # Update vk_id if currently empty
+                if existing["vk_id"] is None:
+                    updates.append("vk_id = ?")
+                    params.append(int(social_id))
+
+            # Set preferred_channel if not already set
+            if existing["preferred_channel"] is None:
+                updates.append("preferred_channel = ?")
+                params.append(channel)
+
+            if updates:
+                updates.append("updated_at = datetime('now')")
+                params.append(existing["id"])
+                conn.execute(
+                    f"UPDATE customers SET {', '.join(updates)} WHERE id = ?",
+                    tuple(params),
+                )
+                conn.commit()
+
+            # Fetch updated record
+            cur = conn.execute(
+                "SELECT * FROM customers WHERE id = ?", (existing["id"],)
+            )
+            updated = cur.fetchone()
+            customer_dict = dict(updated) if updated else dict(existing)
+            return (customer_dict, False)
+
+        else:
+            # Create new customer
+            qr_token = generate_qr_token()
+
+            if channel == "tg":
+                conn.execute(
+                    """
+                    INSERT INTO customers 
+                    (phone, telegram_id, tg_id, qr_token, preferred_channel, balance_points, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, 0, datetime('now'), datetime('now'))
+                    """,
+                    (
+                        normalized_phone,
+                        int(social_id),
+                        int(social_id),
+                        qr_token,
+                        channel,
+                    ),
+                )
+            else:  # vk
+                conn.execute(
+                    """
+                    INSERT INTO customers 
+                    (phone, vk_id, qr_token, preferred_channel, balance_points, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, 0, datetime('now'), datetime('now'))
+                    """,
+                    (normalized_phone, int(social_id), qr_token, channel),
+                )
+
+            conn.commit()
+
+            # Fetch the newly created record
+            cur = conn.execute(
+                "SELECT * FROM customers WHERE phone = ?", (normalized_phone,)
+            )
+            new_customer = cur.fetchone()
+            customer_dict = dict(new_customer) if new_customer else {}
+            return (customer_dict, True)
+
+    finally:
+        conn.close()
 
 
 def _cart_key(tg_id: int) -> str:

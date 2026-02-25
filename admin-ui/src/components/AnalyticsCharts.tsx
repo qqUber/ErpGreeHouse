@@ -61,7 +61,7 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
   return (
     <div className="grid gap-6">
       {/* Sales Dynamics Line Chart */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white rounded-lg shadow p-4 flex-grow min-w-full">
         <h3 className="text-lg font-semibold mb-4">Динамика продаж</h3>
         <ReactECharts
           option={getSalesLineOption(salesData)}
@@ -72,7 +72,7 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Top Products Bar Chart */}
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white rounded-lg shadow p-4 flex-grow min-w-0">
           <h3 className="text-lg font-semibold mb-4">Топ товаров</h3>
           <ReactECharts
             option={getTopProductsOption(topProducts)}
@@ -82,7 +82,7 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
         </div>
 
         {/* Category Distribution Pie Chart */}
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white rounded-lg shadow p-4 flex-grow min-w-0">
           <h3 className="text-lg font-semibold mb-4">Распределение по категориям</h3>
           <ReactECharts
             option={getCategoryPieOption(categoryData)}

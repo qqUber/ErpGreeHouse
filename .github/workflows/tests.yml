@@ -352,7 +352,7 @@ jobs:
       - name: Run Safety dependency check
         working-directory: ./middleware
         run: |
-          safety check --json --output reports/safety_report.json
+          safety check --json --output reports/safety_report.json 2>&1
       
       - name: Upload security reports
         uses: actions/upload-artifact@v4

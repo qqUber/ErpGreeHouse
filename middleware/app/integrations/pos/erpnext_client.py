@@ -1,14 +1,21 @@
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any, List
+from fastapi import HTTPException
 import hashlib
 import time
 import httpx
 import logging
 import os
 import asyncio
-from .config import get_settings
-from .storage import get_redis
+from ...config import get_settings
+from ...storage import get_redis
 
 logger = logging.getLogger(__name__)
+
+
+class ERPClientError(Exception):
+    """Custom exception for ERPClient errors that can be used in both HTTP and non-HTTP contexts."""
+
+    pass
 
 
 class ERPClient:
@@ -51,7 +58,9 @@ class ERPClient:
                 logger.error(f"Request failed: {e}")
                 raise
 
-    async def get_customer_by_telegram_id(self, telegram_id: int) -> Optional[Dict]:
+    async def get_customer_by_telegram_id(
+        self, telegram_id: int
+    ) -> Optional[dict[str, Any]]:
         if self.mock:
             key = f"crm:tg:{telegram_id}"
             cid = self.r.get(key)
@@ -72,7 +81,7 @@ class ERPClient:
 
     async def create_customer(
         self, telegram_id: int, name: str, phone: str, consent_text: str
-    ) -> Dict:
+    ) -> dict[str, Any]:
         ts = int(time.time())
         consent_hash = hashlib.sha256(consent_text.encode()).hexdigest()[:8]
 
@@ -146,7 +155,9 @@ class ERPClient:
             "customer_link": erp_customer_name,
         }
 
-        res = await self._request("POST", "/api/resource/Telegram Client", json=payload)
+        res = await self._request("POST", "/api/resource/Telegram Client", json=payload)  # type: ignore[assignment]
+        if res is None:
+            raise ERPClientError("Failed to create customer in ERP")
         new_client = res["data"]
 
         # 3. Create initial transaction
@@ -178,7 +189,8 @@ class ERPClient:
 
     async def get_balance(self, client_name: str) -> int:
         if self.mock:
-            bal = int(self.r.hget(f"crm:c:{client_name}", "balance") or "0")
+            bal_value = self.r.hget(f"crm:c:{client_name}", "balance")  # type: ignore[assignment]
+            bal = int(bal_value) if bal_value is not None else 0  # type: ignore[arg-type]
             return bal
 
         # In real mode, we should query Telegram Client's balance field if it's updated via hooks,
@@ -202,11 +214,13 @@ class ERPClient:
 
         return total
 
-    async def get_transactions(self, client_name: str, limit: int = 5) -> List[Dict]:
+    async def get_transactions(
+        self, client_name: str, limit: int = 5
+    ) -> List[Dict[str, Any]]:
         if self.mock:
-            items = self.r.lrange(f"crm:tx:{client_name}", 0, limit - 1) or []
+            items = self.r.lrange(f"crm:tx:{client_name}", 0, limit - 1) or []  # type: ignore[assignment]
             result = []
-            for item in items:
+            for item in items:  # type: ignore[union-attr]
                 ts, ttype, points, desc = item.split("|", 3)
                 result.append(
                     {
@@ -229,8 +243,8 @@ class ERPClient:
         return data["data"]
 
     async def create_order(
-        self, client_name: str, items: List[Dict], bonus_points: int
-    ) -> Dict:
+        self, client_name: str, items: List[Dict[str, Any]], bonus_points: int
+    ) -> Dict[str, Any]:
         if self.mock:
             bal = await self.get_balance(client_name)
             bonus_apply = min(bonus_points, bal)
@@ -248,9 +262,11 @@ class ERPClient:
             return {"order_id": order_id, "total": total, "bonus_used": bonus_apply}
 
         # 1. Get Customer Link
-        client_data = await self._request(
+        client_data: Optional[Dict[str, Any]] = await self._request(
             "GET", f"/api/resource/Telegram Client/{client_name}"
         )
+        if client_data is None or client_data.get("data") is None:
+            raise ValueError("Customer not found in ERP")
         customer_link = client_data["data"]["customer_link"]
 
         # 2. Calculate totals
@@ -276,7 +292,11 @@ class ERPClient:
             # "bonus_points_used": bonus_points
         }
 
-        res = await self._request("POST", "/api/resource/Sales Order", json=payload)
+        res: Optional[Dict[str, Any]] = await self._request(
+            "POST", "/api/resource/Sales Order", json=payload
+        )
+        if res is None or res.get("data") is None:
+            raise ValueError("Failed to create sales order in ERP")
         order_id = res["data"]["name"]
 
         # 4. Handle Loyalty Points (Redemption)

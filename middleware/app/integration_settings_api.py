@@ -12,10 +12,10 @@ from pydantic import BaseModel, Field
 
 from .admin_auth_api import require_jwt_auth
 from .auth import check_roles, require_roles
-from .bot import create_bot
+from .integrations.bots.telegram_handler import create_bot, create_bot_with_token
 from .config import get_settings
 from .db import get_db
-from .vk_bot import validate_vk_token
+from .integrations.bots.vk_handler import validate_vk_token
 
 router = APIRouter(prefix="/api/v1/admin/integrations")
 
@@ -96,9 +96,9 @@ async def validate_telegram_token(
     check_roles(auth_result, roles=("owner", "marketer"))
 
     try:
-        bot = create_bot()
-        # Override the token for validation
-        bot.token = payload.bot_token
+        # Use dedicated factory function to create bot with custom token
+        # This avoids using private _token attribute which could break with aiogram updates
+        bot = create_bot_with_token(payload.bot_token)
 
         # Try to get bot info to validate token
         me = await bot.get_me()

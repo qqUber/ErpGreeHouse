@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { ImportPreview, ImportResult, api } from '../api';
+import { api, ImportPreview, ImportResult } from '../api';
 
 interface ProductImportProps {
   onImportComplete?: (result: ImportResult) => void;
@@ -98,7 +98,7 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
         method: 'POST',
         body: formData,
       });
-      
+
       setResult(data);
       if (onImportComplete) {
         onImportComplete(data);
@@ -128,7 +128,7 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
         },
         body: JSON.stringify({ url: url.trim(), format }),
       });
-      
+
       setResult(data);
       if (onImportComplete) {
         onImportComplete(data);

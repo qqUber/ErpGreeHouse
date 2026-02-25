@@ -1,17 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    AdminMe,
-    Api,
-    CustomerDetails,
-    CustomerListItem,
-    Dashboard,
-    getAdminSecret,
-    Integration,
-    IntegrationDelivery,
-    IntegrationTemplate,
-    SalesStats,
-    setAdminSecret,
+  AdminMe,
+  Api,
+  CustomerDetails,
+  CustomerListItem,
+  Dashboard,
+  getAdminSecret,
+  Integration,
+  IntegrationDelivery,
+  IntegrationTemplate,
+  SalesStats,
+  setAdminSecret,
 } from './api';
 import { IntegrationSettings } from './components/IntegrationSettings';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
@@ -233,7 +233,7 @@ function App() {
     setIntegrationsBusy(true);
     try {
       const res = await Api.integrations();
-      setIntegrations(res.items);
+      setIntegrations(res);
     } finally {
       setIntegrationsBusy(false);
     }
@@ -269,7 +269,7 @@ function App() {
         // Use the user data from auth context instead of making redundant Api.me() call
         setMe(user);
         console.log('[Bootstrap] Using user from auth context:', user.username);
-        
+
         // Load protected data since user is authenticated
         try {
           await Promise.all([loadDashboard(), loadCustomers(), loadProducts()]);
@@ -470,7 +470,12 @@ function App() {
 
   async function doLoginByPassword() {
     console.log('[App] doLoginByPassword started');
-    console.log('[App] Current auth state before login - isAuthenticated:', isAuthenticated, 'user:', user);
+    console.log(
+      '[App] Current auth state before login - isAuthenticated:',
+      isAuthenticated,
+      'user:',
+      user
+    );
     setError(null);
     try {
       const signal = startAuthFlowSteps([
@@ -485,7 +490,12 @@ function App() {
       setAuthStep(1, 'Проверка учетных данных...');
       // Use auth context login which handles JWT cookies automatically
       await authLogin(username.trim(), password);
-      console.log('[App] Auth login completed, checking auth state - isAuthenticated:', isAuthenticated, 'user:', user);
+      console.log(
+        '[App] Auth login completed, checking auth state - isAuthenticated:',
+        isAuthenticated,
+        'user:',
+        user
+      );
       setMustChangePassword(authMustChangePassword);
       setPassword('');
       // Note: JWT tokens are in httpOnly cookies, no need to setAdminSecret

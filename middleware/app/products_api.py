@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 import csv
 import io
 import json
@@ -53,10 +53,10 @@ def normalize_column_name(col: str) -> str | None:
     return None
 
 
-def parse_csv(content: bytes) -> tuple[list[dict], list[str]]:
+def parse_csv(content: bytes) -> tuple[list[dict[str, str]], list[str]]:
     """Parse CSV content and return rows and detected headers"""
     rows = []
-    headers = []
+    headers: list[str] = []
 
     # Try UTF-8 first, then fall back to other encodings
     encodings = ["utf-8", "utf-8-sig", "cp1251", "latin-1"]
@@ -113,10 +113,10 @@ def parse_csv(content: bytes) -> tuple[list[dict], list[str]]:
     return rows, headers
 
 
-def parse_xlsx(content: bytes) -> tuple[list[dict], list[str]]:
+def parse_xlsx(content: bytes) -> tuple[list[dict[str, str]], list[str]]:
     """Parse XLSX content and return rows and detected headers"""
     rows = []
-    headers = []
+    headers: list[str] = []
 
     wb = openpyxl.load_workbook(io.BytesIO(content), read_only=True, data_only=True)
     ws = wb.active
@@ -131,15 +131,15 @@ def parse_xlsx(content: bytes) -> tuple[list[dict], list[str]]:
     headers = []
     for h in header_row:
         if h is not None and str(h).strip():
-            normalized = normalize_column_name(h)
+            normalized = normalize_column_name(str(h))
             headers.append(normalized if normalized else str(h).strip().lower())
 
     # Process data rows
     for row_idx, row in enumerate(ws.iter_rows(values_only=True), start=2):
-        item = {}
+        item: dict[str, str] = {}
         for header_idx, value in enumerate(row):
             if header_idx < len(headers):
-                key = headers[header_idx]
+                key: str = headers[header_idx]
                 if key:
                     # Convert cell value
                     if value is not None:
@@ -151,13 +151,13 @@ def parse_xlsx(content: bytes) -> tuple[list[dict], list[str]]:
                         item[key] = ""
 
         if item:
-            item["_row"] = row_idx
+            item["_row"] = str(row_idx)
             rows.append(item)
 
     return rows, headers
 
 
-def parse_json(content: bytes) -> list[dict]:
+def parse_json(content: bytes) -> list[dict[str, str]]:
     """Parse JSON content"""
     try:
         data = json.loads(content.decode("utf-8"))
@@ -200,7 +200,7 @@ def parse_json(content: bytes) -> list[dict]:
     return normalized
 
 
-def parse_xml(content: bytes) -> list[dict]:
+def parse_xml(content: bytes) -> list[dict[str, str]]:
     """Parse XML content"""
     try:
         root = etree.fromstring(content)
@@ -240,9 +240,10 @@ def parse_xml(content: bytes) -> list[dict]:
         # Check if it's the root or a container
         if root.find(".//*") is not None and root != products_elem:
             # products_elem is a container, iterate its children
-            elements = products_elem
+            elements: list[Any] = (
+                list(products_elem) if products_elem is not None else []
+            )
         else:
-            elements = [products_elem]
             # Actually we need to check if root has product children
             if root.tag in ["product", "item", "good", "товар", "products"]:
                 elements = [root]
@@ -250,23 +251,23 @@ def parse_xml(content: bytes) -> list[dict]:
                 elements = list(root)
 
         for idx, elem in enumerate(elements):
-            item = {}
+            item: dict[str, str] = {}
 
             # Get attributes and text content
             for attr in elem.attrib:
-                normalized = normalize_column_name(attr)
+                normalized = normalize_column_name(str(attr))
                 if normalized:
                     item[normalized] = elem.attrib[attr]
 
             # Get child elements as fields
             for child in elem:
                 if child.text and child.text.strip():
-                    normalized = normalize_column_name(child.tag)
+                    normalized = normalize_column_name(str(child.tag))
                     if normalized:
                         item[normalized] = child.text.strip()
                 elif child.attrib:
                     # Handle elements with attributes but no text
-                    normalized = normalize_column_name(child.tag)
+                    normalized = normalize_column_name(str(child.tag))
                     if normalized:
                         # Store as JSON if has nested content
                         item[normalized] = json.dumps(
@@ -279,13 +280,15 @@ def parse_xml(content: bytes) -> list[dict]:
                 item["name"] = elem.text.strip()
 
             if item:
-                item["_row"] = idx + 1
+                item["_row"] = str(idx + 1)
                 items.append(item)
 
     return items
 
 
-def validate_product(row: dict, existing_skus: set) -> tuple[dict | None, str | None]:
+def validate_product(
+    row: dict[str, str], existing_skus: set
+) -> tuple[Optional[dict[str, str]], Optional[str]]:
     """Validate a product row. Returns (validated_data, error_message)"""
     name = row.get("name", "").strip() if row.get("name") else ""
     sku = row.get("sku", "").strip() if row.get("sku") else ""
@@ -395,7 +398,10 @@ def create_product(
             conn.commit()
         except Exception:
             raise HTTPException(status_code=400, detail="Product code already exists")
-        return {"id": int(cur.lastrowid)}
+        rowid = cur.lastrowid
+        if rowid is None:
+            raise HTTPException(status_code=500, detail="Failed to get inserted row id")
+        return {"id": int(rowid)}
     finally:
         conn.close()
 
@@ -607,7 +613,7 @@ def process_import(rows: list[dict], import_type: str) -> dict[str, Any]:
             validated_data, error = validate_product(row, existing_skus)
             if error:
                 errors.append(error)
-            else:
+            elif validated_data is not None:
                 validated.append(validated_data)
                 # Add SKU to existing_skus to prevent duplicates within the import
                 existing_skus.add(validated_data["sku"])
@@ -624,14 +630,15 @@ def process_import(rows: list[dict], import_type: str) -> dict[str, Any]:
         # Create preview (first 5 items)
         preview = []
         for item in validated[:5]:
-            preview.append(
-                {
-                    "name": item["name"],
-                    "sku": item["sku"],
-                    "category": item["category"],
-                    "price": item["price"],
-                }
-            )
+            if item is not None:
+                preview.append(
+                    {
+                        "name": item["name"],
+                        "sku": item["sku"],
+                        "category": item["category"],
+                        "price": item["price"],
+                    }
+                )
 
         # In a real implementation, we'd check dry_run parameter
         # For now, always perform the import
@@ -641,6 +648,8 @@ def process_import(rows: list[dict], import_type: str) -> dict[str, Any]:
         updated = 0
 
         for item in validated:
+            if item is None:
+                continue
             sku = item["sku"]
             name = item["name"]
             kind = item["category"]

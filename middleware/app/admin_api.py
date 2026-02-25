@@ -18,7 +18,7 @@ from .auth import (
 )
 from .admin_auth_api import require_jwt_auth
 from .db import get_db
-from .erp_client import ERPClient
+from .integrations.pos.erpnext_client import ERPClient
 from .identify import generate_qr_token, normalize_name, normalize_phone
 from .loyalty import LoyaltyRules, calc_earned_points, clamp_redeem_points
 from .pdfgen import ReceiptLine, write_simple_receipt_pdf
@@ -31,7 +31,7 @@ router = APIRouter(prefix="/api/v1")
 public_router = APIRouter(prefix="/api/v1/public")
 
 
-def _parse_items_json(items_json: str | None) -> list[dict]:
+def _parse_items_json(items_json: Optional[str]) -> list[dict]:
     """Parse items_json field safely"""
     if not items_json:
         return []

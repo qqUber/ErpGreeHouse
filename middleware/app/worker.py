@@ -4,7 +4,7 @@ from celery import Celery
 from aiogram.types import Update
 import httpx
 from .config import get_settings
-from .bot import create_bot, create_dispatcher
+from .integrations.bots.telegram_handler import create_bot, create_dispatcher
 from .storage import get_redis
 from .db import get_db
 

@@ -5,7 +5,7 @@ from urllib.parse import parse_qsl
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from .config import get_settings
-from .erp_client import ERPClient
+from .integrations.pos.erpnext_client import ERPClient
 from .db import get_db
 from .loyalty import LoyaltyRules, get_tier, get_next_tier
 
@@ -44,7 +44,7 @@ def validate_init_data(init_data: str, bot_token: str) -> dict:
 
 
 @router.post("/me")
-async def get_tma_me(req: InitDataRequest):
+async def get_tma_me(req: InitDataRequest) -> dict[str, Any]:
     settings = get_settings()
     bot_token = settings.telegram_bot_token
 

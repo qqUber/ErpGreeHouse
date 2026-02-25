@@ -140,7 +140,7 @@ fi
 # 5. Security tests
 echo "🔒 Running security tests..."
 if command -v safety &> /dev/null; then
-    safety check -r requirements.txt > "$REPORT_DIR/safety_report.txt" 2>/dev/null || echo "Safety check skipped"
+    safety check -r requirements.txt --json > "$REPORT_DIR/safety_report.json" 2>/dev/null || echo "Safety check skipped"
 fi
 
 if command -v bandit &> /dev/null; then

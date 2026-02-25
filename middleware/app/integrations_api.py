@@ -74,7 +74,7 @@ def list_integrations(
                     "config": cfg,
                 }
             )
-        return {"items": items}
+        return items
     finally:
         conn.close()
 

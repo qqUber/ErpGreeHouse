@@ -1,5 +1,5 @@
 import os
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
@@ -18,7 +18,7 @@ def _enabled() -> None:
         )
 
 
-def _verify_admin_secret(x_admin_secret: str | None) -> None:
+def _verify_admin_secret(x_admin_secret: Optional[str]) -> None:
     """Simple secret check for test API. Don't use in production!"""
     _enabled()
     # Get expected secret from environment variable

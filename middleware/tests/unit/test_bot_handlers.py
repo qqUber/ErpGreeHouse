@@ -42,7 +42,7 @@ def test_handler_functions_are_callable():
 
 def test_erp_client_imports():
     """Smoke test: Verify ERP client can be imported and instantiated."""
-    from app.erp_client import ERPClient
+    from app.integrations.pos.erpnext_client import ERPClient
 
     # Should be able to create client instance (may fail if no config)
     try:

@@ -4,6 +4,58 @@
 
 ---
 
+## Phase 2 Stability Improvements (2026-02-25)
+
+This section documents the key stability improvements added in Phase 2.
+
+### 1. API Schema Changes - integrations_api.py
+
+The `/api/v1/integrations` endpoint now returns a direct list instead of an object with an `items` key:
+
+| Endpoint | Previous Response | New Response |
+|----------|------------------|--------------|
+| `GET /api/v1/integrations` | `{"items": [...]}` | `list[IntegrationOut]` |
+
+**Code Reference**: [`list_integrations()`](middleware/app/integrations_api.py:50) returns `list[IntegrationOut]` (line 53).
+
+### 2. Redis 8 Sorted Set Operations - loyalty.py
+
+Advanced tier calculation using Redis 8 sorted sets for high-load scenarios:
+
+| Function | Purpose | Complexity |
+|---------|---------|------------|
+| [`update_user_spent_score()`](middleware/app/loyalty.py:104) | Set user's total spent amount | O(log N) |
+| [`increment_user_spent_score()`](middleware/app/loyalty.py:120) | Atomic increment using ZINCRBY | O(log N) |
+| [`get_user_rank()`](middleware/app/loyalty.py:140) | Get user's leaderboard rank | O(log N) |
+| [`get_user_percentile()`](middleware/app/loyalty.py:150) | Calculate percentile rank | O(log N) |
+| [`get_top_spenders()`](middleware/app/loyalty.py:165) | Get top N spenders | O(log N + M) |
+| [`get_users_in_tier()`](middleware/app/loyalty.py:196) | Get users by tier threshold | O(log N + M) |
+| [`calculate_user_tier()`](middleware/app/loyalty.py:272) | Determine tier from score | O(log N) |
+| [`bulk_increment_scores()`](middleware/app/loyalty.py:354) | Batch update with pipeline | O(log N * M) |
+
+**Redis Keys**:
+- `crm:leaderboard:spent` - Main sorted set for spent amounts
+- `crm:tier:membership` - Tier membership tracking
+- `crm:user:scores` - User score cache
+
+### 3. Python 3.14 Task Groups - bot.py
+
+Concurrent user session management using Python 3.14 Task Groups:
+
+| Component | Description |
+|-----------|-------------|
+| [`run_bot()`](middleware/app/bot.py:51) | Context manager with TaskGroup support |
+| [`ConcurrentUserSessions`](middleware/app/bot.py:101) | Per-user task isolation class |
+| [`start_user_session_with_group()`](middleware/app/bot.py:152) | TaskGroup-based session management |
+
+**Key Features**:
+- Uses `asyncio.TaskGroup` for structured concurrency (Python 3.14+)
+- `handle_as_task_group=True` parameter for better error handling
+- Fallback to standard `create_task` for Python < 3.14
+- Per-user task cancellation and proper cleanup
+
+---
+
 ## Core Directories
 
 | Directory | Purpose | Technology |
@@ -33,8 +85,11 @@ ErpGreeHouse/
 │   │   ├── admin_api.py
 │   │   ├── admin_auth_api.py
 │   │   ├── auth.py
+│   │   ├── bot.py                 # Telegram bot with Python 3.14 Task Groups
 │   │   ├── db.py
 │   │   ├── handlers.py
+│   │   ├── integrations_api.py    # API returns list[IntegrationOut]
+│   │   ├── loyalty.py             # Redis 8 sorted set operations
 │   │   └── ...
 │   ├── tests/            # Python tests
 │   │   ├── unit/        # Unit tests
@@ -254,5 +309,6 @@ GitHub Actions workflows in [`.github/workflows/`](.github/workflows):
 ## Last Updated
 
 - **Date**: 2026-02-25
-- **Version**: 1.0.0
+- **Version**: 1.1.0
+- **Phase**: 2 - Stability Improvements
 - **Maintainer**: Development Team

@@ -70,7 +70,7 @@ from .test_api import router as test_router
 from .request_context import reset_admin_session_token, set_admin_session_token
 from .runtime import is_debug
 from .worker import process_telegram_update
-from .bot import create_bot
+from .integrations.bots.telegram_handler import create_bot
 from .worker import send_broadcast
 
 app = FastAPI(title="Telegram CRM Middleware")
@@ -249,11 +249,11 @@ async def _http_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(status_code=status, content={"detail": msg})
 
 
-origins = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000")
-if origins == "*":
+origins_str = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000")
+if origins_str.strip() == "*":
     origins = ["*"]
 else:
-    origins = [o.strip() for o in origins.split(",") if o.strip()]
+    origins = [o.strip() for o in origins_str.split(",") if o.strip()]
 
 # If using wildcard, we can't use credentials
 allow_credentials = "*" not in origins
@@ -304,8 +304,46 @@ async def _startup() -> None:
     _bootstrap_demo_users()
 
 
-def verify_webhook_secret(secret_header: str | None, expected: str) -> None:
-    if not secret_header or secret_header != expected:
+def verify_webhook_secret(
+    secret_header: str | None, expected: str, admin_secret: str = ""
+) -> None:
+    """Verify the webhook secret header against expected secret or ADMIN_SECRET.
+
+    Allows authentication via either:
+    1. WEBHOOK_SECRET (dedicated webhook secret)
+    2. ADMIN_SECRET (environment admin secret)
+
+    In development mode (when both secrets are empty), webhooks are allowed without auth.
+
+    Args:
+        secret_header: The secret provided in the request header
+        expected: The expected WEBHOOK_SECRET value
+        admin_secret: Optional ADMIN_SECRET value to also accept
+
+    Raises:
+        HTTPException: 401 if secret is invalid, None if allowed
+    """
+    # Development mode: allow webhooks without secret if no secrets configured
+    if not expected and not admin_secret:
+        logger.warning(
+            "[WEBHOOK] No webhook secret configured - allowing webhook request (dev mode)"
+        )
+        return
+
+    if not secret_header:
+        raise HTTPException(
+            status_code=HTTP_401_UNAUTHORIZED, detail="Missing webhook secret"
+        )
+
+    # Use constant-time comparison to prevent timing attacks
+    from secrets import compare_digest
+
+    # Accept either webhook_secret or ADMIN_SECRET
+    expected_match = compare_digest(secret_header, expected) if expected else False
+    admin_match = compare_digest(secret_header, admin_secret) if admin_secret else False
+
+    if not (expected_match or admin_match):
+        logger.warning("[WEBHOOK] Invalid webhook secret attempt")
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED, detail="Invalid webhook secret"
         )
@@ -322,7 +360,8 @@ async def telegram_webhook(
     x_webhook_secret: str | None = Header(default=None, convert_underscores=False),
 ) -> dict:
     settings = get_settings()
-    verify_webhook_secret(x_webhook_secret, settings.webhook_secret)
+    admin_secret = os.getenv("ADMIN_SECRET", "")
+    verify_webhook_secret(x_webhook_secret, settings.webhook_secret, admin_secret)
     payload = await request.json()
     process_telegram_update.delay(payload)
     return {"accepted": True}
@@ -333,7 +372,8 @@ async def set_webhook(
     x_webhook_secret: str | None = Header(default=None, convert_underscores=False),
 ) -> dict:
     settings = get_settings()
-    verify_webhook_secret(x_webhook_secret, settings.webhook_secret)
+    admin_secret = os.getenv("ADMIN_SECRET", "")
+    verify_webhook_secret(x_webhook_secret, settings.webhook_secret, admin_secret)
     bot = create_bot()
     url = f"{settings.base_web_url}/telegram/webhook"
     await bot.set_webhook(url)
@@ -347,7 +387,8 @@ async def vk_webhook(
 ) -> dict:
     """Handle VK Callback API webhooks"""
     settings = get_settings()
-    verify_webhook_secret(x_webhook_secret, settings.webhook_secret)
+    admin_secret = os.getenv("ADMIN_SECRET", "")
+    verify_webhook_secret(x_webhook_secret, settings.webhook_secret, admin_secret)
     payload = await request.json()
     # Process VK events here
     # For now, just acknowledge receipt
@@ -360,7 +401,8 @@ async def admin_broadcast(
     x_webhook_secret: str | None = Header(default=None, convert_underscores=False),
 ) -> dict:
     settings = get_settings()
-    verify_webhook_secret(x_webhook_secret, settings.webhook_secret)
+    admin_secret = os.getenv("ADMIN_SECRET", "")
+    verify_webhook_secret(x_webhook_secret, settings.webhook_secret, admin_secret)
     body = await request.json()
     text = body.get("text", "")
     if not text:

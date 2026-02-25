@@ -73,6 +73,20 @@ class DB:
         except sqlite3.OperationalError:  # Column already exists
             pass
 
+        # Migration for preferred_channel column
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN preferred_channel TEXT")
+        except sqlite3.OperationalError:  # Column already exists
+            pass
+
+        # Migration for tg_id alias column (for clarity, points to telegram_id)
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN tg_id INTEGER")
+        except sqlite3.OperationalError:  # Column already exists
+            pass
+
+        conn.commit()
+
         return conn
 
 

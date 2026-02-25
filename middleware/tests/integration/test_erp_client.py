@@ -7,7 +7,7 @@ from typing import Dict
 # Ensure we can import app
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from app.erp_client import ERPClient
+from app.integrations.pos.erpnext_client import ERPClient
 
 
 @pytest.fixture

@@ -96,41 +96,55 @@ a:hover {
 }
 
 .grid {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 14px;
   margin-top: 14px;
 }
 
 .card {
-  grid-column: span 3;
+  flex: 1 1 calc(25% - 14px);
+  min-width: 200px;
   padding: 14px;
   border-radius: 12px;
   background: var(--panel);
   border: 1px solid var(--border);
+  overflow: hidden;
 }
 
 .cardWide {
-  grid-column: span 6;
+  flex: 1 1 calc(50% - 14px);
+  min-width: 300px;
 }
 .cardFull {
-  grid-column: 1 / -1;
+  flex: 1 1 100%;
+  min-width: 100%;
 }
 
 .kpiLabel {
   font-size: 12px;
   color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .kpiValue {
   font-size: 24px;
   font-weight: 800;
   margin-top: 6px;
   letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 .kpiSub {
   font-size: 12px;
   color: var(--muted);
   margin-top: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .row {
@@ -365,16 +379,19 @@ a:hover {
 
 @media (max-width: 980px) {
   .card {
-    grid-column: span 6;
+    flex: 1 1 calc(50% - 14px);
+    min-width: 180px;
   }
   .cardWide {
-    grid-column: span 12;
+    flex: 1 1 100%;
+    min-width: 100%;
   }
 }
 
 @media (max-width: 620px) {
   .card {
-    grid-column: span 12;
+    flex: 1 1 100%;
+    min-width: 100%;
   }
 }
 

@@ -279,11 +279,11 @@ export async function fetchWithAuth(
   const headers: Record<string, string> = {
     ...((fetchOptions.headers as Record<string, string>) || {}),
   };
-  
+
   // Use centralized header injection for consistent auth handling
   const authHeaders = injectAuthHeaders(headers);
   Object.assign(headers, authHeaders);
-  
+
   if (!headers['content-type'] && !(fetchOptions.body instanceof FormData)) {
     headers['content-type'] = 'application/json';
   }
@@ -547,11 +547,11 @@ function injectAuthHeaders(headers: Record<string, string> = {}): Record<string,
 
   // Check if token is JWT format (exactly two dots)
   const isJwtFormat = (secret.match(/\./g) || []).length === 2;
-  
+
   if (isJwtFormat) {
     // JWT token - use Authorization Bearer header ONLY
     // Do NOT also send in x-admin-secret
-    headers['Authorization'] = `Bearer ${secret}`;
+    headers.Authorization = `Bearer ${secret}`;
     console.log('[Api] JWT token detected, using Authorization Bearer header');
   } else {
     // Legacy static secret - use x-admin-secret header ONLY
@@ -559,7 +559,7 @@ function injectAuthHeaders(headers: Record<string, string> = {}): Record<string,
     headers['x-admin-secret'] = secret;
     console.log('[Api] Legacy secret detected, using x-admin-secret header only');
   }
-  
+
   return headers;
 }
 
@@ -567,9 +567,9 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   // Use centralized header injection for consistent auth handling
   const headers: Record<string, string> = {
     ...(init?.headers as any),
-    ...injectAuthHeaders()
+    ...injectAuthHeaders(),
   };
-  
+
   if (!headers['content-type'] && !(init?.body instanceof FormData))
     headers['content-type'] = 'application/json';
 
@@ -685,7 +685,7 @@ export const Api = {
   receiptUrl: (txId: number) => `${baseUrl()}/api/v1/transactions/${txId}/receipt`,
 
   integrations: () =>
-    api<{ items: Integration[] }>('/api/v1/integrations', { method: 'GET', headers: {} }),
+    api<Integration[]>('/api/v1/integrations', { method: 'GET', headers: {} }),
   integrationTemplates: () =>
     api<{ items: IntegrationTemplate[] }>('/api/v1/integrations/templates', {
       method: 'GET',

@@ -10,9 +10,9 @@ from typing import Any, Callable, Optional
 
 import aiohttp
 
-from .config import get_settings
-from .db import get_db
-from .identify import generate_qr_token, normalize_name, normalize_phone
+from ...config import get_settings
+from ...db import get_db
+from ...identify import generate_qr_token, normalize_name, normalize_phone
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ class VKBot:
         if self._session and not self._session.closed:
             await self._session.close()
 
-    async def get_long_poll_server(self) -> dict:
+    async def get_long_poll_server(self) -> dict[str, Any]:
         """Get VK Long Poll server info"""
         session = await self._get_session()
         params = {
@@ -65,7 +65,7 @@ class VKBot:
                 raise Exception(f"VK API error: {data['error']}")
             return data["response"]
 
-    async def long_poll(self) -> list:
+    async def long_poll(self) -> list[dict[str, Any]]:
         """Poll for new events from VK"""
         if not self._server_info:
             self._server_info = await self.get_long_poll_server()
