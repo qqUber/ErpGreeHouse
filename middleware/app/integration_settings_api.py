@@ -2,6 +2,7 @@
 Integration Settings API
 Provides endpoints for managing Telegram and VK bot configurations
 """
+
 import json
 import secrets
 from typing import Any, Optional
@@ -20,6 +21,7 @@ router = APIRouter(prefix="/api/v1/admin/integrations")
 
 
 # --- Request Models ---
+
 
 class TelegramSettingsIn(BaseModel):
     bot_token: str = Field(min_length=1)
@@ -40,6 +42,7 @@ class WebhookSetupIn(BaseModel):
 
 # --- Response Models ---
 
+
 class IntegrationStatus(BaseModel):
     connected: bool
     details: Optional[dict] = None
@@ -47,6 +50,7 @@ class IntegrationStatus(BaseModel):
 
 
 # --- Telegram Endpoints ---
+
 
 @router.get("/telegram/status")
 def get_telegram_status(
@@ -59,7 +63,9 @@ def get_telegram_status(
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute("SELECT config_json FROM integrations WHERE kind='telegram' LIMIT 1")
+        cur = conn.execute(
+            "SELECT config_json FROM integrations WHERE kind='telegram' LIMIT 1"
+        )
         row = cur.fetchone()
 
         config = {}
@@ -132,13 +138,23 @@ async def save_telegram_settings(
         if row:
             conn.execute(
                 "UPDATE integrations SET config_json=?, enabled=?, updated_at=datetime('now') WHERE id=?",
-                (json.dumps(config, ensure_ascii=False), 1 if payload.enabled else 0, int(row["id"])),
+                (
+                    json.dumps(config, ensure_ascii=False),
+                    1 if payload.enabled else 0,
+                    int(row["id"]),
+                ),
             )
         else:
             secret = secrets.token_urlsafe(24)
             conn.execute(
                 "INSERT INTO integrations(name, kind, enabled, secret, config_json) VALUES(?,?,?,?,?)",
-                ("Telegram Bot", "telegram", 1 if payload.enabled else 0, secret, json.dumps(config, ensure_ascii=False)),
+                (
+                    "Telegram Bot",
+                    "telegram",
+                    1 if payload.enabled else 0,
+                    secret,
+                    json.dumps(config, ensure_ascii=False),
+                ),
             )
 
         conn.commit()
@@ -176,6 +192,7 @@ async def setup_telegram_webhook(
 
 
 # --- VK Endpoints ---
+
 
 @router.get("/vk/status")
 def get_vk_status(
@@ -245,13 +262,24 @@ async def save_vk_settings(
                 """UPDATE vk_settings SET 
                     access_token=?, group_id=?, api_version=?, enabled=?, updated_at=datetime('now')
                 WHERE id=?""",
-                (payload.access_token, payload.group_id, payload.api_version, 1 if payload.enabled else 0, int(row["id"])),
+                (
+                    payload.access_token,
+                    payload.group_id,
+                    payload.api_version,
+                    1 if payload.enabled else 0,
+                    int(row["id"]),
+                ),
             )
         else:
             conn.execute(
                 """INSERT INTO vk_settings(access_token, group_id, api_version, enabled)
                 VALUES(?,?,?,?)""",
-                (payload.access_token, payload.group_id, payload.api_version, 1 if payload.enabled else 0),
+                (
+                    payload.access_token,
+                    payload.group_id,
+                    payload.api_version,
+                    1 if payload.enabled else 0,
+                ),
             )
 
         conn.commit()
@@ -297,6 +325,7 @@ async def setup_vk_webhook(
 
 
 # --- Combined Status ---
+
 
 @router.get("/status")
 def get_all_integrations_status(

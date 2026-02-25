@@ -5,24 +5,52 @@ from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from unittest.mock import MagicMock, patch
 from app.main import app
-from app.auth import create_access_token, create_refresh_token, validate_access_token, validate_refresh_token
+from app.auth import (
+    create_access_token,
+    create_refresh_token,
+    validate_access_token,
+    validate_refresh_token,
+)
 from app.config import get_settings
 
 # Role definitions for testing
 ROLES = {
-    "owner": {"user_id": 1, "username": "owner_user", "role": "owner", "permissions": ["*"]},
-    "manager": {"user_id": 2, "username": "manager_user", "role": "manager", "permissions": ["product.create", "product.update"]},
-    "operator": {"user_id": 3, "username": "operator_user", "role": "operator", "permissions": ["customer.read", "pos.sale"]},
-    "guest": {"user_id": 4, "username": "guest_user", "role": "guest", "permissions": []}
+    "owner": {
+        "user_id": 1,
+        "username": "owner_user",
+        "role": "owner",
+        "permissions": ["*"],
+    },
+    "manager": {
+        "user_id": 2,
+        "username": "manager_user",
+        "role": "manager",
+        "permissions": ["product.create", "product.update"],
+    },
+    "operator": {
+        "user_id": 3,
+        "username": "operator_user",
+        "role": "operator",
+        "permissions": ["customer.read", "pos.sale"],
+    },
+    "guest": {
+        "user_id": 4,
+        "username": "guest_user",
+        "role": "guest",
+        "permissions": [],
+    },
 }
+
 
 @pytest.fixture
 def client():
     return TestClient(app)
 
+
 @pytest.fixture
 def settings():
     return get_settings()
+
 
 class TestJWTRoleBasedE2E:
     """
@@ -31,7 +59,7 @@ class TestJWTRoleBasedE2E:
     """
 
     @pytest.mark.parametrize("role_name", ROLES.keys())
-    @patch('app.admin_auth_api.get_db')
+    @patch("app.admin_auth_api.get_db")
     def test_role_login_and_token_generation(self, mock_get_db, client, role_name):
         """
         Scenario: Successful login for each role and verification of JWT claims.
@@ -43,7 +71,7 @@ class TestJWTRoleBasedE2E:
         4. Decode access_token and verify claims (sub, role, username).
         """
         role_data = ROLES[role_name]
-        
+
         # Mock DB for login
         mock_conn = MagicMock()
         mock_get_db.return_value.connect.return_value = mock_conn
@@ -55,20 +83,20 @@ class TestJWTRoleBasedE2E:
             "password_iter": 1,
             "must_change_password": 0,
             "disabled": 0,
-            "role": role_data["role"]
+            "role": role_data["role"],
         }
         mock_conn.execute.return_value.fetchone.return_value = mock_row
-        
-        with patch('app.admin_auth_api.hash_password', return_value="mock_hash"):
+
+        with patch("app.admin_auth_api.hash_password", return_value="mock_hash"):
             response = client.post(
                 "/api/v1/public/auth/login",
-                json={"username": role_data["username"], "password": "password123"}
+                json={"username": role_data["username"], "password": "password123"},
             )
-        
+
         assert response.status_code == 200
         assert "access_token" in response.cookies
         assert "refresh_token" in response.cookies
-        
+
         # Verify JWT claims
         token = response.cookies["access_token"]
         payload = validate_access_token(token)
@@ -79,7 +107,7 @@ class TestJWTRoleBasedE2E:
         assert payload["type"] == "access"
 
     @pytest.mark.parametrize("role_name", ["owner", "manager", "operator"])
-    @patch('app.admin_auth_api._get_admin_by_id')
+    @patch("app.admin_auth_api._get_admin_by_id")
     def test_role_token_refresh(self, mock_get_admin, client, role_name):
         """
         Scenario: Token refresh mechanism for different roles.
@@ -94,22 +122,27 @@ class TestJWTRoleBasedE2E:
         mock_get_admin.return_value = {
             "id": role_data["user_id"],
             "username": role_data["username"],
-            "role": role_data["role"]
+            "role": role_data["role"],
         }
-        
+
         # Create a valid refresh token
-        refresh_token = create_refresh_token({"user_id": role_data["user_id"], "username": role_data["username"], "role": role_data["role"]})
-        
+        refresh_token = create_refresh_token(
+            {
+                "user_id": role_data["user_id"],
+                "username": role_data["username"],
+                "role": role_data["role"],
+            }
+        )
+
         # Call refresh endpoint
         response = client.post(
-            "/api/v1/public/auth/refresh",
-            cookies={"refresh_token": refresh_token}
+            "/api/v1/public/auth/refresh", cookies={"refresh_token": refresh_token}
         )
-        
+
         assert response.status_code == 200
         assert "access_token" in response.cookies
         assert "refresh_token" in response.cookies
-        
+
         # Verify new access token
         new_access_token = response.cookies["access_token"]
         payload = validate_access_token(new_access_token)
@@ -125,15 +158,19 @@ class TestJWTRoleBasedE2E:
         """
         owner_token = create_access_token(ROLES["owner"])
         operator_token = create_access_token(ROLES["operator"])
-        
+
         # Assuming /api/v1/auth/me returns role info we can check
         # Owner access
-        resp_owner = client.get("/api/v1/auth/me", cookies={"access_token": owner_token})
+        resp_owner = client.get(
+            "/api/v1/auth/me", cookies={"access_token": owner_token}
+        )
         assert resp_owner.status_code == 200
         assert resp_owner.json()["role"] == "owner"
-        
+
         # Operator access
-        resp_operator = client.get("/api/v1/auth/me", cookies={"access_token": operator_token})
+        resp_operator = client.get(
+            "/api/v1/auth/me", cookies={"access_token": operator_token}
+        )
         assert resp_operator.status_code == 200
         assert resp_operator.json()["role"] == "operator"
 
@@ -144,21 +181,23 @@ class TestJWTRoleBasedE2E:
         Steps:
         1. Call /api/v1/auth/logout.
         2. Verify cookies are cleared (max-age=0 or expired).
-        3. Subsequent request to protected route should fail (if middleware checks session/blacklist, 
+        3. Subsequent request to protected route should fail (if middleware checks session/blacklist,
            though here it just clears cookies).
         """
         access_token = create_access_token(ROLES["owner"])
-        
+
         # Logout
         response = client.post(
-            "/api/v1/auth/logout",
-            cookies={"access_token": access_token}
+            "/api/v1/auth/logout", cookies={"access_token": access_token}
         )
-        
+
         assert response.status_code == 200
         # Check if cookies are set to be deleted (Set-Cookie with empty value or expires in past)
         # TestClient handles cookie deletion by removing them from its jar if instructed
-        assert "access_token" not in response.cookies or response.cookies["access_token"] == ""
+        assert (
+            "access_token" not in response.cookies
+            or response.cookies["access_token"] == ""
+        )
 
     def test_negative_invalid_tokens(self, client):
         """
@@ -171,12 +210,12 @@ class TestJWTRoleBasedE2E:
         # 1. Malformed
         resp = client.get("/api/v1/auth/me", cookies={"access_token": "not.a.jwt"})
         assert resp.status_code == 401
-        
+
         # 2. Wrong type
         refresh_token = create_refresh_token(ROLES["owner"])
         resp = client.get("/api/v1/auth/me", cookies={"access_token": refresh_token})
         assert resp.status_code == 401
-        
+
         # 3. Invalid signature
         tampered_token = create_access_token(ROLES["owner"]) + "tamper"
         resp = client.get("/api/v1/auth/me", cookies={"access_token": tampered_token})
@@ -190,27 +229,27 @@ class TestJWTRoleBasedE2E:
         1. Generate token that is already expired.
         2. Attempt to use it -> 401.
         """
-        with patch('app.auth.get_settings') as mock_settings:
+        with patch("app.auth.get_settings") as mock_settings:
             # Mock settings to have 0 minutes expiry
             mock_s = MagicMock()
-            mock_s.jwt_access_token_expire_minutes = -1 # Expired 1 minute ago
+            mock_s.jwt_access_token_expire_minutes = -1  # Expired 1 minute ago
             mock_s.jwt_secret_key = settings.jwt_secret_key
             mock_s.jwt_algorithm = settings.jwt_algorithm
             mock_settings.return_value = mock_s
-            
+
             expired_token = create_access_token(ROLES["owner"])
-            
+
         resp = client.get("/api/v1/auth/me", cookies={"access_token": expired_token})
         assert resp.status_code == 401
         # Check status code instead of text (localized error messages vary)
 
-    @patch('app.admin_auth_api.get_db')
+    @patch("app.admin_auth_api.get_db")
     def test_guest_role_restrictions(self, mock_get_db, client):
         """
         Scenario: Guest role has minimal permissions.
         """
         guest_token = create_access_token(ROLES["guest"])
-        
+
         # Guest should be able to see their own info but maybe not much else
         resp = client.get("/api/v1/auth/me", cookies={"access_token": guest_token})
         assert resp.status_code == 200
@@ -223,10 +262,12 @@ class TestJWTRoleBasedE2E:
         """
         token = create_access_token(ROLES["owner"])
         wrong_key = "wrong_secret_key_12345678901234567890"
-        
+
         with pytest.raises(jwt.InvalidSignatureError):
             jwt.decode(token, wrong_key, algorithms=[settings.jwt_algorithm])
 
+
 if __name__ == "__main__":
     import pytest
+
     pytest.main([__file__])

@@ -1,6 +1,5 @@
 from typing import List, Dict
 
-
 MENU: List[Dict] = [
     {"code": "cap", "name": "Капучино", "price": 200},
     {"code": "ame", "name": "Американо", "price": 150},

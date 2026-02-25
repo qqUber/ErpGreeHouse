@@ -2,6 +2,7 @@
 VK (VKontakte) Bot Integration
 Handles message processing via VK Long Poll API
 """
+
 import asyncio
 import json
 import logging
@@ -56,7 +57,9 @@ class VKBot:
             "access_token": self.access_token,
             "v": self.api_version,
         }
-        async with session.get(f"{VK_API_URL}/groups.getLongPollServer", params=params) as resp:
+        async with session.get(
+            f"{VK_API_URL}/groups.getLongPollServer", params=params
+        ) as resp:
             data = await resp.json()
             if "error" in data:
                 raise Exception(f"VK API error: {data['error']}")
@@ -72,7 +75,7 @@ class VKBot:
             "key": self._server_info["key"],
             "ts": self._server_info["ts"],
             "wait": 25,  # Max wait time in seconds
-            "mode": 2,   # Return messages only
+            "mode": 2,  # Return messages only
             "version": 3,
         }
 
@@ -139,9 +142,15 @@ class VKBot:
             row = cur.fetchone()
 
             if row:
-                await self._send_message(peer_id, "Вы уже зарегистрированы. Используйте /balance для просмотра баланса.")
+                await self._send_message(
+                    peer_id,
+                    "Вы уже зарегистрированы. Используйте /balance для просмотра баланса.",
+                )
             else:
-                await self._send_message(peer_id, "Привет! Давайте зарегистрируемся. Используйте команду: /register Имя +79991234567")
+                await self._send_message(
+                    peer_id,
+                    "Привет! Давайте зарегистрируемся. Используйте команду: /register Имя +79991234567",
+                )
         finally:
             conn.close()
 
@@ -155,14 +164,18 @@ class VKBot:
         name = args[1]
         phone = normalize_phone(args[2])
         if not phone:
-            await self._send_message(user_id, "Телефон должен быть в формате +79991234567")
+            await self._send_message(
+                user_id, "Телефон должен быть в формате +79991234567"
+            )
             return
 
         db = get_db()
         conn = db.connect()
         try:
             # Check if phone already exists
-            cur = conn.execute("SELECT id, vk_id FROM customers WHERE phone=?", (phone,))
+            cur = conn.execute(
+                "SELECT id, vk_id FROM customers WHERE phone=?", (phone,)
+            )
             row = cur.fetchone()
 
             if row:
@@ -181,7 +194,9 @@ class VKBot:
                 )
 
             conn.commit()
-            await self._send_message(user_id, "Регистрация успешна! Начислено 100 приветственных баллов.")
+            await self._send_message(
+                user_id, "Регистрация успешна! Начислено 100 приветственных баллов."
+            )
         except Exception as e:
             await self._send_message(user_id, f"Ошибка регистрации: {e}")
         finally:
@@ -192,16 +207,23 @@ class VKBot:
         db = get_db()
         conn = db.connect()
         try:
-            cur = conn.execute("SELECT balance_points, full_name FROM customers WHERE vk_id=?", (user_id,))
+            cur = conn.execute(
+                "SELECT balance_points, full_name FROM customers WHERE vk_id=?",
+                (user_id,),
+            )
             row = cur.fetchone()
 
             if not row:
-                await self._send_message(user_id, "Вы ещё не зарегистрированы. Используйте /start")
+                await self._send_message(
+                    user_id, "Вы ещё не зарегистрированы. Используйте /start"
+                )
                 return
 
             balance = int(row["balance_points"])
             name = row["full_name"] or "гость"
-            await self._send_message(user_id, f"Привет, {name}.\nБаланс: {balance} баллов.")
+            await self._send_message(
+                user_id, f"Привет, {name}.\nБаланс: {balance} баллов."
+            )
         finally:
             conn.close()
 
@@ -217,7 +239,9 @@ class VKBot:
         }
 
         try:
-            async with session.post(f"{VK_API_URL}/messages.send", params=params) as resp:
+            async with session.post(
+                f"{VK_API_URL}/messages.send", params=params
+            ) as resp:
                 data = await resp.json()
                 if "error" in data:
                     logger.error(f"VK send message error: {data['error']}")
@@ -226,12 +250,14 @@ class VKBot:
 
     def _get_help_text(self) -> str:
         """Get help text for VK bot"""
-        return "\n".join([
-            "/start — начать",
-            "/register Имя Телефон — регистрация",
-            "/balance — баланс и последние операции",
-            "/help — справка",
-        ])
+        return "\n".join(
+            [
+                "/start — начать",
+                "/register Имя Телефон — регистрация",
+                "/balance — баланс и последние операции",
+                "/help — справка",
+            ]
+        )
 
     async def run(self):
         """Run the bot in polling mode"""
@@ -282,7 +308,9 @@ async def get_vk_bot() -> Optional[VKBot]:
     return _vk_bot
 
 
-async def validate_vk_token(access_token: str, group_id: int, api_version: str = "5.131") -> dict:
+async def validate_vk_token(
+    access_token: str, group_id: int, api_version: str = "5.131"
+) -> dict:
     """
     Validate VK access token and group ID
     Returns dict with 'valid' boolean and optional 'error' message
@@ -294,7 +322,9 @@ async def validate_vk_token(access_token: str, group_id: int, api_version: str =
             "v": api_version,
         }
         try:
-            async with session.get(f"{VK_API_URL}/groups.getById", params=params) as resp:
+            async with session.get(
+                f"{VK_API_URL}/groups.getById", params=params
+            ) as resp:
                 data = await resp.json()
 
                 if "error" in data:

@@ -2,6 +2,7 @@
 Analytics API unit tests.
 NOTE: aiogram and celery are stubbed out globally in conftest.py.
 """
+
 import os
 import pytest
 import tempfile
@@ -18,9 +19,10 @@ def client(tmp_path: Path):
     os.environ["CRM_DB_PATH"] = str(db_path)
     os.environ["ADMIN_SECRET"] = "test_admin_secret"
     os.environ["CORS_ORIGINS"] = "http://localhost:5173"
-    
+
     from app import main as main_module
     import importlib
+
     importlib.reload(main_module)
     return TestClient(main_module.app)
 

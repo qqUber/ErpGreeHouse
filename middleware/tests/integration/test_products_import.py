@@ -13,6 +13,7 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.setenv("CORS_ORIGINS", "http://localhost:5173")
 
     from app import main as main_module
+
     importlib.reload(main_module)
     with TestClient(main_module.app) as c:
         yield c
@@ -21,30 +22,26 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
 def test_import_products_csv(client: TestClient):
     """Test importing products from CSV file"""
     # Create a valid JWT token for authentication
-    admin_data = {
-        "user_id": 1,
-        "username": "admin",
-        "role": "owner"
-    }
+    admin_data = {"user_id": 1, "username": "admin", "role": "owner"}
     access_token = create_access_token(admin_data)
-    
+
     csv_content = b"""code;name;price;kind
 PROD1;Test Product 1;100;goods
 PROD2;Test Product 2;200;service
 """
     files = {"file": ("test.csv", csv_content, "text/csv")}
-    
+
     # Use JWT token for authentication
     r = client.post(
         "/api/v1/products/import/file",
         files=files,
         cookies={"access_token": access_token},
     )
-    
+
     # Check the response - may be 200 (success), 401 (unauthorized), or 403 (forbidden)
     # depending on whether the user has permission
     assert r.status_code in [200, 401, 403]
-    
+
     # If successful, verify the response format
     if r.status_code == 200:
         data = r.json()
@@ -58,17 +55,17 @@ def test_import_products_csv_with_header_auth(client: TestClient):
 PROD1;Test Product 1;100;goods
 """
     files = {"file": ("test.csv", csv_content, "text/csv")}
-    
+
     # Use admin secret for authentication
     r = client.post(
         "/api/v1/products/import/file",
         files=files,
         headers={"x-admin-secret": "test-admin"},
     )
-    
+
     # Check the response
     assert r.status_code in [200, 401, 403]
-    
+
     # If successful, verify the response format
     if r.status_code == 200:
         data = r.json()

@@ -41,9 +41,7 @@ def test_identify_and_sale_flow(client: TestClient) -> None:
         json={
             "customer_id": customer_id,
             "requested_bonus": 999,
-            "items": [
-                {"code": "COFFEE", "name": "Капучино", "price": 200, "qty": 2}
-            ],
+            "items": [{"code": "COFFEE", "name": "Капучино", "price": 200, "qty": 2}],
         },
         headers={"x-admin-secret": "test-admin"},
     )
@@ -53,13 +51,18 @@ def test_identify_and_sale_flow(client: TestClient) -> None:
     assert payload["bonus_used"] == 0
     assert payload["bonus_earned"] == 20
 
-    c = client.get(f"/api/v1/customers/{customer_id}", headers={"x-admin-secret": "test-admin"})
+    c = client.get(
+        f"/api/v1/customers/{customer_id}", headers={"x-admin-secret": "test-admin"}
+    )
     assert c.status_code == 200
     data = c.json()
     assert data["customer"]["balance_points"] == 20
     assert len(data["transactions"]) == 1
 
     tx_id = data["transactions"][0]["id"]
-    pdf = client.get(f"/api/v1/transactions/{tx_id}/receipt", headers={"x-admin-secret": "test-admin"})
+    pdf = client.get(
+        f"/api/v1/transactions/{tx_id}/receipt",
+        headers={"x-admin-secret": "test-admin"},
+    )
     assert pdf.status_code == 200
     assert pdf.headers.get("content-type", "").startswith("application/pdf")

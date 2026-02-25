@@ -8,6 +8,7 @@ import pytest
 def test_worker_module_imports():
     """Test that worker module can be imported without errors."""
     from app import worker
+
     assert worker is not None
-    assert hasattr(worker, 'execute_marketing_trigger')
-    assert hasattr(worker, 'safe_send')
+    assert hasattr(worker, "execute_marketing_trigger")
+    assert hasattr(worker, "safe_send")

@@ -30,7 +30,10 @@ def test_login_and_change_password(client: TestClient) -> None:
     assert st.status_code == 200
     assert st.json()["default_admin_present"] is True
 
-    r = client.post("/api/v1/public/auth/login", json={"username": "admin", "password": "ChangeMe123!"})
+    r = client.post(
+        "/api/v1/public/auth/login",
+        json={"username": "admin", "password": "ChangeMe123!"},
+    )
     assert r.status_code == 200
     token = r.json()["token"]
 
@@ -49,7 +52,10 @@ def test_login_and_change_password(client: TestClient) -> None:
     )
     assert ch.status_code == 200
 
-    r2 = client.post("/api/v1/public/auth/login", json={"username": "admin", "password": "NewPass123!"})
+    r2 = client.post(
+        "/api/v1/public/auth/login",
+        json={"username": "admin", "password": "NewPass123!"},
+    )
     assert r2.status_code == 200
 
 
@@ -61,11 +67,16 @@ def test_recover_password(client: TestClient) -> None:
     )
     assert rec.status_code == 200
 
-    r = client.post("/api/v1/public/auth/login", json={"username": "admin", "password": "Recovered123!"})
+    r = client.post(
+        "/api/v1/public/auth/login",
+        json={"username": "admin", "password": "Recovered123!"},
+    )
     assert r.status_code == 200
 
 
-def test_disabled_user_cannot_login(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_disabled_user_cannot_login(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     db_path = tmp_path / "crm_test.db"
     monkeypatch.setenv("CRM_DB_PATH", str(db_path))
     monkeypatch.setenv("ADMIN_SECRET", "")
@@ -88,5 +99,8 @@ def test_disabled_user_cannot_login(tmp_path: Path, monkeypatch: pytest.MonkeyPa
         finally:
             conn.close()
 
-        r = c.post("/api/v1/public/auth/login", json={"username": "admin", "password": "ChangeMe123!"})
+        r = c.post(
+            "/api/v1/public/auth/login",
+            json={"username": "admin", "password": "ChangeMe123!"},
+        )
         assert r.status_code == 403

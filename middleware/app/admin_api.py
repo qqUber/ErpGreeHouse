@@ -10,7 +10,12 @@ from fastapi.responses import FileResponse
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from .auth import ALL_PERMISSIONS, get_default_permissions, check_permission, check_roles
+from .auth import (
+    ALL_PERMISSIONS,
+    get_default_permissions,
+    check_permission,
+    check_roles,
+)
 from .admin_auth_api import require_jwt_auth
 from .db import get_db
 from .erp_client import ERPClient
@@ -21,7 +26,6 @@ from .storage import get_redis
 from .worker import send_customer_message
 from .integration_events import dispatch_event
 from .trigger_engine import evaluate_and_queue_triggers
-
 
 router = APIRouter(prefix="/api/v1")
 public_router = APIRouter(prefix="/api/v1/public")
@@ -45,7 +49,7 @@ def _get_product_names(items_json: str | None, max_items: int = 2) -> str:
     names = [item.get("name", "Товар") for item in items[:max_items]]
     if len(items) > max_items:
         return f"{', '.join(names)} +{len(items) - max_items}"
-    return ', '.join(names)
+    return ", ".join(names)
 
 
 @public_router.get("/status")
@@ -54,7 +58,8 @@ def public_status() -> dict[str, Any]:
     return {
         "api": "ok",
         "admin_auth_configured": admin_configured,
-        "erp_sync_enabled": os.getenv("ERP_SYNC_ENABLED", "false").lower() in ("1", "true", "yes"),
+        "erp_sync_enabled": os.getenv("ERP_SYNC_ENABLED", "false").lower()
+        in ("1", "true", "yes"),
     }
 
 
@@ -101,7 +106,7 @@ class CreateCustomerIn(BaseModel):
     full_name: str
     phone: str | None = None
     notes: str | None = None
-    birthday: str | None = None # YYYY-MM-DD
+    birthday: str | None = None  # YYYY-MM-DD
     marketing_allowed: int = 1
     data_processing_allowed: int = 1
 
@@ -131,27 +136,31 @@ def list_permissions(
 ) -> dict[str, Any]:
     # Owner only for managing permissions
     check_roles(auth_result, roles=("owner",))
-    
+
     db = get_db()
     conn = db.connect()
     try:
         # Get all configured permissions
-        cur = conn.execute("SELECT role, permission, is_allowed FROM role_permissions ORDER BY role, permission")
+        cur = conn.execute(
+            "SELECT role, permission, is_allowed FROM role_permissions ORDER BY role, permission"
+        )
         items = [dict(r) for r in cur.fetchall()]
-        
+
         # Ensure we return a structure that includes defaults if not in DB?
         # For now, let's just return what's in DB. The UI can handle "undefined means default false/true based on role".
         # But actually, the UI needs to know the full list of available permissions to show checkboxes.
-        
+
         # Use the single source of truth from auth.py
         known_permissions = ALL_PERMISSIONS
-        
-        known_roles = ["operator", "manager", "marketer"] # Owner has all
-        
+
+        known_roles = ["operator", "manager", "marketer"]  # Owner has all
+
         # Build a complete matrix
         matrix = []
-        configured = {(r["role"], r["permission"]): bool(r["is_allowed"]) for r in items}
-        
+        configured = {
+            (r["role"], r["permission"]): bool(r["is_allowed"]) for r in items
+        }
+
         for role in known_roles:
             role_defaults = get_default_permissions(role)
             for perm in known_permissions:
@@ -160,13 +169,11 @@ def list_permissions(
                 if (role, perm) not in configured:
                     if perm in role_defaults:
                         is_allowed = True
-                
-                matrix.append({
-                    "role": role,
-                    "permission": perm,
-                    "is_allowed": is_allowed
-                })
-                
+
+                matrix.append(
+                    {"role": role, "permission": perm, "is_allowed": is_allowed}
+                )
+
         return {"items": matrix}
     finally:
         conn.close()
@@ -178,14 +185,14 @@ def update_permission(
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     check_roles(auth_result, roles=("owner",))
-    
+
     db = get_db()
     conn = db.connect()
     try:
         cur = conn.execute(
             "INSERT INTO role_permissions(role, permission, is_allowed, updated_at) VALUES(?,?,?, datetime('now')) "
             "ON CONFLICT(role, permission) DO UPDATE SET is_allowed=excluded.is_allowed, updated_at=excluded.updated_at",
-            (payload.role, payload.permission, 1 if payload.is_allowed else 0)
+            (payload.role, payload.permission, 1 if payload.is_allowed else 0),
         )
         conn.commit()
         return {"status": "ok"}
@@ -227,7 +234,7 @@ def dashboard(
             tx["product_names"] = _get_product_names(tx.get("items_json"))
             tx.pop("items_json", None)  # Remove raw JSON from response
             txs.append(tx)
-        
+
         # Recent Marketing Triggers (Events)
         cur_tr = conn.execute(
             "SELECT e.id, e.created_at, e.status, t.name as trigger_name "
@@ -244,12 +251,9 @@ def dashboard(
             "bonus_earned": int(row["sum_earned"]),
             "bonus_used": int(row["sum_used"]),
             "customers_total": customers_total,
-            "recent_activity": {
-                "transactions": txs,
-                "marketing_events": trevents
-            }
+            "recent_activity": {"transactions": txs, "marketing_events": trevents},
         }
-        _cache_set_json(cache_key, data, ttl_seconds=300) 
+        _cache_set_json(cache_key, data, ttl_seconds=300)
         return data
     finally:
         conn.close()
@@ -332,7 +336,7 @@ def analytics_top_products(
             """,
             (f"-{days} days",),
         )
-        
+
         # Aggregate product sales
         product_sales = {}
         for row in cur.fetchall():
@@ -346,9 +350,11 @@ def analytics_top_products(
                     product_sales[name]["revenue"] += price * qty
                 else:
                     product_sales[name] = {"qty": qty, "revenue": price * qty}
-        
+
         # Sort by revenue and take top N
-        sorted_products = sorted(product_sales.items(), key=lambda x: x[1]["revenue"], reverse=True)[:limit]
+        sorted_products = sorted(
+            product_sales.items(), key=lambda x: x[1]["revenue"], reverse=True
+        )[:limit]
         data = [
             {"name": name, "qty": stats["qty"], "revenue": stats["revenue"]}
             for name, stats in sorted_products
@@ -370,8 +376,10 @@ def analytics_category_distribution(
     try:
         # Get products to map codes to categories
         cur_products = conn.execute("SELECT code, kind FROM products WHERE active = 1")
-        product_categories = {row["code"]: row["kind"] for row in cur_products.fetchall()}
-        
+        product_categories = {
+            row["code"]: row["kind"] for row in cur_products.fetchall()
+        }
+
         # Get transactions
         cur = conn.execute(
             """
@@ -381,7 +389,7 @@ def analytics_category_distribution(
             """,
             (f"-{days} days",),
         )
-        
+
         # Aggregate by category
         category_sales = {}
         for row in cur.fetchall():
@@ -396,7 +404,7 @@ def analytics_category_distribution(
                     category_sales[category]["revenue"] += price * qty
                 else:
                     category_sales[category] = {"qty": qty, "revenue": price * qty}
-        
+
         data = [
             {"name": cat, "qty": stats["qty"], "revenue": stats["revenue"]}
             for cat, stats in category_sales.items()
@@ -417,8 +425,7 @@ def analytics_recalculate(
     conn = db.connect()
     try:
         # Get all customers with transactions
-        cur = conn.execute(
-            """
+        cur = conn.execute("""
             SELECT 
                 c.id,
                 COALESCE(SUM(t.total_amount), 0) as ltv,
@@ -428,9 +435,8 @@ def analytics_recalculate(
             FROM customers c
             LEFT JOIN transactions t ON c.id = t.customer_id
             GROUP BY c.id
-            """
-        )
-        
+            """)
+
         updated = 0
         for row in cur.fetchall():
             customer_id = row["id"]
@@ -438,15 +444,15 @@ def analytics_recalculate(
             purchase_count = row["purchase_count"] or 0
             last_purchase_date = row["last_purchase_date"]
             first_purchase_date = row["first_purchase_date"]
-            
+
             # Calculate average check
             average_check = ltv / purchase_count if purchase_count > 0 else 0
-            
+
             # Get cohort month from first purchase
             cohort_month = None
             if first_purchase_date:
                 cohort_month = first_purchase_date[:7]  # YYYY-MM
-            
+
             conn.execute(
                 """
                 UPDATE customers SET 
@@ -457,10 +463,17 @@ def analytics_recalculate(
                     cohort_month = ?
                 WHERE id = ?
                 """,
-                (ltv, average_check, purchase_count, last_purchase_date, cohort_month, customer_id)
+                (
+                    ltv,
+                    average_check,
+                    purchase_count,
+                    last_purchase_date,
+                    cohort_month,
+                    customer_id,
+                ),
             )
             updated += 1
-        
+
         conn.commit()
         return {"recalculated": updated}
     finally:
@@ -478,11 +491,11 @@ def list_customers(
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     check_permission(auth_result, "customer.list")
-    
+
     # Cache key depends on all filters
     filters_key = f"{q or ''}:{min_balance}:{max_balance}:{has_orders}:{created_after}:{created_before}"
     cache_key = f"crm:cache:customers:filter:{filters_key}"
-    
+
     cached = _cache_get_json(cache_key)
     if isinstance(cached, dict) and isinstance(cached.get("items"), list):
         return cached
@@ -498,35 +511,37 @@ def list_customers(
             qp = normalize_phone(q)
             where.append("(full_name LIKE ? OR phone LIKE ?)")
             args.extend([f"%{qs}%", f"%{qp}%"])
-        
+
         if min_balance is not None:
             where.append("balance_points >= ?")
             args.append(min_balance)
-        
+
         if max_balance is not None:
             where.append("balance_points <= ?")
             args.append(max_balance)
-            
+
         if created_after:
             where.append("date(created_at) >= ?")
             args.append(created_after)
-            
+
         if created_before:
             where.append("date(created_at) <= ?")
             args.append(created_before)
 
         if has_orders:
-            where.append("EXISTS (SELECT 1 FROM transactions WHERE transactions.customer_id = customers.id)")
-            
+            where.append(
+                "EXISTS (SELECT 1 FROM transactions WHERE transactions.customer_id = customers.id)"
+            )
+
         sql = "SELECT id, phone, full_name, telegram_id, qr_token, balance_points, created_at FROM customers"
         if where:
             sql += " WHERE " + " AND ".join(where)
         sql += " ORDER BY id DESC LIMIT 200"
-        
+
         cur = conn.execute(sql, tuple(args))
         items = [dict(r) for r in cur.fetchall()]
         data = {"items": items}
-        
+
         # Cache for shorter time if filtered
         _cache_set_json(cache_key, data, ttl_seconds=5)
         return data
@@ -574,7 +589,7 @@ def create_customer(
     check_permission(auth_result, "customer.create")
     if not payload.full_name:
         raise HTTPException(status_code=400, detail="Name required")
-    
+
     db = get_db()
     conn = db.connect()
     try:
@@ -582,17 +597,27 @@ def create_customer(
         if phone:
             cur = conn.execute("SELECT id FROM customers WHERE phone=?", (phone,))
             if cur.fetchone():
-                raise HTTPException(status_code=400, detail="Customer with this phone already exists")
-        
+                raise HTTPException(
+                    status_code=400, detail="Customer with this phone already exists"
+                )
+
         token = generate_qr_token()
         prefs = json.dumps({"notes": payload.notes} if payload.notes else {})
-        
+
         cur = conn.execute(
             """
             INSERT INTO customers(full_name, phone, qr_token, preferences_json, balance_points, birthday, marketing_allowed, data_processing_allowed) 
             VALUES(?,?,?,?,0,?,?,?)
             """,
-            (payload.full_name, phone, token, prefs, payload.birthday, payload.marketing_allowed, payload.data_processing_allowed)
+            (
+                payload.full_name,
+                phone,
+                token,
+                prefs,
+                payload.birthday,
+                payload.marketing_allowed,
+                payload.data_processing_allowed,
+            ),
         )
         conn.commit()
         cid = cur.lastrowid
@@ -611,14 +636,18 @@ def get_receipt(
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute("SELECT receipt_pdf_path FROM transactions WHERE id=?", (transaction_id,))
+        cur = conn.execute(
+            "SELECT receipt_pdf_path FROM transactions WHERE id=?", (transaction_id,)
+        )
         row = cur.fetchone()
         if not row or not row["receipt_pdf_path"]:
             raise HTTPException(status_code=404, detail="Receipt not found")
         path = str(row["receipt_pdf_path"])
         if not os.path.exists(path):
             raise HTTPException(status_code=404, detail="Receipt file missing")
-        return FileResponse(path, media_type="application/pdf", filename=os.path.basename(path))
+        return FileResponse(
+            path, media_type="application/pdf", filename=os.path.basename(path)
+        )
     finally:
         conn.close()
 
@@ -719,34 +748,60 @@ def create_sale(
         if not cust:
             raise HTTPException(status_code=404, detail="Customer not found")
 
-        spent_row = conn.execute("SELECT SUM(total_amount) FROM transactions WHERE customer_id=?", (payload.customer_id,)).fetchone()
+        spent_row = conn.execute(
+            "SELECT SUM(total_amount) FROM transactions WHERE customer_id=?",
+            (payload.customer_id,),
+        ).fetchone()
         spent_amount = int(spent_row[0]) if spent_row and spent_row[0] else 0
 
         rules = LoyaltyRules()
-        bonus_used = clamp_redeem_points(total, spent_amount, payload.requested_bonus, int(cust["balance_points"]), rules)
+        bonus_used = clamp_redeem_points(
+            total,
+            spent_amount,
+            payload.requested_bonus,
+            int(cust["balance_points"]),
+            rules,
+        )
         payable = total - bonus_used
         bonus_earned = calc_earned_points(payable, spent_amount, rules)
 
         receipt_dir = os.getenv("RECEIPTS_DIR", "receipts")
-        receipt_name = f"receipt_{payload.customer_id}_{int(datetime.now().timestamp())}.pdf"
+        receipt_name = (
+            f"receipt_{payload.customer_id}_{int(datetime.now().timestamp())}.pdf"
+        )
         receipt_path = os.path.join(os.path.dirname(db.path), receipt_dir, receipt_name)
         lines = []
         for it in payload.items:
-            lines.append(ReceiptLine(text=f"{it.name} x{it.qty} = {it.price * it.qty} ₽"))
+            lines.append(
+                ReceiptLine(text=f"{it.name} x{it.qty} = {it.price * it.qty} ₽")
+            )
         lines.append(ReceiptLine(text=f"Сумма: {total} ₽"))
         lines.append(ReceiptLine(text=f"Списано: {bonus_used}"))
         lines.append(ReceiptLine(text=f"К оплате: {payable} ₽"))
         lines.append(ReceiptLine(text=f"Начислено: {bonus_earned}"))
         lines.append(ReceiptLine(text=f"Баланс до: {int(cust['balance_points'])}"))
-        lines.append(ReceiptLine(text=f"Баланс после: {int(cust['balance_points']) - bonus_used + bonus_earned}"))
+        lines.append(
+            ReceiptLine(
+                text=f"Баланс после: {int(cust['balance_points']) - bonus_used + bonus_earned}"
+            )
+        )
         write_simple_receipt_pdf(receipt_path, title="Coffee CRM Receipt", lines=lines)
 
         new_balance = int(cust["balance_points"]) - bonus_used + bonus_earned
 
-        items_json = json.dumps([i.model_dump() for i in payload.items], ensure_ascii=False)
+        items_json = json.dumps(
+            [i.model_dump() for i in payload.items], ensure_ascii=False
+        )
         cur2 = conn.execute(
             "INSERT INTO transactions(customer_id, total_amount, bonus_used, bonus_earned, items_json, receipt_pdf_path) VALUES(?,?,?,?,?,?)",
-            (payload.customer_id, total, bonus_used, bonus_earned, items_json, receipt_path),
+            (
+                payload.customer_id,
+                total,
+                bonus_used,
+                bonus_earned,
+                items_json,
+                receipt_path,
+            ),
         )
         conn.execute(
             "UPDATE customers SET balance_points=?, updated_at=datetime('now') WHERE id=?",
@@ -756,7 +811,7 @@ def create_sale(
         tx_id = int(cur2.lastrowid)
         _cache_del_prefix("crm:cache:dashboard:")
         _cache_del_prefix("crm:cache:customers:")
-        
+
         # Evaluate triggers
         event_data = {
             "transaction_id": tx_id,
@@ -764,7 +819,9 @@ def create_sale(
             "bonus_used": bonus_used,
             "bonus_earned": bonus_earned,
         }
-        background_tasks.add_task(evaluate_and_queue_triggers, payload.customer_id, "pos.sale", event_data)
+        background_tasks.add_task(
+            evaluate_and_queue_triggers, payload.customer_id, "pos.sale", event_data
+        )
 
         tg_id = cust["telegram_id"]
         if tg_id:
@@ -776,7 +833,9 @@ def create_sale(
             ]
             send_customer_message.delay(int(tg_id), "\n".join(msg_lines))
 
-        erp_ref = _maybe_sync_to_erpnext(int(cust["telegram_id"] or 0), payload.items, bonus_used)
+        erp_ref = _maybe_sync_to_erpnext(
+            int(cust["telegram_id"] or 0), payload.items, bonus_used
+        )
         if erp_ref:
             conn.execute(
                 "UPDATE transactions SET external_erp_ref=? WHERE id=?",
@@ -813,7 +872,9 @@ def create_sale(
     raise HTTPException(status_code=500, detail="Transaction not created")
 
 
-def _maybe_sync_to_erpnext(telegram_id: int, items: list[SaleItem], bonus_used: int) -> str | None:
+def _maybe_sync_to_erpnext(
+    telegram_id: int, items: list[SaleItem], bonus_used: int
+) -> str | None:
     enabled = os.getenv("ERP_SYNC_ENABLED", "false").lower() in ("1", "true", "yes")
     if not enabled:
         return None
@@ -825,7 +886,10 @@ def _maybe_sync_to_erpnext(telegram_id: int, items: list[SaleItem], bonus_used: 
         tg = await client.get_customer_by_telegram_id(telegram_id)
         if not tg:
             return None
-        mapped = [{"code": i.code, "qty": i.qty, "price": i.price, "name": i.name} for i in items]
+        mapped = [
+            {"code": i.code, "qty": i.qty, "price": i.price, "name": i.name}
+            for i in items
+        ]
         res = await client.create_order(tg["name"], mapped, bonus_used)
         return res.get("order_id")
 
@@ -850,9 +914,31 @@ def export_transactions_csv(
         )
         out = io.StringIO()
         w = csv.writer(out)
-        w.writerow(["id", "created_at", "phone", "full_name", "total_amount", "bonus_used", "bonus_earned", "external_erp_ref"])
+        w.writerow(
+            [
+                "id",
+                "created_at",
+                "phone",
+                "full_name",
+                "total_amount",
+                "bonus_used",
+                "bonus_earned",
+                "external_erp_ref",
+            ]
+        )
         for r in cur.fetchall():
-            w.writerow([r["id"], r["created_at"], r["phone"], r["full_name"], r["total_amount"], r["bonus_used"], r["bonus_earned"], r["external_erp_ref"]])
+            w.writerow(
+                [
+                    r["id"],
+                    r["created_at"],
+                    r["phone"],
+                    r["full_name"],
+                    r["total_amount"],
+                    r["bonus_used"],
+                    r["bonus_earned"],
+                    r["external_erp_ref"],
+                ]
+            )
         data = out.getvalue().encode("utf-8")
         return StreamingResponse(
             io.BytesIO(data),
@@ -861,7 +947,3 @@ def export_transactions_csv(
         )
     finally:
         conn.close()
-
-
-
-

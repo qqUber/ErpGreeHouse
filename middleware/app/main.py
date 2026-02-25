@@ -10,34 +10,36 @@ import logging
 import logging.config
 
 # Configure logging
-logging.config.dictConfig({
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'standard': {
-            'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logging.config.dictConfig(
+    {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "standard": {
+                "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            },
         },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'standard',
-            'level': 'INFO',
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "standard",
+                "level": "INFO",
+            },
         },
-    },
-    'loggers': {
-        '': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'middleware': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': True,
+        "loggers": {
+            "": {
+                "handlers": ["console"],
+                "level": "INFO",
+                "propagate": True,
+            },
+            "middleware": {
+                "handlers": ["console"],
+                "level": "INFO",
+                "propagate": True,
+            },
         },
     }
-})
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,12 +53,15 @@ from .db import init_db
 import mimetypes
 
 # Fix MIME types for Windows
-mimetypes.add_type('application/javascript', '.js')
-mimetypes.add_type('text/css', '.css')
+mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("text/css", ".css")
 from .admin_api import router as admin_router, public_router as public_router
 from .admin_auth_api import public_router as auth_public_router, router as auth_router
 from .admin_auth_api import _bootstrap_default_admin, _bootstrap_demo_users
-from .integrations_api import router as integrations_router, public_router as integrations_public_router
+from .integrations_api import (
+    router as integrations_router,
+    public_router as integrations_public_router,
+)
 from .integration_settings_api import router as integration_settings_router
 from .products_api import router as products_router
 from .marketing_api import router as marketing_router
@@ -68,18 +73,19 @@ from .worker import process_telegram_update
 from .bot import create_bot
 from .worker import send_broadcast
 
-
 app = FastAPI(title="Telegram CRM Middleware")
 
 # Define public paths that should bypass authentication
-PUBLIC_PATHS = frozenset([
-    "/",  # Root
-    "/favicon.ico",
-    "/docs",
-    "/redoc",
-    "/openapi.json",
-    "/health",
-])
+PUBLIC_PATHS = frozenset(
+    [
+        "/",  # Root
+        "/favicon.ico",
+        "/docs",
+        "/redoc",
+        "/openapi.json",
+        "/health",
+    ]
+)
 
 # Prefixes for public API endpoints
 PUBLIC_PREFIXES = (
@@ -96,16 +102,16 @@ def _is_public_path(path: str) -> bool:
     # Check exact matches
     if path in PUBLIC_PATHS:
         return True
-    
+
     # Check exact admin path (static files)
     if path == "/admin" or path.startswith("/admin/"):
         return True
-    
+
     # Check public API prefixes
     for prefix in PUBLIC_PREFIXES:
         if path.startswith(prefix):
             return True
-    
+
     return False
 
 
@@ -115,39 +121,39 @@ async def _auth_protection(request: Request, call_next):
     from fastapi import HTTPException
     from .auth import validate_access_token
     from .request_context import get_admin_session_token
-    
+
     try:
         # Get the path
         path = request.url.path
         method = request.method
-        
+
         # Skip auth for public paths
         if _is_public_path(path):
             logger.info(f"[AUTH] Skipping auth for public path: {path}")
             return await call_next(request)
-        
+
         # Skip auth for GET / (root) - redirect to /admin/
         if method == "GET" and path == "/":
             logger.info(f"[AUTH] Root path request, allowing: {path}")
             return await call_next(request)
-        
+
         # Get token from cookies or headers
         access_token = request.cookies.get("access_token")
         if not access_token:
             access_token = request.headers.get("x-admin-secret")
         if not access_token:
             access_token = get_admin_session_token()
-        
+
         # Try JWT first, then fall back to legacy token
         payload = None
         if access_token:
             # Check if it's a JWT token (has 2 dots)
-            if access_token.count('.') == 2:
+            if access_token.count(".") == 2:
                 payload = validate_access_token(access_token)
             else:
                 # Legacy token - will be validated by the endpoint
                 pass
-        
+
         # If we have a valid JWT payload, add user info to request state
         if payload:
             request.state.user = {
@@ -160,23 +166,20 @@ async def _auth_protection(request: Request, call_next):
         else:
             # No valid token - let the endpoint handle auth (will return 401)
             logger.info(f"[AUTH] No valid token for protected route: {path}")
-        
+
         # Continue processing the request
         response = await call_next(request)
         return response
-        
+
     except HTTPException as e:
         # Return proper HTTP exceptions as JSON
-        return JSONResponse(
-            status_code=e.status_code,
-            content={"detail": e.detail}
-        )
+        return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
     except Exception as e:
         # Log the error and return 500 instead of letting it propagate
         logger.error(f"[AUTH] Middleware error: {type(e).__name__}: {e}")
         return JSONResponse(
             status_code=500,
-            content={"detail": "Internal server error in auth middleware"}
+            content={"detail": "Internal server error in auth middleware"},
         )
 
 
@@ -222,7 +225,9 @@ async def _security_headers(request: Request, call_next):
 async def _unhandled_exception_handler(request: Request, exc: Exception):
     if is_debug():
         return JSONResponse(status_code=500, content={"detail": str(exc)})
-    return JSONResponse(status_code=500, content={"detail": "Внутренняя ошибка. Попробуйте позже."})
+    return JSONResponse(
+        status_code=500, content={"detail": "Внутренняя ошибка. Попробуйте позже."}
+    )
 
 
 @app.exception_handler(HTTPException)
@@ -243,12 +248,13 @@ async def _http_exception_handler(request: Request, exc: HTTPException):
         msg = "Ошибка запроса."
     return JSONResponse(status_code=status, content={"detail": msg})
 
+
 origins = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000")
 if origins == "*":
     origins = ["*"]
 else:
     origins = [o.strip() for o in origins.split(",") if o.strip()]
-    
+
 # If using wildcard, we can't use credentials
 allow_credentials = "*" not in origins
 app.add_middleware(
@@ -276,7 +282,12 @@ if os.getenv("E2E_TEST_MODE", "false").lower() in ("1", "true", "yes"):
     app.include_router(test_router)
 
 admin_dist_override = os.getenv("ADMIN_UI_DIST", "").strip()
-admin_dist = Path(admin_dist_override) if admin_dist_override else (Path(__file__).resolve().parents[2] / "admin-ui" / "dist")
+admin_dist = (
+    Path(admin_dist_override)
+    if admin_dist_override
+    else (Path(__file__).resolve().parents[2] / "admin-ui" / "dist")
+)
+
 
 @app.get("/", status_code=307, include_in_schema=False)
 async def _root() -> RedirectResponse:
@@ -295,7 +306,9 @@ async def _startup() -> None:
 
 def verify_webhook_secret(secret_header: str | None, expected: str) -> None:
     if not secret_header or secret_header != expected:
-        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid webhook secret")
+        raise HTTPException(
+            status_code=HTTP_401_UNAUTHORIZED, detail="Invalid webhook secret"
+        )
 
 
 @app.get("/health", status_code=HTTP_200_OK)
@@ -371,13 +384,13 @@ if admin_dist.exists():
 
         file_path = admin_dist / rest_of_path
         if file_path.is_file():
-             return FileResponse(str(file_path))
-        
+            return FileResponse(str(file_path))
+
         # SPA fallback: if it's not a file but looks like a route (no extension)
         # or if it's just /admin/something
         if "." not in rest_of_path:
-             return FileResponse(str(admin_dist / "index.html"))
-             
+            return FileResponse(str(admin_dist / "index.html"))
+
         # Otherwise it's a missing asset
         raise HTTPException(status_code=404, detail="Asset not found")
 
@@ -396,6 +409,3 @@ async def catch_all_spa(path: str):
     if (admin_dist / "index.html").is_file():
         return FileResponse(str(admin_dist / "index.html"))
     raise HTTPException(status_code=404, detail="Not found")
-
-
-

@@ -17,7 +17,11 @@ def list_integration_templates() -> list[dict[str, Any]]:
             "name": "События: webhook в внешнюю систему (мессенджер/ESB)",
             "kind": "outbound_webhook",
             "description": "Доставка событий transaction.created/pos.receipt.ingested во внешние сервисы.",
-            "config": {"url": "https://example.com/webhook", "events": ["transaction.created"], "headers": {}},
+            "config": {
+                "url": "https://example.com/webhook",
+                "events": ["transaction.created"],
+                "headers": {},
+            },
         },
         {
             "id": "rs-pos-webhook-generic",
@@ -33,6 +37,10 @@ def list_integration_templates() -> list[dict[str, Any]]:
             "name": "События: webhook в внешнюю систему (Serbia)",
             "kind": "outbound_webhook",
             "description": "Доставка событий CRM во внешние интеграционные контуры.",
-            "config": {"url": "https://example.com/webhook", "events": ["transaction.created"], "headers": {}},
+            "config": {
+                "url": "https://example.com/webhook",
+                "events": ["transaction.created"],
+                "headers": {},
+            },
         },
     ]

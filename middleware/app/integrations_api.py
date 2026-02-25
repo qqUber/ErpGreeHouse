@@ -17,7 +17,6 @@ from .storage import get_redis
 from .worker import send_customer_message
 from .trigger_engine import evaluate_and_queue_triggers
 
-
 router = APIRouter(prefix="/api/v1/integrations")
 public_router = APIRouter(prefix="/api/v1/public/integrations")
 
@@ -30,6 +29,7 @@ def _cache_del_prefix(prefix: str) -> None:
             r.delete(*keys)
     except Exception:
         return
+
 
 class IntegrationIn(BaseModel):
     name: str = Field(min_length=1, max_length=200)
@@ -55,7 +55,9 @@ def list_integrations(
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute("SELECT id, name, kind, enabled, secret, config_json FROM integrations ORDER BY id DESC")
+        cur = conn.execute(
+            "SELECT id, name, kind, enabled, secret, config_json FROM integrations ORDER BY id DESC"
+        )
         items = []
         for r in cur.fetchall():
             try:
@@ -67,7 +69,7 @@ def list_integrations(
                     "id": int(r["id"]),
                     "name": str(r["name"]),
                     "kind": str(r["kind"]),
-                    "enabled": bool(int(r["enabled"])) ,
+                    "enabled": bool(int(r["enabled"])),
                     "secret": str(r["secret"]),
                     "config": cfg,
                 }
@@ -115,7 +117,10 @@ def get_integration(
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute("SELECT id, name, kind, enabled, secret, config_json FROM integrations WHERE id=?", (integration_id,))
+        cur = conn.execute(
+            "SELECT id, name, kind, enabled, secret, config_json FROM integrations WHERE id=?",
+            (integration_id,),
+        )
         r = cur.fetchone()
         if not r:
             raise HTTPException(status_code=404, detail="Integration not found")
@@ -128,7 +133,7 @@ def get_integration(
                 "id": int(r["id"]),
                 "name": str(r["name"]),
                 "kind": str(r["kind"]),
-                "enabled": bool(int(r["enabled"])) ,
+                "enabled": bool(int(r["enabled"])),
                 "secret": str(r["secret"]),
                 "config": cfg,
             }
@@ -150,7 +155,13 @@ def update_integration(
     try:
         cur = conn.execute(
             "UPDATE integrations SET name=?, kind=?, enabled=?, config_json=?, updated_at=datetime('now') WHERE id=?",
-            (payload.name, payload.kind, 1 if payload.enabled else 0, cfg, integration_id),
+            (
+                payload.name,
+                payload.kind,
+                1 if payload.enabled else 0,
+                cfg,
+                integration_id,
+            ),
         )
         conn.commit()
         if cur.rowcount == 0:
@@ -245,12 +256,17 @@ class ReceiptIn(BaseModel):
 def ingest_pos_receipt(
     integration_id: int,
     payload: ReceiptIn,
-    x_integration_secret: str | None = Header(default=None, alias="x-integration-secret"),
+    x_integration_secret: str | None = Header(
+        default=None, alias="x-integration-secret"
+    ),
 ) -> dict[str, Any]:
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute("SELECT id, enabled, secret, kind FROM integrations WHERE id=?", (integration_id,))
+        cur = conn.execute(
+            "SELECT id, enabled, secret, kind FROM integrations WHERE id=?",
+            (integration_id,),
+        )
         integ = cur.fetchone()
         if not integ:
             raise HTTPException(status_code=404, detail="Integration not found")
@@ -260,9 +276,15 @@ def ingest_pos_receipt(
             raise HTTPException(status_code=403, detail="Integration disabled")
         require_integration_secret(x_integration_secret, str(integ["secret"]))
 
-        existing = conn.execute("SELECT id FROM transactions WHERE pos_receipt_id=?", (payload.receipt_id,)).fetchone()
+        existing = conn.execute(
+            "SELECT id FROM transactions WHERE pos_receipt_id=?", (payload.receipt_id,)
+        ).fetchone()
         if existing:
-            return {"accepted": True, "duplicate": True, "transaction_id": int(existing[0])}
+            return {
+                "accepted": True,
+                "duplicate": True,
+                "transaction_id": int(existing[0]),
+            }
 
         cust_id = _find_or_create_customer(conn, payload.customer)
         cust = conn.execute(
@@ -276,18 +298,28 @@ def ingest_pos_receipt(
         if total is None:
             total = sum(i.price * i.qty for i in payload.items)
 
-        spent_row = conn.execute("SELECT SUM(total_amount) FROM transactions WHERE customer_id=?", (cust_id,)).fetchone()
+        spent_row = conn.execute(
+            "SELECT SUM(total_amount) FROM transactions WHERE customer_id=?", (cust_id,)
+        ).fetchone()
         spent_amount = int(spent_row[0]) if spent_row and spent_row[0] else 0
 
         rules = LoyaltyRules()
         available = int(cust["balance_points"])
         requested_used = int(payload.bonus_used or 0)
-        bonus_used = clamp_redeem_points(int(total), spent_amount, requested_used, available, rules)
+        bonus_used = clamp_redeem_points(
+            int(total), spent_amount, requested_used, available, rules
+        )
         payable = int(total) - bonus_used
-        bonus_earned = int(payload.bonus_earned) if payload.bonus_earned is not None else calc_earned_points(payable, spent_amount, rules)
+        bonus_earned = (
+            int(payload.bonus_earned)
+            if payload.bonus_earned is not None
+            else calc_earned_points(payable, spent_amount, rules)
+        )
         new_balance = available - bonus_used + bonus_earned
 
-        items_json = json.dumps([i.model_dump() for i in payload.items], ensure_ascii=False)
+        items_json = json.dumps(
+            [i.model_dump() for i in payload.items], ensure_ascii=False
+        )
         cur2 = conn.execute(
             "INSERT INTO transactions(customer_id, total_amount, bonus_used, bonus_earned, items_json, pos_receipt_id, created_at) VALUES(?,?,?,?,?,?,?)",
             (
@@ -312,15 +344,28 @@ def ingest_pos_receipt(
 
         tg_id = cust["telegram_id"]
         if tg_id:
-            send_customer_message.delay(int(tg_id), f"Покупка: {int(total)} ₽\nБаланс: {new_balance}")
+            send_customer_message.delay(
+                int(tg_id), f"Покупка: {int(total)} ₽\nБаланс: {new_balance}"
+            )
 
         dispatch_event(
             "pos.receipt.ingested",
-            {"transaction_id": tx_id, "customer_id": cust_id, "receipt_id": payload.receipt_id, "total": int(total)},
+            {
+                "transaction_id": tx_id,
+                "customer_id": cust_id,
+                "receipt_id": payload.receipt_id,
+                "total": int(total),
+            },
         )
         dispatch_event(
             "transaction.created",
-            {"transaction_id": tx_id, "customer_id": cust_id, "total": int(total), "bonus_used": int(bonus_used), "bonus_earned": int(bonus_earned)},
+            {
+                "transaction_id": tx_id,
+                "customer_id": cust_id,
+                "total": int(total),
+                "bonus_used": int(bonus_used),
+                "bonus_earned": int(bonus_earned),
+            },
         )
 
         return {"accepted": True, "transaction_id": tx_id, "customer_id": cust_id}
@@ -330,13 +375,17 @@ def ingest_pos_receipt(
 
 def _find_or_create_customer(conn, cust: ReceiptCustomer) -> int:
     if cust.qr_token:
-        row = conn.execute("SELECT id FROM customers WHERE qr_token=?", (cust.qr_token.strip(),)).fetchone()
+        row = conn.execute(
+            "SELECT id FROM customers WHERE qr_token=?", (cust.qr_token.strip(),)
+        ).fetchone()
         if row:
             return int(row[0])
     if cust.phone:
         phone = normalize_phone(cust.phone)
         if phone:
-            row = conn.execute("SELECT id FROM customers WHERE phone=?", (phone,)).fetchone()
+            row = conn.execute(
+                "SELECT id FROM customers WHERE phone=?", (phone,)
+            ).fetchone()
             if row:
                 return int(row[0])
             token = generate_qr_token()
@@ -346,7 +395,9 @@ def _find_or_create_customer(conn, cust: ReceiptCustomer) -> int:
             )
             return int(cur.lastrowid)
     if cust.telegram_id:
-        row = conn.execute("SELECT id FROM customers WHERE telegram_id=?", (int(cust.telegram_id),)).fetchone()
+        row = conn.execute(
+            "SELECT id FROM customers WHERE telegram_id=?", (int(cust.telegram_id),)
+        ).fetchone()
         if row:
             return int(row[0])
         token = generate_qr_token()
@@ -357,5 +408,8 @@ def _find_or_create_customer(conn, cust: ReceiptCustomer) -> int:
         return int(cur.lastrowid)
 
     token = generate_qr_token()
-    cur = conn.execute("INSERT INTO customers(phone, full_name, qr_token) VALUES(?,?,?)", (None, "", token))
+    cur = conn.execute(
+        "INSERT INTO customers(phone, full_name, qr_token) VALUES(?,?,?)",
+        (None, "", token),
+    )
     return int(cur.lastrowid)

@@ -1,14 +1,19 @@
 import asyncio
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, WebAppInfo
+from aiogram.types import (
+    Message,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    CallbackQuery,
+    WebAppInfo,
+)
 from .erp_client import ERPClient
 from .menu import MENU, find_item
 from .db import get_db
 from .identify import generate_qr_token, normalize_name, normalize_phone
 from .storage import get_redis, get_json, set_json, delete
 from .config import get_settings
-
 
 router = Router()
 
@@ -20,11 +25,21 @@ def _cart_key(tg_id: int) -> str:
 def _consent_key(tg_id: int) -> str:
     return f"crm:consent:{tg_id}"
 
-def _upsert_local_customer(telegram_id: int, full_name: str, phone: str, marketing_allowed: int = 1, data_processing_allowed: int = 1) -> int:
+
+def _upsert_local_customer(
+    telegram_id: int,
+    full_name: str,
+    phone: str,
+    marketing_allowed: int = 1,
+    data_processing_allowed: int = 1,
+) -> int:
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute("SELECT id, qr_token FROM customers WHERE telegram_id=? OR phone=?", (telegram_id, phone))
+        cur = conn.execute(
+            "SELECT id, qr_token FROM customers WHERE telegram_id=? OR phone=?",
+            (telegram_id, phone),
+        )
         row = cur.fetchone()
         name_norm = normalize_name(full_name)
         qr_token = generate_qr_token()
@@ -38,7 +53,15 @@ def _upsert_local_customer(telegram_id: int, full_name: str, phone: str, marketi
                     updated_at=datetime('now') 
                 WHERE id=?
                 """,
-                (phone, name_norm, telegram_id, existing_qr, marketing_allowed, data_processing_allowed, int(row["id"])),
+                (
+                    phone,
+                    name_norm,
+                    telegram_id,
+                    existing_qr,
+                    marketing_allowed,
+                    data_processing_allowed,
+                    int(row["id"]),
+                ),
             )
             conn.commit()
             return int(row["id"])
@@ -47,7 +70,14 @@ def _upsert_local_customer(telegram_id: int, full_name: str, phone: str, marketi
             INSERT INTO customers(phone, full_name, telegram_id, qr_token, marketing_allowed, data_processing_allowed) 
             VALUES(?,?,?,?,?,?)
             """,
-            (phone, name_norm, telegram_id, qr_token, marketing_allowed, data_processing_allowed),
+            (
+                phone,
+                name_norm,
+                telegram_id,
+                qr_token,
+                marketing_allowed,
+                data_processing_allowed,
+            ),
         )
         conn.commit()
         return int(cur2.lastrowid)
@@ -75,7 +105,11 @@ async def cmd_start(message: Message) -> None:
     if not data:
         kb = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text="Зарегистрироваться", callback_data="reg:start")]
+                [
+                    InlineKeyboardButton(
+                        text="Зарегистрироваться", callback_data="reg:start"
+                    )
+                ]
             ]
         )
         await message.answer("Привет. Давай зарегистрируемся.", reply_markup=kb)
@@ -83,7 +117,9 @@ async def cmd_start(message: Message) -> None:
         r.sadd("crm:known_chats", str(message.chat.id))
         return
     bal = await client.get_balance(data["name"])
-    await message.answer(f"Привет, {data.get('first_name','гость')}.\nБаланс: {bal} баллов.")
+    await message.answer(
+        f"Привет, {data.get('first_name','гость')}.\nБаланс: {bal} баллов."
+    )
     r = get_redis()
     r.sadd("crm:known_chats", str(message.chat.id))
 
@@ -143,18 +179,18 @@ async def cb_consent(cb: CallbackQuery) -> None:
             consent_text="Согласие принято (152-ФЗ)",
         )
         customer_id = _upsert_local_customer(
-            cb.from_user.id, 
-            data.get("name", ""), 
+            cb.from_user.id,
+            data.get("name", ""),
             data.get("phone", ""),
             marketing_allowed=1,
-            data_processing_allowed=1
+            data_processing_allowed=1,
         )
         _store_consent(customer_id, consent_text, consent_version)
         delete(_consent_key(cb.from_user.id))
         await cb.message.edit_text(f"Готово. Начислено 100 приветственных баллов.")
     except Exception as e:
         await cb.message.edit_text(f"Ошибка регистрации: {e}")
-        
+
     await cb.answer()
 
 
@@ -175,12 +211,12 @@ async def cmd_balance(message: Message) -> None:
         # My implementation of get_transactions returns raw points.
         # If redemption points are negative, sign should probably be just empty if points already has sign
         # But for UI consistency let's format it.
-        points = t['points']
+        points = t["points"]
         if points > 0:
             sign = "+"
         else:
-            sign = "" # Points already has -
-            
+            sign = ""  # Points already has -
+
         lines.append(f"{sign}{points} {t.get('description','')}")
     await message.answer("\n".join(lines))
 
@@ -191,10 +227,16 @@ async def cmd_menu(message: Message) -> None:
     tma_url = f"{settings.base_web_url}/tma"
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="Открыть каталог", web_app=WebAppInfo(url=tma_url))]
+            [
+                InlineKeyboardButton(
+                    text="Открыть каталог", web_app=WebAppInfo(url=tma_url)
+                )
+            ]
         ]
     )
-    await message.answer("Каталог и акции теперь доступны в приложении:", reply_markup=kb)
+    await message.answer(
+        "Каталог и акции теперь доступны в приложении:", reply_markup=kb
+    )
 
 
 @router.message(Command("add"))
@@ -214,7 +256,9 @@ async def cmd_add(message: Message) -> None:
         await message.answer("Товар не найден")
         return
     cart = get_json(_cart_key(message.from_user.id)) or {"items": [], "bonus": 0}
-    cart["items"].append({"code": code, "name": item["name"], "price": item["price"], "qty": qty})
+    cart["items"].append(
+        {"code": code, "name": item["name"], "price": item["price"], "qty": qty}
+    )
     set_json(_cart_key(message.from_user.id), cart, ex=3600)
     total = sum(x["price"] * x["qty"] for x in cart["items"])
     await message.answer(f"Добавлено. Текущая сумма: {total} ₽")
@@ -228,7 +272,9 @@ async def cb_add(cb: CallbackQuery) -> None:
         await cb.answer()
         return
     cart = get_json(_cart_key(cb.from_user.id)) or {"items": [], "bonus": 0}
-    cart["items"].append({"code": code, "name": item["name"], "price": item["price"], "qty": 1})
+    cart["items"].append(
+        {"code": code, "name": item["name"], "price": item["price"], "qty": 1}
+    )
     set_json(_cart_key(cb.from_user.id), cart, ex=3600)
     total = sum(x["price"] * x["qty"] for x in cart["items"])
     await cb.message.edit_text(f"Добавлено {item['name']}. Сумма: {total} ₽")
@@ -304,7 +350,9 @@ async def cb_delete(cb: CallbackQuery) -> None:
         conn.execute("DELETE FROM customers WHERE telegram_id=?", (cb.from_user.id,))
         conn.commit()
         conn.close()
-        await cb.message.edit_text("Ваш профиль и все данные удалены в соответствии с 152-ФЗ.")
+        await cb.message.edit_text(
+            "Ваш профиль и все данные удалены в соответствии с 152-ФЗ."
+        )
     except Exception as e:
         await cb.message.edit_text(f"Ошибка при удалении: {e}")
     await cb.answer()
@@ -333,19 +381,28 @@ async def cmd_qr(message: Message) -> None:
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute("SELECT qr_token FROM customers WHERE telegram_id=?", (message.from_user.id,))
+        cur = conn.execute(
+            "SELECT qr_token FROM customers WHERE telegram_id=?",
+            (message.from_user.id,),
+        )
         row = cur.fetchone()
         if not row or not row["qr_token"]:
             await message.answer("Сначала зарегистрируйся: /start")
             return
-            
+
         settings = get_settings()
         tma_url = f"{settings.base_web_url}/tma"
         kb = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text="Моя карта лояльности", web_app=WebAppInfo(url=tma_url))]
+                [
+                    InlineKeyboardButton(
+                        text="Моя карта лояльности", web_app=WebAppInfo(url=tma_url)
+                    )
+                ]
             ]
         )
-        await message.answer("Ваша карта лояльности и QR-код доступны в приложении:", reply_markup=kb)
+        await message.answer(
+            "Ваша карта лояльности и QR-код доступны в приложении:", reply_markup=kb
+        )
     finally:
         conn.close()

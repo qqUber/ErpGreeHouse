@@ -1,7 +1,6 @@
 import re
 import secrets
 
-
 _phone_re = re.compile(r"[^0-9+]")
 
 

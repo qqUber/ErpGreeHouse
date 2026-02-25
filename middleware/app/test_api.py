@@ -7,14 +7,15 @@ from pydantic import BaseModel, Field
 from .db import get_db
 from .security import hash_password, new_salt
 
-
 router = APIRouter(prefix="/api/v1/test")
 
 
 def _enabled() -> None:
     """Check if test mode is enabled. Raises 404 if not."""
     if os.getenv("E2E_TEST_MODE", "false").lower() not in ("1", "true", "yes"):
-        raise HTTPException(status_code=404, detail="Test API disabled. Set E2E_TEST_MODE=true")
+        raise HTTPException(
+            status_code=404, detail="Test API disabled. Set E2E_TEST_MODE=true"
+        )
 
 
 def _verify_admin_secret(x_admin_secret: str | None) -> None:
@@ -22,6 +23,7 @@ def _verify_admin_secret(x_admin_secret: str | None) -> None:
     _enabled()
     # Get expected secret from environment variable
     import os
+
     expected = os.environ.get("E2E_ADMIN_SECRET", "test-secret-key")
     if not x_admin_secret or x_admin_secret != expected:
         raise HTTPException(status_code=401, detail="Invalid admin secret")
@@ -45,29 +47,26 @@ def get_test_credentials(
     Returns actual credentials stored in DB for E2E testing.
     """
     _verify_admin_secret(x_admin_secret)
-    
+
     db = get_db()
     conn = db.connect()
-    
+
     try:
         # Get all test users from DB
         users = conn.execute(
             "SELECT username, role FROM admin_users WHERE username IN ('admin', 'operator', 'manager')"
         ).fetchall()
-        
+
         credentials = {}
         for user in users:
             # Return username as password (dev defaults)
-            credentials[user['username']] = {
-                'username': user['username'],
-                'password': user['username'],
-                'role': user['role']
+            credentials[user["username"]] = {
+                "username": user["username"],
+                "password": user["username"],
+                "role": user["role"],
             }
-        
-        return {
-            'credentials': credentials,
-            'message': 'Test credentials from database'
-        }
+
+        return {"credentials": credentials, "message": "Test credentials from database"}
     finally:
         conn.close()
 
@@ -82,50 +81,49 @@ def bootstrap_test_data(
     SAFE: Only works in E2E_TEST_MODE, requires owner role.
     """
     _verify_admin_secret(x_admin_secret)
-    
+
     db = get_db()
     conn = db.connect()
-    
+
     try:
         # Test credentials - set to match dev defaults for existing tests
         test_users = [
-            ('admin', 'owner', 'admin'),
-            ('operator', 'operator', 'operator'),
-            ('manager', 'marketer', 'manager'),
+            ("admin", "owner", "admin"),
+            ("operator", "operator", "operator"),
+            ("manager", "marketer", "manager"),
         ]
-        
+
         updated = 0
         iterations = int(os.getenv("ADMIN_PBKDF2_ITER", "200000"))
-        
+
         for username, role, password in test_users:
             # Generate salt and hash password (same format as admin_auth_api.py)
             salt = new_salt()
             password_hash = hash_password(password, salt=salt, iterations=iterations)
             # Check if user exists
             existing = conn.execute(
-                "SELECT id FROM admin_users WHERE username = ?",
-                (username,)
+                "SELECT id FROM admin_users WHERE username = ?", (username,)
             ).fetchone()
-            
+
             if existing:
                 conn.execute(
                     "UPDATE admin_users SET password_hash = ?, password_salt = ?, password_iter = ?, role = ? WHERE username = ?",
-                    (password_hash, salt, iterations, role, username)
+                    (password_hash, salt, iterations, role, username),
                 )
             else:
                 conn.execute(
                     "INSERT INTO admin_users (username, password_hash, password_salt, password_iter, role, disabled) VALUES (?, ?, ?, ?, ?, 0)",
-                    (username, password_hash, salt, iterations, role)
+                    (username, password_hash, salt, iterations, role),
                 )
             updated += 1
-        
+
         conn.commit()
-        
+
         return {
             "success": True,
             "users_updated": updated,
             "message": "Test users created/updated with known credentials",
-            "warning": "TEST MODE - DO NOT USE IN PRODUCTION"
+            "warning": "TEST MODE - DO NOT USE IN PRODUCTION",
         }
     finally:
         conn.close()
@@ -140,37 +138,39 @@ def reset_test_database(
     WARNING: Deletes all test data! Only works in E2E_TEST_MODE.
     """
     _verify_admin_secret(x_admin_secret)
-    
+
     db = get_db()
     conn = db.connect()
-    
+
     try:
         # Delete test data (not production data)
         tables_to_clean = [
-            'marketing_events',
-            'marketing_campaigns', 
-            'marketing_segments',
-            'integration_deliveries',
-            'transactions',
-            'consents',
-            'customers',
-            'products',
+            "marketing_events",
+            "marketing_campaigns",
+            "marketing_segments",
+            "integration_deliveries",
+            "transactions",
+            "consents",
+            "customers",
+            "products",
         ]
-        
+
         deleted = {}
         for table in tables_to_clean:
             result = conn.execute(f"DELETE FROM {table}")
             deleted[table] = result.rowcount
-        
+
         # Reset auto-increment
-        conn.execute("DELETE FROM sqlite_sequence WHERE name IN ('customers', 'products', 'transactions')")
-        
+        conn.execute(
+            "DELETE FROM sqlite_sequence WHERE name IN ('customers', 'products', 'transactions')"
+        )
+
         conn.commit()
-        
+
         return {
             "success": True,
             "deleted_rows": deleted,
-            "message": "Test database reset to clean state"
+            "message": "Test database reset to clean state",
         }
     finally:
         conn.close()
@@ -260,14 +260,23 @@ def cleanup(
 
         if payload.product_codes:
             q = ",".join(["?"] * len(payload.product_codes))
-            cur = conn.execute(f"DELETE FROM products WHERE code IN ({q})", tuple(payload.product_codes))
+            cur = conn.execute(
+                f"DELETE FROM products WHERE code IN ({q})",
+                tuple(payload.product_codes),
+            )
             removed_products += int(cur.rowcount or 0)
 
         if payload.product_code_prefix:
-            cur = conn.execute("DELETE FROM products WHERE code LIKE ?", (f"{payload.product_code_prefix}%",))
+            cur = conn.execute(
+                "DELETE FROM products WHERE code LIKE ?",
+                (f"{payload.product_code_prefix}%",),
+            )
             removed_products += int(cur.rowcount or 0)
 
         conn.commit()
-        return {"removed_customers": removed_customers, "removed_products": removed_products}
+        return {
+            "removed_customers": removed_customers,
+            "removed_products": removed_products,
+        }
     finally:
         conn.close()

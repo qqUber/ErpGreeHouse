@@ -137,6 +137,7 @@ test.describe('Permission Boundaries', () => {
    * The token is retrieved from localStorage and sent via 'x-admin-secret' header
    * This is the OLD authentication pattern maintained for backward compatibility
    */
+  test.describe('API Permission Enforcement', () => {
     test('operator gets 403 on integrations API', async ({ page, request }) => {
       // Login as operator to get token
       await page.goto('/');

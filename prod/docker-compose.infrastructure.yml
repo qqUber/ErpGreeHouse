@@ -8,7 +8,7 @@ services:
   # Redis Stack
   # ============================================
   redis-cache:
-    image: redis:8-alpine
+    image: redis:8.0-alpine
     restart: always
     command: ["redis-server", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000"]
     volumes:
@@ -24,7 +24,7 @@ services:
       - "${REDIS_CACHE_PORT:-6379}:6379"
 
   redis-queue:
-    image: redis:8-alpine
+    image: redis:8.0-alpine
     restart: always
     command: ["redis-server", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000"]
     volumes:

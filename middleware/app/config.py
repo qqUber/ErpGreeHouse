@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 def detect_environment() -> str:
     """
     Detect the current environment based on ENVIRONMENT variable or common dev indicators.
-    
+
     Returns:
         'development', 'demo', or 'production'
     """
@@ -18,13 +18,13 @@ def detect_environment() -> str:
         return "demo"
     if env in ("production", "prod", "live"):
         return "production"
-    
+
     # Auto-detect based on common development indicators
     if os.getenv("ERP_MOCK_MODE", "true").lower() in ("1", "true", "yes"):
         return "development"
     if os.getenv("DEBUG", "").lower() in ("1", "true", "yes"):
         return "development"
-    
+
     # Default to production for safety
     return "production"
 
@@ -43,27 +43,27 @@ class Settings:
     webhook_secret: str
     base_web_url: str
     erp_mock_mode: bool
-    
+
     # Rate limiting settings for password recovery
     # RECOVERY_RATE_LIMIT_ATTEMPTS: Max attempts per window
     recovery_rate_limit_attempts: int
     # RECOVERY_RATE_LIMIT_WINDOW_SECONDS: Time window in seconds
     recovery_rate_limit_window_seconds: int
-    
+
     # JWT configuration
     # JWT_SECRET_KEY: Primary key for signing JWT tokens
     # Fallback chain: JWT_SECRET_KEY -> JWT_SECRET -> ADMIN_SECRET -> dev-default
     # WARNING: In production, JWT_SECRET_KEY MUST be set via environment variable!
     jwt_secret_key: str
-    
+
     # JWT_ALGORITHM: Algorithm for signing tokens (HS256, HS512, etc.)
     jwt_algorithm: str
-    
+
     # JWT_ACCESS_TOKEN_EXPIRE_MINUTES: How long an access token is valid
     # - Development: 30 minutes (standard security practice)
     # - Production: 30 minutes (should NOT be longer)
     jwt_access_token_expire_minutes: int
-    
+
     # JWT_REFRESH_TOKEN_EXPIRE_DAYS: How long a refresh token is valid
     # - Development: 30 days (convenient for local testing)
     # - Production: 30 days (standard practice, can be extended to 90 days with rotation)
@@ -73,15 +73,15 @@ class Settings:
 @lru_cache
 def get_settings() -> Settings:
     load_dotenv()
-    
+
     # Detect environment
     environment = detect_environment()
-    
+
     # Configure JWT secret based on environment
     # PRODUCTION: JWT_SECRET_KEY MUST be set - no fallbacks allowed!
     # DEMO/DEVELOPMENT: Allow fallback to ADMIN_SECRET for demo/simple auth
     jwt_secret_key = os.getenv("JWT_SECRET_KEY")
-    
+
     if environment == "production":
         # Production: strict mode - require JWT_SECRET_KEY
         if not jwt_secret_key:
@@ -96,15 +96,16 @@ def get_settings() -> Settings:
             jwt_secret_key = os.getenv("JWT_SECRET") or os.getenv("ADMIN_SECRET")
         if not jwt_secret_key:
             import secrets
+
             jwt_secret_key = secrets.token_hex(32)
-    
+
     # Configure defaults based on environment
     if environment == "development":
         # Development defaults - stable and deterministic for local testing
         # These values won't change between restarts, making debugging easier
         default_access_expire = 30  # 30 minutes - standard for access tokens
         default_refresh_expire = 30  # 30 days - convenient for dev testing
-    
+
     return Settings(
         environment=environment,
         telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", ""),
@@ -117,26 +118,30 @@ def get_settings() -> Settings:
         redis_url=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
         webhook_secret=os.getenv("WEBHOOK_SECRET", ""),
         base_web_url=os.getenv("BASE_WEB_URL", ""),
-        erp_mock_mode=os.getenv("ERP_MOCK_MODE", "true").lower() in ("1", "true", "yes"),
-        
+        erp_mock_mode=os.getenv("ERP_MOCK_MODE", "true").lower()
+        in ("1", "true", "yes"),
         # Rate limiting settings for password recovery
-        recovery_rate_limit_attempts=int(os.getenv("RECOVERY_RATE_LIMIT_ATTEMPTS", "5")),
-        recovery_rate_limit_window_seconds=int(os.getenv("RECOVERY_RATE_LIMIT_WINDOW_SECONDS", "60")),
-        
+        recovery_rate_limit_attempts=int(
+            os.getenv("RECOVERY_RATE_LIMIT_ATTEMPTS", "5")
+        ),
+        recovery_rate_limit_window_seconds=int(
+            os.getenv("RECOVERY_RATE_LIMIT_WINDOW_SECONDS", "60")
+        ),
         # JWT configuration
         # PRODUCTION: JWT_SECRET_KEY MUST be set (enforced above)
         # DEVELOPMENT: Allow fallback to ADMIN_SECRET for demo purposes
         jwt_secret_key=jwt_secret_key,
-        
         # Algorithm for JWT signing (HS256 is recommended for most cases)
         jwt_algorithm=os.getenv("JWT_ALGORITHM", "HS256"),
-        
         # Access token expiration (in minutes)
         # CRITICAL: Access tokens should be short-lived (15-30 minutes) for security
         # The old value of 43200 (30 days) was a security risk!
-        jwt_access_token_expire_minutes=int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", str(default_access_expire))),
-        
+        jwt_access_token_expire_minutes=int(
+            os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", str(default_access_expire))
+        ),
         # Refresh token expiration (in days)
         # Refresh tokens can be longer-lived since they can be revoked
-        jwt_refresh_token_expire_days=int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", str(default_refresh_expire))),
+        jwt_refresh_token_expire_days=int(
+            os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", str(default_refresh_expire))
+        ),
     )

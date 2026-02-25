@@ -10,12 +10,13 @@ from .storage import get_redis
 
 logger = logging.getLogger(__name__)
 
+
 class ERPClient:
     def __init__(self) -> None:
         self.settings = get_settings()
         self.mock = self.settings.erp_mock_mode
         self.r = get_redis()
-        
+
         if not self.mock:
             self.headers = {
                 "Authorization": f"token {self.settings.erp_api_key}:{self.settings.erp_api_secret}",
@@ -27,14 +28,18 @@ class ERPClient:
     def _cid(self, telegram_id: int) -> str:
         return str(telegram_id)
 
-    async def _request(self, method: str, endpoint: str, **kwargs) -> Optional[Dict[str, Any]]:
+    async def _request(
+        self, method: str, endpoint: str, **kwargs
+    ) -> Optional[Dict[str, Any]]:
         if self.mock:
             return None
-            
+
         url = f"{self.base_url}{endpoint}"
         async with httpx.AsyncClient(timeout=20.0) as client:
             try:
-                response = await client.request(method, url, headers=self.headers, **kwargs)
+                response = await client.request(
+                    method, url, headers=self.headers, **kwargs
+                )
                 response.raise_for_status()
                 return response.json()
             except httpx.HTTPStatusError as e:
@@ -59,20 +64,22 @@ class ERPClient:
         filters = f'[["telegram_id","=","{telegram_id}"]]'
         fields = '["name", "telegram_id", "first_name", "balance", "customer_link"]'
         endpoint = f"/api/resource/Telegram Client?filters={filters}&fields={fields}"
-        
+
         data = await self._request("GET", endpoint)
         if data and data.get("data"):
             return data["data"][0]
         return None
 
-    async def create_customer(self, telegram_id: int, name: str, phone: str, consent_text: str) -> Dict:
+    async def create_customer(
+        self, telegram_id: int, name: str, phone: str, consent_text: str
+    ) -> Dict:
         ts = int(time.time())
         consent_hash = hashlib.sha256(consent_text.encode()).hexdigest()[:8]
-        
+
         # 152-FZ Logging
         self.r.lpush(
             f"crm:audit:consent:{telegram_id}",
-            f"{ts}|{consent_hash}|{consent_text[:50]}..."
+            f"{ts}|{consent_hash}|{consent_text[:50]}...",
         )
 
         if self.mock:
@@ -102,21 +109,25 @@ class ERPClient:
             "customer_type": "Individual",
             "customer_group": "All Customer Groups",
             "territory": "All Territories",
-            "mobile_no": phone
+            "mobile_no": phone,
         }
-        
+
         # Check if customer with phone exists? Maybe later. For now create new or catch error.
         # Actually ERPNext might prevent duplicate names.
-        
+
         erp_customer_name = ""
         try:
             # Try to find existing customer by phone to avoid duplicates
             filters = f'[["mobile_no","=","{phone}"]]'
-            existing = await self._request("GET", f"/api/resource/Customer?filters={filters}")
+            existing = await self._request(
+                "GET", f"/api/resource/Customer?filters={filters}"
+            )
             if existing and existing.get("data"):
                 erp_customer_name = existing["data"][0]["name"]
             else:
-                res = await self._request("POST", "/api/resource/Customer", json=customer_payload)
+                res = await self._request(
+                    "POST", "/api/resource/Customer", json=customer_payload
+                )
                 if res and res.get("data"):
                     erp_customer_name = res["data"]["name"]
         except Exception as e:
@@ -130,32 +141,38 @@ class ERPClient:
             "phone": phone,
             "consent_given": 1,
             "consent_text_version": consent_hash,
-            "consent_date": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(ts)),
-            "balance": 100, # Initial balance
-            "customer_link": erp_customer_name
+            "consent_date": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ts)),
+            "balance": 100,  # Initial balance
+            "customer_link": erp_customer_name,
         }
-        
+
         res = await self._request("POST", "/api/resource/Telegram Client", json=payload)
         new_client = res["data"]
-        
+
         # 3. Create initial transaction
-        await self.create_loyalty_transaction(new_client['name'], "Accrual", 100, "Welcome Bonus")
-        
+        await self.create_loyalty_transaction(
+            new_client["name"], "Accrual", 100, "Welcome Bonus"
+        )
+
         return new_client
 
-    async def create_loyalty_transaction(self, client_name: str, ttype: str, points: int, desc: str):
+    async def create_loyalty_transaction(
+        self, client_name: str, ttype: str, points: int, desc: str
+    ):
         if self.mock:
             return
-            
+
         payload = {
             "telegram_client": client_name,
             "transaction_type": ttype,
             "points": points,
             "description": desc,
-            "transaction_date": time.strftime('%Y-%m-%d %H:%M:%S')
+            "transaction_date": time.strftime("%Y-%m-%d %H:%M:%S"),
         }
         try:
-            await self._request("POST", "/api/resource/Loyalty Transaction", json=payload)
+            await self._request(
+                "POST", "/api/resource/Loyalty Transaction", json=payload
+            )
         except Exception as e:
             logger.error(f"Failed to create loyalty transaction: {e}")
 
@@ -163,26 +180,26 @@ class ERPClient:
         if self.mock:
             bal = int(self.r.hget(f"crm:c:{client_name}", "balance") or "0")
             return bal
-            
-        # In real mode, we should query Telegram Client's balance field if it's updated via hooks, 
+
+        # In real mode, we should query Telegram Client's balance field if it's updated via hooks,
         # OR sum up transactions. For MVP, let's assume we update 'balance' field in Telegram Client manually or via script.
         # Or simpler: Just GET the Telegram Client again, as we might have updated it.
         # Wait, the schema has 'balance' field (read_only). It should be updated by ERPNext server script on transaction save.
         # If we don't have server script, we must sum transactions.
-        
+
         # Let's try to sum transactions for MVP robustness
         filters = f'[["telegram_client","=","{client_name}"]]'
         fields = '["points", "transaction_type"]'
         endpoint = f"/api/resource/Loyalty Transaction?filters={filters}&fields={fields}&limit_page_length=1000"
-        
+
         data = await self._request("GET", endpoint)
         if not data or not data.get("data"):
             return 0
-            
+
         total = 0
         for tx in data["data"]:
-            total += tx["points"] # Points can be negative for Redemption
-            
+            total += tx["points"]  # Points can be negative for Redemption
+
         return total
 
     async def get_transactions(self, client_name: str, limit: int = 5) -> List[Dict]:
@@ -192,21 +209,28 @@ class ERPClient:
             for item in items:
                 ts, ttype, points, desc = item.split("|", 3)
                 result.append(
-                    {"date": int(ts), "type": ttype, "points": int(points), "description": desc}
+                    {
+                        "date": int(ts),
+                        "type": ttype,
+                        "points": int(points),
+                        "description": desc,
+                    }
                 )
             return result
-            
+
         filters = f'[["telegram_client","=","{client_name}"]]'
         fields = '["transaction_date", "transaction_type", "points", "description"]'
         endpoint = f"/api/resource/Loyalty Transaction?filters={filters}&fields={fields}&order_by=transaction_date desc&limit_page_length={limit}"
-        
+
         data = await self._request("GET", endpoint)
         if not data or not data.get("data"):
             return []
-            
+
         return data["data"]
 
-    async def create_order(self, client_name: str, items: List[Dict], bonus_points: int) -> Dict:
+    async def create_order(
+        self, client_name: str, items: List[Dict], bonus_points: int
+    ) -> Dict:
         if self.mock:
             bal = await self.get_balance(client_name)
             bonus_apply = min(bonus_points, bal)
@@ -224,58 +248,55 @@ class ERPClient:
             return {"order_id": order_id, "total": total, "bonus_used": bonus_apply}
 
         # 1. Get Customer Link
-        client_data = await self._request("GET", f"/api/resource/Telegram Client/{client_name}")
+        client_data = await self._request(
+            "GET", f"/api/resource/Telegram Client/{client_name}"
+        )
         customer_link = client_data["data"]["customer_link"]
-        
+
         # 2. Calculate totals
         amount = sum(x["price"] * x["qty"] for x in items)
-        
+
         # 3. Create Sales Order
-        # Note: We need actual Item Codes from ERPNext. 
+        # Note: We need actual Item Codes from ERPNext.
         # For MVP, assuming items in 'menu.py' have codes that exist in ERPNext or we use a dummy item.
-        
+
         sales_order_items = []
         for item in items:
-            sales_order_items.append({
-                "item_code": item["code"],
-                "qty": item["qty"],
-                "rate": item["price"]
-            })
-            
+            sales_order_items.append(
+                {"item_code": item["code"], "qty": item["qty"], "rate": item["price"]}
+            )
+
         payload = {
             "customer": customer_link,
             "items": sales_order_items,
-            "docstatus": 1, # Submit directly? Or 0 (Draft)
-            "delivery_date": time.strftime('%Y-%m-%d'),
+            "docstatus": 1,  # Submit directly? Or 0 (Draft)
+            "delivery_date": time.strftime("%Y-%m-%d"),
             # Custom fields if added
             # "telegram_order": 1,
             # "bonus_points_used": bonus_points
         }
-        
+
         res = await self._request("POST", "/api/resource/Sales Order", json=payload)
         order_id = res["data"]["name"]
-        
+
         # 4. Handle Loyalty Points (Redemption)
         if bonus_points > 0:
             await self.create_loyalty_transaction(
-                client_name, 
-                "Redemption", 
-                -bonus_points, 
-                f"Redemption for Order {order_id}"
+                client_name,
+                "Redemption",
+                -bonus_points,
+                f"Redemption for Order {order_id}",
             )
-            
+
         # 5. Handle Loyalty Points (Accrual) - 10%
         # Calculate accrual amount (excluding bonus part? or total?)
         # Let's say 10% of amount paid
         paid_amount = max(0, amount - bonus_points)
-        if paid_amount >= 100: # Minimum 100
+        if paid_amount >= 100:  # Minimum 100
             accrual = int(paid_amount * 0.1)
             if accrual > 0:
                 await self.create_loyalty_transaction(
-                    client_name,
-                    "Accrual",
-                    accrual,
-                    f"Accrual for Order {order_id}"
+                    client_name, "Accrual", accrual, f"Accrual for Order {order_id}"
                 )
 
         return {"order_id": order_id, "total": paid_amount, "bonus_used": bonus_points}
@@ -288,6 +309,6 @@ class ERPClient:
                 self.r.delete(f"crm:c:{cid}")
                 self.r.delete(f"crm:tx:{cid}")
             return {"deleted": True}
-            
+
         # Not implemented for real ERP yet (safety)
         return {"deleted": False, "message": "Not implemented"}

@@ -31,6 +31,9 @@ def test_masked_unauthorized_message(client: TestClient) -> None:
 
 
 def test_masked_recover_secret_message(client: TestClient) -> None:
-    r = client.post("/api/v1/public/auth/recover", json={"username": "admin", "new_password": "NewPass123!"})
+    r = client.post(
+        "/api/v1/public/auth/recover",
+        json={"username": "admin", "new_password": "NewPass123!"},
+    )
     assert r.status_code in (401, 400)
     assert "secret" not in str(r.json()).lower()

@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "type-check": "tsc --noEmit",
     "lint": "biome lint .",
     "format": "biome format . --write",
     "check": "biome check --write .",

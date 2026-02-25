@@ -12,31 +12,52 @@ class DB:
         conn = sqlite3.connect(self.path, check_same_thread=False)
         # Migration for compliance fields
         try:
-            conn.execute("ALTER TABLE customers ADD COLUMN marketing_allowed INTEGER NOT NULL DEFAULT 0")
-        except sqlite3.OperationalError: # Column already exists
+            conn.execute(
+                "ALTER TABLE customers ADD COLUMN marketing_allowed INTEGER NOT NULL DEFAULT 0"
+            )
+        except sqlite3.OperationalError:  # Column already exists
             pass
         try:
-            conn.execute("ALTER TABLE customers ADD COLUMN data_processing_allowed INTEGER NOT NULL DEFAULT 0")
-        except sqlite3.OperationalError: pass
+            conn.execute(
+                "ALTER TABLE customers ADD COLUMN data_processing_allowed INTEGER NOT NULL DEFAULT 0"
+            )
+        except sqlite3.OperationalError:
+            pass
         try:
             conn.execute("ALTER TABLE customers ADD COLUMN birthday TEXT")
-        except sqlite3.OperationalError: pass
+        except sqlite3.OperationalError:
+            pass
         # Analytics fields for customers
         try:
-            conn.execute("ALTER TABLE customers ADD COLUMN ltv REAL NOT NULL DEFAULT 0")  # Lifetime Value
-        except sqlite3.OperationalError: pass
+            conn.execute(
+                "ALTER TABLE customers ADD COLUMN ltv REAL NOT NULL DEFAULT 0"
+            )  # Lifetime Value
+        except sqlite3.OperationalError:
+            pass
         try:
-            conn.execute("ALTER TABLE customers ADD COLUMN average_check REAL NOT NULL DEFAULT 0")  # Average transaction amount
-        except sqlite3.OperationalError: pass
+            conn.execute(
+                "ALTER TABLE customers ADD COLUMN average_check REAL NOT NULL DEFAULT 0"
+            )  # Average transaction amount
+        except sqlite3.OperationalError:
+            pass
         try:
-            conn.execute("ALTER TABLE customers ADD COLUMN purchase_frequency INTEGER NOT NULL DEFAULT 0")  # Number of purchases
-        except sqlite3.OperationalError: pass
+            conn.execute(
+                "ALTER TABLE customers ADD COLUMN purchase_frequency INTEGER NOT NULL DEFAULT 0"
+            )  # Number of purchases
+        except sqlite3.OperationalError:
+            pass
         try:
-            conn.execute("ALTER TABLE customers ADD COLUMN last_purchase_date TEXT")  # Date of last purchase
-        except sqlite3.OperationalError: pass
+            conn.execute(
+                "ALTER TABLE customers ADD COLUMN last_purchase_date TEXT"
+            )  # Date of last purchase
+        except sqlite3.OperationalError:
+            pass
         try:
-            conn.execute("ALTER TABLE customers ADD COLUMN cohort_month TEXT")  # Month of first purchase (YYYY-MM)
-        except sqlite3.OperationalError: pass
+            conn.execute(
+                "ALTER TABLE customers ADD COLUMN cohort_month TEXT"
+            )  # Month of first purchase (YYYY-MM)
+        except sqlite3.OperationalError:
+            pass
         conn.commit()
 
         conn.row_factory = sqlite3.Row
@@ -76,8 +97,7 @@ def init_db() -> None:
     conn.execute("PRAGMA journal_mode = WAL")
     conn.execute("PRAGMA synchronous = NORMAL")
     try:
-        conn.executescript(
-            """
+        conn.executescript("""
             CREATE TABLE IF NOT EXISTS customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 phone TEXT UNIQUE,
@@ -264,26 +284,40 @@ def init_db() -> None:
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
             );
-            """
-        )
+            """)
         conn.commit()
-        cols = [r["name"] for r in conn.execute("PRAGMA table_info(transactions)").fetchall()]
+        cols = [
+            r["name"]
+            for r in conn.execute("PRAGMA table_info(transactions)").fetchall()
+        ]
         if "pos_receipt_id" not in cols:
             conn.execute("ALTER TABLE transactions ADD COLUMN pos_receipt_id TEXT")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_transactions_pos_receipt_id ON transactions(pos_receipt_id)")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_transactions_pos_receipt_id ON transactions(pos_receipt_id)"
+            )
             conn.commit()
-        admin_cols = [r["name"] for r in conn.execute("PRAGMA table_info(admin_users)").fetchall()]
+        admin_cols = [
+            r["name"] for r in conn.execute("PRAGMA table_info(admin_users)").fetchall()
+        ]
         if "role" not in admin_cols:
-            conn.execute("ALTER TABLE admin_users ADD COLUMN role TEXT NOT NULL DEFAULT 'owner'")
+            conn.execute(
+                "ALTER TABLE admin_users ADD COLUMN role TEXT NOT NULL DEFAULT 'owner'"
+            )
             conn.commit()
         if "disabled" not in admin_cols:
-            conn.execute("ALTER TABLE admin_users ADD COLUMN disabled INTEGER NOT NULL DEFAULT 0")
+            conn.execute(
+                "ALTER TABLE admin_users ADD COLUMN disabled INTEGER NOT NULL DEFAULT 0"
+            )
             conn.commit()
         if "password_salt" not in admin_cols:
-            conn.execute("ALTER TABLE admin_users ADD COLUMN password_salt TEXT NOT NULL DEFAULT ''")
+            conn.execute(
+                "ALTER TABLE admin_users ADD COLUMN password_salt TEXT NOT NULL DEFAULT ''"
+            )
             conn.commit()
         if "password_iter" not in admin_cols:
-            conn.execute("ALTER TABLE admin_users ADD COLUMN password_iter INTEGER NOT NULL DEFAULT 200000")
+            conn.execute(
+                "ALTER TABLE admin_users ADD COLUMN password_iter INTEGER NOT NULL DEFAULT 200000"
+            )
             conn.commit()
     finally:
         conn.close()

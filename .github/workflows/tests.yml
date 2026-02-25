@@ -55,7 +55,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.14'
           cache: 'pip'
 
       - name: Install dependencies
@@ -144,6 +144,11 @@ jobs:
         working-directory: ./admin-ui
         run: |
           npm ci
+      
+      - name: Run type check
+        working-directory: ./admin-ui
+        run: |
+          npm run type-check
       
       - name: Build frontend
         working-directory: ./admin-ui
@@ -262,7 +267,7 @@ jobs:
       
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.14'
           cache: 'pip'
       
       - name: Install dependencies
@@ -308,7 +313,7 @@ jobs:
       
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.14'
           cache: 'pip'
       
       - name: Install dependencies
@@ -317,10 +322,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install bandit safety
       
+      - name: Create reports directory
+        working-directory: ./middleware
+        run: |
+          mkdir -p reports
+
       - name: Run Bandit security scan
         working-directory: ./middleware
         run: |
-          bandit -r app/ -f json -o reports/bandit_report.json
+          bandit -r middleware/app/ -f json -o reports/bandit_report.json
       
       - name: Run Safety dependency check
         working-directory: ./middleware
@@ -347,7 +357,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.14'
           cache: 'pip'
       
       - name: Install dependencies
