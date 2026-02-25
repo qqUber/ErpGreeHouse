@@ -58,6 +58,12 @@ jobs:
           python-version: '3.14'
           cache: 'pip'
 
+      # Required for lxml (XML/HTML processing) Python package compilation
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-dev libxslt-dev
+
       - name: Install dependencies
         working-directory: ./middleware
         run: |
@@ -125,13 +131,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: admin-ui/package-lock.json
-      - name: Install redis-tools on Runner
-        run: sudo apt-get update && sudo apt-get install -y redis-tools
+
+      # Required for lxml (XML/HTML processing) and redis-tools
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y redis-tools libxml2-dev libxslt-dev
 
       - name: Wait for Redis
         run: |
@@ -269,7 +280,13 @@ jobs:
         with:
           python-version: '3.14'
           cache: 'pip'
-      
+
+      # Required for lxml (XML/HTML processing) Python package compilation
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-dev libxslt-dev
+
       - name: Install dependencies
         working-directory: ./middleware
         run: |
