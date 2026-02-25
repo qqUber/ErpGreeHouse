@@ -24,30 +24,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Pre-flight: Install linting tools
+      - name: "Pre-flight: Install linting tools"
         working-directory: ./middleware
         run: |
           python -m pip install --upgrade pip
           pip install black flake8
 
-      - name: Pre-flight: Run Black format check
+      - name: "Pre-flight: Run Black format check"
         working-directory: ./middleware
         run: |
           black --check app/ tests/
 
-      - name: Pre-flight: Run Flake8 linting
+      - name: "Pre-flight: Run Flake8 linting"
         working-directory: ./middleware
         run: |
           flake8 app/ tests/ --max-line-length=88 --extend-ignore=E203,W503
 
-      - name: Pre-flight: Setup Node.js for TypeScript check
+      - name: "Pre-flight: Setup Node.js for TypeScript check"
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: admin-ui/package-lock.json
 
-      - name: Pre-flight: Run TypeScript type check
+      - name: "Pre-flight: Run TypeScript type check"
         working-directory: ./admin-ui
         run: |
           npm ci
