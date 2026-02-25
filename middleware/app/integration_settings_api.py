@@ -11,7 +11,7 @@ from fastapi import APIRouter, Header, HTTPException, Depends
 from pydantic import BaseModel, Field
 
 from .admin_auth_api import require_jwt_auth
-from .auth import check_roles
+from .auth import check_roles, require_roles
 from .bot import create_bot
 from .config import get_settings
 from .db import get_db
