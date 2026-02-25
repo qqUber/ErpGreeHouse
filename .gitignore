@@ -40,3 +40,7 @@ coverage.xml
 admin-ui/e2e/.test-credentials.json
   
 cookies.txt 
+
+# Generated test reports
+unit-report-2/
+middleware/test-reports/*.txt
