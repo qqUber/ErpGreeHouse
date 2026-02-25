@@ -191,7 +191,10 @@ jobs:
           curl -f http://localhost:5173 || exit 1
           curl -f http://localhost:8000/health || exit 1
       
-      - name: Run E2E tests (headless)
+      - name: Lint E2E tests
+        working-directory: ./admin-ui
+        run: |
+          npx biome lint e2e/
         working-directory: ./admin-ui
         run: |
           npm run test:e2e -- --reporter=list
