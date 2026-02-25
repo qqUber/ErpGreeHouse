@@ -121,6 +121,13 @@ jobs:
         run: |
           npm run build
       
+      - name: Install middleware dependencies
+        working-directory: ./middleware
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov pytest-html pytest-mock httpx structlog
+
       - name: Start backend server (background)
         working-directory: ./middleware
         run: |
