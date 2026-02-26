@@ -185,7 +185,7 @@ class ConcurrentUserSessions:
                 self._tasks[user_id] = asyncio.create_task(coro)
 
     async def start_user_session_with_group(
-        self, user_id: int, coro: asyncio.Coroutine, group: asyncio.TaskGroup
+        self, user_id: int, coro: Coroutine, group: asyncio.TaskGroup
     ) -> asyncio.Task:
         """
         Start a user session within a TaskGroup for structured concurrency.
