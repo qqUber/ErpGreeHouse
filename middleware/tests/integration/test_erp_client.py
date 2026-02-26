@@ -12,7 +12,7 @@ from app.integrations.pos.erpnext_client import ERPClient
 
 @pytest.fixture
 def mock_settings():
-    with patch("app.erp_client.get_settings") as mock:
+    with patch("app.integrations.pos.erpnext_client.get_settings") as mock:
         mock.return_value = Mock(
             erp_mock_mode=False,
             erp_api_base_url="https://mock.erp",
@@ -25,7 +25,7 @@ def mock_settings():
 
 @pytest.fixture
 def erp_client(mock_settings):
-    with patch("app.erp_client.get_redis") as mock_redis:
+    with patch("app.integrations.pos.erpnext_client.get_redis") as mock_redis:
         mock_redis.return_value = Mock()
         return ERPClient()
 
