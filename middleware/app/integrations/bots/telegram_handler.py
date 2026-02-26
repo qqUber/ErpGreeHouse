@@ -1,7 +1,7 @@
 import asyncio
 import sys
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator, Coroutine, Optional
 from asyncio import TaskGroup
 
 from aiogram import Bot, Dispatcher
@@ -159,7 +159,7 @@ class ConcurrentUserSessions:
         # Check for Python 3.14+ TaskGroup support
         self._has_taskgroup = hasattr(asyncio, "TaskGroup")
 
-    async def start_user_session(self, user_id: int, coro: asyncio.Coroutine) -> None:
+    async def start_user_session(self, user_id: int, coro: Coroutine) -> None:
         """
         Start a new async session for a user.
         Cancels any existing session for this user.
