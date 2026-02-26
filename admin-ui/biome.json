@@ -2,7 +2,17 @@
   "$schema": "https://biomejs.dev/schemas/2.4.4/schema.json",
   "files": {
     "ignoreUnknown": true,
-    "includes": ["src/**", "src/**/*", "e2e/**", "*.ts", "*.tsx", "*.js", "*.jsx", "*.json", "*.css"]
+    "includes": [
+      "src/**",
+      "src/**/*",
+      "e2e/**",
+      "*.ts",
+      "*.tsx",
+      "*.js",
+      "*.jsx",
+      "*.json",
+      "*.css"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -18,7 +28,8 @@
       "suspicious": {
         "noExplicitAny": "off",
         "noArrayIndexKey": "off",
-        "noGlobalIsNan": "off"
+        "noGlobalIsNan": "off",
+        "noImplicitAnyLet": "off"
       },
       "style": {
         "useImportType": "off",
@@ -44,7 +55,8 @@
         "noUnusedFunctionParameters": "off"
       },
       "complexity": {
-        "useOptionalChain": "off"
+        "useOptionalChain": "off",
+        "useLiteralKeys": "off"
       }
     }
   },

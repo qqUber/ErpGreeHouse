@@ -1,4 +1,4 @@
-import {Page, test as base, TestInfo} from '@playwright/test';
+import { test as base, Page, TestInfo } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 

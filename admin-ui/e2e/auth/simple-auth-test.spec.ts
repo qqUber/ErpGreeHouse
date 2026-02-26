@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Authentication Header Fix Verification', () => {
   test('should not inject test-secret-key into Authorization header', async ({ page }) => {
@@ -9,60 +9,61 @@ test.describe('Authentication Header Fix Verification', () => {
       requests.push({
         url: request.url(),
         headers: headers,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     });
 
     // Navigate to login page
     await page.goto('/admin/login');
-    
+
     // Set test-secret-key in localStorage (simulating the problematic scenario)
     await page.evaluate(() => {
       localStorage.setItem('admin_session_token', 'test-secret-key');
     });
-    
+
     // Navigate to a protected page that would trigger API calls
     await page.goto('/admin/dashboard');
-    
+
     // Wait for any API calls to complete
     await page.waitForTimeout(3000);
-    
+
     // Filter API requests (exclude static assets)
-    const apiRequests = requests.filter(req => 
-      req.url.includes('/api/') && 
-      !req.url.match(/\.(js|css|png|jpg|svg|ico)$/)
+    const apiRequests = requests.filter(
+      (req) => req.url.includes('/api/') && !req.url.match(/\.(js|css|png|jpg|svg|ico)$/)
     );
-    
+
     console.log(`Captured ${apiRequests.length} API requests`);
-    
+
     // Verify that no request has Authorization header with test-secret-key
     for (const request of apiRequests) {
       const authHeader = request.headers['authorization'];
       const xAdminSecret = request.headers['x-admin-secret'];
-      
+
       console.log(`Request to ${request.url}:`);
       console.log(`  Authorization: ${authHeader || 'not set'}`);
       console.log(`  x-admin-secret: ${xAdminSecret ? 'present' : 'not set'}`);
-      
+
       // Authorization header should NOT contain test-secret-key
       if (authHeader) {
         expect(authHeader).not.toContain('test-secret-key');
         expect(authHeader).not.toBe('Bearer test-secret-key');
       }
-      
+
       // x-admin-secret header should still be present for legacy compatibility
       if (xAdminSecret) {
         expect(xAdminSecret).toBe('test-secret-key');
       }
     }
-    
+
     // Verify that at least one API request was made with proper headers
     expect(apiRequests.length).toBeGreaterThan(0);
-    
+
     // Verify that x-admin-secret is present in requests (legacy compatibility)
-    const hasXAdminSecret = apiRequests.some(req => req.headers['x-admin-secret'] === 'test-secret-key');
+    const hasXAdminSecret = apiRequests.some(
+      (req) => req.headers['x-admin-secret'] === 'test-secret-key'
+    );
     expect(hasXAdminSecret).toBeTruthy();
-    
+
     console.log('✅ Authentication header fix verified successfully!');
     console.log('✅ No Authorization header with test-secret-key found');
     console.log('✅ x-admin-secret header present for legacy compatibility');
@@ -75,30 +76,32 @@ test.describe('Authentication Header Fix Verification', () => {
       localStorage.clear();
       sessionStorage.clear();
     });
-    
+
     // Navigate to login page
     await page.goto('/admin/login');
-    
+
     // Fill in login form with test credentials
     await page.fill('input[name="username"]', 'admin');
     await page.fill('input[name="password"]', 'admin');
-    
+
     // Click login button
     await page.click('button[type="submit"]');
-    
+
     // Wait for navigation to dashboard
     await page.waitForURL('/admin/dashboard', { timeout: 10000 });
-    
+
     // Verify dashboard loaded successfully (no 401 errors)
     await expect(page.locator('h1')).toContainText('Dashboard');
-    
+
     // Verify that API calls on dashboard work without 401 errors
     await page.waitForTimeout(3000); // Wait for API calls to complete
-    
+
     // Check for any error messages that might indicate 401 issues
-    const errorMessages = await page.locator('.error-message, .alert-error, [role="alert"]').count();
+    const errorMessages = await page
+      .locator('.error-message, .alert-error, [role="alert"]')
+      .count();
     expect(errorMessages).toBe(0);
-    
+
     console.log('✅ Login flow completed without 401 errors');
     console.log('✅ Dashboard loaded successfully');
   });

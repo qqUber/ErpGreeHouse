@@ -1,4 +1,4 @@
-import {expect, test} from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 /**
  * Cross-Role Permission Boundaries E2E Test

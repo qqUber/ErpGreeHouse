@@ -684,8 +684,7 @@ export const Api = {
     api<any>('/api/v1/pos/sale', { method: 'POST', body: JSON.stringify(payload) }),
   receiptUrl: (txId: number) => `${baseUrl()}/api/v1/transactions/${txId}/receipt`,
 
-  integrations: () =>
-    api<Integration[]>('/api/v1/integrations', { method: 'GET', headers: {} }),
+  integrations: () => api<Integration[]>('/api/v1/integrations', { method: 'GET', headers: {} }),
   integrationTemplates: () =>
     api<{ items: IntegrationTemplate[] }>('/api/v1/integrations/templates', {
       method: 'GET',

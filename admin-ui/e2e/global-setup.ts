@@ -7,7 +7,7 @@
  * SECURITY: Only works when E2E_TEST_MODE=true
  */
 
-import {FullConfig} from '@playwright/test';
+import { FullConfig } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 

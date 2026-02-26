@@ -1,4 +1,4 @@
-import {expect, Page, test} from '@playwright/test';
+import { expect, Page, test } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -272,7 +272,7 @@ test.describe('UI Logic - Sale to Client Navigation', () => {
   test('should verify client card displays correct information', async ({ page }) => {
     // Mock customer details API
     await page.route('**/api/v1/customer/*', async (route) => {
-      const url = route.request.url();
+      const url = route.request().url();
       const customerId = url.match(/customer\/(\d+)/)?.[1] || '100';
 
       await route.fulfill({

@@ -1,4 +1,4 @@
-import {attachConsole, expect, login, retryBackoff, test} from '../_shared';
+import { attachConsole, expect, login, retryBackoff, test } from '../_shared';
 
 const consoleFlush = new Map<string, () => Promise<void>>();
 

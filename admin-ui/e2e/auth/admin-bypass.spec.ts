@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 /**
  * Admin Secret Bypass E2E Test
@@ -55,10 +55,7 @@ test.describe('Admin Secret Bypass Authentication', () => {
 
   test('should allow x-admin-secret bypass for admin-only endpoints', async ({ request }) => {
     // Test access to admin-only endpoints
-    const endpoints = [
-      '/api/v1/admin/users',
-      '/api/v1/admin/settings',
-    ];
+    const endpoints = ['/api/v1/admin/users', '/api/v1/admin/settings'];
 
     for (const endpoint of endpoints) {
       const response = await request.get(endpoint, {

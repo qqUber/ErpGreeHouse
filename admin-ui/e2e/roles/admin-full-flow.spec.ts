@@ -1,4 +1,4 @@
-import {expect, test} from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 /**
  * Admin (Owner) - Full Flow E2E Test
