@@ -65,17 +65,24 @@ def create_dispatcher() -> Dispatcher:
         "prod",
     )
 
-    if is_production:
+    # Handle case where aiogram storage is not available
+    if MemoryStorage is None and RedisStorage is None:
+        # No FSM storage available - create dispatcher without storage
+        dp = Dispatcher()
+    elif is_production:
         try:
             redis = get_redis_client()
             fsm_storage = RedisStorage(redis=redis)
         except Exception:
             # Fallback to memory storage if Redis unavailable
-            fsm_storage = MemoryStorage()
+            fsm_storage = MemoryStorage() if MemoryStorage else None
     else:
-        fsm_storage = MemoryStorage()
+        fsm_storage = MemoryStorage() if MemoryStorage else None
 
-    dp = Dispatcher(storage=fsm_storage)
+    if fsm_storage is not None:
+        dp = Dispatcher(storage=fsm_storage)
+    else:
+        dp = Dispatcher()
     dp.message.middleware(ThrottleMiddleware(rate=0.7))
     dp.callback_query.middleware(ThrottleMiddleware(rate=0.7))
     dp.include_router(router)
