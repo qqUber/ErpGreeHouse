@@ -3,7 +3,7 @@ import io
 import json
 import os
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Header, HTTPException, BackgroundTasks, Depends, Query
 from fastapi.responses import FileResponse
