@@ -7,8 +7,18 @@ from asyncio import TaskGroup
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.fsm.storage.redis import RedisStorage
+# Try to import aiogram - may fail in some versions
+try:
+    from aiogram.fsm.storage.memory import MemoryStorage
+except (ImportError, OSError) as e:
+    # If aiogram is not available or has import issues, we'll use a placeholder
+    MemoryStorage = None
+    AIOGRAM_AVAILABLE = False
+
+try:
+    from aiogram.fsm.storage.redis import RedisStorage
+except (ImportError, OSError) as e:
+    RedisStorage = None
 from ...handlers import router
 from ...middlewares import ThrottleMiddleware
 
