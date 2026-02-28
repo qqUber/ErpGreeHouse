@@ -52,10 +52,10 @@ An omnichannel CRM + Loyalty system for coffee shops, replacing expensive third-
 
 **Plans**: 4 plans
 
-- [ ] 01-01-PLAN.md — Project structure and configuration
-- [ ] 01-02-PLAN.md — Database setup and core services
-- [ ] 01-03-PLAN.md — API endpoints and authentication
-- [ ] 01-04-PLAN.md — Background workers and integrations
+- [ ] 01-01-PLAN.md — Environment setup and dependency installation
+- [ ] 01-02-PLAN.md — Database initialization and seed data loading
+- [ ] 01-03-PLAN.md — FastAPI application server setup and endpoint verification
+- [ ] 01-04-PLAN.md — Test execution and verification
 
 ### Phase 2: Loyalty Program Management
 **Goal**: Implement the core loyalty program functionality
