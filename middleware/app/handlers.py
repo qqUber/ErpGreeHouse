@@ -245,26 +245,57 @@ def _upsert_local_customer(
 
 @router.message(Command("start"))
 async def cmd_start(message: Message) -> None:
-    client = ERPClient()
-    data = await client.get_customer_by_telegram_id(message.from_user.id)
-    if not data:
-        kb = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="Зарегистрироваться", callback_data="reg:start"
-                    )
-                ]
-            ]
+    """Handle /start command - check if user is registered and show consent if new."""
+    # Check if user is registered
+    db = get_db()
+    conn = db.connect()
+    try:
+        cur = conn.execute(
+            "SELECT id, full_name, marketing_allowed, data_processing_allowed FROM customers WHERE telegram_id=?",
+            (message.from_user.id,),
         )
-        await message.answer("Привет. Давай зарегистрируемся.", reply_markup=kb)
-        r = get_redis()
-        r.sadd("crm:known_chats", str(message.chat.id))
-        return
-    bal = await client.get_balance(data["name"])
-    await message.answer(
-        f"Привет, {data.get('first_name', 'гость')}.\nБаланс: {bal} баллов."
-    )
+        row = cur.fetchone()
+
+        if row:
+            # User is already registered
+            full_name = row["full_name"] or "друг"
+            marketing = row["marketing_allowed"]
+            data_processing = row["data_processing_allowed"]
+
+            consent_status = ""
+            if data_processing:
+                consent_status = "\n\n✅ Обработка данных разрешена"
+                if marketing:
+                    consent_status += "\n✅ Рассылки включены"
+                else:
+                    consent_status += "\n❌ Рассылки выключены"
+
+            await message.answer(
+                f"С возвращением, {full_name}! 🏠☕\n\n"
+                f"Рады видеть вас снова!{consent_status}\n\n"
+                f"Управление подпиской: /subscribe /revoke_consent"
+            )
+        else:
+            # New user - show consent buttons
+            consent_text = "Я соглашаюсь с Пользовательским соглашением и даю согласие на обработку персональных данных в соответствии с 152-ФЗ."
+            kb = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text="Принимаю Пользовательское соглашение и 152-ФЗ",
+                            callback_data="consent:yes",
+                        ),
+                        InlineKeyboardButton(text="Отказ", callback_data="consent:no"),
+                    ]
+                ]
+            )
+            await message.answer(
+                "Добро пожаловать! Для продолжения необходимо принять условия.",
+                reply_markup=kb,
+            )
+    finally:
+        conn.close()
+
     r = get_redis()
     r.sadd("crm:known_chats", str(message.chat.id))
 
