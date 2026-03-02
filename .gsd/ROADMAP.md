@@ -132,17 +132,23 @@ An omnichannel CRM + Loyalty system for coffee shops, replacing expensive third-
 **Dependencies**: Phase 3
 
 **Requirements**:
-- COMP-001: Explicit consent collection for personal data processing
-- COMP-002: Consent records include timestamp and document version
-- COMP-003: User can revoke consent and delete profile in 1 click
-- COMP-004: All data stored within Russian Federation borders
+- COMP-001: Explicit consent collection for personal data processing (completed)
+- COMP-002: Consent records include timestamp and document version (completed)
+- COMP-003: User can revoke consent and delete profile in 1 click (completed)
+- COMP-004: All data stored within Russian Federation borders (in progress)
 
 **Success Criteria**:
-1. Users must explicitly consent to personal data processing before using the system
-2. Consent records are properly stored with all required information
-3. Users can revoke consent and delete their profiles easily
-4. All customer data is stored within Russian Federation borders
+1. Users must explicitly consent to personal data processing before using the system (completed)
+2. Consent records are properly stored with all required information (completed)
+3. Users can revoke consent and delete their profiles easily (completed)
+4. All customer data is stored within Russian Federation borders (in progress)
 5. Data protection practices comply with 152-FZ regulations
+
+**Plans**:
+- ✅ 04-01-PLAN.md — Enhance consent management for 152-FZ compliance (completed)
+- [ ] 04-02-PLAN.md — Implement profile deletion functionality
+- [ ] 04-03-PLAN.md — Ensure data storage compliance
+- [ ] 04-04-PLAN.md — Complete compliance verification and generate audit report
 
 ---
 
@@ -211,7 +217,7 @@ An omnichannel CRM + Loyalty system for coffee shops, replacing expensive third-
 | 1     | Complete | 100%     |
 | 2     | Complete | 100%     |
 | 3     | Complete | 100%     |
-| 4     | Pending | 0%       |
+| 4     | In Progress | 25%       |
 | 5     | Pending | 0%       |
 | 6     | Pending | 0%       |
 | 7     | Pending | 0%       |
