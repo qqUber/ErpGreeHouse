@@ -317,9 +317,9 @@ def main() -> int:
     report = generate_report(results)
     print(report)
 
-    # Write report to file
-    with open("compliance_report.txt", "w", encoding="utf-8") as f:
-        f.write(report + "\n")
+    # Optionally write report to file (comment out to disable)
+    # with open("compliance_report.txt", "w", encoding="utf-8") as f:
+    #     f.write(report + "\n")
 
     # Check if all mandatory checks passed
     mandatory_checks = [
