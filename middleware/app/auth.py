@@ -1,4 +1,4 @@
-from typing import Iterable, Any, Optional
+from typing import Iterable, Any, Optional, cast
 import os
 import logging
 import jwt
@@ -69,7 +69,7 @@ def decode_token(token: str) -> dict[str, Any]:
         payload = jwt.decode(
             token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
         )
-        return payload
+        return cast(dict[str, Any], payload)
     except jwt.ExpiredSignatureError:
         logger.warning("JWT validation failed: Token has expired")
         raise HTTPException(status_code=401, detail="Token has expired")

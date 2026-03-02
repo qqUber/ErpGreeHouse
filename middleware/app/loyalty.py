@@ -164,7 +164,7 @@ def increment_user_spent_score(user_id: int, amount: int) -> int:
         logger.warning("[Loyalty] Redis unavailable, cannot increment user score")
         return 0
     new_score = r.zincrby(LEADERBOARD_KEY, amount, str(user_id))
-    return int(new_score)
+    return int(new_score)  # type: ignore[arg-type]
 
 
 def get_user_rank(user_id: int) -> Optional[int]:
@@ -176,7 +176,7 @@ def get_user_rank(user_id: int) -> Optional[int]:
     if r is None:
         return None
     rank = r.zrevrank(LEADERBOARD_KEY, str(user_id))
-    return rank if rank is not None else None
+    return rank if rank is not None else None  # type: ignore[return-value]
 
 
 def get_user_percentile(user_id: int) -> Optional[float]:
@@ -193,7 +193,7 @@ def get_user_percentile(user_id: int) -> Optional[float]:
     total = r.zcard(LEADERBOARD_KEY)
     if total == 0:
         return 0.0
-    return ((total - rank - 1) / total) * 100
+    return ((total - rank - 1) / total) * 100  # type: ignore[no-any-return]
 
 
 def get_top_spenders(limit: int = 10) -> List[Tuple[int, int]]:
@@ -204,8 +204,8 @@ def get_top_spenders(limit: int = 10) -> List[Tuple[int, int]]:
     r = _get_redis()
     if r is None:
         return []
-    results = r.zrevrange(LEADERBOARD_KEY, 0, limit - 1, withscores=True)
-    return [(int(uid), int(score)) for uid, score in results]
+    results = r.zrevrange(LEADERBOARD_KEY, 0, limit - 1, withscores=True)  # type: ignore[union-attr]
+    return [(int(uid), int(score)) for uid, score in results]  # type: ignore[union-attr]
 
 
 def get_tier_from_percentile(percentile: float, rules: LoyaltyRules) -> Tier:
@@ -244,14 +244,12 @@ def get_users_in_tier(tier_name: str, rules: LoyaltyRules) -> List[int]:
     tier_idx = next((i for i, t in enumerate(sorted_tiers) if t.name == tier_name), -1)
 
     if tier_idx < len(sorted_tiers) - 1:
-        max_score = sorted_tiers[tier_idx + 1].min_spent - 1
+        max_score: float = sorted_tiers[tier_idx + 1].min_spent - 1
     else:
         max_score = float("inf")
 
-    results = r.zrangebyscore(
-        LEADERBOARD_KEY, tier.min_spent, max_score, withscores=False
-    )
-    return [int(uid) for uid in results]
+    results = r.zrangebyscore(LEADERBOARD_KEY, tier.min_spent, max_score, withscores=False)  # type: ignore[union-attr]
+    return [int(uid) for uid in results]  # type: ignore[union-attr]
 
 
 def batch_update_scores(updates: List[Tuple[int, int]]) -> None:
@@ -265,6 +263,8 @@ def batch_update_scores(updates: List[Tuple[int, int]]) -> None:
     if not updates:
         return
     r = _get_redis()
+    if r is None:
+        return
     mapping = {str(uid): score for uid, score in updates}
     r.zadd(LEADERBOARD_KEY, mapping)
 
@@ -277,8 +277,8 @@ def get_user_score(user_id: int) -> Optional[int]:
     if r is None:
         logger.warning("[Loyalty] Redis unavailable, cannot get user score")
         return None
-    score = r.zscore(LEADERBOARD_KEY, str(user_id))
-    return int(score) if score is not None else None
+    score = r.zscore(LEADERBOARD_KEY, str(user_id))  # type: ignore[union-attr]
+    return int(score) if score is not None else None  # type: ignore[arg-type]
 
 
 def remove_user_from_leaderboard(user_id: int) -> None:
@@ -300,7 +300,7 @@ def get_leaderboard_count() -> int:
     if r is None:
         logger.warning("[Loyalty] Redis unavailable, cannot get leaderboard count")
         return 0
-    return r.zcard(LEADERBOARD_KEY)
+    return r.zcard(LEADERBOARD_KEY)  # type: ignore[return-value]
 
 
 def get_rank_range(start: int, end: int) -> List[Tuple[int, int, int]]:
@@ -312,8 +312,8 @@ def get_rank_range(start: int, end: int) -> List[Tuple[int, int, int]]:
     if r is None:
         logger.warning("[Loyalty] Redis unavailable, cannot get rank range")
         return []
-    results = r.zrevrange(LEADERBOARD_KEY, start, end, withscores=True)
-    return [(start + i, int(uid), int(score)) for i, (uid, score) in enumerate(results)]
+    results = r.zrevrange(LEADERBOARD_KEY, start, end, withscores=True)  # type: ignore[union-attr]
+    return [(start + i, int(uid), int(score)) for i, (uid, score) in enumerate(results)]  # type: ignore[arg-type]
 
 
 def calculate_user_tier(user_id: int, rules: LoyaltyRules) -> Tuple[Tier, int]:
@@ -332,11 +332,11 @@ def calculate_user_tier(user_id: int, rules: LoyaltyRules) -> Tuple[Tier, int]:
     r = _get_redis()
 
     # Get user's current score
-    current_score = r.zscore(LEADERBOARD_KEY, str(user_id))
+    current_score = r.zscore(LEADERBOARD_KEY, str(user_id))  # type: ignore[union-attr]
     if current_score is None:
         return rules.tiers[0], rules.tiers[1].min_spent if len(rules.tiers) > 1 else 0
 
-    current_score = int(current_score)
+    current_score = int(current_score)  # type: ignore[arg-type]
 
     # Find current tier based on spent amount
     current_tier = get_tier(current_score, rules)
@@ -380,17 +380,10 @@ def get_tier_leaderboard(
         max_score = sorted_tiers[tier_idx + 1].min_spent - 1
 
     # Use ZRANGEBYSCORE to get users in tier, then reverse for ranking
-    if max_score == float("inf"):
-        results = r.zrangebyscore(
-            LEADERBOARD_KEY, min_score, max_score, withscores=True
-        )
-    else:
-        results = r.zrangebyscore(
-            LEADERBOARD_KEY, min_score, max_score, withscores=True
-        )
+    results = r.zrangebyscore(LEADERBOARD_KEY, min_score, max_score, withscores=True)  # type: ignore[union-attr]
 
     # Sort by score descending and assign ranks
-    results_sorted = sorted(results, key=lambda x: x[1], reverse=True)
+    results_sorted = sorted(results, key=lambda x: x[1], reverse=True)  # type: ignore[arg-type]
     return [
         (i, int(uid), int(score))
         for i, (uid, score) in enumerate(results_sorted[:limit])
@@ -403,6 +396,8 @@ def get_user_tier_rank(user_id: int) -> Optional[int]:
     Returns the user's position within their tier (0-indexed).
     """
     r = _get_redis()
+    if r is None:
+        return None
     rank = r.zrevrank(LEADERBOARD_KEY, str(user_id))
     return rank if rank is not None else None
 
@@ -422,6 +417,8 @@ def bulk_increment_scores(updates: List[Tuple[int, int]]) -> List[int]:
         return []
 
     r = _get_redis()
+    if r is None:
+        return []
     pipe = r.pipeline()
 
     for user_id, amount in updates:

@@ -21,7 +21,7 @@ def hset(key: str, mapping: dict) -> None:
 
 def get_json(key: str) -> Optional[Any]:
     r = get_redis()
-    val = r.get(key)  # type: ignore[assignment]
+    val = r.get(key)
     return json.loads(val) if val else None  # type: ignore[arg-type]
 
 

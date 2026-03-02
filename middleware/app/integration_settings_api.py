@@ -54,10 +54,10 @@ class IntegrationStatus(BaseModel):
 
 @router.get("/telegram/status")
 def get_telegram_status(
-    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ) -> dict[str, Any]:
     """Get current Telegram bot status"""
-    check_roles(auth_result, roles=("owner", "marketer"))
+    require_roles(x_admin_secret, roles=("owner", "marketer"))
     settings = get_settings()
 
     db = get_db()
@@ -249,6 +249,14 @@ async def save_vk_settings(
 ) -> dict[str, Any]:
     """Save VK bot settings"""
     require_roles(x_admin_secret, roles=("owner", "marketer"))
+    
+    # Set VK config for webhook processing
+    from .integrations.bots.vk_handler import set_vk_config
+    set_vk_config(
+        access_token=payload.access_token,
+        group_id=payload.group_id,
+        api_version=payload.api_version or "5.131"
+    )
 
     db = get_db()
     conn = db.connect()

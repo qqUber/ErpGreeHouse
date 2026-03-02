@@ -238,3 +238,270 @@ The implementation is functional but has the following characteristics:
 3. **Enable secure cookies**: Set `ADMIN_COOKIE_SECURE=true`
 4. **Monitor authentication logs**: Watch for brute force attempts
 5. **Implement rate limiting**: Prevent login/recovery abuse
+
+---
+
+## D. Telegram Client Registration Flow (152-ФЗ Compliance)
+
+This section documents the Telegram bot client registration and consent flow, ensuring compliance with Russian Federal Law 152-ФЗ (Personal Data Protection).
+
+### Flow Diagram
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Bot
+    participant DB
+    participant ERP
+
+    User->>Bot: /start
+    Bot->>Bot: Check if Telegram ID registered
+    alt Not Registered
+        Bot->>User: Show "Зарегистрироваться" button
+        User->>Bot: Click registration button
+        Bot->>User: Ask for name
+        User->>Bot: Send name
+        Bot->>User: Ask for phone
+        User->>Bot: Send phone
+        Bot->>User: Show consent buttons
+        alt Accept
+            User->>Bot: Click "Принимаю"
+            Bot->>DB: Store customer + consents
+            Bot->>ERP: Create customer in ERP
+            Bot->>User: Confirm registration + 100 bonus
+        else Decline
+            User->>Bot: Click "Отказ"
+            Bot->>User: Registration cancelled
+        end
+    else Already Registered
+        Bot->>User: Show balance + consent status
+    end
+```
+
+### Consent Types
+
+| Type | Description | Required |
+|------|-------------|----------|
+| **data_processing** | Consent to process personal data (name, phone) | Yes - for account to work |
+| **marketing** | Consent to receive promotional messages | No - optional |
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `/start` | Start bot, show registration or balance |
+| `/balance` | Check loyalty points balance |
+| `/revoke_consent` | 1-click unsubscribe from marketing (152-ФЗ) |
+| `/subscribe` | Re-subscribe to marketing messages |
+| `/delete` | Delete profile and all data (152-ФЗ) |
+
+### 152-ФЗ Compliance Features
+
+1. **Explicit Consent**: Users must actively click "Принимаю" button
+2. **Timestamp Logging**: All consents stored with `accepted_at` datetime
+3. **Policy Version**: Consent linked to specific policy version
+4. **1-Click Revocation**: `/revoke_consent` instantly disables marketing
+5. **Audit Trail**: Full consent history in `consents` table
+
+### Database Schema
+
+**customers table** (relevant columns):
+- `telegram_id` - Telegram user ID
+- `phone` - Phone number (normalized)
+- `full_name` - User's name
+- `marketing_allowed` - 1 = can receive marketing, 0 = blocked
+- `data_processing_allowed` - 1 = data processing allowed
+
+**consents table**:
+- `customer_id` - FK to customers
+- `source` - "telegram" or "vk"
+- `consent_version` - Policy version (e.g., "1.0.0")
+- `consent_text` - Full text of what was consented to
+- `consent_type` - "data_processing" or "marketing"
+- `accepted_at` - Timestamp of consent
+
+### Marketing Compliance
+
+Marketing campaigns (via `/api/v1/marketing/campaigns/{id}/send`) only send to customers where `marketing_allowed = 1`. This ensures:
+- No spam to non-consenting users
+- Legal compliance with 152-ФЗ
+- Audit trail of consent status
+
+### Code Reference
+
+- **Registration Handler**: [`middleware/app/handlers.py:cmd_start()`](middleware/app/handlers.py:216)
+- **Consent Callback**: [`middleware/app/handlers.py:cb_consent()`](middleware/app/handlers.py:273)
+- **Revoke Command**: [`middleware/app/handlers.py:cmd_revoke_consent()`](middleware/app/handlers.py:605)
+- **Marketing API**: [`middleware/app/marketing_api.py`](middleware/app/marketing_api.py)
+
+---
+
+## D.2. Telegram Registration Flow v2 (Enhanced 152-ФЗ Compliance)
+
+This section documents the enhanced Telegram bot registration flow with improved 152-ФЗ compliance, featuring separate consent buttons, explicit refusal handling with data deletion, and optional marketing consent.
+
+### Flow Diagram
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Bot
+    participant DB
+    participant Redis
+    participant ERP
+
+    User->>Bot: /start
+    Bot->>Bot: Check if Telegram ID registered
+    alt Not Registered
+        Bot->>User: Welcome message + registration prompt<br/>"Добро пожаловать в GreenHouse! 🏠☕"
+        User->>Bot: Click "Зарегистрироваться"
+        Bot->>User: Ask for name
+        User->>Bot: Send name
+        Bot->>User: Ask for phone
+        User->>Bot: Send phone
+        Bot->>Redis: Store temp user data (pending)
+        Bot->>User: Show consent buttons<br/>Пользовательское соглашение ✅<br/>152-ФЗ обработка персональных данных ✅<br/>Отказ ❌
+        alt Accept Consents
+            User->>Bot: Click Пользовательское соглашение + 152-ФЗ
+            Bot->>DB: Store customer + consents
+            Bot->>ERP: Create customer in ERP
+            Bot->>User: Ask about marketing consent<br/>"Хотите получать рекламные рассылки?"
+            alt Accept Marketing
+                User->>Bot: Click "Да"
+                Bot->>DB: Update marketing_allowed = 1
+                Bot->>User: Confirm registration + 100 bonus
+            else Decline Marketing
+                User->>Bot: Click "Нет"
+                Bot->>DB: Update marketing_allowed = 0
+                Bot->>User: Confirm registration + 100 bonus
+            end
+        else Decline
+            User->>Bot: Click "Отказ"
+            Bot->>DB: Delete all customer data
+            Bot->>Redis: Delete temp user data
+            Bot->>User: Registration cancelled + data deleted message
+        end
+    else Already Registered
+        Bot->>User: Show balance + consent status
+    end
+```
+
+### Welcome Message
+
+| Element | Content |
+|---------|---------|
+| **Message** | "Добро пожаловать в GreenHouse! 🏠☕" |
+| **Purpose** | Friendly greeting to engage user |
+| **Trigger** | User sends /start command |
+
+### Consent Buttons
+
+| Button | Type | Action |
+|--------|------|--------|
+| **Пользовательское соглашение** | Required | User agrees to Terms of Service |
+| **152-ФЗ обработка персональных данных** | Required | User agrees to personal data processing (152-ФЗ) |
+| **Отказ** | Required | User declines all consents |
+
+### Consent Requirements
+
+| Consent Type | Required | Description | Consequence if Declined |
+|--------------|----------|-------------|------------------------|
+| **Пользовательское соглашение** | Yes | Terms of Service agreement | Registration cancelled, no account created |
+| **152-ФЗ обработка персональных данных** | Yes | Personal data processing consent | Registration cancelled, no account created |
+| **Маркетинговые рассылки** | No | Marketing message consent | Account created without marketing access |
+
+### Refusal Handling (Data Deletion)
+
+When user clicks "Отказ" button:
+
+1. **Database Deletion**: All customer records associated with the Telegram ID are permanently deleted
+2. **Redis Cleanup**: Any pending registration data in Redis is removed
+3. **ERP Sync**: If customer was already synced to ERP, mark as deleted
+4. **User Notification**: Confirmation message sent to user
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Bot
+    participant DB
+    participant Redis
+
+    User->>Bot: Click "Отказ"
+    Bot->>DB: DELETE FROM customers<br/>WHERE telegram_id = {id}
+    DB-->>Bot: Rows deleted
+    Bot->>Redis: DEL user:temp:{id}
+    Redis-->>Bot: Key deleted
+    Bot->>User: "Регистрация отменена. Ваши данные удалены."
+```
+
+### Marketing Consent Flow
+
+Marketing consent is asked **separately** after main consent is accepted:
+
+1. Main consent (User Agreement + 152-ФЗ) is collected first
+2. If both main consents accepted, customer is created in DB and ERP
+3. Then marketing consent is asked as a separate question
+4. User can accept or decline marketing independently
+
+| Question | Options |
+|----------|---------|
+| "Хотите получать рекламные рассылки?" | Да (accept) / Нет (decline) |
+
+### Database Schema Updates
+
+**customers table** (v2 columns):
+- `telegram_id` - Telegram user ID
+- `phone` - Phone number (normalized)
+- `full_name` - User's name
+- `marketing_allowed` - 1 = can receive marketing, 0 = blocked
+- `data_processing_allowed` - 1 = data processing allowed
+- `tos_accepted` - 1 = Terms of Service accepted
+- `registration_source` - "telegram_v2" (new for v2 flow)
+
+**consents table** (enhanced):
+- `customer_id` - FK to customers
+- `source` - "telegram_v2" for new flow
+- `consent_version` - Policy version (e.g., "2.0.0")
+- `consent_text` - Full text of what was consented to
+- `consent_type` - "data_processing", "tos", or "marketing"
+- `accepted_at` - Timestamp of consent
+- `declined_at` - Timestamp if consent was declined
+
+### 152-ФЗ Compliance Features (v2)
+
+1. **Separate Consent Buttons**: Each consent type has its own button (not combined)
+2. **Explicit Refusal Handling**: Clear data deletion when user declines
+3. **Timestamp Logging**: All consents and refusals stored with datetime
+4. **Policy Version Tracking**: Consent linked to specific policy version
+5. **Marketing Opt-In**: Marketing is opt-in only, not pre-selected
+6. **Audit Trail**: Full consent/refusal history in `consents` table
+
+### Commands (v2)
+
+| Command | Description |
+|---------|-------------|
+| `/start` | Start bot, show registration or balance |
+| `/balance` | Check loyalty points balance |
+| `/revoke_consent` | 1-click unsubscribe from marketing (152-ФЗ) |
+| `/subscribe` | Re-subscribe to marketing messages |
+| `/delete` | Delete profile and all data (152-ФЗ) |
+
+### Comparison: D vs D.2
+
+| Feature | Section D (Original) | Section D.2 (Enhanced) |
+|---------|---------------------|----------------------|
+| Welcome Message | None | "Добро пожаловать в GreenHouse! 🏠☕" |
+| Consent Buttons | Combined "Принимаю" | Separate buttons per consent |
+| Refusal Handling | Simple cancellation | Full data deletion (DB + Redis) |
+| Marketing Consent | Combined with main | Asked separately after main consent |
+| Consent Types | data_processing, marketing | tos, data_processing, marketing |
+| Policy Version | 1.0.0 | 2.0.0 |
+| Source Identifier | telegram | telegram_v2 |
+
+### Code Reference
+
+- **Registration Handler v2**: [`middleware/app/handlers.py:cmd_start_v2()`](middleware/app/handlers.py)
+- **Consent Callback v2**: [`middleware/app/handlers.py:cb_consent_v2()`](middleware/app/handlers.py)
+- **Refusal Handler**: [`middleware/app/handlers.py:handle_refusal()`](middleware/app/handlers.py)
+- **Marketing Consent**: [`middleware/app/handlers.py:cb_marketing_consent()`](middleware/app/handlers.py)
+- **Data Deletion**: [`middleware/app/handlers.py:delete_user_data()`](middleware/app/handlers.py)

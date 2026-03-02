@@ -26,7 +26,7 @@ def _cache_del_prefix(prefix: str) -> None:
         r = get_redis()
         keys = r.keys(prefix + "*") or []
         if keys:
-            r.delete(*keys)
+            r.delete(*keys)  # type: ignore[misc]
     except Exception:
         return
 
@@ -74,7 +74,7 @@ def list_integrations(
                     "config": cfg,
                 }
             )
-        return items
+        return items  # type: ignore[return-value]
     finally:
         conn.close()
 
@@ -103,7 +103,7 @@ def create_integration(
             (payload.name, payload.kind, 1 if payload.enabled else 0, secret, cfg),
         )
         conn.commit()
-        return {"id": int(cur.lastrowid)}
+        return {"id": int(cur.lastrowid)}  # type: ignore[arg-type]
     finally:
         conn.close()
 
@@ -337,7 +337,7 @@ def ingest_pos_receipt(
             (new_balance, cust_id),
         )
         conn.commit()
-        tx_id = int(cur2.lastrowid)
+        tx_id = int(cur2.lastrowid)  # type: ignore[arg-type]
 
         _cache_del_prefix("crm:cache:dashboard:")
         _cache_del_prefix("crm:cache:customers:")

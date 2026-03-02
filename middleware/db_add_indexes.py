@@ -21,12 +21,21 @@ from app.db import get_db, get_db_path
 
 
 # Index definitions to add
+# NOTE: Some indexes reference columns that may not exist yet (email, vk_id, preferred_channel)
+# The script will skip indexes on non-existent columns gracefully
 INDEXES_TO_ADD: List[Tuple[str, str, str]] = [
     # customers table indexes
     ("idx_customers_phone", "customers", "phone"),
     ("idx_customers_full_name", "customers", "full_name"),
-    ("idx_customers_email", "customers", "email"),  # Note: email column doesn't exist yet
     ("idx_customers_created_at", "customers", "created_at"),
+    ("idx_customers_telegram_id", "customers", "telegram_id"),
+    # NOTE: vk_id column migration happens in db.py
+    ("idx_customers_vk_id", "customers", "vk_id"),
+    # NOTE: preferred_channel column migration happens in db.py
+    ("idx_customers_preferred_channel", "customers", "preferred_channel"),
+    ("idx_customers_marketing_allowed", "customers", "marketing_allowed"),
+    ("idx_customers_balance_points", "customers", "balance_points"),
+    ("idx_customers_qr_token", "customers", "qr_token"),
     
     # products table indexes
     ("idx_products_code", "products", "code"),
@@ -53,9 +62,13 @@ INDEXES_TO_ADD: List[Tuple[str, str, str]] = [
     # marketing indexes
     ("idx_marketing_campaigns_status", "marketing_campaigns", "status"),
     ("idx_marketing_campaigns_segment_id", "marketing_campaigns", "segment_id"),
+    ("idx_marketing_campaigns_created_at", "marketing_campaigns", "created_at"),
     ("idx_marketing_trigger_events_status", "marketing_trigger_events", "status"),
     ("idx_marketing_trigger_events_trigger_id", "marketing_trigger_events", "trigger_id"),
     ("idx_marketing_trigger_events_customer_id", "marketing_trigger_events", "customer_id"),
+    ("idx_marketing_trigger_events_created_at", "marketing_trigger_events", "created_at"),
+    ("idx_marketing_triggers_active", "marketing_triggers", "active"),
+    ("idx_marketing_triggers_event_source", "marketing_triggers", "event_source"),
 ]
 
 
@@ -88,9 +101,23 @@ class IndexMigration:
         )
         return cursor.fetchone() is not None
     
+    def column_exists(self, table_name: str, column_name: str) -> bool:
+        """Check if a column exists in a table."""
+        try:
+            cursor = self.conn.execute(f"PRAGMA table_info({table_name})")
+            columns = [row[1] for row in cursor.fetchall()]
+            return column_name in columns
+        except sqlite3.Error:
+            return False
+    
     def create_index(self, index_name: str, table_name: str, column_name: str, 
                      unique: bool = False, if_not_exists: bool = True) -> bool:
         """Create an index."""
+        # Check if column exists before creating index
+        if not self.column_exists(table_name, column_name):
+            print(f"⚠ Skipping index {index_name}: column {column_name} does not exist in table {table_name}")
+            return False
+        
         try:
             unique_str = "UNIQUE" if unique else ""
             if_str = "IF NOT EXISTS" if if_not_exists else ""
@@ -115,29 +142,36 @@ class IndexMigration:
         
         return existing, missing
     
-    def apply_indexes(self, dry_run: bool = False) -> Tuple[int, int]:
-        """Apply all missing indexes."""
+    def apply_indexes(self, dry_run: bool = False) -> Tuple[int, int, int]:
+        """Apply all missing indexes. Returns (applied, skipped_existing, skipped_no_column)."""
         existing = self.get_all_indexes()
         applied = 0
-        skipped = 0
+        skipped_existing = 0
+        skipped_no_column = 0
         
         for index_name, table_name, column_name in INDEXES_TO_ADD:
             if index_name in existing:
-                print(f"✓ Index {index_name} already exists, skipping")
-                skipped += 1
+                print(f"[SKIP] Index {index_name} already exists, skipping")
+                skipped_existing += 1
+                continue
+            
+            # Check if column exists
+            if not self.column_exists(table_name, column_name):
+                print(f"[WARN] Skipping {index_name}: column {column_name} does not exist in {table_name}")
+                skipped_no_column += 1
                 continue
             
             if dry_run:
-                print(f"Would create: {index_name} on {table_name}({column_name})")
+                print(f"[WOULD] Create index: {index_name} on {table_name}({column_name})")
                 applied += 1
             else:
                 if self.create_index(index_name, table_name, column_name):
-                    print(f"✓ Created index {index_name}")
+                    print(f"[OK] Created index {index_name}")
                     applied += 1
                 else:
-                    print(f"✗ Failed to create index {index_name}")
+                    print(f"[ERROR] Failed to create index {index_name}")
         
-        return applied, skipped
+        return applied, skipped_existing, skipped_no_column
     
     def generate_sql(self) -> List[str]:
         """Generate SQL for all indexes."""
@@ -214,20 +248,21 @@ def main():
         sys.exit(0)
     
     print("Applying indexes...\n")
-    applied, skipped = migration.apply_indexes()
+    applied, skipped_existing, skipped_no_column = migration.apply_indexes()
     
     print(f"\n" + "=" * 60)
     print("Summary")
     print("=" * 60)
     print(f"Applied: {applied}")
-    print(f"Skipped (already exist): {skipped}")
+    print(f"Skipped (already exist): {skipped_existing}")
+    print(f"Skipped (column not found): {skipped_no_column}")
     
     migration.close()
     
     if applied > 0:
-        print("\n✓ Index migration completed successfully!")
+        print("\n[OK] Index migration completed successfully!")
     else:
-        print("\n✓ No indexes needed to be added.")
+        print("\n[OK] No indexes needed to be added.")
 
 
 if __name__ == "__main__":

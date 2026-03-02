@@ -1,7 +1,7 @@
 import asyncio
 import sys
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Coroutine, Optional
+from typing import Any, AsyncGenerator, Coroutine, Optional
 from asyncio import TaskGroup
 
 from aiogram import Bot, Dispatcher
@@ -9,17 +9,20 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 # Try to import aiogram - may fail in some versions
-try:
-    from aiogram.fsm.storage.memory import MemoryStorage
-except (ImportError, OSError) as e:
-    # If aiogram is not available or has import issues, we'll use a placeholder
-    MemoryStorage = None
-    AIOGRAM_AVAILABLE = False
+MemoryStorage: type | None = None
+RedisStorage: type | None = None
 
 try:
-    from aiogram.fsm.storage.redis import RedisStorage
-except (ImportError, OSError) as e:
-    RedisStorage = None
+    from aiogram.fsm.storage.memory import MemoryStorage as _MemoryStorage
+    MemoryStorage = _MemoryStorage
+except (ImportError, OSError):
+    pass
+
+try:
+    from aiogram.fsm.storage.redis import RedisStorage as _RedisStorage
+    RedisStorage = _RedisStorage
+except (ImportError, OSError):
+    pass
 from ...handlers import router
 from ...middlewares import ThrottleMiddleware
 
@@ -66,19 +69,19 @@ def create_dispatcher() -> Dispatcher:
         "prod",
     )
 
+    fsm_storage = None
+
     # Handle case where aiogram storage is not available
-    if MemoryStorage is None and RedisStorage is None:
-        # No FSM storage available - create dispatcher without storage
-        dp = Dispatcher()
-    elif is_production:
-        try:
-            redis = get_redis_client()
-            fsm_storage = RedisStorage(redis=redis)
-        except Exception:
-            # Fallback to memory storage if Redis unavailable
-            fsm_storage = MemoryStorage() if MemoryStorage else None
-    else:
-        fsm_storage = MemoryStorage() if MemoryStorage else None
+    if MemoryStorage is not None:
+        if is_production and RedisStorage is not None:
+            try:
+                redis = get_redis_client()
+                fsm_storage = RedisStorage(redis=redis)
+            except Exception:
+                # Fallback to memory storage if Redis unavailable
+                fsm_storage = MemoryStorage()
+        else:
+            fsm_storage = MemoryStorage()
 
     if fsm_storage is not None:
         dp = Dispatcher(storage=fsm_storage)
@@ -91,7 +94,7 @@ def create_dispatcher() -> Dispatcher:
 
 
 @asynccontextmanager
-async def run_bot() -> AsyncGenerator[Bot, None]:  # type: ignore
+async def run_bot() -> AsyncGenerator[Bot, None]:
     """
     Context manager for running bot with proper cleanup.
     Handles graceful shutdown with TaskGroup support.
@@ -224,7 +227,7 @@ class ConcurrentUserSessions:
                     pass
                 del self._tasks[user_id]
 
-    async def wait_for_user(self, user_id: int, timeout: float = 30.0) -> Optional[any]:
+    async def wait_for_user(self, user_id: int, timeout: float = 30.0) -> Optional[Any]:
         """
         Wait for user's task to complete with timeout.
         Returns task result or None on timeout/cancellation.
@@ -236,7 +239,8 @@ class ConcurrentUserSessions:
             return None
 
         try:
-            return await asyncio.wait_for(task, timeout=timeout)
+            result: Any = await asyncio.wait_for(task, timeout=timeout)
+            return result
         except asyncio.TimeoutError:
             return None
         except asyncio.CancelledError:

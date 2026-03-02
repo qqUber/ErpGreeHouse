@@ -104,6 +104,24 @@ class DB:
             )
         except sqlite3.OperationalError:
             pass
+        try:
+            conn.execute(
+                "ALTER TABLE marketing_trigger_events ADD COLUMN delivered_at TEXT"
+            )
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute(
+                "ALTER TABLE marketing_trigger_events ADD COLUMN opened_at TEXT"
+            )
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute(
+                "ALTER TABLE marketing_trigger_events ADD COLUMN clicked_at TEXT"
+            )
+        except sqlite3.OperationalError:
+            pass
         conn.commit()
 
         # Migration for vk_id column
@@ -345,6 +363,20 @@ def init_db() -> None:
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
             );
+            
+            CREATE TABLE IF NOT EXISTS short_urls (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                short_code TEXT NOT NULL UNIQUE,
+                original_url TEXT NOT NULL,
+                campaign_id INTEGER,
+                customer_id INTEGER,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(campaign_id) REFERENCES marketing_campaigns(id),
+                FOREIGN KEY(customer_id) REFERENCES customers(id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_short_urls_short_code ON short_urls(short_code);
+            CREATE INDEX IF NOT EXISTS idx_short_urls_campaign_id ON short_urls(campaign_id);
+            CREATE INDEX IF NOT EXISTS idx_short_urls_customer_id ON short_urls(customer_id);
             """)
         conn.commit()
         cols = [

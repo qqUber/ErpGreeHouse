@@ -288,11 +288,11 @@ def parse_xml(content: bytes) -> list[dict[str, str]]:
 
 def validate_product(
     row: dict[str, str], existing_skus: set
-) -> tuple[Optional[dict[str, str]], Optional[str]]:
+) -> tuple[Optional[dict[str, Any]], Optional[str]]:
     """Validate a product row. Returns (validated_data, error_message)"""
     name = row.get("name", "").strip() if row.get("name") else ""
     sku = row.get("sku", "").strip() if row.get("sku") else ""
-    price_raw = row.get("price", "0")
+    price_raw: Any = row.get("price", "0")
     category = row.get("category", "").strip() if row.get("category") else "Import"
 
     # Check required fields
@@ -648,7 +648,7 @@ def process_import(rows: list[dict], import_type: str) -> dict[str, Any]:
         updated = 0
 
         for item in validated:
-            if item is None:
+            if item is None:  # type: ignore[unreachable]
                 continue
             sku = item["sku"]
             name = item["name"]

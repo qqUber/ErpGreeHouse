@@ -31,12 +31,12 @@ router = APIRouter(prefix="/api/v1")
 public_router = APIRouter(prefix="/api/v1/public")
 
 
-def _parse_items_json(items_json: Optional[str]) -> list[dict]:
+def _parse_items_json(items_json: Optional[str]) -> list[dict[str, Any]]:
     """Parse items_json field safely"""
     if not items_json:
         return []
     try:
-        return json.loads(items_json)
+        return json.loads(items_json)  # type: ignore[no-any-return]
     except (json.JSONDecodeError, TypeError):
         return []
 
@@ -63,11 +63,21 @@ def public_status() -> dict[str, Any]:
     }
 
 
+# Cache TTL constants (in seconds)
+# Dashboard: 60s - real-time data, refreshed on each POS sale
+# Analytics: 300s (5 min) - aggregated data changes less frequently
+# Sales stats: 180s (3 min) - moderate freshness requirement
+DASHBOARD_CACHE_TTL = 60
+ANALYTICS_CACHE_TTL = 300
+SALES_STATS_CACHE_TTL = 180
+CUSTOMERS_LIST_CACHE_TTL = 5
+
+
 def _cache_get_json(key: str) -> Any | None:
     try:
         r = get_redis()
         raw = r.get(key)
-        return json.loads(raw) if raw else None
+        return json.loads(raw) if raw else None  # type: ignore[arg-type]
     except Exception:
         return None
 
@@ -85,9 +95,64 @@ def _cache_del_prefix(prefix: str) -> None:
         r = get_redis()
         keys = r.keys(prefix + "*") or []
         if keys:
-            r.delete(*keys)
+            r.delete(*keys)  # type: ignore[misc]
     except Exception:
         return
+
+
+def _warm_dashboard_cache() -> None:
+    """Pre-warm dashboard cache with today's data"""
+    try:
+        today = datetime.now().strftime("%Y-%m-%d")
+        cache_key = f"crm:cache:dashboard:{today}"
+        # Check if already cached
+        if _cache_get_json(cache_key):
+            return
+        
+        db = get_db()
+        conn = db.connect()
+        try:
+            cur = conn.execute(
+                "SELECT COUNT(*) as cnt, COALESCE(SUM(total_amount),0) as sum_total, COALESCE(SUM(bonus_earned),0) as sum_earned, COALESCE(SUM(bonus_used),0) as sum_used FROM transactions WHERE date(created_at)=?",
+                (today,),
+            )
+            row = cur.fetchone()
+            cur2 = conn.execute("SELECT COUNT(*) as cnt FROM customers")
+            customers_total = int(cur2.fetchone()[0])
+            cur_tx = conn.execute(
+                "SELECT t.id, t.created_at, t.total_amount, t.bonus_earned, t.bonus_used, t.items_json, c.full_name as customer_name, t.customer_id "
+                "FROM transactions t "
+                "JOIN customers c ON t.customer_id = c.id "
+                "ORDER BY t.created_at DESC LIMIT 10"
+            )
+            txs = []
+            for r in cur_tx.fetchall():
+                tx = dict(r)
+                tx["customer_name"] = tx.get("customer_name") or "Клиент"
+                tx["product_names"] = _get_product_names(tx.get("items_json"))
+                tx.pop("items_json", None)
+                txs.append(tx)
+            cur_tr = conn.execute(
+                "SELECT e.id, e.created_at, e.status, t.name as trigger_name "
+                "FROM marketing_trigger_events e "
+                "JOIN marketing_triggers t ON e.trigger_id = t.id "
+                "ORDER BY e.created_at DESC LIMIT 5"
+            )
+            trevents = [dict(r) for r in cur_tr.fetchall()]
+            data = {
+                "today": today,
+                "sales_count": int(row["cnt"]),
+                "sales_total": int(row["sum_total"]),
+                "bonus_earned": int(row["sum_earned"]),
+                "bonus_used": int(row["sum_used"]),
+                "customers_total": customers_total,
+                "recent_activity": {"transactions": txs, "marketing_events": trevents},
+            }
+            _cache_set_json(cache_key, data, ttl_seconds=DASHBOARD_CACHE_TTL)
+        finally:
+            conn.close()
+    except Exception:
+        pass  # Silent fail for cache warming
 
 
 class IdentifyPhoneIn(BaseModel):
@@ -253,7 +318,7 @@ def dashboard(
             "customers_total": customers_total,
             "recent_activity": {"transactions": txs, "marketing_events": trevents},
         }
-        _cache_set_json(cache_key, data, ttl_seconds=300)
+        _cache_set_json(cache_key, data, ttl_seconds=DASHBOARD_CACHE_TTL)
         return data
     finally:
         conn.close()
@@ -265,6 +330,13 @@ def sales_stats(
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     check_permission(auth_result, "dashboard.read")
+    
+    # Cache key includes days parameter for different time ranges
+    cache_key = f"crm:cache:stats:sales:{days}"
+    cached = _cache_get_json(cache_key)
+    if isinstance(cached, dict):
+        return cached
+    
     db = get_db()
     conn = db.connect()
     try:
@@ -280,7 +352,9 @@ def sales_stats(
             (f"-{days} days",),
         )
         stats = [dict(r) for r in cur.fetchall()]
-        return {"stats": stats}
+        data = {"stats": stats}
+        _cache_set_json(cache_key, data, ttl_seconds=SALES_STATS_CACHE_TTL)
+        return data
     finally:
         conn.close()
 
@@ -292,6 +366,13 @@ def analytics_sales_by_day(
 ) -> dict[str, Any]:
     """Get sales dynamics by day for charts"""
     check_permission(auth_result, "dashboard.read")
+    
+    # Cache key includes days parameter
+    cache_key = f"crm:cache:analytics:sales-by-day:{days}"
+    cached = _cache_get_json(cache_key)
+    if isinstance(cached, dict):
+        return cached
+    
     db = get_db()
     conn = db.connect()
     try:
@@ -310,7 +391,9 @@ def analytics_sales_by_day(
             (f"-{days} days",),
         )
         data = [dict(r) for r in cur.fetchall()]
-        return {"sales_by_day": data}
+        result = {"sales_by_day": data}
+        _cache_set_json(cache_key, result, ttl_seconds=ANALYTICS_CACHE_TTL)
+        return result
     finally:
         conn.close()
 
@@ -323,6 +406,13 @@ def analytics_top_products(
 ) -> dict[str, Any]:
     """Get top products by sales for bar chart"""
     check_permission(auth_result, "dashboard.read")
+    
+    # Cache key includes days and limit parameters
+    cache_key = f"crm:cache:analytics:top-products:{days}:{limit}"
+    cached = _cache_get_json(cache_key)
+    if isinstance(cached, dict):
+        return cached
+    
     db = get_db()
     conn = db.connect()
     try:
@@ -338,7 +428,7 @@ def analytics_top_products(
         )
 
         # Aggregate product sales
-        product_sales = {}
+        product_sales: dict[str, dict[str, Any]] = {}
         for row in cur.fetchall():
             items = json.loads(row["items_json"] or "[]")
             for item in items:
@@ -359,7 +449,9 @@ def analytics_top_products(
             {"name": name, "qty": stats["qty"], "revenue": stats["revenue"]}
             for name, stats in sorted_products
         ]
-        return {"top_products": data}
+        result = {"top_products": data}
+        _cache_set_json(cache_key, result, ttl_seconds=ANALYTICS_CACHE_TTL)
+        return result
     finally:
         conn.close()
 
@@ -371,6 +463,13 @@ def analytics_category_distribution(
 ) -> dict[str, Any]:
     """Get category distribution for pie/donut chart"""
     check_permission(auth_result, "dashboard.read")
+    
+    # Cache key includes days parameter
+    cache_key = f"crm:cache:analytics:category-dist:{days}"
+    cached = _cache_get_json(cache_key)
+    if isinstance(cached, dict):
+        return cached
+    
     db = get_db()
     conn = db.connect()
     try:
@@ -391,7 +490,7 @@ def analytics_category_distribution(
         )
 
         # Aggregate by category
-        category_sales = {}
+        category_sales: dict[str, dict[str, Any]] = {}
         for row in cur.fetchall():
             items = json.loads(row["items_json"] or "[]")
             for item in items:
@@ -409,7 +508,9 @@ def analytics_category_distribution(
             {"name": cat, "qty": stats["qty"], "revenue": stats["revenue"]}
             for cat, stats in category_sales.items()
         ]
-        return {"category_distribution": data}
+        result = {"category_distribution": data}
+        _cache_set_json(cache_key, result, ttl_seconds=ANALYTICS_CACHE_TTL)
+        return result
     finally:
         conn.close()
 
@@ -514,11 +615,11 @@ def list_customers(
 
         if min_balance is not None:
             where.append("balance_points >= ?")
-            args.append(min_balance)
+            args.append(min_balance)  # type: ignore[arg-type]
 
         if max_balance is not None:
             where.append("balance_points <= ?")
-            args.append(max_balance)
+            args.append(max_balance)  # type: ignore[arg-type]
 
         if created_after:
             where.append("date(created_at) >= ?")
@@ -675,7 +776,7 @@ def identify_phone(
         )
         conn.commit()
         _cache_del_prefix("crm:cache:customers:")
-        return {"customer_id": int(cur2.lastrowid)}
+        return {"customer_id": int(cur2.lastrowid)}  # type: ignore[arg-type]
     finally:
         conn.close()
 
@@ -808,8 +909,11 @@ def create_sale(
             (new_balance, payload.customer_id),
         )
         conn.commit()
-        tx_id = int(cur2.lastrowid)
+        tx_id = int(cur2.lastrowid)  # type: ignore[arg-type]
+        # Invalidate all dashboard-related caches on new transaction
         _cache_del_prefix("crm:cache:dashboard:")
+        _cache_del_prefix("crm:cache:stats:")
+        _cache_del_prefix("crm:cache:analytics:")
         _cache_del_prefix("crm:cache:customers:")
 
         # Evaluate triggers
@@ -945,5 +1049,130 @@ def export_transactions_csv(
             media_type="text/csv; charset=utf-8",
             headers={"Content-Disposition": "attachment; filename=transactions.csv"},
         )
+    finally:
+        conn.close()
+
+
+class MarketingPushIn(BaseModel):
+    """Request model for marketing push endpoint."""
+    message: str = Field(min_length=1, max_length=1000)
+    min_balance_points: int = Field(default=100, ge=0)
+    channel_filter: str | None = Field(default=None, pattern="^(tg|vk|telegram|vkontakte)$")
+
+
+@router.post("/marketing/push")
+def marketing_push(
+    payload: MarketingPushIn,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """
+    Send marketing push to customers.
+    
+    Filters customers where:
+    - marketing_allowed == 1
+    - balance_points > min_balance_points (default: 100)
+    
+    Sends message via preferred_channel (TG or VK).
+    """
+    check_permission(auth_result, "marketing.send")
+    
+    db = get_db()
+    conn = db.connect()
+    
+    try:
+        # Build query with optional channel filter
+        query = """
+            SELECT id, telegram_id, vk_id, phone, full_name, preferred_channel, balance_points
+            FROM customers
+            WHERE marketing_allowed = 1
+            AND balance_points > ?
+        """
+        params = [payload.min_balance_points]
+        
+        if payload.channel_filter:
+            # Normalize channel filter
+            channel = payload.channel_filter.lower()
+            if channel in ("telegram", "tg"):
+                query += " AND preferred_channel = 'tg' AND telegram_id IS NOT NULL"
+            elif channel in ("vkontakte", "vk"):
+                query += " AND preferred_channel = 'vk' AND vk_id IS NOT NULL"
+        else:
+            # Default: get customers with any channel
+            query += " AND (telegram_id IS NOT NULL OR vk_id IS NOT NULL)"
+        
+        cur = conn.execute(query, tuple(params))
+        customers = cur.fetchall()
+        
+        sent_tg = 0
+        sent_vk = 0
+        failed = 0
+        
+        # Import async message sending functions
+        from .worker import send_customer_message
+        import aiohttp
+        import asyncio
+        
+        # Get VK settings for sending messages
+        from .config import get_settings
+        settings = get_settings()
+        vk_token = getattr(settings, 'vk_group_token', None) or os.getenv("VK_GROUP_TOKEN")
+        vk_group_id = getattr(settings, 'vk_group_id', None) or os.getenv("VK_GROUP_ID")
+        
+        for customer in customers:
+            customer_id = int(customer["id"])
+            telegram_id = customer["telegram_id"]
+            vk_id = customer["vk_id"]
+            preferred = customer["preferred_channel"]
+            
+            try:
+                # Send via preferred channel
+                if preferred == "tg" and telegram_id:
+                    # Use worker task for async sending
+                    result = send_customer_message.delay(int(telegram_id), payload.message)
+                    sent_tg += 1
+                elif preferred == "vk" and vk_id and vk_token:
+                    # Send via VK API directly
+                    async def send_vk_message():
+                        async with aiohttp.ClientSession() as session:
+                            params = {
+                                "access_token": vk_token,
+                                "v": "5.131",
+                                "user_id": int(vk_id),
+                                "message": payload.message,
+                                "random_id": int(asyncio.get_event_loop().time() * 1000)
+                            }
+                            async with session.post(
+                                "https://api.vk.com/method/messages.send",
+                                params=params
+                            ) as resp:
+                                return await resp.json()
+                    
+                    # Run async VK send
+                    try:
+                        asyncio.run(send_vk_message())
+                        sent_vk += 1
+                    except Exception as vk_err:
+                        print(f"VK send error: {vk_err}")
+                        failed += 1
+                else:
+                    # Fallback: try telegram if available
+                    if telegram_id:
+                        send_customer_message.delay(int(telegram_id), payload.message)
+                        sent_tg += 1
+                    else:
+                        failed += 1
+            except Exception as e:
+                print(f"Error sending to customer {customer_id}: {e}")
+                failed += 1
+        
+        return {
+            "status": "completed",
+            "total_customers": len(customers),
+            "sent_telegram": sent_tg,
+            "sent_vk": sent_vk,
+            "failed": failed,
+            "message": payload.message[:50] + "..." if len(payload.message) > 50 else payload.message
+        }
+        
     finally:
         conn.close()

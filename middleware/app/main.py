@@ -50,6 +50,7 @@ logger = logging.getLogger(__name__)
 
 from .config import get_settings
 from .db import init_db
+from .middlewares import rate_limit_middleware
 import mimetypes
 
 # Fix MIME types for Windows
@@ -71,6 +72,12 @@ from .request_context import reset_admin_session_token, set_admin_session_token
 from .runtime import is_debug
 from .worker import process_telegram_update
 from .integrations.bots.telegram_handler import create_bot
+from .integrations.bots.vk_handler import (
+    create_vk_bot,
+    validate_vk_token,
+    process_vk_webhook_event,
+    set_vk_config,
+)
 from .worker import send_broadcast
 
 app = FastAPI(title="Telegram CRM Middleware")
@@ -268,6 +275,9 @@ app.add_middleware(
 # GZip сжатие для ответов больше 1KB
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+# Rate limiting middleware for auth endpoints
+app.add_middleware(rate_limit_middleware)  # type: ignore[arg-type]
+
 app.include_router(admin_router)
 app.include_router(public_router)
 app.include_router(auth_public_router)
@@ -302,6 +312,9 @@ async def _startup() -> None:
     init_db()
     _bootstrap_default_admin()
     _bootstrap_demo_users()
+    
+    # Load VK config from database if available
+    _load_vk_config()
 
 
 def verify_webhook_secret(
@@ -389,10 +402,31 @@ async def vk_webhook(
     settings = get_settings()
     admin_secret = os.getenv("ADMIN_SECRET", "")
     verify_webhook_secret(x_webhook_secret, settings.webhook_secret, admin_secret)
+    
     payload = await request.json()
-    # Process VK events here
-    # For now, just acknowledge receipt
-    return {"accepted": True}
+    
+    # Handle confirmation (VK requires this for initial setup)
+    if payload.get("type") == "confirmation":
+        confirmation_code = os.getenv("VK_GROUP_CONFIRMATION_CODE", "")
+        if not confirmation_code:
+            logger.error("VK_GROUP_CONFIRMATION_CODE is not set in environment")
+            return {"response": "error"}
+        return {"response": confirmation_code}
+    
+    # Process the event
+    event_type = payload.get("type")
+    
+    if event_type == "message_new":
+        # Process new message event
+        await process_vk_webhook_event(payload)
+    elif event_type == "message_event":
+        # Process keyboard button click events
+        await process_vk_webhook_event(payload)
+    else:
+        logger.info(f"Unhandled VK event type: {event_type}")
+    
+    # VK Callback API expects "ok" response
+    return {"response": "ok"}
 
 
 @app.post("/admin/broadcast", status_code=HTTP_200_OK)
@@ -440,6 +474,32 @@ if admin_dist.exists():
     # including the SPA fallback.
 else:
     print(f"WARNING: Admin UI distribution not found at {admin_dist}")
+
+
+def _load_vk_config() -> None:
+    """Load VK config from database at startup."""
+    try:
+        from .db import get_db
+        from .integrations.bots.vk_handler import set_vk_config
+        
+        db = get_db()
+        conn = db.connect()
+        try:
+            cur = conn.execute(
+                "SELECT access_token, group_id, api_version FROM vk_settings WHERE enabled = 1 LIMIT 1"
+            )
+            row = cur.fetchone()
+            if row and row["access_token"] and row["group_id"]:
+                set_vk_config(
+                    access_token=row["access_token"],
+                    group_id=int(row["group_id"]),
+                    api_version=row["api_version"] or "5.131"
+                )
+                logger.info(f"VK config loaded for group {row['group_id']}")
+        finally:
+            conn.close()
+    except Exception as e:
+        logger.warning(f"Failed to load VK config: {e}")
 
 
 # Catch-all for SPA routing (Vue Router history mode)

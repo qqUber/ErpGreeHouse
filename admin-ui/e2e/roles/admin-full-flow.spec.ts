@@ -118,7 +118,7 @@ test.describe('Admin Full Flow', () => {
 
     // Select product from catalog - use value instead of label
     const select = page.getByRole('combobox');
-    await select.selectOption({ label: (/Капучино|Чизкейк/i).source });
+    await select.selectOption({ label: /Капучино|Чизкейк/i.source });
     await page.getByRole('button', { name: 'Добавить в чек' }).click();
 
     // Verify product in cart using table

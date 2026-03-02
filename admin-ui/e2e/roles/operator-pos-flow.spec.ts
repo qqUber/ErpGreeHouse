@@ -85,7 +85,7 @@ test.describe('Operator POS Flow', () => {
 
     // Select product from catalog - use default products
     const select = page.getByRole('combobox');
-    await select.selectOption({ label: (/Капучино|Чизкейк/i).source });
+    await select.selectOption({ label: /Капучино|Чизкейк/i.source });
     await page.getByRole('button', { name: 'Добавить в чек' }).click();
 
     // Verify product in cart using table

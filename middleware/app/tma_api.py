@@ -1,7 +1,7 @@
 import hmac
 import hashlib
 import json
-from typing import Any
+from typing import Any, cast
 from urllib.parse import parse_qsl
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -39,7 +39,7 @@ def validate_init_data(init_data: str, bot_token: str) -> dict:
         if calc_hash != hash_val:
             raise ValueError("Invalid hash")
 
-        return json.loads(parsed.get("user", "{}"))
+        return cast(dict[str, Any], json.loads(parsed.get("user", "{}")))
     except Exception as e:
         raise ValueError(f"Failed to validate initData: {e}")
 

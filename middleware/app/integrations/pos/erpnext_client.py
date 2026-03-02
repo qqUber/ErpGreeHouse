@@ -48,7 +48,7 @@ class ERPClient:
                     method, url, headers=self.headers, **kwargs
                 )
                 response.raise_for_status()
-                return response.json()
+                return response.json()  # type: ignore[no-any-return]
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 404:
                     return None
@@ -66,17 +66,17 @@ class ERPClient:
             cid = self.r.get(key)
             if not cid:
                 return None
-            data = self.r.hgetall(f"crm:c:{cid}")
-            return data or None
+            customer_data = self.r.hgetall(f"crm:c:{cid}")
+            return customer_data or None  # type: ignore[return-value]
 
         # Query Telegram Client DocType
         filters = f'[["telegram_id","=","{telegram_id}"]]'
         fields = '["name", "telegram_id", "first_name", "balance", "customer_link"]'
         endpoint = f"/api/resource/Telegram Client?filters={filters}&fields={fields}"
 
-        data = await self._request("GET", endpoint)
+        data: Optional[Dict[str, Any]] = await self._request("GET", endpoint)
         if data and data.get("data"):
-            return data["data"][0]
+            return data["data"][0]  # type: ignore[no-any-return]
         return None
 
     async def create_customer(
@@ -155,7 +155,7 @@ class ERPClient:
             "customer_link": erp_customer_name,
         }
 
-        res = await self._request("POST", "/api/resource/Telegram Client", json=payload)  # type: ignore[assignment]
+        res = await self._request("POST", "/api/resource/Telegram Client", json=payload)
         if res is None:
             raise ERPClientError("Failed to create customer in ERP")
         new_client = res["data"]
@@ -165,7 +165,7 @@ class ERPClient:
             new_client["name"], "Accrual", 100, "Welcome Bonus"
         )
 
-        return new_client
+        return new_client  # type: ignore[no-any-return]
 
     async def create_loyalty_transaction(
         self, client_name: str, ttype: str, points: int, desc: str
@@ -189,7 +189,7 @@ class ERPClient:
 
     async def get_balance(self, client_name: str) -> int:
         if self.mock:
-            bal_value = self.r.hget(f"crm:c:{client_name}", "balance")  # type: ignore[assignment]
+            bal_value = self.r.hget(f"crm:c:{client_name}", "balance")
             bal = int(bal_value) if bal_value is not None else 0  # type: ignore[arg-type]
             return bal
 
@@ -218,7 +218,7 @@ class ERPClient:
         self, client_name: str, limit: int = 5
     ) -> List[Dict[str, Any]]:
         if self.mock:
-            items = self.r.lrange(f"crm:tx:{client_name}", 0, limit - 1) or []  # type: ignore[assignment]
+            items = self.r.lrange(f"crm:tx:{client_name}", 0, limit - 1) or []
             result = []
             for item in items:  # type: ignore[union-attr]
                 ts, ttype, points, desc = item.split("|", 3)
@@ -240,7 +240,7 @@ class ERPClient:
         if not data or not data.get("data"):
             return []
 
-        return data["data"]
+        return data["data"]  # type: ignore[no-any-return]
 
     async def create_order(
         self, client_name: str, items: List[Dict[str, Any]], bonus_points: int

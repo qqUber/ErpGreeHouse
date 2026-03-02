@@ -48,7 +48,7 @@ def _check_rate_limit(client_ip: str) -> tuple[bool, int]:
     r = get_redis()
     key = f"rate_limit:recovery:{client_ip}"
 
-    current_count = int(r.get(key) or "0")
+    current_count = int(r.get(key) or "0")  # type: ignore[arg-type]
     remaining = max(0, settings.recovery_rate_limit_attempts - current_count - 1)
 
     if current_count >= settings.recovery_rate_limit_attempts:
@@ -735,7 +735,7 @@ def refresh_token_public(response: Response, request: Request) -> dict[str, Any]
 
     # Get admin user from refresh token
     admin_user_id = payload.get("sub")
-    admin = _get_admin_by_id(int(admin_user_id))
+    admin = _get_admin_by_id(int(admin_user_id))  # type: ignore[arg-type]
     if not admin:
         _clear_jwt_cookies(response)
         raise HTTPException(status_code=401, detail="User not found")

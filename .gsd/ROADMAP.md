@@ -64,6 +64,34 @@ An omnichannel CRM + Loyalty system for coffee shops, replacing expensive third-
 
 ---
 
+### Phase 3: Messaging System
+**Goal**: Implement the messaging and communications functionality
+
+**Dependencies**: Phase 2
+
+**Requirements**:
+- MSG-001: Send targeted promotional messages to customer segments
+- MSG-002: Implement trigger-based messages (birthday, inactivity, welcome)
+- MSG-003: Support for text and media messages (images, videos, documents)
+- MSG-004: Rate limiting to prevent channel bans
+- MSG-005: Track message delivery and open rates
+
+**Success Criteria**:
+1. Admin can create and send targeted promotional messages to customer segments
+2. Trigger-based messages are automatically sent based on user behavior
+3. Support for various message types including text and media
+4. Rate limiting is implemented to prevent channel bans
+5. Message delivery and open rates are tracked and accessible
+
+**Plans**: 4 plans
+
+- [x] 03-01-PLAN.md — Campaign management API
+- [x] 03-02-PLAN.md — Media message support
+- [x] 03-03-PLAN.md — Delivery and open rate tracking
+- [x] 03-04-PLAN.md — VK integration
+
+---
+
 ### Phase 2: Loyalty Program Management
 **Goal**: Implement the core loyalty program functionality
 

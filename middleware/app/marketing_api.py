@@ -188,6 +188,8 @@ def send_campaign(
                             "chat_id": customer["telegram_id"],
                             "photo_path": campaign["media_urls"],
                             "caption": campaign.get("caption", campaign["content"]),
+                            "campaign_id": id,
+                            "customer_id": customer["id"],
                         },
                     )
                 elif campaign.get("content_type") == "video" and campaign.get(
@@ -200,6 +202,8 @@ def send_campaign(
                             "chat_id": customer["telegram_id"],
                             "video_path": campaign["media_urls"],
                             "caption": campaign.get("caption", campaign["content"]),
+                            "campaign_id": id,
+                            "customer_id": customer["id"],
                         },
                     )
                 elif campaign.get("content_type") == "document" and campaign.get(
@@ -212,6 +216,8 @@ def send_campaign(
                             "chat_id": customer["telegram_id"],
                             "document_path": campaign["media_urls"],
                             "caption": campaign.get("caption", campaign["content"]),
+                            "campaign_id": id,
+                            "customer_id": customer["id"],
                         },
                     )
                 elif campaign.get("content_type") == "media_group" and campaign.get(
@@ -226,6 +232,8 @@ def send_campaign(
                         kwargs={
                             "chat_id": customer["telegram_id"],
                             "media_items": media_items,
+                            "campaign_id": id,
+                            "customer_id": customer["id"],
                         },
                     )
                 else:
@@ -235,6 +243,35 @@ def send_campaign(
                         kwargs={
                             "chat_id": customer["telegram_id"],
                             "text": campaign["content"],
+                            "campaign_id": id,
+                            "customer_id": customer["id"],
+                        },
+                    )
+
+            if customer["vk_id"]:
+                # Send VK message
+                if campaign.get("content_type") == "photo" and campaign.get(
+                    "media_urls"
+                ):
+                    celery_app.send_task(
+                        "app.worker.send_vk_photo_message",
+                        kwargs={
+                            "user_id": customer["vk_id"],
+                            "photo_path": campaign["media_urls"],
+                            "caption": campaign.get("caption", campaign["content"]),
+                            "campaign_id": id,
+                            "customer_id": customer["id"],
+                        },
+                    )
+                else:
+                    # Default to text message
+                    celery_app.send_task(
+                        "app.worker.send_vk_message",
+                        kwargs={
+                            "user_id": customer["vk_id"],
+                            "text": campaign["content"],
+                            "campaign_id": id,
+                            "customer_id": customer["id"],
                         },
                     )
 
@@ -313,3 +350,76 @@ def create_trigger(
     )
     conn.commit()
     return {"id": cursor.lastrowid, "status": "active"}
+
+
+@router.get("/marketing/analytics/campaign/{id}")
+def get_campaign_analytics(
+    id: int, x_admin_secret: str | None = Header(default=None, alias="x-admin-secret")
+):
+    require_permission(x_admin_secret, "marketing.campaigns")
+    db = get_db()
+    conn = db.connect()
+    try:
+        # Get campaign performance metrics
+        cur = conn.execute(
+            """
+            SELECT 
+                COUNT(CASE WHEN event_type = 'sent' THEN 1 END) as sent,
+                COUNT(CASE WHEN event_type = 'delivered' THEN 1 END) as delivered,
+                COUNT(CASE WHEN event_type = 'opened' THEN 1 END) as opened,
+                COUNT(CASE WHEN event_type = 'clicked' THEN 1 END) as clicked
+            FROM marketing_events 
+            WHERE campaign_id = ?
+        """,
+            (id,),
+        )
+        metrics = cur.fetchone()
+
+        # Get channel breakdown
+        cur = conn.execute(
+            """
+            SELECT 
+                json_extract(event_data, '$.channel') as channel,
+                COUNT(CASE WHEN event_type = 'sent' THEN 1 END) as sent,
+                COUNT(CASE WHEN event_type = 'delivered' THEN 1 END) as delivered,
+                COUNT(CASE WHEN event_type = 'opened' THEN 1 END) as opened,
+                COUNT(CASE WHEN event_type = 'clicked' THEN 1 END) as clicked
+            FROM marketing_events 
+            WHERE campaign_id = ? 
+            GROUP BY json_extract(event_data, '$.channel')
+        """,
+            (id,),
+        )
+        channel_breakdown = [dict(row) for row in cur.fetchall()]
+
+        return {
+            "id": id,
+            "metrics": dict(metrics),
+            "channel_breakdown": channel_breakdown,
+        }
+    finally:
+        conn.close()
+
+
+@router.get("/marketing/analytics/events")
+def get_events_breakdown(
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+):
+    require_permission(x_admin_secret, "marketing.campaigns")
+    db = get_db()
+    conn = db.connect()
+    try:
+        cur = conn.execute("""
+            SELECT 
+                event_type,
+                COUNT(*) as count,
+                json_extract(event_data, '$.channel') as channel
+            FROM marketing_events 
+            GROUP BY event_type, json_extract(event_data, '$.channel')
+            ORDER BY event_type
+        """)
+        events = [dict(row) for row in cur.fetchall()]
+
+        return {"events": events}
+    finally:
+        conn.close()

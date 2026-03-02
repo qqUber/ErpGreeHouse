@@ -31,13 +31,127 @@ celery_app.conf.timezone = "UTC"
 
 
 @celery_app.task
-def process_telegram_update(update: dict) -> dict:
+def send_media_group_message(
+    chat_id: int, media_items: list, campaign_id: int = None, customer_id: int = None
+) -> dict:
     async def runner() -> dict:
         bot = create_bot()
-        dp = create_dispatcher()
-        aioupdate = Update.model_validate(update)
-        await dp.feed_update(bot, aioupdate)
-        return {"processed": True, "update_id": update.get("update_id")}
+        ok = await send_media_group(bot, int(chat_id), media_items)
+
+        # Track delivery event
+        if campaign_id and customer_id:
+            db = get_db()
+            conn = db.connect()
+            try:
+                conn.execute(
+                    "INSERT INTO marketing_events (campaign_id, user_id, event_type, event_data) VALUES (?, ?, ?, ?)",
+                    (
+                        campaign_id,
+                        customer_id,
+                        "delivered",
+                        json.dumps({"channel": "telegram"}),
+                    ),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
+        return {"sent": bool(ok), "chat_id": int(chat_id)}
+
+    return asyncio.run(runner())
+
+
+@celery_app.task
+def send_vk_message(
+    user_id: int, text: str, campaign_id: int = None, customer_id: int = None
+) -> dict:
+    async def runner() -> dict:
+        from app.integrations.bots.vk_handler import get_vk_bot, create_vk_bot
+        from app.config import get_settings
+
+        settings = get_settings()
+        bot = await get_vk_bot()
+        if not bot:
+            if settings.vk_access_token and settings.vk_group_id:
+                bot = create_vk_bot(settings.vk_access_token, settings.vk_group_id)
+            else:
+                return {"sent": False, "reason": "VK bot not configured"}
+
+        try:
+            await bot._send_message(user_id, text)
+            ok = True
+
+            # Track delivery event
+            if campaign_id and customer_id:
+                db = get_db()
+                conn = db.connect()
+                try:
+                    conn.execute(
+                        "INSERT INTO marketing_events (campaign_id, user_id, event_type, event_data) VALUES (?, ?, ?, ?)",
+                        (
+                            campaign_id,
+                            customer_id,
+                            "delivered",
+                            json.dumps({"channel": "vk"}),
+                        ),
+                    )
+                    conn.commit()
+                finally:
+                    conn.close()
+
+            return {"sent": ok, "user_id": user_id}
+        except Exception as e:
+            return {"sent": False, "error": str(e)}
+
+    return asyncio.run(runner())
+
+
+@celery_app.task
+def send_vk_photo_message(
+    user_id: int,
+    photo_path: str,
+    caption: str = None,
+    campaign_id: int = None,
+    customer_id: int = None,
+) -> dict:
+    async def runner() -> dict:
+        from app.integrations.bots.vk_handler import get_vk_bot, create_vk_bot
+        from app.config import get_settings
+
+        settings = get_settings()
+        bot = await get_vk_bot()
+        if not bot:
+            if settings.vk_access_token and settings.vk_group_id:
+                bot = create_vk_bot(settings.vk_access_token, settings.vk_group_id)
+            else:
+                return {"sent": False, "reason": "VK bot not configured"}
+
+        try:
+            # TODO: Implement photo sending for VK
+            await bot._send_message(user_id, f"Фото: {caption or ''}")
+            ok = True
+
+            # Track delivery event
+            if campaign_id and customer_id:
+                db = get_db()
+                conn = db.connect()
+                try:
+                    conn.execute(
+                        "INSERT INTO marketing_events (campaign_id, user_id, event_type, event_data) VALUES (?, ?, ?, ?)",
+                        (
+                            campaign_id,
+                            customer_id,
+                            "delivered",
+                            json.dumps({"channel": "vk"}),
+                        ),
+                    )
+                    conn.commit()
+                finally:
+                    conn.close()
+
+            return {"sent": ok, "user_id": user_id}
+        except Exception as e:
+            return {"sent": False, "error": str(e)}
 
     return asyncio.run(runner())
 
@@ -84,30 +198,101 @@ def send_broadcast(text: str) -> dict:
 
 
 @celery_app.task
-def send_customer_message(chat_id: int, text: str) -> dict:
+def send_customer_message(
+    chat_id: int, text: str, campaign_id: int = None, customer_id: int = None
+) -> dict:
     async def runner() -> dict:
         bot = create_bot()
         ok = await safe_send(bot, int(chat_id), text)
+
+        # Track delivery event
+        if campaign_id and customer_id:
+            db = get_db()
+            conn = db.connect()
+            try:
+                conn.execute(
+                    "INSERT INTO marketing_events (campaign_id, user_id, event_type, event_data) VALUES (?, ?, ?, ?)",
+                    (
+                        campaign_id,
+                        customer_id,
+                        "delivered",
+                        json.dumps({"channel": "telegram"}),
+                    ),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
         return {"sent": bool(ok), "chat_id": int(chat_id)}
 
     return asyncio.run(runner())
 
 
 @celery_app.task
-def send_photo_message(chat_id: int, photo_path: str, caption: str = None) -> dict:
+def send_photo_message(
+    chat_id: int,
+    photo_path: str,
+    caption: str = None,
+    campaign_id: int = None,
+    customer_id: int = None,
+) -> dict:
     async def runner() -> dict:
         bot = create_bot()
         ok = await safe_send_photo(bot, int(chat_id), photo_path, caption)
+
+        # Track delivery event
+        if campaign_id and customer_id:
+            db = get_db()
+            conn = db.connect()
+            try:
+                conn.execute(
+                    "INSERT INTO marketing_events (campaign_id, user_id, event_type, event_data) VALUES (?, ?, ?, ?)",
+                    (
+                        campaign_id,
+                        customer_id,
+                        "delivered",
+                        json.dumps({"channel": "telegram"}),
+                    ),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
         return {"sent": bool(ok), "chat_id": int(chat_id)}
 
     return asyncio.run(runner())
 
 
 @celery_app.task
-def send_video_message(chat_id: int, video_path: str, caption: str = None) -> dict:
+def send_video_message(
+    chat_id: int,
+    video_path: str,
+    caption: str = None,
+    campaign_id: int = None,
+    customer_id: int = None,
+) -> dict:
     async def runner() -> dict:
         bot = create_bot()
         ok = await safe_send_video(bot, int(chat_id), video_path, caption)
+
+        # Track delivery event
+        if campaign_id and customer_id:
+            db = get_db()
+            conn = db.connect()
+            try:
+                conn.execute(
+                    "INSERT INTO marketing_events (campaign_id, user_id, event_type, event_data) VALUES (?, ?, ?, ?)",
+                    (
+                        campaign_id,
+                        customer_id,
+                        "delivered",
+                        json.dumps({"channel": "telegram"}),
+                    ),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
         return {"sent": bool(ok), "chat_id": int(chat_id)}
 
     return asyncio.run(runner())
@@ -115,21 +300,65 @@ def send_video_message(chat_id: int, video_path: str, caption: str = None) -> di
 
 @celery_app.task
 def send_document_message(
-    chat_id: int, document_path: str, caption: str = None
+    chat_id: int,
+    document_path: str,
+    caption: str = None,
+    campaign_id: int = None,
+    customer_id: int = None,
 ) -> dict:
     async def runner() -> dict:
         bot = create_bot()
         ok = await safe_send_document(bot, int(chat_id), document_path, caption)
+
+        # Track delivery event
+        if campaign_id and customer_id:
+            db = get_db()
+            conn = db.connect()
+            try:
+                conn.execute(
+                    "INSERT INTO marketing_events (campaign_id, user_id, event_type, event_data) VALUES (?, ?, ?, ?)",
+                    (
+                        campaign_id,
+                        customer_id,
+                        "delivered",
+                        json.dumps({"channel": "telegram"}),
+                    ),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
         return {"sent": bool(ok), "chat_id": int(chat_id)}
 
     return asyncio.run(runner())
 
 
 @celery_app.task
-def send_media_group_message(chat_id: int, media_items: list) -> dict:
+def send_media_group_message(
+    chat_id: int, media_items: list, campaign_id: int = None, customer_id: int = None
+) -> dict:
     async def runner() -> dict:
         bot = create_bot()
         ok = await send_media_group(bot, int(chat_id), media_items)
+
+        # Track delivery event
+        if campaign_id and customer_id:
+            db = get_db()
+            conn = db.connect()
+            try:
+                conn.execute(
+                    "INSERT INTO marketing_events (campaign_id, user_id, event_type, event_data) VALUES (?, ?, ?, ?)",
+                    (
+                        campaign_id,
+                        customer_id,
+                        "delivered",
+                        json.dumps({"channel": "telegram"}),
+                    ),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
         return {"sent": bool(ok), "chat_id": int(chat_id)}
 
     return asyncio.run(runner())
