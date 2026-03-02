@@ -17,6 +17,47 @@ from .storage import get_redis, get_json, set_json, delete
 from .config import get_settings
 from typing import Literal, Tuple, Dict, Any
 
+# Import cleanup function from shared module for backward compatibility
+from .integrations.bots.shared.consent import (
+    cleanup_user_data as _shared_cleanup,
+    store_consent as _shared_store,
+    get_customer_consents as _shared_get,
+    update_consent as _shared_update,
+    CURRENT_POLICY_VERSION
+)
+
+
+def _cleanup_user_data(telegram_id: int) -> None:
+    """Clean up user data for 152-ФЗ compliance. Wrapper around shared module function."""
+    _shared_cleanup("tg", telegram_id)
+
+
+def _store_consent(
+    customer_id: int,
+    consent_text: str,
+    consent_version: str,
+    consent_type: str = "data_processing",
+    conn=None
+) -> None:
+    """Store consent record for 152-ФЗ compliance. Wrapper around shared module function."""
+    _shared_store(customer_id, "tg", consent_text, consent_version, consent_type, conn)
+
+
+def _get_customer_consents(telegram_id: int, conn=None) -> dict:
+    """Get customer consent status by Telegram ID. Wrapper around shared module function."""
+    return _shared_get("tg", telegram_id, conn)
+
+
+def _update_consent(
+    telegram_id: int,
+    marketing_allowed: int = None,
+    data_processing_allowed: int = None,
+    conn=None
+) -> None:
+    """Update customer consent status. Wrapper around shared module function."""
+    _shared_update("tg", telegram_id, marketing_allowed, data_processing_allowed, conn)
+
+
 router = Router()
 
 
@@ -200,16 +241,7 @@ def _upsert_local_customer(
         conn.close()
 
 
-def _store_consent(customer_id: int, consent_text: str, consent_version: str) -> None:
-    db = get_db()
-    conn = db.connect()
-    try:
-        conn.execute(
-            "INSERT INTO consents(customer_id, source, consent_version, consent_text) VALUES(?,?,?,?)",
-            (customer_id, "telegram", consent_version, consent_text),
-        )
-        conn.commit()
-    finally:
+
         conn.close()
 
 

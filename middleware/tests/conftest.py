@@ -19,6 +19,9 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 from typing import Generator, Dict, Any
 
+# Import required app modules
+from app.db import init_db, get_db
+
 # ---------------------------------------------------------------------------
 # 1. Stub out aiogram & celery BEFORE any app module is imported.
 #    This must happen at module (collection) time, not inside fixtures.
@@ -99,63 +102,85 @@ def clean_database(test_db_path: str) -> Generator[str, None, None]:
     """
     import sqlite3
     import os
+    import time
     from pathlib import Path
+    from app.db import init_db
 
     # Step 1: Restore the test database path before each test
     # This ensures tests that change CRM_DB_PATH don't affect other tests
     db_path = str((Path(__file__).parent.parent / "test_telegram_crm.db").resolve())
     os.environ["CRM_DB_PATH"] = db_path
-
-    # Step 2: Get the database connection
-    from app.db import get_db, init_db
-
-    db = get_db()
-    db_path = db.path
-
-    # Step 3: Close any existing connections and delete the file for clean state
-    try:
-        conn = sqlite3.connect(db_path)
-        conn.close()
-    except:
-        pass
-
+    
+    # Step 2: Ensure all connections are closed before attempting to delete
+    # Step 2-3: Robust database file cleanup - handle Windows file locking issue
     if os.path.exists(db_path):
-        os.remove(db_path)
-
+        max_retries = 8
+        retry_delay = 0.5
+        
+        # First, try to release all connections and unlock file
+        for i in range(max_retries):
+            try:
+                # Attempt to delete the file directly
+                os.remove(db_path)
+                break
+            except PermissionError as e:
+                if i == max_retries - 1:
+                    # If all retries failed, try to delete on next run by renaming
+                    try:
+                        import time
+                        temp_path = f"{db_path}.{int(time.time())}.tmp"
+                        os.rename(db_path, temp_path)
+                        print(f"Warning: Renamed locked database file to {temp_path}")
+                        break
+                    except Exception as rename_error:
+                        # If even rename fails, skip cleanup but continue
+                        print(f"Warning: Failed to delete or rename database file {db_path}: {e}")
+                
+                # Wait and retry with increasing delay
+                time.sleep(retry_delay)
+                retry_delay += 0.5
+    
     # Step 4: Initialize fresh test database (this creates all tables)
     init_db()
-
+    
     # Step 5: Get a fresh connection after init_db
     db = get_db()
     conn = db.connect()
-
+    
     # Step 6: Seed default role_permissions data (Admin Role and Permissions)
     _seed_role_permissions(conn)
-
-    try:
-        yield test_db_path
-
-    finally:
-        # Cleanup: Drop all tables created by init_db()
-        # Order matters due to foreign key constraints
-        conn.execute("DROP TABLE IF EXISTS marketing_trigger_events")
-        conn.execute("DROP TABLE IF EXISTS marketing_events")
-        conn.execute("DROP TABLE IF EXISTS marketing_campaigns")
-        conn.execute("DROP TABLE IF EXISTS marketing_triggers")
-        conn.execute("DROP TABLE IF EXISTS marketing_segments")
-        conn.execute("DROP TABLE IF EXISTS integration_deliveries")
-        conn.execute("DROP TABLE IF EXISTS vk_settings")
-        conn.execute("DROP TABLE IF EXISTS admin_tokens")
-        conn.execute("DROP TABLE IF EXISTS admin_users")
-        conn.execute("DROP TABLE IF EXISTS role_permissions")
-        conn.execute("DROP TABLE IF EXISTS products")
-        conn.execute("DROP TABLE IF EXISTS integrations")
-        conn.execute("DROP TABLE IF EXISTS sync_log")
-        conn.execute("DROP TABLE IF EXISTS transactions")
-        conn.execute("DROP TABLE IF EXISTS consents")
-        conn.execute("DROP TABLE IF EXISTS customers")
-        conn.commit()
-        conn.close()
+    
+    yield test_db_path
+    
+    # Close the connection before cleanup to avoid "database is locked" errors
+    conn.commit()
+    conn.close()
+    
+    # Cleanup: Drop all tables created by init_db()
+    # Re-open connection for cleanup with exclusive lock
+    cleanup_conn = sqlite3.connect(db_path, timeout=30.0)
+    cleanup_conn.execute("PRAGMA exclusive_mode = TRUE")
+    cleanup_conn.execute("PRAGMA locking_mode = EXCLUSIVE")
+    
+    # Order matters due to foreign key constraints
+    cleanup_conn.execute("DROP TABLE IF EXISTS marketing_trigger_events")
+    cleanup_conn.execute("DROP TABLE IF EXISTS marketing_events")
+    cleanup_conn.execute("DROP TABLE IF EXISTS marketing_campaigns")
+    cleanup_conn.execute("DROP TABLE IF EXISTS marketing_triggers")
+    cleanup_conn.execute("DROP TABLE IF EXISTS marketing_segments")
+    cleanup_conn.execute("DROP TABLE IF EXISTS integration_deliveries")
+    cleanup_conn.execute("DROP TABLE IF EXISTS vk_settings")
+    cleanup_conn.execute("DROP TABLE IF EXISTS admin_tokens")
+    cleanup_conn.execute("DROP TABLE IF EXISTS admin_users")
+    cleanup_conn.execute("DROP TABLE IF EXISTS role_permissions")
+    cleanup_conn.execute("DROP TABLE IF EXISTS products")
+    cleanup_conn.execute("DROP TABLE IF EXISTS integrations")
+    cleanup_conn.execute("DROP TABLE IF EXISTS sync_log")
+    cleanup_conn.execute("DROP TABLE IF EXISTS transactions")
+    cleanup_conn.execute("DROP TABLE IF EXISTS consents")
+    cleanup_conn.execute("DROP TABLE IF EXISTS customers")
+    cleanup_conn.commit()
+    cleanup_conn.close()
 
 
 def _seed_role_permissions(conn: sqlite3.Connection) -> None:
@@ -705,6 +730,20 @@ def sample_qr_data() -> str:
     Generate sample QR code data.
     """
     return "crm:auth:test_token_12345"
+
+
+@pytest.fixture
+def cleanup_messages() -> list:
+    """
+    Fixture to track and cleanup Telegram message IDs sent during tests.
+    Used by integration tests that send messages to Telegram API.
+    """
+    messages = []
+    yield messages
+    # Cleanup would happen here if we had a way to delete messages
+    # For now, we just track them for reference
+    if messages:
+        print(f"Test sent {len(messages)} message(s): {messages}")
 
 
 # =============================================================================
