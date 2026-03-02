@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Api, MarketingCampaign, MarketingSegment, MarketingTrigger } from './api';
+import { Api, MarketingCampaign, MarketingSegment, MarketingTrigger, baseUrl, injectAuthHeaders } from './api';
 import { AnalyticsCharts } from './components/AnalyticsCharts';
 
 export function MarketingView() {
@@ -371,14 +371,18 @@ function SegmentsManager({
       });
       
       // Get preview
-      const response = await fetch(`${Api.baseUrl}/api/v1/marketing/segments/${tempSegment.id}/preview?limit=10`);
+      const response = await fetch(`${baseUrl()}/api/v1/marketing/segments/${tempSegment.id}/preview?limit=10`, {
+        headers: injectAuthHeaders(),
+        credentials: 'include',
+      });
       const data = await response.json();
       setPreview(data.customers);
       
       // Delete temporary segment
-      await fetch(`${Api.baseUrl}/api/v1/marketing/segments/${tempSegment.id}`, {
+      await fetch(`${baseUrl()}/api/v1/marketing/segments/${tempSegment.id}`, {
         method: 'DELETE',
-        headers: Api.headers,
+        headers: injectAuthHeaders(),
+        credentials: 'include',
       });
       
     } catch (e) {
@@ -637,16 +641,17 @@ function SegmentsManager({
                   {JSON.stringify(s.criteria)}
                 </td>
                 <td className="p-2 text-gray-500">
-                  {s.last_updated ? new Date(s.last_updated).toLocaleDateString() : '—'}
+                  {s.created_at ? new Date(s.created_at).toLocaleDateString() : '—'}
                 </td>
                 <td className="p-2">
                   <button 
                     className="text-blue-600 hover:underline text-xs"
                     onClick={async () => {
                       try {
-                        await fetch(`${Api.baseUrl}/api/v1/marketing/segments/${s.id}/refresh`, {
+                        await fetch(`${baseUrl()}/api/v1/marketing/segments/${s.id}/refresh`, {
                           method: 'POST',
-                          headers: Api.headers,
+                          headers: injectAuthHeaders(),
+                          credentials: 'include',
                         });
                         onUpdate();
                       } catch (e) {

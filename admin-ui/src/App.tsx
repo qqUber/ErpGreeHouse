@@ -16,6 +16,8 @@ import {
 import { IntegrationSettings } from './components/IntegrationSettings';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { useAuth } from './stores/auth';
+import { ComplianceView } from './ComplianceView';
+import { MarketingView } from './MarketingView';
 
 type Tab =
   | 'dashboard'
@@ -24,7 +26,8 @@ type Tab =
   | 'integrations'
   | 'products'
   | 'settings'
-  | 'marketing';
+  | 'marketing'
+  | 'compliance';
 
 type PublicStatus = {
   api: string;
@@ -623,20 +626,20 @@ function App() {
 
   const allowedTabs: Tab[] = useMemo(() => {
     if (!effectiveAuthReady)
-      return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings'];
+      return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings', 'marketing', 'compliance'];
     const effectiveUser = user || me;
     // If authenticated but user data not yet loaded, show all tabs temporarily
     // This prevents race condition where effectiveAuthReady=true but me is still null
     if (!effectiveUser)
-      return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings'];
+      return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings', 'marketing', 'compliance'];
     const role = String(effectiveUser?.role || '').toLowerCase();
     if (role === 'owner')
-      return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings'];
+      return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings', 'marketing', 'compliance'];
 
     const perms = new Set(effectiveUser?.permissions || []);
     // If user has '*' permission, they see everything (though owner check above covers this usually)
     if (perms.has('*'))
-      return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings'];
+      return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings', 'marketing', 'compliance'];
 
     const tabs: Tab[] = [];
     if (perms.has('dashboard.read')) tabs.push('dashboard');
@@ -646,6 +649,8 @@ function App() {
     if (perms.has('product.read')) tabs.push('products');
     // Settings is always available for password change, but content inside depends on permissions
     tabs.push('settings');
+    if (perms.has('marketing.campaign')) tabs.push('marketing');
+    if (perms.has('customer.delete') || perms.has('customer.read')) tabs.push('compliance');
 
     return tabs;
   }, [effectiveAuthReady, user, me?.role, me?.permissions]);
@@ -713,6 +718,22 @@ function App() {
               onClick={() => setTab('settings')}
             >
               {t('menu.settings')}
+            </div>
+          ) : null}
+          {allowedTabs.includes('marketing') ? (
+            <div
+              className={`tab ${safeTab === 'marketing' ? 'tabActive' : ''}`}
+              onClick={() => setTab('marketing')}
+            >
+              {t('menu.marketing')}
+            </div>
+          ) : null}
+          {allowedTabs.includes('compliance') ? (
+            <div
+              className={`tab ${safeTab === 'compliance' ? 'tabActive' : ''}`}
+              onClick={() => setTab('compliance')}
+            >
+              Комплаенс
             </div>
           ) : null}
         </div>
@@ -1077,6 +1098,14 @@ function App() {
             <PermissionsTable />
           ) : null}
         </div>
+       ) : null}
+
+      {optimisticReady && safeTab === 'marketing' ? (
+        <MarketingView />
+      ) : null}
+
+      {optimisticReady && safeTab === 'compliance' ? (
+        <ComplianceView />
       ) : null}
 
       {authFlow?.active ? (

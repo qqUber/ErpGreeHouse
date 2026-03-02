@@ -200,6 +200,16 @@ export type MarketingTrigger = {
   created_at: string;
 };
 
+export type ConsentRecord = {
+  id: number;
+  customer_id: number;
+  source: string;
+  consent_version: string;
+  consent_text: string;
+  consent_type: string;
+  accepted_at: string;
+};
+
 // Request queue for token refresh
 let isRefreshing = false;
 let refreshRetryCount = 0;
@@ -500,7 +510,7 @@ async function parseError(response: Response): Promise<Error> {
   return new Error(errorMsg);
 }
 
-function baseUrl() {
+export function baseUrl() {
   // In development, Vite proxies /api to localhost:8000
   // Use explicit URL if VITE_API_BASE_URL is set, otherwise rely on Vite proxy
   const envUrl = (import.meta as any).env.VITE_API_BASE_URL;
@@ -545,7 +555,7 @@ export function setAdminSecret(v: string) {
  * Only JWT tokens should use Bearer header
  * Static secrets use x-admin-secret header for legacy compatibility
  */
-function injectAuthHeaders(headers: Record<string, string> = {}): Record<string, string> {
+export function injectAuthHeaders(headers: Record<string, string> = {}): Record<string, string> {
   const secret = getAdminSecret();
   if (!secret) {
     return headers;
@@ -857,7 +867,7 @@ export const Api = {
       method: 'POST',
       body: JSON.stringify({ access_token, group_id, api_version, enabled }),
     }),
-  setVkWebhook: (webhook_url?: string, secret?: string) =>
+   setVkWebhook: (webhook_url?: string, secret?: string) =>
     api<{ webhook_set: boolean; url: string; secret: string; note: string }>(
       '/api/v1/admin/integrations/vk/set_webhook',
       {
@@ -865,4 +875,23 @@ export const Api = {
         body: JSON.stringify({ webhook_url, secret }),
       }
     ),
+
+  // Compliance endpoints
+  listConsents: (customerId?: number) =>
+    api<{ items: ConsentRecord[] }>(
+      `/api/v1/compliance/consents${customerId ? `?customer_id=${customerId}` : ''}`,
+      { method: 'GET', headers: {} }
+    ),
+
+  getCustomerConsents: (customerId: number) =>
+    api<{ items: ConsentRecord[] }>(`/api/v1/compliance/consents/${customerId}`, {
+      method: 'GET',
+      headers: {},
+    }),
+
+  deleteCustomer: (customerId: number) =>
+    api<{ status: string }>(`/api/v1/compliance/customers/${customerId}`, {
+      method: 'DELETE',
+      headers: {},
+    }),
 };
