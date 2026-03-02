@@ -31,6 +31,34 @@ An omnichannel CRM + Loyalty system for coffee shops, replacing expensive third-
 - ✅ 00-02-PLAN.md — Improve test coverage
 - ✅ 00-03-PLAN.md — Verify integration and run full test suite
 
+---
+
+### Phase 1: Foundation (Core Infrastructure)
+**Goal**: Establish the core system infrastructure and basic functionality
+
+**Dependencies**: None
+
+**Requirements**:
+- System architecture setup
+- Database schema design
+- Basic API infrastructure
+- Authentication and authorization
+- Environment configuration
+
+**Success Criteria**:
+1. System can be deployed locally and in production
+2. Basic API endpoints are accessible and functional
+3. Database connections are established and tested
+4. Authentication mechanism works for admin users
+5. Environment configuration is properly set up
+
+**Plans**: 4 plans
+
+- [ ] 01-01-PLAN.md — Environment setup and dependency installation
+- [ ] 01-02-PLAN.md — Database initialization and seed data loading
+- [ ] 01-03-PLAN.md — FastAPI application server setup and endpoint verification
+- [ ] 01-04-PLAN.md — Test execution and verification
+
 ### Phase 1: Foundation (Core Infrastructure)
 **Goal**: Establish the core system infrastructure and basic functionality
 
