@@ -67,6 +67,45 @@ class DB:
         conn.execute("PRAGMA temp_store = MEMORY")
         conn.execute("PRAGMA mmap_size = 268435456")
 
+        # Media message fields migration
+        try:
+            conn.execute(
+                "ALTER TABLE marketing_campaigns ADD COLUMN content_type TEXT DEFAULT 'text'"
+            )
+        except sqlite3.OperationalError:  # Column already exists
+            pass
+        try:
+            conn.execute("ALTER TABLE marketing_campaigns ADD COLUMN media_urls TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE marketing_campaigns ADD COLUMN caption TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE marketing_triggers ADD COLUMN media_type TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE marketing_triggers ADD COLUMN media_url TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE marketing_triggers ADD COLUMN caption TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE marketing_events ADD COLUMN event_data TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute(
+                "ALTER TABLE marketing_trigger_events ADD COLUMN delivery_data TEXT"
+            )
+        except sqlite3.OperationalError:
+            pass
+        conn.commit()
+
         # Migration for vk_id column
         try:
             conn.execute("ALTER TABLE customers ADD COLUMN vk_id INTEGER UNIQUE")
@@ -85,7 +124,13 @@ class DB:
         except sqlite3.OperationalError:  # Column already exists
             pass
 
-        conn.commit()
+        # Migration for consent_type column
+        try:
+            conn.execute(
+                "ALTER TABLE consents ADD COLUMN consent_type TEXT DEFAULT 'data_processing'"
+            )
+        except sqlite3.OperationalError:  # Column already exists
+            pass
 
         return conn
 
@@ -117,6 +162,7 @@ def init_db() -> None:
                 phone TEXT UNIQUE,
                 full_name TEXT,
                 telegram_id INTEGER UNIQUE,
+                vk_id INTEGER UNIQUE,
                 qr_token TEXT UNIQUE,
                 balance_points INTEGER NOT NULL DEFAULT 0,
                 preferences_json TEXT NOT NULL DEFAULT '{}',
@@ -133,6 +179,7 @@ def init_db() -> None:
                 source TEXT NOT NULL,
                 consent_version TEXT NOT NULL,
                 consent_text TEXT NOT NULL,
+                consent_type TEXT DEFAULT 'data_processing',
                 accepted_at TEXT NOT NULL DEFAULT (datetime('now')),
                 FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE
             );

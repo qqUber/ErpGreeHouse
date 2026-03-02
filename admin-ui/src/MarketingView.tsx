@@ -98,6 +98,9 @@ function CampaignsManager({
   const [isCreating, setIsCreating] = useState(false);
   const [newName, setNewName] = useState('');
   const [newContent, setNewContent] = useState('');
+  const [newContentType, setNewContentType] = useState('text');
+  const [newMediaUrls, setNewMediaUrls] = useState('');
+  const [newCaption, setNewCaption] = useState('');
   const [newSegmentId, setNewSegmentId] = useState<number | ''>('');
   const [newType, setNewType] = useState('telegram');
   const [error, setError] = useState('');
@@ -111,6 +114,9 @@ function CampaignsManager({
       await Api.createMarketingCampaign({
         name: newName,
         content: newContent,
+        content_type: newContentType,
+        media_urls: newMediaUrls || undefined,
+        caption: newCaption || undefined,
         segment_id: Number(newSegmentId),
         type: newType,
         scheduled_at: undefined, // Immediate for now
@@ -118,6 +124,9 @@ function CampaignsManager({
       setIsCreating(false);
       setNewName('');
       setNewContent('');
+      setNewContentType('text');
+      setNewMediaUrls('');
+      setNewCaption('');
       setNewSegmentId('');
       onUpdate();
     } catch (e) {
@@ -182,7 +191,53 @@ function CampaignsManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Текст сообщения</label>
+            <label className="block text-sm font-medium text-gray-700">Тип контента</label>
+            <select
+              className="input w-full"
+              value={newContentType}
+              onChange={(e) => setNewContentType(e.target.value)}
+            >
+              <option value="text">Текст</option>
+              <option value="photo">Фотография</option>
+              <option value="video">Видео</option>
+              <option value="document">Документ</option>
+              <option value="media_group">Альбом (несколько файлов)</option>
+            </select>
+          </div>
+
+          {newContentType !== 'text' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                {newContentType === 'media_group' ? 'URLы медиа файлов (JSON массив)' : 'URL медиа файла'}
+              </label>
+              <textarea
+                className="input w-full h-12"
+                value={newMediaUrls}
+                onChange={(e) => setNewMediaUrls(e.target.value)}
+                placeholder={newContentType === 'media_group' 
+                  ? '[{"type":"photo","path":"https://example.com/image1.jpg"},{"type":"video","path":"https://example.com/video1.mp4"}]'
+                  : 'https://example.com/image.jpg'
+                }
+              />
+            </div>
+          )}
+
+          {newContentType !== 'text' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Подпись</label>
+              <textarea
+                className="input w-full h-12"
+                value={newCaption}
+                onChange={(e) => setNewCaption(e.target.value)}
+                placeholder="Добавьте подпись..."
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              {newContentType === 'text' ? 'Текст сообщения' : 'Альтернативный текст'}
+            </label>
             <textarea
               className="input w-full h-24"
               value={newContent}
@@ -414,6 +469,9 @@ function TriggersManager({
   const [minAmount, setMinAmount] = useState('');
   const [daysInactive, setDaysInactive] = useState('');
   const [newMessage, setNewMessage] = useState('');
+  const [newMediaType, setNewMediaType] = useState<string | ''>('');
+  const [newMediaUrl, setNewMediaUrl] = useState('');
+  const [newCaption, setNewCaption] = useState('');
   const [error, setError] = useState('');
 
   async function handleCreate() {
@@ -433,6 +491,9 @@ function TriggersManager({
         criteria,
         delay_hours: Number(newDelay),
         message_text: newMessage,
+        media_type: newMediaType || undefined,
+        media_url: newMediaUrl || undefined,
+        caption: newCaption || undefined,
       });
       setIsCreating(false);
       setNewName('');
@@ -441,6 +502,9 @@ function TriggersManager({
       setMinAmount('');
       setDaysInactive('');
       setNewMessage('');
+      setNewMediaType('');
+      setNewMediaUrl('');
+      setNewCaption('');
       onUpdate();
     } catch (e) {
       setError(String(e));
@@ -536,6 +600,50 @@ function TriggersManager({
                 </div>
               )}
             </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                Тип медиа
+              </label>
+              <select
+                className="input w-full bg-white"
+                value={newMediaType}
+                onChange={(e) => setNewMediaType(e.target.value)}
+              >
+                <option value="">Нет медиа</option>
+                <option value="photo">Фотография</option>
+                <option value="video">Видео</option>
+                <option value="document">Документ</option>
+              </select>
+            </div>
+
+            {newMediaType && (
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  URL медиа файла
+                </label>
+                <input
+                  className="input w-full bg-white"
+                  value={newMediaUrl}
+                  onChange={(e) => setNewMediaUrl(e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+            )}
+
+            {newMediaType && (
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Подпись к медиа
+                </label>
+                <textarea
+                  className="input w-full h-12 bg-white font-mono text-sm"
+                  value={newCaption}
+                  onChange={(e) => setNewCaption(e.target.value)}
+                  placeholder="Подпись к изображению..."
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">

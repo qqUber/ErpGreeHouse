@@ -176,6 +176,9 @@ export type MarketingCampaign = {
   segment_id: number | null;
   type: string;
   content: string;
+  content_type: string;
+  media_urls: string | null;
+  caption: string | null;
   status: string;
   scheduled_at: string | null;
   sent_at: string | null;
@@ -190,6 +193,9 @@ export type MarketingTrigger = {
   criteria_json: Record<string, any>;
   delay_hours: number;
   message_text: string;
+  media_type: string | null;
+  media_url: string | null;
+  caption: string | null;
   active: boolean;
   created_at: string;
 };
@@ -761,6 +767,9 @@ export const Api = {
     segment_id: number | null;
     type: string;
     content: string;
+    content_type?: string;
+    media_urls?: string;
+    caption?: string;
     scheduled_at?: string;
   }) =>
     api<{ id: number }>('/api/v1/marketing/campaigns', {
@@ -777,6 +786,9 @@ export const Api = {
     criteria: Record<string, any>;
     delay_hours: number;
     message_text: string;
+    media_type?: string;
+    media_url?: string;
+    caption?: string;
   }) =>
     api<{ id: number }>('/api/v1/marketing/triggers', {
       method: 'POST',

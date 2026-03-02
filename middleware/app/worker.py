@@ -1,5 +1,6 @@
 import asyncio
 import json
+from typing import Any
 from celery import Celery
 from aiogram.types import Update
 import httpx
@@ -45,29 +46,37 @@ def process_telegram_update(update: dict) -> dict:
 def send_broadcast(text: str) -> dict:
     async def runner() -> dict:
         r = get_redis()
-        chats = r.smembers("crm:known_chats") or set()
+        chats = r.smembers("crm:known_chats") or set()  # type: ignore[union-attr]
         bot = create_bot()
         ok = 0
         failed = 0
-        total = len(chats)
+        total = len(chats)  # type: ignore[arg-type]
 
-        # Batch processing to respect Telegram limits (30 msgs/sec roughly)
-        # We will be conservative: 20 msgs per batch, sleep 1 sec
-        batch_size = 20
-        chat_list = list(chats)
+        chat_list: list[Any] = list(chats)  # type: ignore[arg-type]
 
-        for i in range(0, total, batch_size):
-            batch = chat_list[i : i + batch_size]
-            tasks = []
-            for cid in batch:
-                tasks.append(safe_send(bot, int(cid), text))
+        # Import rate limiter
+        from app.rate_limiter import is_rate_limited
 
-            results = await asyncio.gather(*tasks)
-            ok += sum(1 for res in results if res)
-            failed += sum(1 for res in results if not res)
+        for cid in chat_list:
+            chat_id = int(cid)
 
-            if i + batch_size < total:
-                await asyncio.sleep(1.0)
+            # Check rate limit before sending
+            if is_rate_limited(chat_id, "telegram"):
+                failed += 1
+                continue
+
+            try:
+                # Send message
+                ok_flag = await safe_send(bot, chat_id, text)
+                if ok_flag:
+                    ok += 1
+                else:
+                    failed += 1
+
+                # Sleep to respect rate limits
+                await asyncio.sleep(0.1)
+            except Exception as e:
+                failed += 1
 
         return {"sent": ok, "failed": failed, "total": total}
 
@@ -79,6 +88,48 @@ def send_customer_message(chat_id: int, text: str) -> dict:
     async def runner() -> dict:
         bot = create_bot()
         ok = await safe_send(bot, int(chat_id), text)
+        return {"sent": bool(ok), "chat_id": int(chat_id)}
+
+    return asyncio.run(runner())
+
+
+@celery_app.task
+def send_photo_message(chat_id: int, photo_path: str, caption: str = None) -> dict:
+    async def runner() -> dict:
+        bot = create_bot()
+        ok = await safe_send_photo(bot, int(chat_id), photo_path, caption)
+        return {"sent": bool(ok), "chat_id": int(chat_id)}
+
+    return asyncio.run(runner())
+
+
+@celery_app.task
+def send_video_message(chat_id: int, video_path: str, caption: str = None) -> dict:
+    async def runner() -> dict:
+        bot = create_bot()
+        ok = await safe_send_video(bot, int(chat_id), video_path, caption)
+        return {"sent": bool(ok), "chat_id": int(chat_id)}
+
+    return asyncio.run(runner())
+
+
+@celery_app.task
+def send_document_message(
+    chat_id: int, document_path: str, caption: str = None
+) -> dict:
+    async def runner() -> dict:
+        bot = create_bot()
+        ok = await safe_send_document(bot, int(chat_id), document_path, caption)
+        return {"sent": bool(ok), "chat_id": int(chat_id)}
+
+    return asyncio.run(runner())
+
+
+@celery_app.task
+def send_media_group_message(chat_id: int, media_items: list) -> dict:
+    async def runner() -> dict:
+        bot = create_bot()
+        ok = await send_media_group(bot, int(chat_id), media_items)
         return {"sent": bool(ok), "chat_id": int(chat_id)}
 
     return asyncio.run(runner())
@@ -138,6 +189,75 @@ def deliver_webhook_event(integration_id: int, event_type: str, payload: dict) -
 async def safe_send(bot, chat_id: int, text: str) -> bool:
     try:
         await bot.send_message(chat_id=chat_id, text=text)
+        return True
+    except Exception as e:
+        # In production: log error, handle blocking/deactivation
+        return False
+
+
+async def safe_send_photo(
+    bot, chat_id: int, photo_path: str, caption: str = None
+) -> bool:
+    try:
+        from aiogram.methods.send_photo import SendPhoto
+        from aiogram.types.input_file import FSInputFile
+
+        photo = FSInputFile(photo_path)
+        await bot(SendPhoto(chat_id=chat_id, photo=photo, caption=caption))
+        return True
+    except Exception as e:
+        # In production: log error, handle blocking/deactivation
+        return False
+
+
+async def safe_send_video(
+    bot, chat_id: int, video_path: str, caption: str = None
+) -> bool:
+    try:
+        from aiogram.methods.send_video import SendVideo
+        from aiogram.types.input_file import FSInputFile
+
+        video = FSInputFile(video_path)
+        await bot(SendVideo(chat_id=chat_id, video=video, caption=caption))
+        return True
+    except Exception as e:
+        # In production: log error, handle blocking/deactivation
+        return False
+
+
+async def safe_send_document(
+    bot, chat_id: int, document_path: str, caption: str = None
+) -> bool:
+    try:
+        from aiogram.methods.send_document import SendDocument
+        from aiogram.types.input_file import FSInputFile
+
+        document = FSInputFile(document_path)
+        await bot(SendDocument(chat_id=chat_id, document=document, caption=caption))
+        return True
+    except Exception as e:
+        # In production: log error, handle blocking/deactivation
+        return False
+
+
+async def send_media_group(bot, chat_id: int, media_items: list) -> bool:
+    try:
+        from aiogram.utils.media_group import MediaGroupBuilder
+        from aiogram.methods.send_media_group import SendMediaGroup
+        from aiogram.types.input_file import FSInputFile
+
+        media_group = MediaGroupBuilder()
+        for item in media_items:
+            if item["type"] == "photo":
+                media_group.add_photo(
+                    media=FSInputFile(item["path"]), caption=item.get("caption")
+                )
+            elif item["type"] == "video":
+                media_group.add_video(
+                    media=FSInputFile(item["path"]), caption=item.get("caption")
+                )
+
+        await bot(SendMediaGroup(chat_id=chat_id, media=media_group.build()))
         return True
     except Exception as e:
         # In production: log error, handle blocking/deactivation

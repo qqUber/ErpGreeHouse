@@ -1,11 +1,43 @@
-from typing import List, Optional, Any
+from typing import Dict, List, Optional, Any
 from fastapi import APIRouter, Header, HTTPException, Body
 from pydantic import BaseModel
 import json
 from .db import get_db
 from .auth import require_permission
+from .worker import celery_app
 
 router = APIRouter(prefix="/api/v1/marketing")
+
+
+def get_customers_with_consent(
+    limit: int = 1000, offset: int = 0
+) -> List[Dict[str, Any]]:
+    """
+    Get list of customers who have given marketing consent.
+    Used for sending marketing campaigns (152-ФЗ compliance).
+
+    Args:
+        limit: Maximum number of records to return
+        offset: Number of records to skip
+
+    Returns:
+        List of customer dictionaries with telegram_id
+    """
+    db = get_db()
+    conn = db.connect()
+    try:
+        cur = conn.execute(
+            """
+            SELECT id, telegram_id, vk_id, phone, full_name, marketing_allowed 
+            FROM customers 
+            WHERE marketing_allowed = 1 AND (telegram_id IS NOT NULL OR vk_id IS NOT NULL)
+            LIMIT ? OFFSET ?
+            """,
+            (limit, offset),
+        )
+        return [dict(row) for row in cur.fetchall()]
+    finally:
+        conn.close()
 
 
 class SegmentCreate(BaseModel):
@@ -18,6 +50,9 @@ class CampaignCreate(BaseModel):
     segment_id: int
     type: str
     content: str
+    content_type: str = "text"
+    media_urls: Optional[str] = None
+    caption: Optional[str] = None
     scheduled_at: Optional[str] = None
 
 
@@ -27,11 +62,14 @@ class TriggerCreate(BaseModel):
     criteria: dict[str, Any]
     delay_hours: int
     message_text: str
+    media_type: Optional[str] = None
+    media_url: Optional[str] = None
+    caption: Optional[str] = None
 
 
 @router.get("/marketing/segments")
 def list_segments(
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret")
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ):
     require_permission(x_admin_secret, "marketing.users")
     db = get_db()
@@ -60,7 +98,7 @@ def create_segment(
 
 @router.get("/marketing/campaigns")
 def list_campaigns(
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret")
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ):
     require_permission(x_admin_secret, "marketing.campaigns")
     db = get_db()
@@ -81,14 +119,17 @@ def create_campaign(
     conn = db.connect()
     cursor = conn.execute(
         """
-        INSERT INTO marketing_campaigns (name, segment_id, type, content, scheduled_at, status)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO marketing_campaigns (name, segment_id, type, content, content_type, media_urls, caption, scheduled_at, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             campaign.name,
             campaign.segment_id,
             campaign.type,
             campaign.content,
+            campaign.content_type,
+            campaign.media_urls,
+            campaign.caption,
             campaign.scheduled_at,
             "scheduled" if campaign.scheduled_at else "draft",
         ),
@@ -104,21 +145,111 @@ def create_campaign(
 def send_campaign(
     id: int, x_admin_secret: str | None = Header(default=None, alias="x-admin-secret")
 ):
+    """
+    Send campaign to all customers in the segment.
+    Only sends to customers who have given marketing consent (marketing_allowed = 1).
+    """
     require_permission(x_admin_secret, "marketing.campaigns")
     db = get_db()
     conn = db.connect()
-    # In a real system, this would trigger a background task
-    conn.execute(
-        "UPDATE marketing_campaigns SET status = 'sent', sent_at = datetime('now') WHERE id = ?",
-        (id,),
-    )
-    conn.commit()
-    return {"status": "sent"}
+
+    try:
+        # Get campaign details
+        cur = conn.execute("SELECT * FROM marketing_campaigns WHERE id = ?", (id,))
+        campaign = cur.fetchone()
+
+        if not campaign:
+            raise HTTPException(status_code=404, detail="Campaign not found")
+
+        # Count customers with marketing consent
+        cur = conn.execute(
+            "SELECT COUNT(*) as count FROM customers WHERE marketing_allowed = 1"
+        )
+        consented_count = cur.fetchone()["count"]
+
+        # Update campaign status
+        conn.execute(
+            "UPDATE marketing_campaigns SET status = 'sent', sent_at = datetime('now') WHERE id = ?",
+            (id,),
+        )
+        conn.commit()
+
+        # Queue messages for delivery based on content type
+        customers = get_customers_with_consent()
+        for customer in customers:
+            if customer["telegram_id"]:
+                if campaign.get("content_type") == "photo" and campaign.get(
+                    "media_urls"
+                ):
+                    # Send photo message
+                    celery_app.send_task(
+                        "app.worker.send_photo_message",
+                        kwargs={
+                            "chat_id": customer["telegram_id"],
+                            "photo_path": campaign["media_urls"],
+                            "caption": campaign.get("caption", campaign["content"]),
+                        },
+                    )
+                elif campaign.get("content_type") == "video" and campaign.get(
+                    "media_urls"
+                ):
+                    # Send video message
+                    celery_app.send_task(
+                        "app.worker.send_video_message",
+                        kwargs={
+                            "chat_id": customer["telegram_id"],
+                            "video_path": campaign["media_urls"],
+                            "caption": campaign.get("caption", campaign["content"]),
+                        },
+                    )
+                elif campaign.get("content_type") == "document" and campaign.get(
+                    "media_urls"
+                ):
+                    # Send document message
+                    celery_app.send_task(
+                        "app.worker.send_document_message",
+                        kwargs={
+                            "chat_id": customer["telegram_id"],
+                            "document_path": campaign["media_urls"],
+                            "caption": campaign.get("caption", campaign["content"]),
+                        },
+                    )
+                elif campaign.get("content_type") == "media_group" and campaign.get(
+                    "media_urls"
+                ):
+                    # Send media group (album)
+                    import json
+
+                    media_items = json.loads(campaign["media_urls"])
+                    celery_app.send_task(
+                        "app.worker.send_media_group_message",
+                        kwargs={
+                            "chat_id": customer["telegram_id"],
+                            "media_items": media_items,
+                        },
+                    )
+                else:
+                    # Default to text message
+                    celery_app.send_task(
+                        "app.worker.send_customer_message",
+                        kwargs={
+                            "chat_id": customer["telegram_id"],
+                            "text": campaign["content"],
+                        },
+                    )
+
+        return {
+            "status": "sending",
+            "recipients": consented_count,
+            "note": "Only customers with marketing consent (152-ФЗ) were included",
+        }
+    finally:
+        conn.close()
 
 
 @router.get("/marketing/triggers")
 def list_triggers(
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret")
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
 ):
     require_permission(x_admin_secret, "marketing.campaigns")
     db = get_db()
@@ -127,6 +258,33 @@ def list_triggers(
         "SELECT * FROM marketing_triggers ORDER BY created_at DESC"
     ).fetchall()
     return [dict(r) for r in rows]
+
+
+@router.get("/marketing/rate-limit/status")
+def get_rate_limit_status(
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+):
+    require_permission(x_admin_secret, "marketing.campaigns")
+    from app.rate_limiter import get_rate_limit_config
+
+    # Get rate limit config for all channels
+    channels = ["telegram", "vk", "mobile"]
+    configs = {}
+
+    for channel in channels:
+        config = get_rate_limit_config(channel)
+        configs[channel] = {
+            "per_chat": {
+                "max_tokens": config["per_chat"]["max_tokens"],
+                "refill_rate": config["per_chat"]["refill_rate"],
+            },
+            "global": {
+                "max_tokens": config["global"]["max_tokens"],
+                "refill_rate": config["global"]["refill_rate"],
+            },
+        }
+
+    return {"rate_limits": configs}
 
 
 @router.post("/marketing/triggers")
@@ -139,8 +297,8 @@ def create_trigger(
     conn = db.connect()
     cursor = conn.execute(
         """
-        INSERT INTO marketing_triggers (name, event_source, criteria_json, delay_hours, message_text)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO marketing_triggers (name, event_source, criteria_json, delay_hours, message_text, media_type, media_url, caption)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             trigger.name,
@@ -148,6 +306,9 @@ def create_trigger(
             json.dumps(trigger.criteria),
             trigger.delay_hours,
             trigger.message_text,
+            trigger.media_type,
+            trigger.media_url,
+            trigger.caption,
         ),
     )
     conn.commit()

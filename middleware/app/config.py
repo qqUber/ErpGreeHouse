@@ -50,6 +50,26 @@ class Settings:
     # RECOVERY_RATE_LIMIT_WINDOW_SECONDS: Time window in seconds
     recovery_rate_limit_window_seconds: int
 
+    # API Rate limiting settings (sliding window algorithm)
+    # RATE_LIMIT_REQUESTS: Max requests per IP per window
+    rate_limit_requests: int
+    # RATE_LIMIT_WINDOW_SECONDS: Time window in seconds
+    rate_limit_window_seconds: int
+
+    # Messaging rate limiting settings
+    # TELEGRAM_RATE_LIMIT_PER_CHAT: Messages per second per chat
+    telegram_rate_limit_per_chat: float
+    # TELEGRAM_RATE_LIMIT_GLOBAL: Messages per second global
+    telegram_rate_limit_global: float
+    # VK_RATE_LIMIT_PER_CHAT: Messages per second per chat
+    vk_rate_limit_per_chat: float
+    # VK_RATE_LIMIT_GLOBAL: Messages per minute global
+    vk_rate_limit_global: float
+    # MOBILE_RATE_LIMIT_PER_CHAT: Messages per second per chat
+    mobile_rate_limit_per_chat: float
+    # MOBILE_RATE_LIMIT_GLOBAL: Messages per second global
+    mobile_rate_limit_global: float
+
     # JWT configuration
     # JWT_SECRET_KEY: Primary key for signing JWT tokens
     # Fallback chain: JWT_SECRET_KEY -> JWT_SECRET -> ADMIN_SECRET -> dev-default
@@ -127,6 +147,22 @@ def get_settings() -> Settings:
         recovery_rate_limit_window_seconds=int(
             os.getenv("RECOVERY_RATE_LIMIT_WINDOW_SECONDS", "60")
         ),
+        # API Rate limiting settings
+        rate_limit_requests=int(os.getenv("RATE_LIMIT_REQUESTS", "100")),
+        rate_limit_window_seconds=int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60")),
+        # Messaging rate limiting settings
+        telegram_rate_limit_per_chat=float(
+            os.getenv("TELEGRAM_RATE_LIMIT_PER_CHAT", "1.0")
+        ),
+        telegram_rate_limit_global=float(
+            os.getenv("TELEGRAM_RATE_LIMIT_GLOBAL", "30.0")
+        ),
+        vk_rate_limit_per_chat=float(os.getenv("VK_RATE_LIMIT_PER_CHAT", "1.0")),
+        vk_rate_limit_global=float(os.getenv("VK_RATE_LIMIT_GLOBAL", "0.333")),
+        mobile_rate_limit_per_chat=float(
+            os.getenv("MOBILE_RATE_LIMIT_PER_CHAT", "5.0")
+        ),
+        mobile_rate_limit_global=float(os.getenv("MOBILE_RATE_LIMIT_GLOBAL", "100.0")),
         # JWT configuration
         # PRODUCTION: JWT_SECRET_KEY MUST be set (enforced above)
         # DEVELOPMENT: Allow fallback to ADMIN_SECRET for demo purposes
