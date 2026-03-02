@@ -23,7 +23,7 @@ from .integrations.bots.shared.consent import (
     store_consent as _shared_store,
     get_customer_consents as _shared_get,
     update_consent as _shared_update,
-    CURRENT_POLICY_VERSION
+    CURRENT_POLICY_VERSION,
 )
 
 
@@ -37,7 +37,7 @@ def _store_consent(
     consent_text: str,
     consent_version: str,
     consent_type: str = "data_processing",
-    conn=None
+    conn=None,
 ) -> None:
     """Store consent record for 152-ФЗ compliance. Wrapper around shared module function."""
     _shared_store(customer_id, "tg", consent_text, consent_version, consent_type, conn)
@@ -52,7 +52,7 @@ def _update_consent(
     telegram_id: int,
     marketing_allowed: int = None,
     data_processing_allowed: int = None,
-    conn=None
+    conn=None,
 ) -> None:
     """Update customer consent status. Wrapper around shared module function."""
     _shared_update("tg", telegram_id, marketing_allowed, data_processing_allowed, conn)
@@ -240,8 +240,6 @@ def _upsert_local_customer(
     finally:
         conn.close()
 
-
-
         conn.close()
 
 
@@ -265,7 +263,7 @@ async def cmd_start(message: Message) -> None:
         return
     bal = await client.get_balance(data["name"])
     await message.answer(
-        f"Привет, {data.get('first_name','гость')}.\nБаланс: {bal} баллов."
+        f"Привет, {data.get('first_name', 'гость')}.\nБаланс: {bal} баллов."
     )
     r = get_redis()
     r.sadd("crm:known_chats", str(message.chat.id))
@@ -364,7 +362,7 @@ async def cmd_balance(message: Message) -> None:
         else:
             sign = ""  # Points already has -
 
-        lines.append(f"{sign}{points} {t.get('description','')}")
+        lines.append(f"{sign}{points} {t.get('description', '')}")
     await message.answer("\n".join(lines))
 
 
@@ -464,7 +462,7 @@ async def cmd_order(message: Message) -> None:
         resp = await client.create_order(data["name"], items, cart.get("bonus", 0))
         delete(_cart_key(message.from_user.id))
         await message.answer(
-            f"Заказ оформлен. Номер: {resp.get('order_id','N/A')}\nСумма к оплате: {resp['total']} ₽"
+            f"Заказ оформлен. Номер: {resp.get('order_id', 'N/A')}\nСумма к оплате: {resp['total']} ₽"
         )
     except Exception as e:
         await message.answer(f"Ошибка оформления заказа: {e}")
@@ -505,6 +503,59 @@ async def cb_delete(cb: CallbackQuery) -> None:
     await cb.answer()
 
 
+@router.message(Command("revoke_consent"))
+async def cmd_revoke_consent(message: Message) -> None:
+    """Revoke consent to marketing communications."""
+    consents = _get_customer_consents(message.from_user.id)
+
+    if not consents.get("data_processing_allowed"):
+        await message.answer("Вы ещё не зарегистрированы. Используйте /start")
+        return
+
+    # Revoke marketing consent
+    _update_consent(message.from_user.id, marketing_allowed=0)
+
+    await message.answer(
+        "Вы отписаны от рассылки.\nДля повторной подписки используйте /subscribe"
+    )
+
+
+@router.message(Command("subscribe"))
+async def cmd_subscribe(message: Message) -> None:
+    """Subscribe to marketing communications."""
+    consents = _get_customer_consents(message.from_user.id)
+
+    if not consents.get("data_processing_allowed"):
+        await message.answer("Вы ещё не зарегистрированы. Используйте /start")
+        return
+
+    # Get customer_id
+    db = get_db()
+    conn = db.connect()
+    try:
+        cur = conn.execute(
+            "SELECT id FROM customers WHERE telegram_id=?", (message.from_user.id,)
+        )
+        row = cur.fetchone()
+        if not row:
+            await message.answer("Вы ещё не зарегистрированы. Используйте /start")
+            return
+        customer_id = row["id"]
+
+        # Update consent
+        _update_consent(message.from_user.id, marketing_allowed=1, conn=conn)
+
+        # Store consent record
+        consent_text = "Согласие на получение рекламных рассылок"
+        _store_consent(
+            customer_id, consent_text, CURRENT_POLICY_VERSION, "marketing", conn
+        )
+
+        await message.answer("Вы подписаны на рассылку!\nОтписаться: /revoke_consent")
+    finally:
+        conn.close()
+
+
 @router.message(Command("help"))
 async def cmd_help(message: Message) -> None:
     text = "\n".join(
@@ -518,9 +569,59 @@ async def cmd_help(message: Message) -> None:
             "/order — оформить заказ",
             "/qr — показать QR токен",
             "/delete — удалить данные",
+            "/revoke_consent — отписаться от рассылок",
+            "/subscribe — подписаться на рассылки",
         ]
     )
     await message.answer(text)
+
+
+@router.message(Command("delete"))
+async def cmd_delete(message: Message) -> None:
+    """Handle /delete command - delete user profile."""
+    # Check if user is registered
+    consents = get_customer_consents("tg", message.from_user.id)
+
+    if not consents.get("data_processing_allowed"):
+        await message.answer("Вы ещё не зарегистрированы. Используйте /start")
+        return
+
+    # Show confirmation
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="Удалить", callback_data="delete:yes"),
+                InlineKeyboardButton(text="Отмена", callback_data="delete:no"),
+            ]
+        ]
+    )
+    await message.answer("Подтверди удаление данных", reply_markup=kb)
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("delete:"))
+async def handle_delete_confirmation(callback: CallbackQuery) -> None:
+    """Handle delete confirmation button response."""
+    command = callback.data.split(":")[1]
+
+    if command == "no":
+        await callback.message.edit_text("Отменено")
+        return
+
+    if command == "yes":
+        try:
+            from app.integrations.pos.erpnext_client import ERPClient
+
+            client = ERPClient()
+            await client.delete_telegram_client(callback.from_user.id)
+
+            # Cleanup user data - don't log refusal since it's a deliberate deletion
+            cleanup_user_data("tg", callback.from_user.id, log_refusal=False)
+
+            await callback.message.edit_text(
+                "Ваш профиль и все данные удалены в соответствии с 152-ФЗ."
+            )
+        except Exception as e:
+            await callback.message.edit_text(f"Ошибка при удалении: {e}")
 
 
 @router.message(Command("qr"))

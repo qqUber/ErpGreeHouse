@@ -108,7 +108,7 @@ def _warm_dashboard_cache() -> None:
         # Check if already cached
         if _cache_get_json(cache_key):
             return
-        
+
         db = get_db()
         conn = db.connect()
         try:
@@ -330,13 +330,13 @@ def sales_stats(
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     check_permission(auth_result, "dashboard.read")
-    
+
     # Cache key includes days parameter for different time ranges
     cache_key = f"crm:cache:stats:sales:{days}"
     cached = _cache_get_json(cache_key)
     if isinstance(cached, dict):
         return cached
-    
+
     db = get_db()
     conn = db.connect()
     try:
@@ -366,13 +366,13 @@ def analytics_sales_by_day(
 ) -> dict[str, Any]:
     """Get sales dynamics by day for charts"""
     check_permission(auth_result, "dashboard.read")
-    
+
     # Cache key includes days parameter
     cache_key = f"crm:cache:analytics:sales-by-day:{days}"
     cached = _cache_get_json(cache_key)
     if isinstance(cached, dict):
         return cached
-    
+
     db = get_db()
     conn = db.connect()
     try:
@@ -406,13 +406,13 @@ def analytics_top_products(
 ) -> dict[str, Any]:
     """Get top products by sales for bar chart"""
     check_permission(auth_result, "dashboard.read")
-    
+
     # Cache key includes days and limit parameters
     cache_key = f"crm:cache:analytics:top-products:{days}:{limit}"
     cached = _cache_get_json(cache_key)
     if isinstance(cached, dict):
         return cached
-    
+
     db = get_db()
     conn = db.connect()
     try:
@@ -463,13 +463,13 @@ def analytics_category_distribution(
 ) -> dict[str, Any]:
     """Get category distribution for pie/donut chart"""
     check_permission(auth_result, "dashboard.read")
-    
+
     # Cache key includes days parameter
     cache_key = f"crm:cache:analytics:category-dist:{days}"
     cached = _cache_get_json(cache_key)
     if isinstance(cached, dict):
         return cached
-    
+
     db = get_db()
     conn = db.connect()
     try:
@@ -646,6 +646,89 @@ def list_customers(
         # Cache for shorter time if filtered
         _cache_set_json(cache_key, data, ttl_seconds=5)
         return data
+    finally:
+        conn.close()
+
+
+@router.get("/compliance/consents")
+def list_consents(
+    customer_id: Optional[int] = Query(None),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Get consent records with optional customer filtering"""
+    check_permission(auth_result, "customer.read")
+    db = get_db()
+    conn = db.connect()
+    try:
+        where = []
+        params = []
+
+        if customer_id is not None:
+            where.append("customer_id = ?")
+            params.append(customer_id)
+
+        sql = "SELECT * FROM consents"
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        sql += " ORDER BY accepted_at DESC"
+
+        cur = conn.execute(sql, tuple(params))
+        items = [dict(r) for r in cur.fetchall()]
+        return {"items": items}
+    finally:
+        conn.close()
+
+
+@router.get("/compliance/consents/{customer_id}")
+def get_customer_consents(
+    customer_id: int,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Get consent history for a specific customer"""
+    check_permission(auth_result, "customer.read")
+    db = get_db()
+    conn = db.connect()
+    try:
+        cur = conn.execute(
+            "SELECT * FROM consents WHERE customer_id = ? ORDER BY accepted_at DESC",
+            (customer_id,),
+        )
+        items = [dict(r) for r in cur.fetchall()]
+        return {"items": items}
+    finally:
+        conn.close()
+
+
+@router.delete("/compliance/customers/{customer_id}")
+def delete_customer(
+    customer_id: int,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Delete customer profile and all associated data"""
+    check_permission(auth_result, "customer.delete")
+    db = get_db()
+    conn = db.connect()
+    try:
+        # Check if customer exists
+        cur = conn.execute("SELECT id FROM customers WHERE id = ?", (customer_id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Customer not found")
+
+        # Delete all consents for customer
+        conn.execute("DELETE FROM consents WHERE customer_id = ?", (customer_id,))
+
+        # Delete all transactions for customer
+        conn.execute("DELETE FROM transactions WHERE customer_id = ?", (customer_id,))
+
+        # Delete customer
+        conn.execute("DELETE FROM customers WHERE id = ?", (customer_id,))
+
+        conn.commit()
+
+        # Invalidate cache
+        _cache_del_prefix("crm:cache:customers:")
+
+        return {"status": "deleted"}
     finally:
         conn.close()
 
@@ -1055,9 +1138,12 @@ def export_transactions_csv(
 
 class MarketingPushIn(BaseModel):
     """Request model for marketing push endpoint."""
+
     message: str = Field(min_length=1, max_length=1000)
     min_balance_points: int = Field(default=100, ge=0)
-    channel_filter: str | None = Field(default=None, pattern="^(tg|vk|telegram|vkontakte)$")
+    channel_filter: str | None = Field(
+        default=None, pattern="^(tg|vk|telegram|vkontakte)$"
+    )
 
 
 @router.post("/marketing/push")
@@ -1067,18 +1153,18 @@ def marketing_push(
 ) -> dict[str, Any]:
     """
     Send marketing push to customers.
-    
+
     Filters customers where:
     - marketing_allowed == 1
     - balance_points > min_balance_points (default: 100)
-    
+
     Sends message via preferred_channel (TG or VK).
     """
     check_permission(auth_result, "marketing.send")
-    
+
     db = get_db()
     conn = db.connect()
-    
+
     try:
         # Build query with optional channel filter
         query = """
@@ -1088,7 +1174,7 @@ def marketing_push(
             AND balance_points > ?
         """
         params = [payload.min_balance_points]
-        
+
         if payload.channel_filter:
             # Normalize channel filter
             channel = payload.channel_filter.lower()
@@ -1099,36 +1185,41 @@ def marketing_push(
         else:
             # Default: get customers with any channel
             query += " AND (telegram_id IS NOT NULL OR vk_id IS NOT NULL)"
-        
+
         cur = conn.execute(query, tuple(params))
         customers = cur.fetchall()
-        
+
         sent_tg = 0
         sent_vk = 0
         failed = 0
-        
+
         # Import async message sending functions
         from .worker import send_customer_message
         import aiohttp
         import asyncio
-        
+
         # Get VK settings for sending messages
         from .config import get_settings
+
         settings = get_settings()
-        vk_token = getattr(settings, 'vk_group_token', None) or os.getenv("VK_GROUP_TOKEN")
-        vk_group_id = getattr(settings, 'vk_group_id', None) or os.getenv("VK_GROUP_ID")
-        
+        vk_token = getattr(settings, "vk_group_token", None) or os.getenv(
+            "VK_GROUP_TOKEN"
+        )
+        vk_group_id = getattr(settings, "vk_group_id", None) or os.getenv("VK_GROUP_ID")
+
         for customer in customers:
             customer_id = int(customer["id"])
             telegram_id = customer["telegram_id"]
             vk_id = customer["vk_id"]
             preferred = customer["preferred_channel"]
-            
+
             try:
                 # Send via preferred channel
                 if preferred == "tg" and telegram_id:
                     # Use worker task for async sending
-                    result = send_customer_message.delay(int(telegram_id), payload.message)
+                    result = send_customer_message.delay(
+                        int(telegram_id), payload.message
+                    )
                     sent_tg += 1
                 elif preferred == "vk" and vk_id and vk_token:
                     # Send via VK API directly
@@ -1139,14 +1230,15 @@ def marketing_push(
                                 "v": "5.131",
                                 "user_id": int(vk_id),
                                 "message": payload.message,
-                                "random_id": int(asyncio.get_event_loop().time() * 1000)
+                                "random_id": int(
+                                    asyncio.get_event_loop().time() * 1000
+                                ),
                             }
                             async with session.post(
-                                "https://api.vk.com/method/messages.send",
-                                params=params
+                                "https://api.vk.com/method/messages.send", params=params
                             ) as resp:
                                 return await resp.json()
-                    
+
                     # Run async VK send
                     try:
                         asyncio.run(send_vk_message())
@@ -1164,15 +1256,17 @@ def marketing_push(
             except Exception as e:
                 print(f"Error sending to customer {customer_id}: {e}")
                 failed += 1
-        
+
         return {
             "status": "completed",
             "total_customers": len(customers),
             "sent_telegram": sent_tg,
             "sent_vk": sent_vk,
             "failed": failed,
-            "message": payload.message[:50] + "..." if len(payload.message) > 50 else payload.message
+            "message": payload.message[:50] + "..."
+            if len(payload.message) > 50
+            else payload.message,
         }
-        
+
     finally:
         conn.close()

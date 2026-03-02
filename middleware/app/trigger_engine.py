@@ -17,7 +17,7 @@ def evaluate_and_queue_triggers(
     conn = db.connect()
     try:
         triggers = conn.execute(
-            "SELECT id, criteria_json, delay_hours, message_text FROM marketing_triggers WHERE active=1 AND event_source=?",
+            "SELECT id, criteria_json, delay_hours, message_text, media_type, media_url, caption FROM marketing_triggers WHERE active=1 AND event_source=?",
             (event_source,),
         ).fetchall()
 
@@ -38,6 +38,9 @@ def evaluate_and_queue_triggers(
             # Record the event and queue it
             delay_hours = int(trigger["delay_hours"])
             message_text = trigger["message_text"]
+            media_type = trigger["media_type"]
+            media_url = trigger["media_url"]
+            caption = trigger["caption"]
             source_tx_id = event_data.get("transaction_id")
 
             # Queue the Celery task
@@ -45,6 +48,9 @@ def evaluate_and_queue_triggers(
                 "customer_id": customer_id,
                 "trigger_id": trigger_id,
                 "message_text": message_text,
+                "media_type": media_type,
+                "media_url": media_url,
+                "caption": caption,
             }
 
             # We schedule it for now + delay_hours.
@@ -95,6 +101,14 @@ def _check_criteria(criteria: Dict[str, Any], event_data: Dict[str, Any]) -> boo
         if key == "days_inactive":
             actual_days = event_data.get("days_inactive", 0)
             if actual_days < expected_value:
+                return False
+        if key == "points_to_expire":
+            actual_points = event_data.get("points_to_expire", 0)
+            if actual_points < expected_value:
+                return False
+        if key == "purchase_category":
+            actual_category = event_data.get("category", "")
+            if actual_category != expected_value:
                 return False
         # Add more criteria types here as needed
 

@@ -516,7 +516,13 @@ def expire_inactive_points() -> dict:
 
 @celery_app.task
 def execute_marketing_trigger(
-    customer_id: int, trigger_id: int, message_text: str, event_id: int | None = None
+    customer_id: int,
+    trigger_id: int,
+    message_text: str,
+    media_type: str = None,
+    media_url: str = None,
+    caption: str = None,
+    event_id: int | None = None,
 ) -> dict:
     async def runner() -> dict:
         db = get_db()
@@ -545,7 +551,25 @@ def execute_marketing_trigger(
                 return {"sent": False, "reason": "no telegram id"}
 
             bot = create_bot()
-            ok = await safe_send(bot, int(row["telegram_id"]), message_text)
+            ok = False
+
+            if media_type:
+                if media_type == "photo" and media_url:
+                    ok = await safe_send_photo(
+                        bot, int(row["telegram_id"]), media_url, caption or message_text
+                    )
+                elif media_type == "video" and media_url:
+                    ok = await safe_send_video(
+                        bot, int(row["telegram_id"]), media_url, caption or message_text
+                    )
+                elif media_type == "document" and media_url:
+                    ok = await safe_send_document(
+                        bot, int(row["telegram_id"]), media_url, caption or message_text
+                    )
+                else:
+                    ok = await safe_send(bot, int(row["telegram_id"]), message_text)
+            else:
+                ok = await safe_send(bot, int(row["telegram_id"]), message_text)
 
             if event_id:
                 conn.execute(
@@ -599,11 +623,60 @@ def process_periodic_marketing() -> dict:
                 {"days_inactive": int(r["days_inactive"])},
             )
 
+        # Welcome message triggers for new customers
+        rows = conn.execute("""
+            SELECT id FROM customers 
+            WHERE created_at >= datetime('now', '-24 hours')
+        """).fetchall()
+        for r in rows:
+            trigger_engine.evaluate_and_queue_triggers(
+                int(r["id"]), "customer.welcome", {}
+            )
+
+        # Points expiration triggers
+        # Check for points that will expire in next 7 days
+        rows = conn.execute("""
+            SELECT c.id, SUM(t.points_earned - t.points_redeemed) as points_to_expire
+            FROM customers c
+            LEFT JOIN transactions t ON c.id = t.customer_id
+            WHERE t.created_at <= datetime('now', '-365 days')
+            GROUP BY c.id
+            HAVING points_to_expire > 0
+        """).fetchall()
+        for r in rows:
+            trigger_engine.evaluate_and_queue_triggers(
+                int(r["id"]),
+                "points.expiration",
+                {"points_to_expire": int(r["points_to_expire"])},
+            )
+
         return {"processed": True}
     except Exception as e:
         return {"processed": False, "error": str(e)}
     finally:
         conn.close()
+
+
+@celery_app.task
+def process_telegram_update(payload: dict) -> dict:
+    """Process Telegram webhook updates."""
+
+    async def runner() -> dict:
+        from app.integrations.bots.telegram_handler import create_bot, create_dispatcher
+        from aiogram.types import Update
+
+        bot = create_bot()
+        dp = create_dispatcher()
+
+        try:
+            update = Update(**payload)
+            await dp.feed_update(bot, update)
+            return {"processed": True}
+        except Exception as e:
+            logger.error(f"Error processing Telegram update: {e}")
+            return {"processed": False, "error": str(e)}
+
+    return asyncio.run(runner())
 
 
 if __name__ == "__main__":

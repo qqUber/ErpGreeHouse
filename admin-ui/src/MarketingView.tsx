@@ -334,7 +334,59 @@ function SegmentsManager({
   // Criteria builder state
   const [minBalance, setMinBalance] = useState('');
   const [daysSinceVisit, setDaysSinceVisit] = useState('');
+  const [minPurchaseAmount, setMinPurchaseAmount] = useState('');
+  const [purchaseFrequency, setPurchaseFrequency] = useState('');
+  const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
+  const [selectedGender, setSelectedGender] = useState('');
+  const [ageMin, setAgeMin] = useState('');
+  const [ageMax, setAgeMax] = useState('');
   const [error, setError] = useState('');
+  const [preview, setPreview] = useState<any[]>([]);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+
+  async function handlePreview() {
+    if (!newName) {
+      setError('Введите название сегмента');
+      return;
+    }
+    try {
+      setIsPreviewing(true);
+      const criteria: any = {};
+      if (minBalance) criteria.min_balance = Number(minBalance);
+      if (daysSinceVisit) criteria.days_since_visit = Number(daysSinceVisit);
+      if (minPurchaseAmount) criteria.min_purchase_amount = Number(minPurchaseAmount);
+      if (purchaseFrequency) criteria.purchase_frequency = Number(purchaseFrequency);
+      if (selectedPreferences.length > 0) criteria.preferences = selectedPreferences;
+      if (selectedGender) criteria.gender = selectedGender;
+      if (ageMin || ageMax) {
+        criteria.age_range = {};
+        if (ageMin) criteria.age_range.min = Number(ageMin);
+        if (ageMax) criteria.age_range.max = Number(ageMax);
+      }
+
+      // Create temporary segment for preview
+      const tempSegment = await Api.createMarketingSegment({
+        name: `PREVIEW_${newName}`,
+        criteria,
+      });
+      
+      // Get preview
+      const response = await fetch(`${Api.baseUrl}/api/v1/marketing/segments/${tempSegment.id}/preview?limit=10`);
+      const data = await response.json();
+      setPreview(data.customers);
+      
+      // Delete temporary segment
+      await fetch(`${Api.baseUrl}/api/v1/marketing/segments/${tempSegment.id}`, {
+        method: 'DELETE',
+        headers: Api.headers,
+      });
+      
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setIsPreviewing(false);
+    }
+  }
 
   async function handleCreate() {
     if (!newName) {
@@ -345,6 +397,15 @@ function SegmentsManager({
       const criteria: any = {};
       if (minBalance) criteria.min_balance = Number(minBalance);
       if (daysSinceVisit) criteria.days_since_visit = Number(daysSinceVisit);
+      if (minPurchaseAmount) criteria.min_purchase_amount = Number(minPurchaseAmount);
+      if (purchaseFrequency) criteria.purchase_frequency = Number(purchaseFrequency);
+      if (selectedPreferences.length > 0) criteria.preferences = selectedPreferences;
+      if (selectedGender) criteria.gender = selectedGender;
+      if (ageMin || ageMax) {
+        criteria.age_range = {};
+        if (ageMin) criteria.age_range.min = Number(ageMin);
+        if (ageMax) criteria.age_range.max = Number(ageMax);
+      }
 
       await Api.createMarketingSegment({
         name: newName,
@@ -354,16 +415,31 @@ function SegmentsManager({
       setNewName('');
       setMinBalance('');
       setDaysSinceVisit('');
+      setMinPurchaseAmount('');
+      setPurchaseFrequency('');
+      setSelectedPreferences([]);
+      setSelectedGender('');
+      setAgeMin('');
+      setAgeMax('');
+      setPreview([]);
       onUpdate();
     } catch (e) {
       setError(String(e));
     }
   }
 
+  const togglePreference = (preference: string) => {
+    setSelectedPreferences(prev => 
+      prev.includes(preference) 
+        ? prev.filter(p => p !== preference) 
+        : [...prev, preference]
+    );
+  };
+
   return (
     <div className="grid gap-6">
       {isCreating ? (
-        <div className="card p-4 grid gap-4 max-w-lg">
+        <div className="card p-4 grid gap-4 max-w-2xl">
           <h3 className="font-bold">Новый сегмент</h3>
           {error && <div className="text-red-600 text-sm">{error}</div>}
 
@@ -379,35 +455,156 @@ function SegmentsManager({
 
           <div className="border-t pt-4 mt-2">
             <h4 className="text-sm font-bold mb-2">Критерии фильтрации</h4>
-            <div className="grid gap-3">
-              <div>
-                <label className="block text-xs text-gray-500">Минимальный баланс баллов</label>
-                <input
-                  className="input w-full"
-                  type="number"
-                  value={minBalance}
-                  onChange={(e) => setMinBalance(e.target.value)}
-                  placeholder="0"
-                />
+            
+            <div className="grid gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-500">Минимальный баланс баллов</label>
+                  <input
+                    className="input w-full"
+                    type="number"
+                    value={minBalance}
+                    onChange={(e) => setMinBalance(e.target.value)}
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500">
+                    Дней с последнего визита (больше чем)
+                  </label>
+                  <input
+                    className="input w-full"
+                    type="number"
+                    value={daysSinceVisit}
+                    onChange={(e) => setDaysSinceVisit(e.target.value)}
+                    placeholder="30"
+                  />
+                </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-500">Минимальная сумма покупки (₽)</label>
+                  <input
+                    className="input w-full"
+                    type="number"
+                    value={minPurchaseAmount}
+                    onChange={(e) => setMinPurchaseAmount(e.target.value)}
+                    placeholder="5000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500">Количество покупок (не менее)</label>
+                  <input
+                    className="input w-full"
+                    type="number"
+                    value={purchaseFrequency}
+                    onChange={(e) => setPurchaseFrequency(e.target.value)}
+                    placeholder="5"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="block text-xs text-gray-500">
-                  Дней с последнего визита (больше чем)
-                </label>
-                <input
+                <label className="block text-xs text-gray-500">Пол</label>
+                <select
                   className="input w-full"
-                  type="number"
-                  value={daysSinceVisit}
-                  onChange={(e) => setDaysSinceVisit(e.target.value)}
-                  placeholder="30"
-                />
+                  value={selectedGender}
+                  onChange={(e) => setSelectedGender(e.target.value)}
+                >
+                  <option value="">Не выбран</option>
+                  <option value="male">Мужской</option>
+                  <option value="female">Женский</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-500">Возраст от</label>
+                  <input
+                    className="input w-full"
+                    type="number"
+                    value={ageMin}
+                    onChange={(e) => setAgeMin(e.target.value)}
+                    placeholder="18"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500">Возраст до</label>
+                  <input
+                    className="input w-full"
+                    type="number"
+                    value={ageMax}
+                    onChange={(e) => setAgeMax(e.target.value)}
+                    placeholder="65"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-500">Предпочтения (выберите)</label>
+                <div className="grid grid-cols-3 gap-2 mt-1">
+                  {['coffee', 'tea', 'pastries', 'breakfast', 'lunch'].map(preference => (
+                    <label key={preference} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedPreferences.includes(preference)}
+                        onChange={() => togglePreference(preference)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      {preference === 'coffee' && 'Кофе'}
+                      {preference === 'tea' && 'Чай'}
+                      {preference === 'pastries' && 'Выпечка'}
+                      {preference === 'breakfast' && 'Завтрак'}
+                      {preference === 'lunch' && 'Обед'}
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
+          {preview.length > 0 && (
+            <div className="border-t pt-4 mt-2">
+              <h4 className="text-sm font-bold mb-2">Предварительный просмотр (10 клиентов)</h4>
+              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-gray-50 border-b">
+                      <th className="p-2">Имя</th>
+                      <th className="p-2">Баланс</th>
+                      <th className="p-2">Последний визит</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {preview.map((customer, index) => (
+                      <tr key={index} className="border-b last:border-0 hover:bg-gray-50">
+                        <td className="p-2">{customer.full_name}</td>
+                        <td className="p-2">{customer.points_balance}</td>
+                        <td className="p-2">
+                          {new Date(customer.last_visit).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-2 justify-end">
-            <button className="btn btn-secondary" onClick={() => setIsCreating(false)}>
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => setIsCreating(false)}
+            >
               Отмена
+            </button>
+            <button 
+              className="btn btn-outline" 
+              onClick={handlePreview}
+              disabled={isPreviewing}
+            >
+              {isPreviewing ? 'Просмотр...' : 'Предварительный просмотр'}
             </button>
             <button className="btn btn-primary" onClick={handleCreate}>
               Создать
@@ -427,7 +624,8 @@ function SegmentsManager({
               <th className="p-2">ID</th>
               <th className="p-2">Название</th>
               <th className="p-2">Критерии</th>
-              <th className="p-2">Создан</th>
+              <th className="p-2">Обновлен</th>
+              <th className="p-2">Действия</th>
             </tr>
           </thead>
           <tbody>
@@ -435,15 +633,35 @@ function SegmentsManager({
               <tr key={s.id} className="border-b last:border-0 hover:bg-gray-50">
                 <td className="p-2 text-gray-500">#{s.id}</td>
                 <td className="p-2 font-medium">{s.name}</td>
-                <td className="p-2 text-xs text-gray-600 font-mono">
+                <td className="p-2 text-xs text-gray-600 font-mono max-w-xs truncate" title={JSON.stringify(s.criteria)}>
                   {JSON.stringify(s.criteria)}
                 </td>
-                <td className="p-2 text-gray-500">{new Date(s.created_at).toLocaleDateString()}</td>
+                <td className="p-2 text-gray-500">
+                  {s.last_updated ? new Date(s.last_updated).toLocaleDateString() : '—'}
+                </td>
+                <td className="p-2">
+                  <button 
+                    className="text-blue-600 hover:underline text-xs"
+                    onClick={async () => {
+                      try {
+                        await fetch(`${Api.baseUrl}/api/v1/marketing/segments/${s.id}/refresh`, {
+                          method: 'POST',
+                          headers: Api.headers,
+                        });
+                        onUpdate();
+                      } catch (e) {
+                        console.error(e);
+                      }
+                    }}
+                  >
+                    Обновить
+                  </button>
+                </td>
               </tr>
             ))}
             {segments.length === 0 && (
               <tr>
-                <td colSpan={4} className="p-4 text-center text-gray-500">
+                <td colSpan={5} className="p-4 text-center text-gray-500">
                   Нет сегментов
                 </td>
               </tr>
@@ -468,6 +686,8 @@ function TriggersManager({
   const [newDelay, setNewDelay] = useState('24');
   const [minAmount, setMinAmount] = useState('');
   const [daysInactive, setDaysInactive] = useState('');
+  const [pointsToExpire, setPointsToExpire] = useState('');
+  const [purchaseCategory, setPurchaseCategory] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [newMediaType, setNewMediaType] = useState<string | ''>('');
   const [newMediaUrl, setNewMediaUrl] = useState('');
@@ -484,6 +704,10 @@ function TriggersManager({
       if (eventSource === 'pos.sale' && minAmount) criteria.min_amount = Number(minAmount);
       if (eventSource === 'customer.inactive' && daysInactive)
         criteria.days_inactive = Number(daysInactive);
+      if (eventSource === 'points.expiration' && pointsToExpire)
+        criteria.points_to_expire = Number(pointsToExpire);
+      if (eventSource === 'pos.sale' && purchaseCategory)
+        criteria.purchase_category = purchaseCategory;
 
       await Api.createMarketingTrigger({
         name: newName,
@@ -501,6 +725,8 @@ function TriggersManager({
       setNewDelay('24');
       setMinAmount('');
       setDaysInactive('');
+      setPointsToExpire('');
+      setPurchaseCategory('');
       setNewMessage('');
       setNewMediaType('');
       setNewMediaUrl('');
@@ -547,6 +773,8 @@ function TriggersManager({
                   <option value="pos.sale">🛒 Покупка на кассе</option>
                   <option value="customer.birthday">🎂 День Рождения</option>
                   <option value="customer.inactive">💤 Клиент "остыл"</option>
+                  <option value="customer.welcome">👋 Приветственное сообщение</option>
+                  <option value="points.expiration">⏰ Истечение баллов</option>
                 </select>
               </div>
               <div>
@@ -569,16 +797,33 @@ function TriggersManager({
               </h4>
 
               {eventSource === 'pos.sale' && (
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600">Сумма заказа ≥</span>
-                  <input
-                    className="input w-32"
-                    type="number"
-                    value={minAmount}
-                    onChange={(e) => setMinAmount(e.target.value)}
-                    placeholder="5000"
-                  />
-                  <span className="text-sm text-gray-600">₽</span>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-600">Сумма заказа ≥</span>
+                    <input
+                      className="input w-32"
+                      type="number"
+                      value={minAmount}
+                      onChange={(e) => setMinAmount(e.target.value)}
+                      placeholder="5000"
+                    />
+                    <span className="text-sm text-gray-600">₽</span>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Категория покупки</label>
+                    <select
+                      className="input w-full"
+                      value={purchaseCategory}
+                      onChange={(e) => setPurchaseCategory(e.target.value)}
+                    >
+                      <option value="">Все категории</option>
+                      <option value="coffee">Кофе</option>
+                      <option value="tea">Чай</option>
+                      <option value="pastries">Выпечка</option>
+                      <option value="breakfast">Завтрак</option>
+                      <option value="lunch">Обед</option>
+                    </select>
+                  </div>
                 </div>
               )}
               {eventSource === 'customer.inactive' && (
@@ -597,6 +842,23 @@ function TriggersManager({
               {eventSource === 'customer.birthday' && (
                 <div className="text-xs text-blue-600 italic bg-blue-50 p-2 rounded">
                   Автоматическое срабатывание в 09:00 по местному времени в день рождения.
+                </div>
+              )}
+              {eventSource === 'customer.welcome' && (
+                <div className="text-xs text-blue-600 italic bg-blue-50 p-2 rounded">
+                  Срабатывает для новых клиентов в течение 24 часов после регистрации.
+                </div>
+              )}
+              {eventSource === 'points.expiration' && (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">Баллы к истечению ≥</span>
+                  <input
+                    className="input w-32"
+                    type="number"
+                    value={pointsToExpire}
+                    onChange={(e) => setPointsToExpire(e.target.value)}
+                    placeholder="100"
+                  />
                 </div>
               )}
             </div>

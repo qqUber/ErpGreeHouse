@@ -150,6 +150,30 @@ class DB:
         except sqlite3.OperationalError:  # Column already exists
             pass
 
+        # Migration for additional consent fields (effective_date, ip_address)
+        try:
+            conn.execute("ALTER TABLE consents ADD COLUMN effective_date TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE consents ADD COLUMN ip_address TEXT")
+        except sqlite3.OperationalError:
+            pass
+
+        # Add indexes for consents table
+        try:
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_consents_customer_id ON consents(customer_id)"
+            )
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_consents_accepted_at ON consents(accepted_at)"
+            )
+        except sqlite3.OperationalError:
+            pass
+
         return conn
 
 

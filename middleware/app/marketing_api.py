@@ -89,11 +89,161 @@ def create_segment(
     db = get_db()
     conn = db.connect()
     cursor = conn.execute(
-        "INSERT INTO marketing_segments (name, criteria_json) VALUES (?, ?)",
+        "INSERT INTO marketing_segments (name, criteria_json, last_updated) VALUES (?, ?, datetime('now'))",
         (segment.name, json.dumps(segment.criteria)),
     )
     conn.commit()
     return {"id": cursor.lastrowid, "name": segment.name}
+
+
+@router.get("/marketing/segments/{id}/preview")
+def preview_segment(
+    id: int,
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    limit: int = 50,
+    offset: int = 0,
+):
+    require_permission(x_admin_secret, "marketing.users")
+    db = get_db()
+    conn = db.connect()
+
+    try:
+        # Get segment criteria
+        cur = conn.execute(
+            "SELECT criteria_json FROM marketing_segments WHERE id = ?", (id,)
+        )
+        segment = cur.fetchone()
+
+        if not segment:
+            raise HTTPException(status_code=404, detail="Segment not found")
+
+        criteria = json.loads(segment["criteria_json"])
+
+        # Build query to find matching customers with marketing consent
+        query = """
+            SELECT id, telegram_id, vk_id, phone, full_name, marketing_allowed, points_balance 
+            FROM customers 
+            WHERE marketing_allowed = 1 AND (telegram_id IS NOT NULL OR vk_id IS NOT NULL)
+        """
+        params = []
+
+        # Apply segmentation criteria
+        conditions = []
+
+        if "min_balance" in criteria:
+            conditions.append("points_balance >= ?")
+            params.append(criteria["min_balance"])
+
+        if "days_since_visit" in criteria:
+            conditions.append("julianday('now') - julianday(last_visit) >= ?")
+            params.append(criteria["days_since_visit"])
+
+        if "min_purchase_amount" in criteria:
+            conditions.append("""
+                EXISTS (
+                    SELECT 1 FROM transactions 
+                    WHERE customer_id = customers.id 
+                    AND total_amount >= ?
+                )
+            """)
+            params.append(criteria["min_purchase_amount"])
+
+        if "purchase_frequency" in criteria:
+            conditions.append("""
+                (SELECT COUNT(*) FROM transactions WHERE customer_id = customers.id) >= ?
+            """)
+            params.append(criteria["purchase_frequency"])
+
+        if "preferences" in criteria and criteria["preferences"]:
+            conditions.append(
+                """
+                EXISTS (
+                    SELECT 1 FROM customer_preferences 
+                    WHERE customer_id = customers.id 
+                    AND preference IN ({})
+                )
+            """.format(",".join(["?"] * len(criteria["preferences"])))
+            )
+            params.extend(criteria["preferences"])
+
+        if "gender" in criteria:
+            conditions.append("gender = ?")
+            params.append(criteria["gender"])
+
+        if "age_range" in criteria:
+            age_range = criteria["age_range"]
+            if "min" in age_range:
+                conditions.append("age >= ?")
+                params.append(age_range["min"])
+            if "max" in age_range:
+                conditions.append("age <= ?")
+                params.append(age_range["max"])
+
+        if conditions:
+            query += " AND " + " AND ".join(conditions)
+
+        query += " LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+
+        cur = conn.execute(query, params)
+        customers = [dict(row) for row in cur.fetchall()]
+
+        # Get total count for pagination
+        count_query = (
+            "SELECT COUNT(*) as total FROM ("
+            + query.replace(" LIMIT ? OFFSET ?", "")
+            + ")"
+        )
+        count_params = params[:-2]  # Remove limit and offset
+        cur_count = conn.execute(count_query, count_params)
+        total = cur_count.fetchone()["total"]
+
+        return {
+            "customers": customers,
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        }
+
+    finally:
+        conn.close()
+
+
+@router.post("/marketing/segments/{id}/refresh")
+def refresh_segment(
+    id: int,
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+):
+    require_permission(x_admin_secret, "marketing.users")
+    db = get_db()
+    conn = db.connect()
+
+    try:
+        conn.execute(
+            "UPDATE marketing_segments SET last_updated = datetime('now') WHERE id = ?",
+            (id,),
+        )
+        conn.commit()
+        return {"status": "success", "message": "Segment refreshed"}
+    finally:
+        conn.close()
+
+
+@router.delete("/marketing/segments/{id}")
+def delete_segment(
+    id: int,
+    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+):
+    require_permission(x_admin_secret, "marketing.users")
+    db = get_db()
+    conn = db.connect()
+
+    try:
+        conn.execute("DELETE FROM marketing_segments WHERE id = ?", (id,))
+        conn.commit()
+        return {"status": "success", "message": "Segment deleted"}
+    finally:
+        conn.close()
 
 
 @router.get("/marketing/campaigns")

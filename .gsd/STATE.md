@@ -4,10 +4,10 @@
 **Core Value:** A centralized loyalty and communications platform for coffee shops that saves 50-100k ₽/month by replacing expensive third-party solutions with an open-source, omnichannel CRM.
 
 ## Current Position
-- **Phase:** 03 of 07 (Messaging System)
-- **Plan:** 05 of 05 in current phase
-- **Status:** Complete
-- **Progress:** ████████████████████ 100%
+- **Phase:** 04 of 07 (Compliance & Data Protection)
+- **Plan:** 01 of 04 in current phase
+- **Status:** In Progress
+- **Progress:** ███░░░░░░░░░░░░░░░░░░ 25%
 
 ## Performance Metrics
 - **Estimated launch:** Q2 2025
@@ -21,10 +21,11 @@
 - Database: PostgreSQL with Redis cache
 - ERP integration: ERPNext
 - **Test infrastructure:** SQLAlchemy URLs vs absolute filesystem paths for SQLite - critical distinction for pytest fixtures
+- **Compliance:** Separate consents for data processing and marketing communications, consent versioning (1.0.0), data storage within Russian borders
 
 ### Blockers
 - None
 
 ## Session Continuity
 Last updated: 2026-03-02
-Next step: Plan Phase 04 - Compliance & Data Protection
+Next step: Execute Plan 04-01 - Enhance consent management

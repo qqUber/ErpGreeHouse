@@ -9,7 +9,18 @@ Only VK-specific API code is kept in this file.
 import asyncio
 import json
 import logging
-from typing import Any, Callable, Dict, Literal, Mapping, Optional, Sequence, SupportsInt, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Literal,
+    Mapping,
+    Optional,
+    Sequence,
+    SupportsInt,
+    Union,
+    cast,
+)
 
 import aiohttp
 from aiohttp import ClientSession, TCPConnector
@@ -127,7 +138,7 @@ class VKBot:
         """Process incoming VK updates"""
         for update in updates:
             update_type = update.get("type")
-            
+
             if update_type == "message_new":
                 await self._handle_message(update["object"]["message"])
             elif update_type == "message_event":
@@ -162,6 +173,8 @@ class VKBot:
             await self._handle_revoke_consent(user_id, peer_id)
         elif command.startswith("/subscribe"):
             await self._handle_subscribe(user_id, peer_id)
+        elif command.startswith("/delete"):
+            await self._handle_delete(user_id, peer_id)
         else:
             # Handle registration flow - check if user is in consent flow
             await self._handle_registration_message(user_id, peer_id, text)
@@ -175,128 +188,141 @@ class VKBot:
         user_id = event_data.get("user_id")
         peer_id = event_data.get("peer_id")
         payload = event_data.get("payload", {})
-        
+
         if not user_id or not peer_id:
             return
-            
+
         logger.info(f"VK message event from user {user_id}: {payload}")
-        
+
         # Parse payload - could be string or dict
         if isinstance(payload, str):
             try:
                 payload = json.loads(payload)
             except json.JSONDecodeError:
                 payload = {}
-        
+
         command = payload.get("command", "")
-        
+
         if command.startswith("consent:marketing:"):
             # Handle marketing consent
             await self._handle_marketing_consent(user_id, peer_id, payload)
         elif command.startswith("consent:"):
             # Handle main consent
             await self._handle_consent(user_id, peer_id, payload)
+        elif command.startswith("delete:"):
+            # Handle delete confirmation
+            await self._handle_delete_confirmation(user_id, peer_id, payload)
 
     async def _handle_registration_message(self, user_id: int, peer_id: int, text: str):
         """Handle registration flow - capture name, then phone."""
         # Use shared RegistrationFlow
         r = get_redis()
         consent_data = r.hgetall(consent_key(VK_SOURCE, user_id))
-        
+
         # Only handle if user is in registration flow (consent was given)
         if consent_data.get("consent_given") != "1":
-            await self._send_message(peer_id, "Используйте /start для начала регистрации")
+            await self._send_message(
+                peer_id, "Используйте /start для начала регистрации"
+            )
             return
-        
+
         step = consent_data.get("step", consent_data.get("state", ""))
-        
+
         if step == "name":
             # Store name and ask for phone
             name = text.strip()
-            r.hset(consent_key(VK_SOURCE, user_id), mapping={"name": name, "step": "phone"})
-            r.expire(consent_key(VK_SOURCE, user_id), 3600)  # 1 hour TTL for abandoned registrations
+            r.hset(
+                consent_key(VK_SOURCE, user_id), mapping={"name": name, "step": "phone"}
+            )
+            r.expire(
+                consent_key(VK_SOURCE, user_id), 3600
+            )  # 1 hour TTL for abandoned registrations
             await self._send_message(peer_id, "Телефон? (Формат: +79991234567)")
-        
+
         elif step == "phone":
             # Store phone and ask for marketing consent
             phone = normalize_phone(text.strip())
             if not phone:
-                await self._send_message(peer_id, "Телефон должен быть в формате +79991234567")
+                await self._send_message(
+                    peer_id, "Телефон должен быть в формате +79991234567"
+                )
                 return
-            
-            r.hset(consent_key(VK_SOURCE, user_id), mapping={"phone": phone, "step": "marketing"})
-            r.expire(consent_key(VK_SOURCE, user_id), 3600)  # 1 hour TTL for abandoned registrations
+
+            r.hset(
+                consent_key(VK_SOURCE, user_id),
+                mapping={"phone": phone, "step": "marketing"},
+            )
+            r.expire(
+                consent_key(VK_SOURCE, user_id), 3600
+            )  # 1 hour TTL for abandoned registrations
 
             # Ask for marketing consent - use shared keyboard formatting
             await self._send_message(
                 peer_id,
                 "Хотите получать новости и акции?",
-                keyboard=format_vk_keyboard(get_marketing_buttons())
+                keyboard=format_vk_keyboard(get_marketing_buttons()),
             )
         else:
             # Not in registration flow
-            await self._send_message(peer_id, "Используйте /start для начала регистрации")
+            await self._send_message(
+                peer_id, "Используйте /start для начала регистрации"
+            )
 
     async def _handle_revoke_consent(self, user_id: int, peer_id: int):
         """Handle /revoke_consent command - opt out of marketing."""
         # Use shared update_consent function
         consents = get_customer_consents(VK_SOURCE, user_id)
-        
+
         if not consents.get("data_processing_allowed"):
             await self._send_message(
-                peer_id, 
-                "Вы ещё не зарегистрированы. Используйте /start"
+                peer_id, "Вы ещё не зарегистрированы. Используйте /start"
             )
             return
-        
+
         # Update marketing consent using shared function
         update_consent(VK_SOURCE, user_id, marketing_allowed=0)
-        
+
         await self._send_message(
             peer_id,
-            "Вы отписаны от рассылки.\n"
-            "Для повторной подписки используйте /subscribe"
+            "Вы отписаны от рассылки.\nДля повторной подписки используйте /subscribe",
         )
 
     async def _handle_subscribe(self, user_id: int, peer_id: int):
         """Handle /subscribe command - opt in to marketing."""
         # Use shared get_customer_consents function
         consents = get_customer_consents(VK_SOURCE, user_id)
-        
+
         if not consents.get("data_processing_allowed"):
             await self._send_message(
-                peer_id, 
-                "Вы ещё не зарегистрированы. Используйте /start"
+                peer_id, "Вы ещё не зарегистрированы. Используйте /start"
             )
             return
-        
+
         # Get customer_id using shared function
         from .shared.consent import get_customer_id
+
         customer_id = get_customer_id(VK_SOURCE, user_id)
-        
+
         if not customer_id:
             await self._send_message(
-                peer_id, 
-                "Вы ещё не зарегистрированы. Используйте /start"
+                peer_id, "Вы ещё не зарегистрированы. Используйте /start"
             )
             return
-        
+
         # Update marketing consent using shared function
         update_consent(VK_SOURCE, user_id, marketing_allowed=1)
-        
+
         # Store marketing consent using shared function
         store_consent(
-            customer_id, 
-            VK_SOURCE, 
-            get_marketing_consent_text(), 
-            CURRENT_POLICY_VERSION, 
-            "marketing"
+            customer_id,
+            VK_SOURCE,
+            get_marketing_consent_text(),
+            CURRENT_POLICY_VERSION,
+            "marketing",
         )
-        
+
         await self._send_message(
-            peer_id,
-            "Вы подписаны на рассылку!\n"
-            "Отписаться: /revoke_consent"
+            peer_id, "Вы подписаны на рассылку!\nОтписаться: /revoke_consent"
         )
 
     async def _handle_register(self, user_id: int, text: str):
@@ -332,30 +358,31 @@ class VKBot:
         """Handle /balance command"""
         # Use shared get_customer_consents to check if user exists
         consents = get_customer_consents(VK_SOURCE, user_id)
-        
+
         if not consents.get("data_processing_allowed"):
             await self._send_message(
                 peer_id, "Вы ещё не зарегистрированы. Используйте /start"
             )
             return
-        
+
         # Get customer data
         from .shared.consent import find_customer_by_platform
+
         customer = find_customer_by_platform(VK_SOURCE, user_id)
-        
+
         if not customer:
             await self._send_message(
                 peer_id, "Вы ещё не зарегистрированы. Используйте /start"
             )
             return
-        
+
         balance = int(customer.get("balance_points", 0))
         name = customer.get("full_name", "") or "гость"
-        await self._send_message(
-            peer_id, f"Привет, {name}.\nБаланс: {balance} баллов."
-        )
+        await self._send_message(peer_id, f"Привет, {name}.\nБаланс: {balance} баллов.")
 
-    async def _send_message(self, peer_id: int, text: str, keyboard: Optional[dict] = None):
+    async def _send_message(
+        self, peer_id: int, text: str, keyboard: Optional[dict] = None
+    ):
         """Send message to VK user with optional keyboard."""
         session = await self._get_session()
         params: Any = {
@@ -365,7 +392,7 @@ class VKBot:
             "v": self.api_version,
             "random_id": 0,  # Will be auto-generated by VK
         }
-        
+
         # Add keyboard if provided (VK uses special keyboard format)
         if keyboard:
             params["keyboard"] = json.dumps(keyboard)
@@ -382,14 +409,14 @@ class VKBot:
 
     def _get_consent_keyboard(self) -> dict:
         """Get keyboard for 152-ФЗ consent request (VK community bot format).
-        
+
         Uses shared keyboard formatting for consistency.
         """
         return format_vk_keyboard(get_consent_buttons())
 
     def _get_marketing_keyboard(self) -> dict:
         """Get keyboard for marketing consent request.
-        
+
         Uses shared keyboard formatting for consistency.
         """
         return format_vk_keyboard(get_marketing_buttons())
@@ -398,7 +425,7 @@ class VKBot:
         """Handle /start command - check if user is registered and show consent if new."""
         # Use shared consent check
         consents = get_customer_consents(VK_SOURCE, user_id)
-        
+
         if consents.get("data_processing_allowed"):
             # User already registered - show balance
             await self._handle_balance(user_id, peer_id)
@@ -407,7 +434,7 @@ class VKBot:
             await self._send_message(
                 peer_id,
                 "Добро пожаловать в GreenHouse! 🏠☕",
-                keyboard=self._get_consent_keyboard()
+                keyboard=self._get_consent_keyboard(),
             )
             # Store consent state in Redis using shared key function
             r = get_redis()
@@ -418,77 +445,83 @@ class VKBot:
         """Handle consent button response."""
         command = payload.get("command", "")
         r = get_redis()
-        
+
         # Handle refusal
         if command == "consent:refuse":
             # Use shared cleanup_user_data function for 152-ФЗ compliance
             cleanup_user_data(VK_SOURCE, user_id)
-            
+
             await self._send_message(
                 peer_id,
                 "Вы отказались от регистрации.\n\n"
                 "Ваши данные были удалены.\n"
-                "Для повторной регистрации используйте /start"
+                "Для повторной регистрации используйте /start",
             )
             return
-        
+
         # Handle agreement
         if command not in ("consent:agree", "consent:yes"):
             return
-        
+
         # Store consent state and ask for name using shared RegistrationFlow
         self._reg_flow.start_registration(user_id)
-        
+
         await self._send_message(
-            peer_id,
-            "Согласие принято! ✅\n\n"
-            "Как тебя зовут? (Имя)"
+            peer_id, "Согласие принято! ✅\n\nКак тебя зовут? (Имя)"
         )
 
-    async def _handle_marketing_consent(self, user_id: int, peer_id: int, payload: dict):
+    async def _handle_marketing_consent(
+        self, user_id: int, peer_id: int, payload: dict
+    ):
         """Handle marketing consent button response."""
         command = payload.get("command", "")
         r = get_redis()
         consent_data = r.hgetall(consent_key(VK_SOURCE, user_id))
-        
+
         if not consent_data or consent_data.get("consent_given") != "1":
             await self._send_message(
                 peer_id,
-                "Сессия регистрации истекла. Используйте /start для начала заново."
+                "Сессия регистрации истекла. Используйте /start для начала заново.",
             )
             return
-        
+
         marketing_allowed = 1 if command == "consent:marketing:yes" else 0
-        
+
         # Get stored registration data
         phone = consent_data.get("phone", "")
         name = consent_data.get("name", "")
-        
+
         if not phone or not name:
             await self._send_message(
                 peer_id,
-                "Сессия регистрации неполна. Используйте /start для начала заново."
+                "Сессия регистрации неполна. Используйте /start для начала заново.",
             )
             r.delete(consent_key(VK_SOURCE, user_id))
             return
-        
-        # Complete registration using shared RegistrationFlow
-        await self._complete_registration(user_id, peer_id, name, phone, marketing_allowed)
 
-    async def _complete_registration(self, user_id: int, peer_id: int, name: str, phone: str, marketing_allowed: int):
+        # Complete registration using shared RegistrationFlow
+        await self._complete_registration(
+            user_id, peer_id, name, phone, marketing_allowed
+        )
+
+    async def _complete_registration(
+        self, user_id: int, peer_id: int, name: str, phone: str, marketing_allowed: int
+    ):
         """Complete the registration process using shared RegistrationFlow."""
         from ...integrations.pos.erpnext_client import ERPClient
-        
+
         try:
             # Use shared RegistrationFlow.complete_registration
             customer, is_new = self._reg_flow.complete_registration(
                 user_id, name, phone, marketing_allowed
             )
-            
+
             if not customer:
-                await self._send_message(peer_id, "Ошибка регистрации: не удалось создать запись")
+                await self._send_message(
+                    peer_id, "Ошибка регистрации: не удалось создать запись"
+                )
                 return
-            
+
             # Try to create customer in ERP
             client = ERPClient()
             try:
@@ -501,27 +534,78 @@ class VKBot:
                 )
             except Exception as e:
                 logger.warning(f"Failed to create customer in ERP: {e}")
-            
+
             # Clean up registration data using shared function
             self._reg_flow.clear_registration(user_id)
-            
+
             # Show success message
             if marketing_allowed:
                 await self._send_message(
                     peer_id,
                     "Готово! Начислено 100 приветственных баллов.\n\n"
                     "Вы будете получать новости и акции.\n"
-                    "Отписаться: /revoke_consent"
+                    "Отписаться: /revoke_consent",
                 )
             else:
                 await self._send_message(
                     peer_id,
                     "Готово! Начислено 100 приветственных баллов.\n\n"
                     "Вы не будете получать рекламные сообщения.\n"
-                    "Подписаться: /subscribe"
+                    "Подписаться: /subscribe",
                 )
         except Exception as e:
             await self._send_message(peer_id, f"Ошибка регистрации: {e}")
+
+    async def _handle_delete(self, user_id: int, peer_id: int):
+        """Handle /delete command - delete user profile."""
+        # Use shared get_customer_consents to check if user exists
+        consents = get_customer_consents(VK_SOURCE, user_id)
+
+        if not consents.get("data_processing_allowed"):
+            await self._send_message(
+                peer_id, "Вы ещё не зарегистрированы. Используйте /start"
+            )
+            return
+
+        # Show confirmation
+        keyboard = format_vk_keyboard(
+            [
+                {"text": "Удалить", "callback_data": "delete:yes"},
+                {"text": "Отмена", "callback_data": "delete:no"},
+            ]
+        )
+
+        await self._send_message(
+            peer_id, "Подтверди удаление данных", keyboard=keyboard
+        )
+
+    async def _handle_delete_confirmation(
+        self, user_id: int, peer_id: int, payload: dict
+    ):
+        """Handle delete confirmation button response."""
+        command = payload.get("command", "")
+
+        if command == "delete:no":
+            await self._send_message(peer_id, "Отменено")
+            return
+
+        if command == "delete:yes":
+            try:
+                from ...integrations.pos.erpnext_client import ERPClient
+
+                client = ERPClient()
+                await client.delete_telegram_client(
+                    user_id
+                )  # Note: Uses telegram_id parameter for both platforms
+
+                # Cleanup user data using shared function - don't log refusal since it's a deliberate deletion
+                cleanup_user_data(VK_SOURCE, user_id, log_refusal=False)
+
+                await self._send_message(
+                    peer_id, "Ваш профиль и все данные удалены в соответствии с 152-ФЗ."
+                )
+            except Exception as e:
+                await self._send_message(peer_id, f"Ошибка при удалении: {e}")
 
     def _get_help_text(self) -> str:
         """Get help text for VK bot"""
@@ -531,6 +615,9 @@ class VKBot:
                 "/register Имя Телефон — регистрация",
                 "/balance — баланс и последние операции",
                 "/help — справка",
+                "/delete — удалить данные",
+                "/revoke_consent — отписаться от рассылок",
+                "/subscribe — подписаться на рассылки",
             ]
         )
 
@@ -647,14 +734,14 @@ def set_vk_config(access_token: str, group_id: int, api_version: str = "5.131"):
 async def _get_webhook_bot() -> Optional["VKBot"]:
     """Get or create a reusable bot instance for webhook processing."""
     global _vk_webhook_bot, _vk_config
-    
+
     if _vk_webhook_bot is not None:
         return _vk_webhook_bot
-    
+
     if not _vk_config:
         logger.error("VK config not set, cannot create webhook bot")
         return None
-    
+
     _vk_webhook_bot = VKBot(
         access_token=_vk_config["access_token"],
         group_id=_vk_config["group_id"],
@@ -666,39 +753,39 @@ async def _get_webhook_bot() -> Optional["VKBot"]:
 async def process_vk_webhook_event(event: dict) -> None:
     """
     Process a VK webhook event.
-    
+
     Args:
         event: The VK event payload from Callback API
     """
     global _vk_config
-    
+
     # Check if config is set
     async with _vk_config_lock:
         if not _vk_config:
             logger.error("VK config not set, cannot process webhook event")
             return
-    
+
     # Get reusable bot instance
     bot = await _get_webhook_bot()
     if bot is None:
         logger.error("Failed to get VK bot instance")
         return
-    
+
     try:
         event_type = event.get("type")
-        
+
         if event_type == "message_new":
             # Handle new message
             message = event.get("object", {}).get("message", {})
             await bot._handle_message(message)
-            
+
         elif event_type == "message_event":
             # Handle keyboard button clicks (callback_query)
             event_data = event.get("object", {})
             await bot._handle_message_event(event_data)
-            
+
         else:
             logger.debug(f"Unhandled VK event type: {event_type}")
-    
+
     except Exception as e:
         logger.error(f"Error processing VK webhook event: {e}")
