@@ -1,5 +1,11 @@
 # Production Docker Compose - Telegram CRM Middleware + ERPNext
 # Используется для развёртывания в production окружении
+#
+# Data Localization Compliance (152-FZ):
+# - Все компоненты (PostgreSQL, Redis, ERPNext) должны быть размещены на территории РФ
+# - Резервные копии баз данных хранятся локально внутри РФ
+# - Не допускается передача персональных данных за границу
+
 
 version: "3.9"
 
@@ -95,6 +101,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    # Data Localization Compliance (152-FZ):
+    # - Redis кэш размещается на территории РФ
+    # - Данные кэша не передаются за границу
 
   redis-socketio:
     image: redis:8.0-alpine
@@ -187,6 +196,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    # Data Localization Compliance (152-FZ):
+    # - База данных размещается на территории РФ
+    # - Резервные копии хранятся локально в томе postgres-backups
 
   # ============================================
   # Nginx Reverse Proxy (опционально)

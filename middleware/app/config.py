@@ -44,6 +44,11 @@ class Settings:
     base_web_url: str
     erp_mock_mode: bool
 
+    # Compliance configuration (152-FZ)
+    # Data localization settings (must be hosted within Russian Federation borders)
+    # This is enforced by production infrastructure configuration
+    # For more information, see docs/compliance/data_storage_compliance.md
+
     # Rate limiting settings for password recovery
     # RECOVERY_RATE_LIMIT_ATTEMPTS: Max attempts per window
     recovery_rate_limit_attempts: int
