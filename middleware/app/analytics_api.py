@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import Any, Optional, List
 from io import BytesIO
 
-from fastapi import APIRouter, Query, Depends
+from fastapi import APIRouter, Query, Depends, HTTPException
 from fastapi.responses import StreamingResponse, FileResponse
 from pydantic import BaseModel, Field
 
@@ -336,7 +336,7 @@ def get_customer_chart(
         if interval == "day":
             query = """
                 SELECT 
-                    SUBSTR(created_at, 1, 10) as date,
+                    SUBSTR(c.created_at, 1, 10) as date,
                     COUNT(*) as new_customers,
                     COUNT(DISTINCT c.id) as active_customers
                 FROM customers c
@@ -375,11 +375,11 @@ def get_customer_chart(
         else:
             query = """
                 SELECT 
-                    SUBSTR(created_at, 1, 10) as date,
+                    SUBSTR(c.created_at, 1, 10) as date,
                     COUNT(*) as new_customers
-                FROM customers
-                WHERE created_at BETWEEN ? AND ?
-                GROUP BY SUBSTR(created_at, 1, 10)
+                FROM customers c
+                WHERE c.created_at BETWEEN ? AND ?
+                GROUP BY SUBSTR(c.created_at, 1, 10)
                 ORDER BY date
             """
 

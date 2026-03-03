@@ -7,7 +7,7 @@ r = redis.from_url(settings.redis_url)
 
 
 def check_rate_limit(
-    chat_id: int, channel: str, max_tokens: int, refill_rate: float
+    chat_id: int | str, channel: str, max_tokens: int, refill_rate: float
 ) -> bool:
     key = f"rate_limit:{channel}:{chat_id}"
     current_time = time.time()
@@ -40,37 +40,38 @@ def get_rate_limit_config(channel: str):
     # Telegram: 30 msg/sec broadcast, 1 msg/sec per chat
     if channel == "telegram":
         return {
-            "global": {"max_tokens": int(settings.telegram_rate_limit_global), "refill_rate": settings.telegram_rate_limit_global},
-            "per_chat": {"max_tokens": int(settings.telegram_rate_limit_per_chat), "refill_rate": settings.telegram_rate_limit_per_chat}
+            "global": {
+                "max_tokens": int(settings.telegram_rate_limit_global),
+                "refill_rate": settings.telegram_rate_limit_global,
+            },
+            "per_chat": {
+                "max_tokens": int(settings.telegram_rate_limit_per_chat),
+                "refill_rate": settings.telegram_rate_limit_per_chat,
+            },
         }
     # VK: 20 msg/min per group, 1 msg/sec per user
     elif channel == "vk":
         return {
-            "global": {"max_tokens": int(settings.vk_rate_limit_global * 60), "refill_rate": settings.vk_rate_limit_global},
-            "per_chat": {"max_tokens": int(settings.vk_rate_limit_per_chat), "refill_rate": settings.vk_rate_limit_per_chat}
+            "global": {
+                "max_tokens": int(settings.vk_rate_limit_global * 60),
+                "refill_rate": settings.vk_rate_limit_global,
+            },
+            "per_chat": {
+                "max_tokens": int(settings.vk_rate_limit_per_chat),
+                "refill_rate": settings.vk_rate_limit_per_chat,
+            },
         }
     # Mobile app: 100 msg/sec
     elif channel == "mobile":
         return {
-            "global": {"max_tokens": int(settings.mobile_rate_limit_global), "refill_rate": settings.mobile_rate_limit_global},
-            "per_chat": {"max_tokens": int(settings.mobile_rate_limit_per_chat), "refill_rate": settings.mobile_rate_limit_per_chat}
-        }
-    # Default: conservative limits
-    return {
-        "global": {"max_tokens": 10, "refill_rate": 10.0},
-        "per_chat": {"max_tokens": 1, "refill_rate": 1.0}
-    }
-    # VK: 20 msg/min per group, 1 msg/sec per user
-    elif channel == "vk":
-        return {
-            "global": {"max_tokens": 20, "refill_rate": 0.333},
-            "per_chat": {"max_tokens": 1, "refill_rate": 1.0},
-        }
-    # Mobile app: 100 msg/sec
-    elif channel == "mobile":
-        return {
-            "global": {"max_tokens": 100, "refill_rate": 100.0},
-            "per_chat": {"max_tokens": 5, "refill_rate": 1.0},
+            "global": {
+                "max_tokens": int(settings.mobile_rate_limit_global),
+                "refill_rate": settings.mobile_rate_limit_global,
+            },
+            "per_chat": {
+                "max_tokens": int(settings.mobile_rate_limit_per_chat),
+                "refill_rate": settings.mobile_rate_limit_per_chat,
+            },
         }
     # Default: conservative limits
     return {
@@ -79,7 +80,7 @@ def get_rate_limit_config(channel: str):
     }
 
 
-def is_rate_limited(chat_id: int, channel: str) -> bool:
+def is_rate_limited(chat_id: int | str, channel: str) -> bool:
     """Check if sending a message to this chat on this channel would exceed rate limits"""
     config = get_rate_limit_config(channel)
 

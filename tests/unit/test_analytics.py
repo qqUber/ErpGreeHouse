@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
-from app.main import app
+from middleware.app.main import app
 
 
 @pytest.fixture
@@ -161,7 +161,7 @@ def test_external_api_endpoints(client: TestClient):
     """Test external API endpoints with API key authentication."""
     # Test without API key
     response = client.get("/api/v1/analytics/api/reports/sales")
-    assert response.status_code == 400
+    assert response.status_code == 422
 
     # Test with invalid API key
     response = client.get("/api/v1/analytics/api/reports/sales?api_key=invalid_key")
@@ -185,7 +185,7 @@ def test_external_api_endpoints(client: TestClient):
 def test_api_key_configuration():
     """Test that API key configuration is properly handled."""
     with patch.dict("os.environ", {"ANALYTICS_API_KEY": "test_api_key"}):
-        from app.analytics_api import get_external_sales_report
+        from middleware.app.analytics_api import get_external_sales_report
         from fastapi.testclient import TestClient
         import sys
         import io
