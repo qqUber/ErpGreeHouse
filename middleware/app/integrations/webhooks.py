@@ -5,8 +5,8 @@ import logging
 from datetime import datetime
 from typing import Dict, Any
 from fastapi import APIRouter, Request, HTTPException
-from middleware.app.integrations.erp_sync import ERPSyncService
-from middleware.app.db import get_db
+from ..integrations.erp_sync import ERPSyncService
+from ..db import get_db
 
 logger = logging.getLogger(__name__)
 

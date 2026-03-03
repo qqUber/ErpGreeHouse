@@ -18,6 +18,7 @@ import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { useAuth } from './stores/auth';
 import { ComplianceView } from './ComplianceView';
 import { MarketingView } from './MarketingView';
+import { AnalyticsView } from './AnalyticsView';
 
 type Tab =
   | 'dashboard'
@@ -27,7 +28,8 @@ type Tab =
   | 'products'
   | 'settings'
   | 'marketing'
-  | 'compliance';
+  | 'compliance'
+  | 'analytics';
 
 type PublicStatus = {
   api: string;
@@ -639,7 +641,7 @@ function App() {
     const perms = new Set(effectiveUser?.permissions || []);
     // If user has '*' permission, they see everything (though owner check above covers this usually)
     if (perms.has('*'))
-      return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings', 'marketing', 'compliance'];
+      return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings', 'marketing', 'compliance', 'analytics'];
 
     const tabs: Tab[] = [];
     if (perms.has('dashboard.read')) tabs.push('dashboard');
@@ -651,6 +653,7 @@ function App() {
     tabs.push('settings');
     if (perms.has('marketing.campaign')) tabs.push('marketing');
     if (perms.has('customer.delete') || perms.has('customer.read')) tabs.push('compliance');
+    if (perms.has('dashboard.read')) tabs.push('analytics');
 
     return tabs;
   }, [effectiveAuthReady, user, me?.role, me?.permissions]);
@@ -734,6 +737,14 @@ function App() {
               onClick={() => setTab('compliance')}
             >
               Комплаенс
+            </div>
+          ) : null}
+          {allowedTabs.includes('analytics') ? (
+            <div
+              className={`tab ${safeTab === 'analytics' ? 'tabActive' : ''}`}
+              onClick={() => setTab('analytics')}
+            >
+              Аналитика
             </div>
           ) : null}
         </div>
@@ -1106,6 +1117,9 @@ function App() {
 
       {optimisticReady && safeTab === 'compliance' ? (
         <ComplianceView />
+      ) : null}
+      {optimisticReady && safeTab === 'analytics' ? (
+        <AnalyticsView />
       ) : null}
 
       {authFlow?.active ? (

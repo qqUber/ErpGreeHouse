@@ -184,6 +184,7 @@ def get_default_permissions(role: str) -> set[str]:
             "pos.sale",
             "transaction.read",
             "product.read",
+            "analytics.read",
         }
     if role == "marketer" or role == "manager":
         return {
@@ -199,6 +200,8 @@ def get_default_permissions(role: str) -> set[str]:
             "integration.read",
             "integration.update",
             "report.export",
+            "analytics.read",
+            "analytics.export",
         }
     return set()
 
@@ -244,6 +247,8 @@ ALL_PERMISSIONS = [
     "marketing.users",
     "receipt.manual",
     "report.export",
+    "analytics.read",
+    "analytics.export",
 ]
 
 

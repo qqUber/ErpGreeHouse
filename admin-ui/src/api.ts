@@ -50,6 +50,78 @@ export type RecalculateAnalytics = {
   recalculated: number;
 };
 
+// Analytics types
+export type DashboardOverview = {
+  time_range: string;
+  metrics: {
+    total_customers: number;
+    new_customers: number;
+    total_transactions: number;
+    transactions: number;
+    total_revenue: number;
+    revenue: number;
+    avg_check: number;
+    points_redeemed: number;
+    points_earned: number;
+    active_customers: number;
+    retention_rate: number;
+  };
+  last_updated: string;
+};
+
+export type ChartData = {
+  time_range: string;
+  interval: string;
+  data: Array<{
+    date: string;
+    transactions?: number;
+    revenue?: number;
+    points_redeemed?: number;
+    points_earned?: number;
+    new_customers?: number;
+    active_customers?: number;
+    customers_redeeming?: number;
+  }>;
+};
+
+export type LoyaltyReportOverview = {
+  time_range: string;
+  metrics: {
+    points_earned: number;
+    points_redeemed: number;
+    redemption_rate: number;
+    avg_points_per_transaction: number;
+    avg_points_redeemed_per_customer: number;
+    avg_visits_per_redeeming_customer: number;
+    reminder_count: number;
+  };
+};
+
+export type LoyaltyDetailedReport = {
+  time_range: string;
+  customer_data: Array<{
+    customer_id: number;
+    full_name: string;
+    phone: string;
+    transaction_count: number;
+    total_spent: number;
+    points_earned: number;
+    points_redeemed: number;
+    last_transaction: string;
+  }>;
+};
+
+export type CustomerSegmentation = {
+  segments: {
+    new: { count: number; avg_monetary: number; avg_frequency: number };
+    active: { count: number; avg_monetary: number; avg_frequency: number };
+    at_risk: { count: number; avg_monetary: number; avg_frequency: number };
+    churned: { count: number; avg_monetary: number; avg_frequency: number };
+    vip: { count: number; avg_monetary: number; avg_frequency: number };
+  };
+  total_customers: number;
+};
+
 export type CustomerListItem = {
   id: number;
   phone: string | null;
@@ -814,6 +886,39 @@ export const Api = {
     api<CategoryDistribution>(`/api/v1/analytics/category-distribution?days=${days}`),
   recalculateAnalytics: () =>
     api<RecalculateAnalytics>('/api/v1/analytics/recalculate', { method: 'POST' }),
+
+  // Dashboard endpoints
+  dashboardOverview: (timeRange: string = '7d') =>
+    api<DashboardOverview>(`/api/v1/analytics/dashboard/overview?time_range=${timeRange}`),
+  salesChart: (timeRange: string = '7d', interval: string = 'day') =>
+    api<ChartData>(`/api/v1/analytics/dashboard/sales?time_range=${timeRange}&interval=${interval}`),
+  customerChart: (timeRange: string = '7d', interval: string = 'day') =>
+    api<ChartData>(`/api/v1/analytics/dashboard/customers?time_range=${timeRange}&interval=${interval}`),
+  loyaltyChart: (timeRange: string = '7d', interval: string = 'day') =>
+    api<ChartData>(`/api/v1/analytics/dashboard/loyalty?time_range=${timeRange}&interval=${interval}`),
+
+  // Loyalty reports
+  loyaltyReportOverview: (timeRange: string = '30d') =>
+    api<LoyaltyReportOverview>(`/api/v1/analytics/reports/loyalty/overview?time_range=${timeRange}`),
+  loyaltyDetailedReport: (timeRange: string = '30d') =>
+    api<LoyaltyDetailedReport>(`/api/v1/analytics/reports/loyalty/detailed?time_range=${timeRange}`),
+
+  // Customer segmentation
+  customerSegmentation: () => api<CustomerSegmentation>('/api/v1/analytics/customers/segmentation'),
+
+  // Data export endpoints
+  exportLoyaltyReport: (timeRange: string = '30d') =>
+    fetchWithAuth(`/api/v1/analytics/export/loyalty/csv?time_range=${timeRange}`, {
+      method: 'GET',
+    }),
+  exportSalesReport: (timeRange: string = '30d') =>
+    fetchWithAuth(`/api/v1/analytics/export/sales/csv?time_range=${timeRange}`, {
+      method: 'GET',
+    }),
+  exportCustomersReport: (timeRange: string = '30d') =>
+    fetchWithAuth(`/api/v1/analytics/export/customers/csv?time_range=${timeRange}`, {
+      method: 'GET',
+    }),
 
   // Integration Settings API
   getIntegrationsStatus: () => api<{ telegram: any; vk: any }>('/api/v1/admin/integrations/status'),

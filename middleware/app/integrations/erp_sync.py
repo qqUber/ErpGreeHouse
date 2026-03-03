@@ -6,7 +6,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
-from middleware.app.integrations.erpnext import ERPNextClient
+from .erpnext import ERPNextClient
 import redis
 
 logger = logging.getLogger(__name__)
