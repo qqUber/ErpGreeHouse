@@ -171,9 +171,10 @@ An omnichannel CRM + Loyalty system for coffee shops, replacing expensive third-
 
 **Plans**: 1 plan
 
-- [ ] 05-01-PLAN.md — ERP integration core functionality
+- [x] 05-01-PLAN.md — ERP integration core functionality
 
-**Status**: In progress
+**Status**: Complete
+**Completed**: 2026-03-03
 
 ---
 
@@ -224,7 +225,7 @@ An omnichannel CRM + Loyalty system for coffee shops, replacing expensive third-
 | 2     | Complete | 100%     |
 | 3     | Complete | 100%     |
 | 4     | Complete | 100%     |
-| 5     | In progress | 0%       |
+| 5     | Complete | 100%     |
 | 6     | Pending | 0%       |
 | 7     | Pending | 0%       |
 
@@ -245,9 +246,9 @@ An omnichannel CRM + Loyalty system for coffee shops, replacing expensive third-
 | COMP-002    | Phase 4 | Complete |
 | COMP-003    | Phase 4 | Complete |
 | COMP-004    | Phase 4 | Complete |
-| ERP-001     | Phase 5 | Pending |
-| ERP-002     | Phase 5 | Pending |
-| ERP-003     | Phase 5 | Pending |
+| ERP-001     | Phase 5 | Complete |
+| ERP-002     | Phase 5 | Complete |
+| ERP-003     | Phase 5 | Complete |
 | ADMIN-001   | Phase 6 | Pending |
 | ADMIN-002   | Phase 6 | Pending |
 | ADMIN-003   | Phase 6 | Pending |
