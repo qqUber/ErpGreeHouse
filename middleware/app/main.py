@@ -68,6 +68,8 @@ from .products_api import router as products_router
 from .marketing_api import router as marketing_router
 from .tma_api import router as tma_router
 from .test_api import router as test_router
+from .integrations.webhooks import router as erp_webhook_router
+from .erp_scheduler import start_erp_sync_scheduler
 from .request_context import reset_admin_session_token, set_admin_session_token
 from .runtime import is_debug
 from .worker import process_telegram_update
@@ -101,6 +103,7 @@ PUBLIC_PREFIXES = (
     "/telegram/",
     "/vk/",
     "/admin/broadcast",
+    "/webhooks/",
 )
 
 
@@ -288,6 +291,7 @@ app.include_router(integration_settings_router)
 app.include_router(products_router)
 app.include_router(marketing_router)
 app.include_router(tma_router)
+app.include_router(erp_webhook_router)
 if os.getenv("E2E_TEST_MODE", "false").lower() in ("1", "true", "yes"):
     app.include_router(test_router)
 
@@ -312,7 +316,7 @@ async def _startup() -> None:
     init_db()
     _bootstrap_default_admin()
     _bootstrap_demo_users()
-    
+
     # Load VK config from database if available
     _load_vk_config()
 
@@ -402,9 +406,9 @@ async def vk_webhook(
     settings = get_settings()
     admin_secret = os.getenv("ADMIN_SECRET", "")
     verify_webhook_secret(x_webhook_secret, settings.webhook_secret, admin_secret)
-    
+
     payload = await request.json()
-    
+
     # Handle confirmation (VK requires this for initial setup)
     if payload.get("type") == "confirmation":
         confirmation_code = os.getenv("VK_GROUP_CONFIRMATION_CODE", "")
@@ -412,10 +416,10 @@ async def vk_webhook(
             logger.error("VK_GROUP_CONFIRMATION_CODE is not set in environment")
             return {"response": "error"}
         return {"response": confirmation_code}
-    
+
     # Process the event
     event_type = payload.get("type")
-    
+
     if event_type == "message_new":
         # Process new message event
         await process_vk_webhook_event(payload)
@@ -424,7 +428,7 @@ async def vk_webhook(
         await process_vk_webhook_event(payload)
     else:
         logger.info(f"Unhandled VK event type: {event_type}")
-    
+
     # VK Callback API expects "ok" response
     return {"response": "ok"}
 
@@ -481,7 +485,7 @@ def _load_vk_config() -> None:
     try:
         from .db import get_db
         from .integrations.bots.vk_handler import set_vk_config
-        
+
         db = get_db()
         conn = db.connect()
         try:
@@ -493,13 +497,25 @@ def _load_vk_config() -> None:
                 set_vk_config(
                     access_token=row["access_token"],
                     group_id=int(row["group_id"]),
-                    api_version=row["api_version"] or "5.131"
+                    api_version=row["api_version"] or "5.131",
                 )
                 logger.info(f"VK config loaded for group {row['group_id']}")
         finally:
             conn.close()
     except Exception as e:
         logger.warning(f"Failed to load VK config: {e}")
+
+
+def _start_erp_scheduler() -> None:
+    """Start ERP sync scheduler at startup."""
+    try:
+        scheduler = start_erp_sync_scheduler()
+        if scheduler:
+            logger.info("ERP sync scheduler started")
+        else:
+            logger.info("ERP sync scheduler not started (disabled or error)")
+    except Exception as e:
+        logger.warning(f"Failed to start ERP sync scheduler: {e}")
 
 
 # Catch-all for SPA routing (Vue Router history mode)

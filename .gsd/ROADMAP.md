@@ -169,6 +169,12 @@ An omnichannel CRM + Loyalty system for coffee shops, replacing expensive third-
 4. Integration is reliable and handles errors gracefully
 5. Data sync processes are automated and scheduled
 
+**Plans**: 1 plan
+
+- [ ] 05-01-PLAN.md — ERP integration core functionality
+
+**Status**: In progress
+
 ---
 
 ### Phase 6: Admin Dashboard
@@ -218,7 +224,7 @@ An omnichannel CRM + Loyalty system for coffee shops, replacing expensive third-
 | 2     | Complete | 100%     |
 | 3     | Complete | 100%     |
 | 4     | Complete | 100%     |
-| 5     | Pending | 0%       |
+| 5     | In progress | 0%       |
 | 6     | Pending | 0%       |
 | 7     | Pending | 0%       |
 
