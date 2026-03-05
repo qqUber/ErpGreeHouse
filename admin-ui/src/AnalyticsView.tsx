@@ -149,7 +149,14 @@ export function AnalyticsView() {
           </button>
           <button
             onClick={() => handleExport('customers')}
-            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="btn btnPrimary"
+            style={{ 
+              background: 'var(--primary)',
+              color: 'white',
+              borderColor: 'rgba(59, 130, 246, 0.3)',
+              fontSize: 13,
+              padding: '8px 16px'
+            }}
           >
             Экспорт клиентов
           </button>
@@ -159,60 +166,96 @@ export function AnalyticsView() {
       {/* Key Metrics Overview */}
       {overview && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold">👥</span>
+          <div className="card" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ flexShrink: 0 }}>
+                <div style={{ 
+                  width: 32, 
+                  height: 32, 
+                  background: 'var(--primary)', 
+                  borderRadius: '50%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center'
+                }}>
+                  <span style={{ color: 'white', fontWeight: 'bold' }}>👥</span>
                 </div>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Общее число клиентов</p>
-                <p className="text-2xl font-bold text-gray-900">{overview.metrics.total_customers}</p>
+              <div style={{ marginLeft: 16 }}>
+                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>Общее число клиентов</p>
+                <p style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>
+                  {overview.metrics.total_customers}
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold">📈</span>
+          <div className="card" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ flexShrink: 0 }}>
+                <div style={{ 
+                  width: 32, 
+                  height: 32, 
+                  background: 'var(--good)', 
+                  borderRadius: '50%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center'
+                }}>
+                  <span style={{ color: 'white', fontWeight: 'bold' }}>📈</span>
                 </div>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Новые клиенты</p>
-                <p className="text-2xl font-bold text-gray-900">{overview.metrics.new_customers}</p>
+              <div style={{ marginLeft: 16 }}>
+                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>Новые клиенты</p>
+                <p style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>
+                  {overview.metrics.new_customers}
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold">💰</span>
+          <div className="card" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ flexShrink: 0 }}>
+                <div style={{ 
+                  width: 32, 
+                  height: 32, 
+                  background: 'rgba(168, 85, 247, 0.8)', 
+                  borderRadius: '50%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center'
+                }}>
+                  <span style={{ color: 'white', fontWeight: 'bold' }}>💰</span>
                 </div>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Выручка</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div style={{ marginLeft: 16 }}>
+                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>Выручка</p>
+                <p style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>
                   {new Intl.NumberFormat('ru-RU').format(overview.metrics.revenue)} ₽
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold">🎯</span>
+          <div className="card" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ flexShrink: 0 }}>
+                <div style={{ 
+                  width: 32, 
+                  height: 32, 
+                  background: 'var(--warn)', 
+                  borderRadius: '50%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center'
+                }}>
+                  <span style={{ color: 'white', fontWeight: 'bold' }}>🎯</span>
                 </div>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Средний чек</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div style={{ marginLeft: 16 }}>
+                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>Средний чек</p>
+                <p style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>
                   {new Intl.NumberFormat('ru-RU').format(overview.metrics.avg_check)} ₽
                 </p>
               </div>
@@ -225,8 +268,10 @@ export function AnalyticsView() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Sales Chart */}
         {salesChart && (
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold mb-4">Динамика продаж</h3>
+          <div className="card cardFull" style={{ padding: 24 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text)', marginBottom: 16 }}>
+              Динамика продаж
+            </h3>
             <ReactECharts
               option={getSalesChartOption(salesChart.data)}
               style={{ height: '300px' }}
@@ -237,8 +282,10 @@ export function AnalyticsView() {
 
         {/* Customers Chart */}
         {customerChart && (
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold mb-4">Динамика клиентов</h3>
+          <div className="card cardFull" style={{ padding: 24 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text)', marginBottom: 16 }}>
+              Динамика клиентов
+            </h3>
             <ReactECharts
               option={getCustomersChartOption(customerChart.data)}
               style={{ height: '300px' }}

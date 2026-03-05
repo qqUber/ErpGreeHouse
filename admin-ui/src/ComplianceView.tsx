@@ -9,19 +9,62 @@ export function ComplianceView() {
 
   return (
     <div className="grid gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Комплаенс</h1>
+      <div className="row">
+        <h1 style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>Комплаенс</h1>
       </div>
 
-      <div className="flex gap-6 border-b border-gray-200">
+      <div style={{ 
+        display: 'flex', 
+        gap: 24, 
+        borderBottom: '1px solid var(--border)',
+        paddingBottom: 8
+      }}>
         <button
-          className={`pb-2 px-1 ${tab === 'consents' ? 'border-b-2 border-blue-600 font-medium text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          style={{ 
+            padding: '8px 0',
+            fontSize: 13,
+            borderBottom: tab === 'consents' ? '2px solid var(--primary)' : 'none',
+            color: tab === 'consents' ? 'var(--primary)' : 'var(--muted)',
+            fontWeight: tab === 'consents' ? '600' : 'normal',
+            cursor: 'pointer',
+            background: 'none',
+            border: 'none'
+          }}
+          onMouseEnter={(e) => {
+            if (tab !== 'consents') {
+              e.currentTarget.style.color = 'var(--text)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (tab !== 'consents') {
+              e.currentTarget.style.color = 'var(--muted)';
+            }
+          }}
           onClick={() => setTab('consents')}
         >
           Согласия
         </button>
         <button
-          className={`pb-2 px-1 ${tab === 'delete' ? 'border-b-2 border-blue-600 font-medium text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          style={{ 
+            padding: '8px 0',
+            fontSize: 13,
+            borderBottom: tab === 'delete' ? '2px solid var(--primary)' : 'none',
+            color: tab === 'delete' ? 'var(--primary)' : 'var(--muted)',
+            fontWeight: tab === 'delete' ? '600' : 'normal',
+            cursor: 'pointer',
+            background: 'none',
+            border: 'none'
+          }}
+          onMouseEnter={(e) => {
+            if (tab !== 'delete') {
+              e.currentTarget.style.color = 'var(--text)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (tab !== 'delete') {
+              e.currentTarget.style.color = 'var(--muted)';
+            }
+          }}
           onClick={() => setTab('delete')}
         >
           Удаление профилей
@@ -30,11 +73,13 @@ export function ComplianceView() {
 
       {tab === 'consents' && (
         <div className="grid gap-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-medium text-gray-900">Регистрация согласий</h2>
+          <div className="row">
+            <h2 style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text)' }}>
+              Регистрация согласий
+            </h2>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm">
+          <div className="card cardFull" style={{ padding: 24 }}>
             <ConsentTable customerId={selectedCustomerId} />
           </div>
         </div>
@@ -42,19 +87,28 @@ export function ComplianceView() {
 
       {tab === 'delete' && (
         <div className="grid gap-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-medium text-gray-900">Удаление профиля пользователя</h2>
+          <div className="row">
+            <h2 style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text)' }}>
+              Удаление профиля пользователя
+            </h2>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="card cardFull" style={{ padding: 24 }}>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: 13, 
+                fontWeight: '600', 
+                color: 'var(--text)', 
+                marginBottom: 8 
+              }}>
                 Введите ID пользователя для удаления:
               </label>
               <input
                 type="number"
                 placeholder="ID пользователя"
-                className="p-2 border border-gray-300 rounded-md w-full"
+                className="input w-full"
+                style={{ padding: 12 }}
                 onChange={(e) => setSelectedCustomerId(parseInt(e.target.value) || undefined)}
               />
             </div>
