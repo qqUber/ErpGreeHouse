@@ -5,10 +5,8 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "C/Users/AASS/IdeaProjects/ErpGreeHouse/"
-      ],
-      "disabled": true,
-      "alwaysAllow": []
+        "/"
+      ]
     },
     "sequentialthinking": {
       "command": "npx",
@@ -16,6 +14,30 @@
         "-y",
         "@modelcontextprotocol/server-sequential-thinking"
       ]
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ]
+    },
+    "everything": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-everything"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ],
+      "env": {
+        "DEFAULT_MINIMUM_TOKENS": "10000"
+      },
+      "fromGalleryId": "upstash.context7"
     }
   }
 }
