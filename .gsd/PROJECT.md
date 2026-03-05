@@ -10,7 +10,7 @@ Saves 50-100k ₽/month for coffee shops by replacing expensive third-party CRM 
 |-----------|--------|------|
 | v1.0 MVP | ✅ | 2026-03-03 |
 | v1.1 Security | ✅ | 2026-03-04 |
-| v2.0 Redesign | 📋 | - |
+| v2.0 UI Experience & Responsive Design | 📋 | - |
 
 ## Key Features
 - Loyalty program (points, tiers, redemption)
