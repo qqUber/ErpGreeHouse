@@ -1322,8 +1322,8 @@ function DashboardView({
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI Cards - responsive grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card">
           <div className="kpiLabel">Продаж за день</div>
           <div className="kpiValue">{dash ? dash.sales_count : '—'}</div>
@@ -1355,7 +1355,7 @@ function DashboardView({
       <SalesTrend />
 
       {/* Recent Sales & Marketing Events */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card cardWide glass">
           <div style={{ fontWeight: 800 }}>Последние продажи</div>
           <div className="activity-list">
@@ -1433,7 +1433,7 @@ function DashboardView({
       )}
 
       {/* Operational & Product Data */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Operational Data */}
         {data.operational && (
           <OperationalWidget data={data.operational} />

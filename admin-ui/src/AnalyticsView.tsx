@@ -163,9 +163,9 @@ export function AnalyticsView() {
         </div>
       </div>
 
-      {/* Key Metrics Overview */}
-      {overview && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+       {/* Key Metrics Overview */}
+       {overview && (
+         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="card" style={{ padding: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ flexShrink: 0 }}>

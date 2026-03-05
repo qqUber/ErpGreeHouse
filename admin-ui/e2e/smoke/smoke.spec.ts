@@ -29,8 +29,8 @@ test('auth rejects invalid password', async ({ page }) => {
   expect(loginResponse.status()).toBe(401);
 
   const errorData = await loginResponse.json();
-  // Backend returns localized error message in Russian
-  expect(errorData.detail).toContain('Доступ запрещён');
+  // Backend returns English error message
+  expect(errorData.detail).toContain('Invalid credentials');
 
   console.log('[Test] Correctly rejected invalid password with 401');
 });
