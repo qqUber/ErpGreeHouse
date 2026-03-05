@@ -490,10 +490,43 @@ a:hover {
   .header {
     padding: 10px 12px;
     gap: 12px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .tabs {
+    justify-content: center;
+  }
+  
+  .tab {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  
+  .brand {
+    justify-content: center;
   }
   
   .card {
     padding: 12px;
+  }
+}
+
+/* Mobile - 640px */
+@media (max-width: 640px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .tabs {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .brand {
+    justify-content: center;
   }
 }
 
