@@ -61,8 +61,14 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
   return (
     <div className="grid gap-6">
       {/* Sales Dynamics Line Chart */}
-      <div className="bg-white rounded-lg shadow p-4 flex-grow min-w-full">
-        <h3 className="text-lg font-semibold mb-4">Динамика продаж</h3>
+      <div className="card cardFull">
+        <h3 style={{ 
+          fontSize: 'var(--font-size-lg)', 
+          fontWeight: 'var(--font-weight-semibold)', 
+          marginBottom: 'var(--spacing-md)'
+        }}>
+          Динамика продаж
+        </h3>
         <ReactECharts
           option={getSalesLineOption(salesData)}
           style={{ height: '300px' }}
@@ -72,8 +78,14 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Top Products Bar Chart */}
-        <div className="bg-white rounded-lg shadow p-4 flex-grow min-w-0">
-          <h3 className="text-lg font-semibold mb-4">Топ товаров</h3>
+        <div className="card">
+          <h3 style={{ 
+            fontSize: 'var(--font-size-lg)', 
+            fontWeight: 'var(--font-weight-semibold)', 
+            marginBottom: 'var(--spacing-md)'
+          }}>
+            Топ товаров
+          </h3>
           <ReactECharts
             option={getTopProductsOption(topProducts)}
             style={{ height: '300px' }}
@@ -82,8 +94,14 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
         </div>
 
         {/* Category Distribution Pie Chart */}
-        <div className="bg-white rounded-lg shadow p-4 flex-grow min-w-0">
-          <h3 className="text-lg font-semibold mb-4">Распределение по категориям</h3>
+        <div className="card">
+          <h3 style={{ 
+            fontSize: 'var(--font-size-lg)', 
+            fontWeight: 'var(--font-weight-semibold)', 
+            marginBottom: 'var(--spacing-md)'
+          }}>
+            Распределение по категориям
+          </h3>
           <ReactECharts
             option={getCategoryPieOption(categoryData)}
             style={{ height: '300px' }}

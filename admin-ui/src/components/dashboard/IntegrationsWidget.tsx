@@ -48,25 +48,25 @@ export const IntegrationsWidget: React.FC<IntegrationsWidgetProps> = ({
     switch (status) {
       case 'success':
         return {
-          background: 'rgba(4, 120, 87, 0.06)',
+          background: 'var(--good-light)',
           color: 'var(--good)',
           border: '1px solid rgba(4, 120, 87, 0.25)'
         };
       case 'failed':
         return {
-          background: 'rgba(185, 28, 28, 0.06)',
+          background: 'var(--bad-light)',
           color: 'var(--bad)',
           border: '1px solid rgba(185, 28, 28, 0.25)'
         };
       case 'pending':
         return {
-          background: 'rgba(180, 83, 9, 0.06)',
+          background: 'var(--warn-light)',
           color: 'var(--warn)',
           border: '1px solid rgba(180, 83, 9, 0.25)'
         };
       default:
         return {
-          background: 'rgba(107, 114, 128, 0.06)',
+          background: 'var(--brand-light)',
           color: 'var(--muted)',
           border: '1px solid rgba(107, 114, 128, 0.25)'
         };
@@ -92,28 +92,36 @@ export const IntegrationsWidget: React.FC<IntegrationsWidgetProps> = ({
   return (
     <div className="card cardFull">
       <div className="row mb-4">
-        <div style={{ fontWeight: 800, fontSize: 16 }}>Интеграции</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 13, color: 'var(--muted)' }}>
+        <div style={{ 
+          fontWeight: 'var(--font-weight-extrabold)', 
+          fontSize: 'var(--font-size-xl)'
+        }}>
+          Интеграции
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+          <span style={{ 
+            fontSize: 'var(--font-size-sm)', 
+            color: 'var(--muted)'
+          }}>
             Успешность: {successRate.toFixed(1)}%
           </span>
           {pendingCount > 0 && (
-            <span className="pill pillWarn" style={{ fontSize: 11 }}>
+            <span className="pill pillWarn">
               {pendingCount} в очереди
             </span>
           )}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gap: 16 }}>
+      <div style={{ display: 'grid', gap: 'var(--spacing-lg)' }}>
         {/* Integration Status Grid */}
         {integrations.length > 0 && (
           <div>
             <div style={{ 
-              fontSize: 13, 
-              fontWeight: 600, 
+              fontSize: 'var(--font-size-sm)', 
+              fontWeight: 'var(--font-weight-semibold)', 
               color: 'var(--text)', 
-              marginBottom: 8 
+              marginBottom: 'var(--spacing-sm)'
             }}>
               Статус интеграций
             </div>
@@ -121,36 +129,44 @@ export const IntegrationsWidget: React.FC<IntegrationsWidgetProps> = ({
               {integrations.map((integration, index) => (
                 <div
                   key={index}
-                  className="card"
+                  className="card cardCompact"
                   style={{ 
-                    padding: 12,
-                    background: 'rgba(255, 255, 255, 0.5)'
+                    background: 'var(--brand-light)'
                   }}
                 >
                   <div className="row">
-                    <div style={{ fontSize: 24 }}>{getIntegrationIcon(integration.kind)}</div>
+                    <div style={{ fontSize: '2rem' }}>{getIntegrationIcon(integration.kind)}</div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                      <div style={{ 
+                        fontSize: 'var(--font-size-sm)', 
+                        fontWeight: 'var(--font-weight-semibold)', 
+                        color: 'var(--text)'
+                      }}>
                         {integration.name}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--muted)' }}>{integration.kind}</div>
+                      <div style={{ 
+                        fontSize: 'var(--font-size-xs)', 
+                        color: 'var(--muted)'
+                      }}>
+                        {integration.kind}
+                      </div>
                     </div>
                     <div>
                       <span
                         style={{
                           ...(integration.status === 'online' ? {
-                            background: 'rgba(4, 120, 87, 0.06)',
+                            background: 'var(--good-light)',
                             color: 'var(--good)',
                             border: '1px solid rgba(4, 120, 87, 0.25)'
                           } : {
-                            background: 'rgba(185, 28, 28, 0.06)',
+                            background: 'var(--bad-light)',
                             color: 'var(--bad)',
                             border: '1px solid rgba(185, 28, 28, 0.25)'
                           }),
-                          padding: '2px 8px',
-                          borderRadius: '999px',
-                          fontSize: 11,
-                          fontWeight: 500,
+                          padding: '0.125rem 0.5rem',
+                          borderRadius: 'var(--radius-full)',
+                          fontSize: 'var(--font-size-xs)',
+                          fontWeight: 'var(--font-weight-medium)',
                           display: 'inline-flex',
                           alignItems: 'center'
                         }}
@@ -169,51 +185,59 @@ export const IntegrationsWidget: React.FC<IntegrationsWidgetProps> = ({
         {recentDeliveries.length > 0 && (
           <div>
             <div style={{ 
-              fontSize: 13, 
-              fontWeight: 600, 
+              fontSize: 'var(--font-size-sm)', 
+              fontWeight: 'var(--font-weight-semibold)', 
               color: 'var(--text)', 
-              marginBottom: 8 
+              marginBottom: 'var(--spacing-sm)'
             }}>
               Последние события
             </div>
-            <div style={{ display: 'grid', gap: 8 }}>
+            <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
               {recentDeliveries.slice(0, 5).map((delivery) => (
                 <div
                   key={delivery.id}
                   className="row"
                   style={{ 
-                    padding: 8, 
-                    borderRadius: 8, 
-                    background: 'rgba(255, 255, 255, 0.5)',
-                    border: '1px solid rgba(0, 0, 0, 0.03)',
-                    cursor: 'pointer'
+                    padding: 'var(--spacing-sm)', 
+                    borderRadius: 'var(--radius-md)', 
+                    background: 'var(--brand-light)',
+                    border: '1px solid var(--border)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.background = 'var(--primary-light)';
                     e.currentTarget.style.transform = 'translateX(4px)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                    e.currentTarget.style.background = 'var(--brand-light)';
                     e.currentTarget.style.transform = 'translateX(0)';
                   }}
                 >
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                    <div style={{ 
+                      fontSize: 'var(--font-size-sm)', 
+                      fontWeight: 'var(--font-weight-semibold)', 
+                      color: 'var(--text)'
+                    }}>
                       {delivery.event_type}
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                    <div style={{ 
+                      fontSize: 'var(--font-size-xs)', 
+                      color: 'var(--muted)'
+                    }}>
                       {formatTime(delivery.created_at)}
                       {delivery.http_status && ` · HTTP ${delivery.http_status}`}
                     </div>
                   </div>
-                  <div style={{ marginLeft: 12 }}>
+                  <div style={{ marginLeft: 'var(--spacing-sm)' }}>
                     <span
                       style={{
                         ...getDeliveryStatusColor(delivery.status),
-                        padding: '2px 8px',
-                        borderRadius: '999px',
-                        fontSize: 11,
-                        fontWeight: 500,
+                        padding: '0.125rem 0.5rem',
+                        borderRadius: 'var(--radius-full)',
+                        fontSize: 'var(--font-size-xs)',
+                        fontWeight: 'var(--font-weight-medium)',
                         display: 'inline-flex',
                         alignItems: 'center'
                       }}
@@ -232,26 +256,26 @@ export const IntegrationsWidget: React.FC<IntegrationsWidgetProps> = ({
         {Object.keys(deliveryStats).length > 0 && (
           <div>
             <div style={{ 
-              fontSize: 13, 
-              fontWeight: 600, 
+              fontSize: 'var(--font-size-sm)', 
+              fontWeight: 'var(--font-weight-semibold)', 
               color: 'var(--text)', 
-              marginBottom: 8 
+              marginBottom: 'var(--spacing-sm)'
             }}>
               Статистика за 24ч
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap' }}>
               {deliveryStats.success > 0 && (
-                <div className="pill pillGood" style={{ fontSize: 11 }}>
+                <div className="pill pillGood">
                   Успех: {deliveryStats.success}
                 </div>
               )}
               {deliveryStats.failed > 0 && (
-                <div className="pill pillBad" style={{ fontSize: 11 }}>
+                <div className="pill pillBad">
                   Ошибки: {deliveryStats.failed}
                 </div>
               )}
               {deliveryStats.pending > 0 && (
-                <div className="pill pillWarn" style={{ fontSize: 11 }}>
+                <div className="pill pillWarn">
                   В очереди: {deliveryStats.pending}
                 </div>
               )}
@@ -263,36 +287,39 @@ export const IntegrationsWidget: React.FC<IntegrationsWidgetProps> = ({
         {Object.keys(lastSyncs).length > 0 && (
           <div>
             <div style={{ 
-              fontSize: 13, 
-              fontWeight: 600, 
+              fontSize: 'var(--font-size-sm)', 
+              fontWeight: 'var(--font-weight-semibold)', 
               color: 'var(--text)', 
-              marginBottom: 8 
+              marginBottom: 'var(--spacing-sm)'
             }}>
               Последние синхронизации
             </div>
-            <div style={{ display: 'grid', gap: 8 }}>
+            <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
               {Object.entries(lastSyncs).map(([integration, syncData]) => (
                 <div
                   key={integration}
                   className="row"
                   style={{ 
-                    padding: 8, 
-                    borderRadius: 8, 
-                    background: 'rgba(255, 255, 255, 0.5)',
-                    border: '1px solid rgba(0, 0, 0, 0.03)',
-                    cursor: 'pointer'
+                    padding: 'var(--spacing-sm)', 
+                    borderRadius: 'var(--radius-md)', 
+                    background: 'var(--brand-light)',
+                    border: '1px solid var(--border)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.background = 'var(--primary-light)';
                     e.currentTarget.style.transform = 'translateX(4px)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                    e.currentTarget.style.background = 'var(--brand-light)';
                     e.currentTarget.style.transform = 'translateX(0)';
                   }}
                 >
-                  <div style={{ fontSize: 13, color: 'var(--text)' }}>{integration}</div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                  <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text)' }}>
+                    {integration}
+                  </div>
+                  <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--muted)' }}>
                     {new Date(syncData).toLocaleString('ru-RU')}
                   </div>
                 </div>
@@ -303,7 +330,12 @@ export const IntegrationsWidget: React.FC<IntegrationsWidgetProps> = ({
 
         {/* Empty State */}
         {integrations.length === 0 && recentDeliveries.length === 0 && Object.keys(deliveryStats).length === 0 && (
-          <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--muted)', fontSize: 13 }}>
+          <div style={{ 
+            textAlign: 'center', 
+            padding: 'var(--spacing-xl) var(--spacing-lg)', 
+            color: 'var(--muted)', 
+            fontSize: 'var(--font-size-sm)'
+          }}>
             Интеграции не настроены
           </div>
         )}

@@ -10,6 +10,12 @@ export interface Theme {
     good: string;
     warn: string;
     bad: string;
+    // Additional color variants for consistency
+    primaryLight: string;
+    goodLight: string;
+    warnLight: string;
+    badLight: string;
+    brandLight: string;
   };
   spacing: {
     xs: string;
@@ -41,6 +47,28 @@ export interface Theme {
     md: string;
     lg: string;
   };
+  typography: {
+    fontSize: {
+      xs: string;
+      sm: string;
+      base: string;
+      lg: string;
+      xl: string;
+      '2xl': string;
+    };
+    fontWeight: {
+      normal: number;
+      medium: number;
+      semibold: number;
+      bold: number;
+      extrabold: number;
+    };
+    lineHeight: {
+      tight: string;
+      normal: string;
+      relaxed: string;
+    };
+  };
 }
 
 export const theme: Theme = {
@@ -55,6 +83,12 @@ export const theme: Theme = {
     good: '#047857',
     warn: '#b45309',
     bad: '#b91c1c',
+    // Light variants for backgrounds
+    primaryLight: 'rgba(59, 130, 246, 0.06)',
+    goodLight: 'rgba(4, 120, 87, 0.06)',
+    warnLight: 'rgba(180, 83, 9, 0.06)',
+    badLight: 'rgba(185, 28, 28, 0.06)',
+    brandLight: 'rgba(55, 65, 81, 0.06)',
   },
   spacing: {
     xs: '0.25rem',
@@ -85,6 +119,28 @@ export const theme: Theme = {
     sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
     md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
     lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+  },
+  typography: {
+    fontSize: {
+      xs: '0.75rem',
+      sm: '0.875rem',
+      base: '1rem',
+      lg: '1.125rem',
+      xl: '1.25rem',
+      '2xl': '1.5rem',
+    },
+    fontWeight: {
+      normal: 400,
+      medium: 500,
+      semibold: 600,
+      bold: 700,
+      extrabold: 800,
+    },
+    lineHeight: {
+      tight: '1.25',
+      normal: '1.5',
+      relaxed: '1.75',
+    },
   },
 };
 

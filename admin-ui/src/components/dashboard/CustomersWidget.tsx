@@ -43,26 +43,67 @@ export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
   return (
     <div className="card cardFull">
       <div className="row mb-4">
-        <div style={{ fontWeight: 800, fontSize: 16 }}>Клиенты</div>
-        <span style={{ fontSize: 13, color: 'var(--muted)' }}>
+        <div style={{ 
+          fontWeight: 'var(--font-weight-extrabold)', 
+          fontSize: 'var(--font-size-xl)'
+        }}>
+          Клиенты
+        </div>
+        <span style={{ 
+          fontSize: 'var(--font-size-sm)', 
+          color: 'var(--muted)'
+        }}>
           Всего: {data.total_customers}
         </span>
       </div>
 
-      <div style={{ display: 'grid', gap: 16 }}>
+      <div style={{ display: 'grid', gap: 'var(--spacing-lg)' }}>
         {/* New Customers */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="card" style={{ padding: 12 }}>
-            <div style={{ fontSize: 13, color: 'var(--muted)' }}>Сегодня</div>
-            <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6 }}>{data.new_customers.today}</div>
+          <div className="card cardCompact">
+            <div style={{ 
+              fontSize: 'var(--font-size-sm)', 
+              color: 'var(--muted)'
+            }}>
+              Сегодня
+            </div>
+            <div style={{ 
+              fontSize: 'var(--font-size-2xl)', 
+              fontWeight: 'var(--font-weight-extrabold)', 
+              marginTop: 'var(--spacing-xs)'
+            }}>
+              {data.new_customers.today}
+            </div>
           </div>
-          <div className="card" style={{ padding: 12 }}>
-            <div style={{ fontSize: 13, color: 'var(--muted)' }}>На неделе</div>
-            <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6 }}>{data.new_customers.this_week}</div>
+          <div className="card cardCompact">
+            <div style={{ 
+              fontSize: 'var(--font-size-sm)', 
+              color: 'var(--muted)'
+            }}>
+              На неделе
+            </div>
+            <div style={{ 
+              fontSize: 'var(--font-size-2xl)', 
+              fontWeight: 'var(--font-weight-extrabold)', 
+              marginTop: 'var(--spacing-xs)'
+            }}>
+              {data.new_customers.this_week}
+            </div>
           </div>
-          <div className="card" style={{ padding: 12 }}>
-            <div style={{ fontSize: 13, color: 'var(--muted)' }}>В этом месяце</div>
-            <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6 }}>{data.new_customers.this_month}</div>
+          <div className="card cardCompact">
+            <div style={{ 
+              fontSize: 'var(--font-size-sm)', 
+              color: 'var(--muted)'
+            }}>
+              В этом месяце
+            </div>
+            <div style={{ 
+              fontSize: 'var(--font-size-2xl)', 
+              fontWeight: 'var(--font-weight-extrabold)', 
+              marginTop: 'var(--spacing-xs)'
+            }}>
+              {data.new_customers.this_month}
+            </div>
           </div>
         </div>
 
@@ -70,45 +111,62 @@ export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
         {data.top_customers.length > 0 && (
           <div>
             <div style={{ 
-              fontSize: 13, 
-              fontWeight: 600, 
+              fontSize: 'var(--font-size-sm)', 
+              fontWeight: 'var(--font-weight-semibold)', 
               color: 'var(--text)', 
-              marginBottom: 8 
+              marginBottom: 'var(--spacing-sm)'
             }}>
               Топ клиентов
             </div>
-            <div style={{ display: 'grid', gap: 8 }}>
+            <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
               {data.top_customers.slice(0, 5).map((customer) => (
                 <div
                   key={customer.id}
                   className="row"
                   style={{ 
-                    padding: 8, 
-                    borderRadius: 8, 
-                    background: 'rgba(255, 255, 255, 0.5)',
-                    border: '1px solid rgba(0, 0, 0, 0.03)',
-                    cursor: 'pointer'
+                    padding: 'var(--spacing-sm)', 
+                    borderRadius: 'var(--radius-md)', 
+                    background: 'var(--brand-light)',
+                    border: '1px solid var(--border)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.background = 'var(--primary-light)';
                     e.currentTarget.style.transform = 'translateX(4px)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                    e.currentTarget.style.background = 'var(--brand-light)';
                     e.currentTarget.style.transform = 'translateX(0)';
                   }}
                 >
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                    <div style={{ 
+                      fontSize: 'var(--font-size-sm)', 
+                      fontWeight: 'var(--font-weight-semibold)', 
+                      color: 'var(--text)'
+                    }}>
                       {customer.name}
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{customer.phone}</div>
+                    <div style={{ 
+                      fontSize: 'var(--font-size-xs)', 
+                      color: 'var(--muted)'
+                    }}>
+                      {customer.phone}
+                    </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                    <div style={{ 
+                      fontSize: 'var(--font-size-sm)', 
+                      fontWeight: 'var(--font-weight-bold)', 
+                      color: 'var(--text)'
+                    }}>
                       {customer.total_spent.toFixed(2)} ₽
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                    <div style={{ 
+                      fontSize: 'var(--font-size-xs)', 
+                      color: 'var(--muted)'
+                    }}>
                       {customer.transactions} транз.
                     </div>
                   </div>
@@ -122,36 +180,39 @@ export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
         {data.birthdays_this_week.length > 0 && (
           <div>
             <div style={{ 
-              fontSize: 13, 
-              fontWeight: 600, 
+              fontSize: 'var(--font-size-sm)', 
+              fontWeight: 'var(--font-weight-semibold)', 
               color: 'var(--text)', 
-              marginBottom: 8 
+              marginBottom: 'var(--spacing-sm)'
             }}>
               Дни рождения
             </div>
-            <div style={{ display: 'grid', gap: 8 }}>
+            <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
               {data.birthdays_this_week.map((birthday) => (
                 <div
                   key={birthday.id}
                   className="row"
                   style={{ 
-                    padding: 8, 
-                    borderRadius: 8, 
-                    background: 'rgba(255, 255, 255, 0.5)',
-                    border: '1px solid rgba(0, 0, 0, 0.03)',
-                    cursor: 'pointer'
+                    padding: 'var(--spacing-sm)', 
+                    borderRadius: 'var(--radius-md)', 
+                    background: 'var(--brand-light)',
+                    border: '1px solid var(--border)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.background = 'var(--primary-light)';
                     e.currentTarget.style.transform = 'translateX(4px)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                    e.currentTarget.style.background = 'var(--brand-light)';
                     e.currentTarget.style.transform = 'translateX(0)';
                   }}
                 >
-                  <div style={{ fontSize: 13, color: 'var(--text)' }}>{birthday.name}</div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                  <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text)' }}>
+                    {birthday.name}
+                  </div>
+                  <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--muted)' }}>
                     {new Date(birthday.birthday).toLocaleDateString('ru-RU')}
                   </div>
                 </div>
@@ -164,10 +225,10 @@ export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
         {data.loyalty_tiers.length > 0 && (
           <div>
             <div style={{ 
-              fontSize: 13, 
-              fontWeight: 600, 
+              fontSize: 'var(--font-size-sm)', 
+              fontWeight: 'var(--font-weight-semibold)', 
               color: 'var(--text)', 
-              marginBottom: 8 
+              marginBottom: 'var(--spacing-sm)'
             }}>
               Лояльность
             </div>
@@ -175,15 +236,25 @@ export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
               {data.loyalty_tiers.map((tier, index) => (
                 <div
                   key={index}
-                  className="card"
+                  className="card cardCompact"
                   style={{ 
-                    padding: 8, 
                     textAlign: 'center',
-                    background: 'rgba(255, 255, 255, 0.5)'
+                    background: 'var(--brand-light)'
                   }}
                 >
-                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{tier.tier}</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>{tier.count}</div>
+                  <div style={{ 
+                    fontSize: 'var(--font-size-xs)', 
+                    color: 'var(--muted)'
+                  }}>
+                    {tier.tier}
+                  </div>
+                  <div style={{ 
+                    fontSize: 'var(--font-size-lg)', 
+                    fontWeight: 'var(--font-weight-bold)', 
+                    color: 'var(--text)'
+                  }}>
+                    {tier.count}
+                  </div>
                 </div>
               ))}
             </div>

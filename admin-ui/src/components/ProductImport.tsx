@@ -156,7 +156,7 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
       <div
         className="modal"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: 700, width: '90%' }}
+        style={{ maxWidth: 700 }}
       >
         <div className="modal-header">
           <h3>Импорт товаров</h3>
@@ -167,7 +167,7 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
 
         <div className="modal-body">
           {/* Tabs */}
-          <div className="tabs" style={{ marginBottom: 16 }}>
+          <div className="tabs" style={{ marginBottom: 'var(--spacing-lg)' }}>
             <button
               className={`tab ${activeTab === 'file' ? 'active' : ''}`}
               onClick={() => {
@@ -191,11 +191,12 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
           {error && (
             <div
               style={{
-                padding: '12px 16px',
-                background: '#fee2e2',
-                color: '#dc2626',
-                borderRadius: 8,
-                marginBottom: 16,
+                padding: 'var(--spacing-md)',
+                background: 'var(--bad-light)',
+                color: 'var(--bad)',
+                borderRadius: 'var(--radius-md)',
+                marginBottom: 'var(--spacing-lg)',
+                border: '1px solid rgba(185, 28, 28, 0.25)',
               }}
             >
               {error}
@@ -205,25 +206,34 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
           {result && (
             <div
               style={{
-                padding: '16px',
-                background: result.errors.length > 0 ? '#fef3c7' : '#dcfce7',
-                borderRadius: 8,
-                marginBottom: 16,
+                padding: 'var(--spacing-lg)',
+                background: result.errors.length > 0 ? 'var(--warn-light)' : 'var(--good-light)',
+                borderRadius: 'var(--radius-md)',
+                marginBottom: 'var(--spacing-lg)',
+                border: result.errors.length > 0 
+                  ? '1px solid rgba(180, 83, 9, 0.25)' 
+                  : '1px solid rgba(4, 120, 87, 0.25)',
               }}
             >
-              <div style={{ fontWeight: 600, marginBottom: 8 }}>Результат импорта:</div>
-              <div style={{ display: 'flex', gap: 16 }}>
+              <div style={{ 
+                fontWeight: 'var(--font-weight-semibold)', 
+                marginBottom: 'var(--spacing-sm)',
+                fontSize: 'var(--font-size-base)'
+              }}>
+                Результат импорта:
+              </div>
+              <div style={{ display: 'flex', gap: 'var(--spacing-lg)', flexWrap: 'wrap' }}>
                 <div>
                   Всего: <strong>{result.total}</strong>
                 </div>
-                <div style={{ color: '#16a34a' }}>
+                <div style={{ color: 'var(--good)' }}>
                   Создано: <strong>{result.created}</strong>
                 </div>
-                <div style={{ color: '#2563eb' }}>
+                <div style={{ color: 'var(--primary)' }}>
                   Обновлено: <strong>{result.updated}</strong>
                 </div>
                 {result.errors.length > 0 && (
-                  <div style={{ color: '#dc2626' }}>
+                  <div style={{ color: 'var(--bad)' }}>
                     Ошибок: <strong>{result.errors.length}</strong>
                   </div>
                 )}
@@ -250,9 +260,15 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
               )}
 
               {result.preview && result.preview.length > 0 && (
-                <div style={{ marginTop: 12 }}>
-                  <div style={{ fontWeight: 500, marginBottom: 8 }}>Предпросмотр:</div>
-                  <table className="table" style={{ fontSize: 13 }}>
+                <div style={{ marginTop: 'var(--spacing-md)' }}>
+                  <div style={{ 
+                    fontWeight: 'var(--font-weight-semibold)', 
+                    marginBottom: 'var(--spacing-sm)',
+                    fontSize: 'var(--font-size-sm)'
+                  }}>
+                    Предпросмотр:
+                  </div>
+                  <table className="table">
                     <thead>
                       <tr>
                         <th>Название</th>
@@ -275,7 +291,7 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                 </div>
               )}
 
-              <button className="btn" style={{ marginTop: 12 }} onClick={handleReset}>
+              <button className="btn" style={{ marginTop: 'var(--spacing-md)' }} onClick={handleReset}>
                 Импортировать ещё
               </button>
             </div>
@@ -294,28 +310,44 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
                     style={{
-                      border: '2px dashed #ccc',
-                      borderRadius: 8,
-                      padding: '32px',
+                      border: '2px dashed var(--border)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: 'var(--spacing-xl)',
                       textAlign: 'center',
                       cursor: 'pointer',
-                      background: dragActive ? '#f0f9ff' : '#fafafa',
+                      background: dragActive ? 'var(--primary-light)' : 'var(--brand-light)',
                       transition: 'all 0.2s',
+                      borderStyle: dragActive ? 'solid' : 'dashed',
                     }}
                   >
                     {file ? (
                       <div>
-                        <div style={{ fontSize: 24, marginBottom: 8 }}>📄</div>
-                        <div style={{ fontWeight: 500 }}>{file.name}</div>
-                        <div style={{ fontSize: 13, color: '#666' }}>
+                        <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-sm)' }}>📄</div>
+                        <div style={{ 
+                          fontWeight: 'var(--font-weight-semibold)',
+                          fontSize: 'var(--font-size-base)'
+                        }}>
+                          {file.name}
+                        </div>
+                        <div style={{ 
+                          fontSize: 'var(--font-size-xs)', 
+                          color: 'var(--muted)',
+                          marginTop: 'var(--spacing-xs)'
+                        }}>
                           {(file.size / 1024).toFixed(1)} KB
                         </div>
                       </div>
                     ) : (
                       <div>
-                        <div style={{ fontSize: 24, marginBottom: 8 }}>📁</div>
-                        <div>Перетащите файл сюда или нажмите для выбора</div>
-                        <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>
+                        <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-sm)' }}>📁</div>
+                        <div style={{ fontSize: 'var(--font-size-base)' }}>
+                          Перетащите файл сюда или нажмите для выбора
+                        </div>
+                        <div style={{ 
+                          fontSize: 'var(--font-size-xs)', 
+                          color: 'var(--muted)', 
+                          marginTop: 'var(--spacing-xs)'
+                        }}>
                           Поддерживаются CSV, XLSX, XLS
                         </div>
                       </div>
@@ -330,7 +362,7 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                   </div>
 
                   {file && !preview && (
-                    <div style={{ marginTop: 16 }}>
+                    <div style={{ marginTop: 'var(--spacing-lg)' }}>
                       <button className="btn" onClick={handlePreview} disabled={busy}>
                         {busy ? 'Загрузка...' : 'Предпросмотр'}
                       </button>
@@ -338,11 +370,15 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                   )}
 
                   {preview && (
-                    <div style={{ marginTop: 16 }}>
-                      <div style={{ fontWeight: 500, marginBottom: 8 }}>
+                    <div style={{ marginTop: 'var(--spacing-lg)' }}>
+                      <div style={{ 
+                        fontWeight: 'var(--font-weight-semibold)', 
+                        marginBottom: 'var(--spacing-sm)',
+                        fontSize: 'var(--font-size-sm)'
+                      }}>
                         Предпросмотр ({preview.total_rows} строк)
                       </div>
-                      <table className="table" style={{ fontSize: 13 }}>
+                      <table className="table">
                         <thead>
                           <tr>
                             <th>Строка</th>
@@ -367,7 +403,12 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                     </div>
                   )}
 
-                  <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+                  <div style={{ 
+                    marginTop: 'var(--spacing-lg)', 
+                    display: 'flex', 
+                    gap: 'var(--spacing-sm)',
+                    flexWrap: 'wrap'
+                  }}>
                     <button
                       className="btn btnPrimary"
                       onClick={handleImportFile}
@@ -387,8 +428,13 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
               {/* URL Import Tab */}
               {activeTab === 'url' && (
                 <div>
-                  <div style={{ marginBottom: 16 }}>
-                    <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                  <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: 'var(--spacing-sm)', 
+                      fontWeight: 'var(--font-weight-semibold)',
+                      fontSize: 'var(--font-size-sm)'
+                    }}>
                       URL источника данных
                     </label>
                     <input
@@ -400,8 +446,13 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                     />
                   </div>
 
-                  <div style={{ marginBottom: 16 }}>
-                    <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                  <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: 'var(--spacing-sm)', 
+                      fontWeight: 'var(--font-weight-semibold)',
+                      fontSize: 'var(--font-size-sm)'
+                    }}>
                       Формат данных
                     </label>
                     <select
@@ -417,15 +468,23 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
 
                   <div
                     style={{
-                      padding: '12px 16px',
-                      background: '#f0f9ff',
-                      borderRadius: 8,
-                      fontSize: 13,
-                      color: '#0369a1',
+                      padding: 'var(--spacing-md)',
+                      background: 'var(--primary-light)',
+                      borderRadius: 'var(--radius-md)',
+                      fontSize: 'var(--font-size-sm)',
+                      color: 'var(--primary)',
+                      border: '1px solid rgba(59, 130, 246, 0.25)',
                     }}
                   >
                     <strong>Ожидаемый формат JSON:</strong>
-                    <pre style={{ margin: '8px 0 0', fontSize: 12, overflow: 'auto' }}>
+                    <pre style={{ 
+                      margin: 'var(--spacing-sm) 0 0', 
+                      fontSize: 'var(--font-size-xs)', 
+                      overflow: 'auto',
+                      background: 'var(--panel)',
+                      padding: 'var(--spacing-sm)',
+                      borderRadius: 'var(--radius-sm)'
+                    }}>
                       {`[
   { "name": "Латте", "sku": "DRINK-001", "category": "Напитки", "price": 150 },
   { "name": "Капучино", "sku": "DRINK-002", "category": "Напитки", "price": 140 }
@@ -433,7 +492,11 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                     </pre>
                   </div>
 
-                  <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+                  <div style={{ 
+                    marginTop: 'var(--spacing-lg)', 
+                    display: 'flex', 
+                    gap: 'var(--spacing-sm)'
+                  }}>
                     <button
                       className="btn btnPrimary"
                       onClick={handleImportUrl}
