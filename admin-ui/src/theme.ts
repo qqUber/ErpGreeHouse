@@ -77,12 +77,12 @@ export const theme: Theme = {
     panel: '#ffffff',
     border: '#e6e8ef',
     text: '#111827',
-    muted: '#6b7280',
-    brand: '#374151',
-    primary: '#3b82f6',
-    good: '#047857',
-    warn: '#b45309',
-    bad: '#b91c1c',
+    muted: '#585e6b', /* Improved contrast */
+    brand: '#2d3748', /* Darker brand color for better contrast */
+    primary: '#2563eb', /* Darker blue for better contrast */
+    good: '#059669', /* Darker green for better contrast */
+    warn: '#d97706', /* Darker orange for better contrast */
+    bad: '#dc2626', /* Darker red for better contrast */
     // Light variants for backgrounds
     primaryLight: 'rgba(59, 130, 246, 0.06)',
     goodLight: 'rgba(4, 120, 87, 0.06)',

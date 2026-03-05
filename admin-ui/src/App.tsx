@@ -682,76 +682,103 @@ function App() {
         </div>
         <div className="tabs">
           {allowedTabs.includes('dashboard') ? (
-            <div
+            <button
               className={`tab ${safeTab === 'dashboard' ? 'tabActive' : ''}`}
               onClick={() => setTab('dashboard')}
+              role="tab"
+              aria-selected={safeTab === 'dashboard'}
+              aria-controls="dashboard-panel"
             >
               {t('menu.dashboard')}
-            </div>
+            </button>
           ) : null}
           {allowedTabs.includes('customers') ? (
-            <div
+            <button
               className={`tab ${safeTab === 'customers' ? 'tabActive' : ''}`}
               onClick={() => setTab('customers')}
+              role="tab"
+              aria-selected={safeTab === 'customers'}
+              aria-controls="customers-panel"
             >
               {t('menu.clients')}
-            </div>
+            </button>
           ) : null}
           {allowedTabs.includes('pos') ? (
-            <div
+            <button
               className={`tab ${safeTab === 'pos' ? 'tabActive' : ''}`}
               onClick={() => setTab('pos')}
+              role="tab"
+              aria-selected={safeTab === 'pos'}
+              aria-controls="pos-panel"
             >
               {t('sales.title')}
-            </div>
+            </button>
           ) : null}
           {allowedTabs.includes('integrations') ? (
-            <div
+            <button
               className={`tab ${safeTab === 'integrations' ? 'tabActive' : ''}`}
               onClick={() => setTab('integrations')}
+              role="tab"
+              aria-selected={safeTab === 'integrations'}
+              aria-controls="integrations-panel"
             >
               {t('menu.integrations')}
-            </div>
+            </button>
           ) : null}
           {allowedTabs.includes('products') ? (
-            <div
+            <button
               className={`tab ${safeTab === 'products' ? 'tabActive' : ''}`}
               onClick={() => setTab('products')}
+              role="tab"
+              aria-selected={safeTab === 'products'}
+              aria-controls="products-panel"
             >
               {t('menu.products')}
-            </div>
+            </button>
           ) : null}
           {allowedTabs.includes('settings') ? (
-            <div
+            <button
               className={`tab ${safeTab === 'settings' ? 'tabActive' : ''}`}
               onClick={() => setTab('settings')}
+              role="tab"
+              aria-selected={safeTab === 'settings'}
+              aria-controls="settings-panel"
             >
               {t('menu.settings')}
-            </div>
+            </button>
           ) : null}
           {allowedTabs.includes('marketing') ? (
-            <div
+            <button
               className={`tab ${safeTab === 'marketing' ? 'tabActive' : ''}`}
               onClick={() => setTab('marketing')}
+              role="tab"
+              aria-selected={safeTab === 'marketing'}
+              aria-controls="marketing-panel"
             >
               {t('menu.marketing')}
-            </div>
+            </button>
           ) : null}
           {allowedTabs.includes('compliance') ? (
-            <div
+            <button
               className={`tab ${safeTab === 'compliance' ? 'tabActive' : ''}`}
               onClick={() => setTab('compliance')}
+              role="tab"
+              aria-selected={safeTab === 'compliance'}
+              aria-controls="compliance-panel"
             >
               Комплаенс
-            </div>
+            </button>
           ) : null}
           {allowedTabs.includes('analytics') ? (
-            <div
+            <button
               className={`tab ${safeTab === 'analytics' ? 'tabActive' : ''}`}
               onClick={() => setTab('analytics')}
+              role="tab"
+              aria-selected={safeTab === 'analytics'}
+              aria-controls="analytics-panel"
             >
               Аналитика
-            </div>
+            </button>
           ) : null}
         </div>
         {authReady ? <div className="pill">Роль: {roleLabel(me?.role || '')}</div> : null}
