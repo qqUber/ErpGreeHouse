@@ -896,6 +896,13 @@ export const Api = {
     api<ChartData>(`/api/v1/analytics/dashboard/customers?time_range=${timeRange}&interval=${interval}`),
   loyaltyChart: (timeRange: string = '7d', interval: string = 'day') =>
     api<ChartData>(`/api/v1/analytics/dashboard/loyalty?time_range=${timeRange}&interval=${interval}`),
+  
+  // New enterprise dashboard endpoints
+  dashboardOperational: () => api<import('./hooks/useDashboard').OperationalData>('/api/v1/dashboard/operational'),
+  dashboardMarketing: () => api<import('./hooks/useDashboard').MarketingData>('/api/v1/dashboard/marketing'),
+  dashboardCustomers: () => api<import('./hooks/useDashboard').CustomerData>('/api/v1/dashboard/customers'),
+  dashboardProducts: () => api<import('./hooks/useDashboard').ProductData>('/api/v1/dashboard/products'),
+  dashboardIntegrations: () => api<import('./hooks/useDashboard').IntegrationData>('/api/v1/dashboard/integrations'),
 
   // Loyalty reports
   loyaltyReportOverview: (timeRange: string = '30d') =>

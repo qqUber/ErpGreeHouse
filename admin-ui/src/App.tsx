@@ -1,5 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useDashboard } from './hooks/useDashboard';
+import { MarketingWidget } from './components/dashboard/MarketingWidget';
+import { IntegrationsWidget } from './components/dashboard/IntegrationsWidget';
+import { CustomersWidget } from './components/dashboard/CustomersWidget';
+import { ProductsWidget } from './components/dashboard/ProductsWidget';
+import { OperationalWidget } from './components/dashboard/OperationalWidget';
 import {
   AdminMe,
   Api,
@@ -1312,116 +1318,140 @@ function DashboardView({
   reload: () => Promise<void>;
   onNavigate: (tab: string, params?: Record<string, string | number>) => void;
 }) {
+  const { data, loading, error, refresh } = useDashboard();
+
   return (
-    <div className="grid">
-      <div className="card">
-        <div className="kpiLabel">Продаж за день</div>
-        <div className="kpiValue">{dash ? dash.sales_count : '—'}</div>
-        <div className="kpiSub">{dash ? dash.today : ''}</div>
-      </div>
-      <div className="card">
-        <div className="kpiLabel">Выручка</div>
-        <div className="kpiValue">{dash ? `${money(dash.sales_total)} ₽` : '—'}</div>
-        <div className="kpiSub">
-          <span className="pill pillGood">Начислено {dash ? dash.bonus_earned : '—'}</span>{' '}
-          <span className="pill pillWarn">Списано {dash ? dash.bonus_used : '—'}</span>
+    <div className="space-y-6">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="card">
+          <div className="kpiLabel">Продаж за день</div>
+          <div className="kpiValue">{dash ? dash.sales_count : '—'}</div>
+          <div className="kpiSub">{dash ? dash.today : ''}</div>
         </div>
-      </div>
-      <div className="card">
-        <div className="kpiLabel">Клиентов</div>
-        <div className="kpiValue">{dash ? dash.customers_total : '—'}</div>
-        <div className="kpiSub">Всего в системе</div>
-      </div>
-      <div className="card">
-        <div className="kpiLabel">Чистое начисление</div>
-        <div className="kpiValue">
-          {dash ? Math.max(0, dash.bonus_earned - dash.bonus_used) : '—'}
+        <div className="card">
+          <div className="kpiLabel">Выручка</div>
+          <div className="kpiValue">{dash ? `${money(dash.sales_total)} ₽` : '—'}</div>
+          <div className="kpiSub">
+            <span className="pill pillGood">Начислено {dash ? dash.bonus_earned : '—'}</span>{' '}
+            <span className="pill pillWarn">Списано {dash ? dash.bonus_used : '—'}</span>
+          </div>
         </div>
-        <div className="kpiSub">Итог за день</div>
+        <div className="card">
+          <div className="kpiLabel">Клиентов</div>
+          <div className="kpiValue">{dash ? dash.customers_total : '—'}</div>
+          <div className="kpiSub">Всего в системе</div>
+        </div>
+        <div className="card">
+          <div className="kpiLabel">Чистое начисление</div>
+          <div className="kpiValue">
+            {dash ? Math.max(0, dash.bonus_earned - dash.bonus_used) : '—'}
+          </div>
+          <div className="kpiSub">Итог за день</div>
+        </div>
       </div>
 
+      {/* Sales Trend Chart */}
       <SalesTrend />
 
-      <div className="card cardWide glass">
-        <div style={{ fontWeight: 800 }}>Последние продажи</div>
-        <div className="activity-list">
-          {dash?.recent_activity.transactions.map((tx) => (
-            <div key={tx.id} className="activity-item">
-              <div>
-                <div
-                  style={{ fontWeight: 600, cursor: 'pointer', color: 'var(--primary)' }}
-                  onClick={() => onNavigate('customers', { customer: tx.customer_id })}
-                  title="Открыть заказ"
-                >
-                  #{tx.id}
+      {/* Recent Sales & Marketing Events */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="card cardWide glass">
+          <div style={{ fontWeight: 800 }}>Последние продажи</div>
+          <div className="activity-list">
+            {dash?.recent_activity.transactions.map((tx) => (
+              <div key={tx.id} className="activity-item">
+                <div>
+                  <div
+                    style={{ fontWeight: 600, cursor: 'pointer', color: 'var(--primary)' }}
+                    onClick={() => onNavigate('customers', { customer: tx.customer_id })}
+                    title="Открыть заказ"
+                  >
+                    #{tx.id}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                    {new Date(tx.created_at).toLocaleTimeString()}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      color: 'var(--primary)',
+                      textDecoration: 'underline',
+                    }}
+                    onClick={() => onNavigate('customers', { customer: tx.customer_id })}
+                    title="Открыть профиль клиента"
+                  >
+                    {tx.customer_name || 'Клиент'}
+                  </div>
+                  <div
+                    style={{ fontSize: 11, cursor: 'pointer', color: 'var(--muted)' }}
+                    onClick={() => onNavigate('products', { product: tx.id })}
+                    title="Открыть товар"
+                  >
+                    {tx.product_names || 'Товары'}
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--muted)' }}>
-                  {new Date(tx.created_at).toLocaleTimeString()}
-                </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    cursor: 'pointer',
-                    color: 'var(--primary)',
-                    textDecoration: 'underline',
-                  }}
-                  onClick={() => onNavigate('customers', { customer: tx.customer_id })}
-                  title="Открыть профиль клиента"
-                >
-                  {tx.customer_name || 'Клиент'}
-                </div>
-                <div
-                  style={{ fontSize: 11, cursor: 'pointer', color: 'var(--muted)' }}
-                  onClick={() => onNavigate('products', { product: tx.id })}
-                  title="Открыть товар"
-                >
-                  {tx.product_names || 'Товары'}
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 700 }}>{money(tx.total_amount)} ₽</div>
+                  <div style={{ fontSize: 11, color: 'var(--good)' }}>
+                    +{tx.bonus_earned} / -{tx.bonus_used}
+                  </div>
                 </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: 700 }}>{money(tx.total_amount)} ₽</div>
-                <div style={{ fontSize: 11, color: 'var(--good)' }}>
-                  +{tx.bonus_earned} / -{tx.bonus_used}
-                </div>
+            ))}
+            {(!dash || dash.recent_activity.transactions.length === 0) && (
+              <div style={{ color: 'var(--muted)', fontSize: 13, padding: 10 }}>
+                Нет недавних операций
               </div>
-            </div>
-          ))}
-          {(!dash || dash.recent_activity.transactions.length === 0) && (
-            <div style={{ color: 'var(--muted)', fontSize: 13, padding: 10 }}>
-              Нет недавних операций
-            </div>
-          )}
+            )}
+          </div>
         </div>
+
+        {/* Marketing Widget */}
+        {data.marketing && (
+          <MarketingWidget
+            activeCampaigns={data.marketing.active_campaigns}
+            recentTriggerEvents={data.marketing.recent_trigger_events}
+            triggerStats={data.marketing.trigger_stats_24h}
+            campaignPerformance={data.marketing.campaign_performance}
+            upcomingCampaigns={data.marketing.upcoming_campaigns}
+          />
+        )}
       </div>
 
-      <div className="card cardWide glass">
-        <div style={{ fontWeight: 800 }}>Маркетинговые события</div>
-        <div className="activity-list">
-          {dash?.recent_activity.marketing_events.map((ev) => (
-            <div key={ev.id} className="activity-item">
-              <div>
-                <div style={{ fontWeight: 600 }}>{ev.trigger_name}</div>
-                <div style={{ fontSize: 11, color: 'var(--muted)' }}>
-                  {new Date(ev.created_at).toLocaleTimeString()}
-                </div>
-              </div>
-              <div>
-                <span
-                  className={`pill ${ev.status === 'processed' ? 'pillGood' : ev.status === 'failed' ? 'pillBad' : 'pillWarn'}`}
-                >
-                  {ev.status}
-                </span>
-              </div>
-            </div>
-          ))}
-          {(!dash || dash.recent_activity.marketing_events.length === 0) && (
-            <div style={{ color: 'var(--muted)', fontSize: 13, padding: 10 }}>
-              Нет недавних событий
-            </div>
-          )}
-        </div>
+      {/* Integrations Widget */}
+      {data.integrations && (
+        <IntegrationsWidget
+          integrations={data.integrations.integrations}
+          recentDeliveries={data.integrations.recent_deliveries}
+          deliveryStats={data.integrations.delivery_stats_24h}
+          successRate={data.integrations.success_rate}
+          pendingCount={data.integrations.pending_count}
+          lastSyncs={data.integrations.last_syncs}
+        />
+      )}
+
+      {/* Operational & Product Data */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Operational Data */}
+        {data.operational && (
+          <OperationalWidget data={data.operational} />
+        )}
+
+        {/* Product Data */}
+        {data.products && (
+          <ProductsWidget data={data.products} />
+        )}
       </div>
 
+      {/* Customer Data */}
+      {data.customers && (
+        <CustomersWidget data={data.customers} />
+      )}
+
+
+      {/* Refresh and Export */}
       <div className="card cardFull">
         <div className="row">
           <div>
@@ -1431,7 +1461,7 @@ function DashboardView({
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" onClick={() => void reload()}>
+            <button className="btn" onClick={() => Promise.all([reload(), refresh()])}>
               Обновить
             </button>
             <a
@@ -1445,6 +1475,22 @@ function DashboardView({
           </div>
         </div>
       </div>
+
+      {/* Loading and Error States */}
+      {loading && (
+        <div className="text-center py-8">
+          <div className="text-gray-500">Загрузка данных...</div>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="text-red-800">{error}</div>
+          <button className="btn btn-sm mt-2" onClick={refresh}>
+            Попробовать снова
+          </button>
+        </div>
+      )}
     </div>
   );
 }

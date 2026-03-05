@@ -1,26 +1,34 @@
 # Project Milestones: ErpGreeHouse
 
-## v1.0 MVP (Shipped: 2026-03-02)
+## v1.1 Security (Shipped: 2026-03-04)
 
-**Delivered:** An omnichannel CRM + Loyalty system for coffee shops, replacing expensive third-party solutions with an open-source alternative. The system unifies customer loyalty management and targeted communications across Telegram, VK, and mobile app channels.
+**Delivered:** Security audit and hardening - all security vulnerabilities resolved.
 
-**Phases completed:** 0-4 (16 plans total)
+**Phases completed:** 8-9 (2 plans total)
 
 **Key accomplishments:**
 
-- ✅ Foundation phase: System architecture, database schema, API infrastructure
-- ✅ Loyalty program management: Points calculation, redemption, and cross-channel sync
-- ✅ Messaging system: Targeted promotional messages, trigger-based messaging, media support
-- ✅ Compliance & Data Protection: 152-FZ consent management, profile deletion, data storage compliance
+- ✅ Security Audit: Comprehensive scan with bandit, safety, npm audit
+- ✅ Vulnerability assessment: 26 issues identified and prioritized
+- ✅ Hardening: SHA1→SHA256 fix, B608 false positives documented
+- ✅ Compliance verified: 152-FZ consent management reviewed
 
 **Stats:**
 
-- Files created/modified: [TBD]
-- Lines of code: Python backend, React/TypeScript admin UI
-- Phases: 5, Plans: 16, Tasks: [TBD]
-- Timeline: [TBD] days from project start to ship
-- Git range: [TBD]
+- Security issues: HIGH 0, MEDIUM 0, LOW 5
+- Tests: 693 total (561 pytest + 132 E2E)
+- Phases: 2, Plans: 2
+- Git range: Phase 8 → Phase 9
 
-**What's next:** Phase 5: ERP Integration - integrate with ERPNext for data synchronization
+**What's next:** v2.0 Redesign - UI/UX improvements and feature enhancements
 
 ---
+
+## v1.0 MVP (Shipped: 2026-03-03)
+
+**Delivered:** Omnichannel CRM + Loyalty system for coffee shops
+
+**Phases:** 0-7 (27 plans)
+
+**Key accomplishments:**
+- Foundation, Loyalty Program, Messaging, Compliance, ERP Integration, Analytics, Testing

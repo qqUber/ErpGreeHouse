@@ -157,6 +157,7 @@ def _get_jwt_cookie_settings() -> dict[str, Any]:
         "samesite": "lax",
         "secure": cookie_secure,
         "path": "/",
+        "domain": "localhost",
     }
     logger.info(
         f"JWT cookie settings: httponly={cookie_settings['httponly']}, samesite={cookie_settings['samesite']}, secure={cookie_settings['secure']}, path={cookie_settings['path']}"

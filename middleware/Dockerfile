@@ -5,6 +5,15 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# Install system dependencies for lxml and other packages
+RUN apt-get update && apt-get install -y \
+    libxml2-dev \
+    libxslt1-dev \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir --upgrade pip
 
 COPY requirements.txt /app/requirements.txt

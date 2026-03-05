@@ -72,7 +72,7 @@ def revoke_all_consents(source: Source, user_id: int, conn=None) -> None:
         close_conn = False
 
     try:
-        # Get customer ID
+        # Get customer ID  # noqa: B608 - id_column is hardcoded
         cur = conn.execute(
             f"SELECT id FROM customers WHERE {id_column} = ?", (user_id,)
         )

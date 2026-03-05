@@ -69,6 +69,7 @@ from .marketing_api import router as marketing_router
 from .tma_api import router as tma_router
 from .test_api import router as test_router
 from .analytics_api import router as analytics_router
+from .dashboard_api import router as dashboard_router
 from .integrations.webhooks import router as erp_webhook_router
 from .erp_scheduler import start_erp_sync_scheduler
 from .request_context import reset_admin_session_token, set_admin_session_token
@@ -293,6 +294,7 @@ app.include_router(products_router)
 app.include_router(marketing_router)
 app.include_router(tma_router)
 app.include_router(analytics_router)
+app.include_router(dashboard_router)
 app.include_router(erp_webhook_router)
 if os.getenv("E2E_TEST_MODE", "false").lower() in ("1", "true", "yes"):
     app.include_router(test_router)

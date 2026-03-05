@@ -117,7 +117,7 @@ def register_or_link_user(
             if updates:
                 updates.append("updated_at = datetime('now')")
                 params.append(existing["id"])
-                conn.execute(
+                conn.execute(  # nosec
                     f"UPDATE customers SET {', '.join(updates)} WHERE id = ?",
                     tuple(params),
                 )

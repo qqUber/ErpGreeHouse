@@ -258,7 +258,7 @@ class ERPClient:
                     f"crm:tx:{client_name}",
                     f"{ts}|Redemption|{-bonus_apply}|Оплата бонусами",
                 )
-            order_id = hashlib.sha1(f"{client_name}{ts}".encode()).hexdigest()[:10]
+            order_id = hashlib.sha256(f"{client_name}{ts}".encode()).hexdigest()[:10]
             return {"order_id": order_id, "total": total, "bonus_used": bonus_apply}
 
         # 1. Get Customer Link

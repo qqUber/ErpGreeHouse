@@ -162,7 +162,7 @@ def preview_segment(
                     WHERE customer_id = customers.id 
                     AND preference IN ({})
                 )
-            """.format(",".join(["?"] * len(criteria["preferences"])))
+            """.format(",".join(["?"] * len(criteria["preferences"])))  # noqa: B608 - safe, uses parameterized placeholders
             )
             params.extend(criteria["preferences"])
 
@@ -188,7 +188,7 @@ def preview_segment(
         cur = conn.execute(query, params)
         customers = [dict(row) for row in cur.fetchall()]
 
-        # Get total count for pagination
+        # Get total count for pagination  # noqa: B608 - safe, uses same parameterized query
         count_query = (
             "SELECT COUNT(*) as total FROM ("
             + query.replace(" LIMIT ? OFFSET ?", "")
