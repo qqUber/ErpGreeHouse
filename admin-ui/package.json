@@ -9,6 +9,7 @@
     "format": "biome format . --write",
     "check": "biome check --write .",
     "ci:check": "biome check .",
+    "clean": "rm -rf node_modules dist .turbo",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
