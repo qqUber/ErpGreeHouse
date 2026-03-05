@@ -19,21 +19,23 @@ test('owner sees all tabs', async ({ page }) => {
   // Use TEST_CREDENTIALS instead of hardcoded passwords
   await login(page, 'admin');
   await page.waitForTimeout(2000);
-  // Owner should see all tabs: Клиенты, Продажи, Товары, Маркетинг, Интеграции, Настройки
-  await expect(page.getByText('Клиенты', { exact: true })).toBeVisible();
-  await expect(page.getByText('Продажи', { exact: true })).toBeVisible();
-  await expect(page.getByText('Товары', { exact: true })).toBeVisible();
-  await expect(page.getByText('Интеграции', { exact: true })).toBeVisible();
+  // Owner should see all tabs: Dashboard, Clients, Products, Sales, Marketing, Integrations, Settings
+  await expect(page.getByText('Dashboard', { exact: true })).toBeVisible();
+  await expect(page.getByText('Clients', { exact: true })).toBeVisible();
+  await expect(page.getByText('Products', { exact: true })).toBeVisible();
+  await expect(page.getByText('Sales', { exact: true })).toBeVisible();
+  await expect(page.getByText('Marketing', { exact: true })).toBeVisible();
+  await expect(page.getByText('Integrations', { exact: true })).toBeVisible();
   // Use exact match for Settings tab (not "Settings access")
-  await expect(page.getByText('Настройки', { exact: true })).toBeVisible();
+  await expect(page.getByText('Settings', { exact: true })).toBeVisible();
 });
 
 test('operator cannot see integrations', async ({ page }) => {
   await login(page, 'operator');
   await page.waitForTimeout(2000);
-  // Operator sees Продажи (Sales) tab but not Интеграции (Integrations)
-  await expect(page.getByText('Продажи', { exact: true })).toBeVisible();
-  await expect(page.getByText('Интеграции', { exact: true })).toHaveCount(0);
+  // Operator sees Sales tab but not Integrations
+  await expect(page.getByText('Sales', { exact: true })).toBeVisible();
+  await expect(page.getByText('Integrations', { exact: true })).toHaveCount(0);
 
   const resp = await page.request.get('/api/v1/integrations');
   // API returns 401 when user is authenticated but lacks permission
@@ -43,9 +45,9 @@ test('operator cannot see integrations', async ({ page }) => {
 test('manager cannot see pos operations', async ({ page }) => {
   await login(page, 'manager');
   await page.waitForTimeout(2000);
-  // Manager sees Интеграции but not Продажи (POS operations)
-  await expect(page.getByText('Интеграции', { exact: true })).toBeVisible();
-  await expect(page.getByText('Продажи', { exact: true })).toHaveCount(0);
+  // Manager sees Integrations but not Sales (POS operations)
+  await expect(page.getByText('Integrations', { exact: true })).toBeVisible();
+  await expect(page.getByText('Sales', { exact: true })).toHaveCount(0);
 
   const resp = await page.request.post('/api/v1/pos/sale', {
     data: {

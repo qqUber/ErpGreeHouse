@@ -115,7 +115,7 @@ function findCssFiles(dir) {
 
 findCssFiles(srcDir);
 
-let mediaQueries = [];
+const mediaQueries = [];
 
 cssFiles.forEach(file => {
     const content = fs.readFileSync(file, 'utf8');

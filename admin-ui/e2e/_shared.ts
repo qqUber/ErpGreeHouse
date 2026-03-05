@@ -143,7 +143,7 @@ export async function login(page: Page, role: TestRole = 'admin') {
   // Do NOT set admin_session_token in localStorage - use httpOnly cookies instead
   await page.addInitScript(() => {
     window.sessionStorage.setItem('auth_validation_state', 'valid');
-    window.localStorage.setItem('language', 'ru');
+    window.localStorage.setItem('language', 'en');
   });
 
   // Navigate directly to dashboard - the auth context will validate the token
@@ -155,7 +155,7 @@ export async function login(page: Page, role: TestRole = 'admin') {
 
   // Wait for dashboard content to be visible (either the nav items or the page to load)
   try {
-    await page.waitForSelector('text=Клиенты', { timeout: 15000 });
+    await page.waitForSelector('text=Dashboard', { timeout: 15000 });
   } catch {
     // If nav items not found, try waiting for URL or other dashboard elements
     await page.waitForURL('**/dashboard', { timeout: 5000 }).catch(() => {});

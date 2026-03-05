@@ -214,6 +214,49 @@ This document identifies potential technical debt, security vulnerabilities, per
 - Log all user and system actions
 - Add audit log API for monitoring and compliance
 
+## UI Concerns
+
+### 1. Responsive Design (Medium Risk)
+
+**Location:** Admin UI components
+
+- Responsive grid usage is only 48%
+- Limited use of md:, lg:, and xl: responsive classes
+- Some layouts may not work well on mobile devices
+
+**Recommendation:**
+- Increase use of responsive grid classes
+- Test layouts on mobile, tablet, and desktop devices
+- Implement mobile-first approach
+
+### 2. Semantic HTML (Low Risk)
+
+**Location:** Admin UI components
+
+- No semantic HTML elements used (header, nav, main, section, article, aside, footer)
+- All content wrapped in divs
+- Limited accessibility features
+
+**Recommendation:**
+- Implement semantic HTML structure
+- Add ARIA attributes for accessibility
+- Ensure screen reader support
+
+### 3. UI Text Inconsistency (Low Risk)
+
+**Location:** Admin UI components
+
+- Some UI text is hardcoded in Russian
+- Translation system not used consistently
+- Login page and some error messages in Russian
+
+**Recommendation:**
+- Move all UI text to translation files
+- Ensure consistent use of translation system
+- Add English translations for all text
+
 ## Conclusion
 
-This project has several security, performance, and technical debt concerns that need to be addressed. The highest priority issues are related to default credentials, JWT cookie security, and database connection management. Addressing these concerns will improve the overall security, reliability, and maintainability of the system.
+This project has several security, performance, technical debt, and UI concerns that need to be addressed. The highest priority issues are related to default credentials, JWT cookie security, and database connection management. Addressing these concerns will improve the overall security, reliability, and maintainability of the system.
+
+The UI concerns include responsive design issues, lack of semantic HTML, and inconsistent use of translation system. Improving these will enhance the user experience and accessibility of the application.

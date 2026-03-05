@@ -2,10 +2,6 @@ import ReactECharts from 'echarts-for-react';
 import { useEffect, useState } from 'react';
 import { Api, DashboardOverview, ChartData, LoyaltyReportOverview, LoyaltyDetailedReport, CustomerSegmentation } from './api';
 
-interface AnalyticsViewProps {
-  // No props needed
-}
-
 export function AnalyticsView() {
   const [timeRange, setTimeRange] = useState<string>('7d');
   const [overview, setOverview] = useState<DashboardOverview | null>(null);

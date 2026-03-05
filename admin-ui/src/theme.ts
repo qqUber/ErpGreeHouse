@@ -24,6 +24,8 @@ export interface Theme {
     lg: string;
     xl: string;
     '2xl': string;
+    '3xl': string;
+    '4xl': string;
   };
   breakpoints: {
     sm: string;
@@ -31,6 +33,7 @@ export interface Theme {
     lg: string;
     xl: string;
     '2xl': string;
+    '3xl': string;
   };
   border: {
     radius: {
@@ -97,6 +100,8 @@ export const theme: Theme = {
     lg: '1.5rem',
     xl: '2rem',
     '2xl': '3rem',
+    '3xl': '4rem',
+    '4xl': '6rem',
   },
   breakpoints: {
     sm: '320px',
@@ -104,6 +109,7 @@ export const theme: Theme = {
     lg: '1024px',
     xl: '1280px',
     '2xl': '1536px',
+    '3xl': '1920px', // Full HD monitor
   },
   border: {
     radius: {
@@ -152,7 +158,10 @@ export const mediaQueries = {
   lg: `(min-width: ${theme.breakpoints.lg})`,
   xl: `(min-width: ${theme.breakpoints.xl})`,
   '2xl': `(min-width: ${theme.breakpoints['2xl']})`,
+  '3xl': `(min-width: ${theme.breakpoints['3xl']})`, // Full HD monitor
   maxSm: `(max-width: 767px)`,
   maxMd: `(max-width: 1023px)`,
   maxLg: `(max-width: 1279px)`,
+  maxXl: `(max-width: 1535px)`,
+  max2xl: `(max-width: 1919px)`,
 };

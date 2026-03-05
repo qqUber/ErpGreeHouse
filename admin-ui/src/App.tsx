@@ -6,6 +6,9 @@ import { IntegrationsWidget } from './components/dashboard/IntegrationsWidget';
 import { CustomersWidget } from './components/dashboard/CustomersWidget';
 import { ProductsWidget } from './components/dashboard/ProductsWidget';
 import { OperationalWidget } from './components/dashboard/OperationalWidget';
+import { OperatorDashboard } from './components/dashboard/OperatorDashboard';
+import { ManagerDashboard } from './components/dashboard/ManagerDashboard';
+import { AdminDashboard } from './components/dashboard/AdminDashboard';
 import {
   AdminMe,
   Api,
@@ -1346,7 +1349,36 @@ function DashboardView({
   onNavigate: (tab: string, params?: Record<string, string | number>) => void;
 }) {
   const { data, loading, error, refresh } = useDashboard();
+  const { user } = useAuth();
 
+  // Render role-specific dashboard
+  if (!user) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-gray-500">Загрузка данных...</div>
+      </div>
+    );
+  }
+
+  if (user.role === 'operator') {
+    return (
+      <OperatorDashboard dash={dash} onNavigate={onNavigate} />
+    );
+  }
+
+  if (user.role === 'marketer') {
+    return (
+      <ManagerDashboard dash={dash} onNavigate={onNavigate} />
+    );
+  }
+
+  if (user.role === 'owner') {
+    return (
+      <AdminDashboard dash={dash} onNavigate={onNavigate} />
+    );
+  }
+
+  // Fallback for unknown roles
   return (
     <div className="space-y-6">
       {/* KPI Cards - responsive grid */}
