@@ -195,7 +195,7 @@ def get_default_permissions(role: str) -> set[str]:
             "product.create",
             "product.update",
             "product.import",
-            "marketing.campaigns",
+            "marketing.campaign",  # Changed from marketing.campaigns to marketing.campaign
             "marketing.users",
             "integration.read",
             "integration.update",
