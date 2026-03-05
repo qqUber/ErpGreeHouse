@@ -41,50 +41,74 @@ interface CustomersWidgetProps {
 
 export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Клиенты</h3>
-        <span className="text-sm text-gray-600">
+    <div className="card cardFull">
+      <div className="row mb-4">
+        <div style={{ fontWeight: 800, fontSize: 16 }}>Клиенты</div>
+        <span style={{ fontSize: 13, color: 'var(--muted)' }}>
           Всего: {data.total_customers}
         </span>
       </div>
 
-      <div className="space-y-4">
+      <div style={{ display: 'grid', gap: 16 }}>
         {/* New Customers */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="text-sm text-gray-600">Сегодня</div>
-            <div className="text-2xl font-semibold text-gray-900">{data.new_customers.today}</div>
+          <div className="card" style={{ padding: 12 }}>
+            <div style={{ fontSize: 13, color: 'var(--muted)' }}>Сегодня</div>
+            <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6 }}>{data.new_customers.today}</div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="text-sm text-gray-600">На неделе</div>
-            <div className="text-2xl font-semibold text-gray-900">{data.new_customers.this_week}</div>
+          <div className="card" style={{ padding: 12 }}>
+            <div style={{ fontSize: 13, color: 'var(--muted)' }}>На неделе</div>
+            <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6 }}>{data.new_customers.this_week}</div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="text-sm text-gray-600">В этом месяце</div>
-            <div className="text-2xl font-semibold text-gray-900">{data.new_customers.this_month}</div>
+          <div className="card" style={{ padding: 12 }}>
+            <div style={{ fontSize: 13, color: 'var(--muted)' }}>В этом месяце</div>
+            <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6 }}>{data.new_customers.this_month}</div>
           </div>
         </div>
 
         {/* Top Customers */}
         {data.top_customers.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Топ клиентов</h4>
-            <div className="space-y-2">
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              color: 'var(--text)', 
+              marginBottom: 8 
+            }}>
+              Топ клиентов
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
               {data.top_customers.slice(0, 5).map((customer) => (
                 <div
                   key={customer.id}
-                  className="flex items-center justify-between p-2 rounded hover:bg-gray-50"
+                  className="row"
+                  style={{ 
+                    padding: 8, 
+                    borderRadius: 8, 
+                    background: 'rgba(255, 255, 255, 0.5)',
+                    border: '1px solid rgba(0, 0, 0, 0.03)',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.transform = 'translateX(4px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                    e.currentTarget.style.transform = 'translateX(0)';
+                  }}
                 >
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">{customer.name}</div>
-                    <div className="text-xs text-gray-500">{customer.phone}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                      {customer.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{customer.phone}</div>
                   </div>
-                  <div className="ml-3 text-right">
-                    <div className="text-sm font-semibold text-gray-900">
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
                       {customer.total_spent.toFixed(2)} ₽
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>
                       {customer.transactions} транз.
                     </div>
                   </div>
@@ -97,15 +121,37 @@ export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
         {/* Birthdays */}
         {data.birthdays_this_week.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Дни рождения</h4>
-            <div className="space-y-2">
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              color: 'var(--text)', 
+              marginBottom: 8 
+            }}>
+              Дни рождения
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
               {data.birthdays_this_week.map((birthday) => (
                 <div
                   key={birthday.id}
-                  className="flex items-center justify-between p-2 rounded hover:bg-gray-50"
+                  className="row"
+                  style={{ 
+                    padding: 8, 
+                    borderRadius: 8, 
+                    background: 'rgba(255, 255, 255, 0.5)',
+                    border: '1px solid rgba(0, 0, 0, 0.03)',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.transform = 'translateX(4px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                    e.currentTarget.style.transform = 'translateX(0)';
+                  }}
                 >
-                  <div className="text-sm text-gray-900">{birthday.name}</div>
-                  <div className="text-xs text-gray-500">
+                  <div style={{ fontSize: 13, color: 'var(--text)' }}>{birthday.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>
                     {new Date(birthday.birthday).toLocaleDateString('ru-RU')}
                   </div>
                 </div>
@@ -117,15 +163,27 @@ export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
         {/* Loyalty Tiers */}
         {data.loyalty_tiers.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Лояльность</h4>
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              color: 'var(--text)', 
+              marginBottom: 8 
+            }}>
+              Лояльность
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {data.loyalty_tiers.map((tier, index) => (
                 <div
                   key={index}
-                  className="bg-gray-50 rounded-lg p-2 text-center"
+                  className="card"
+                  style={{ 
+                    padding: 8, 
+                    textAlign: 'center',
+                    background: 'rgba(255, 255, 255, 0.5)'
+                  }}
                 >
-                  <div className="text-xs text-gray-600">{tier.tier}</div>
-                  <div className="text-lg font-semibold text-gray-900">{tier.count}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{tier.tier}</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>{tier.count}</div>
                 </div>
               ))}
             </div>

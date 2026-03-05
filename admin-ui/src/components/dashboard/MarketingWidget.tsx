@@ -26,13 +26,29 @@ export const MarketingWidget: React.FC<MarketingWidgetProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'processed':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return {
+          background: 'rgba(4, 120, 87, 0.06)',
+          color: 'var(--good)',
+          border: '1px solid rgba(4, 120, 87, 0.25)'
+        };
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return {
+          background: 'rgba(180, 83, 9, 0.06)',
+          color: 'var(--warn)',
+          border: '1px solid rgba(180, 83, 9, 0.25)'
+        };
       case 'failed':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return {
+          background: 'rgba(185, 28, 28, 0.06)',
+          color: 'var(--bad)',
+          border: '1px solid rgba(185, 28, 28, 0.25)'
+        };
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return {
+          background: 'rgba(107, 114, 128, 0.06)',
+          color: 'var(--muted)',
+          border: '1px solid rgba(107, 114, 128, 0.25)'
+        };
     }
   };
 
@@ -53,36 +69,66 @@ export const MarketingWidget: React.FC<MarketingWidgetProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Маркетинговые события</h3>
-        <span className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
+    <div className="card cardFull">
+      <div className="row mb-4">
+        <div style={{ fontWeight: 800, fontSize: 16 }}>Маркетинговые события</div>
+        <span className="pill pillGood" style={{ fontSize: 12 }}>
           {activeCampaigns} активных кампаний
         </span>
       </div>
 
-      <div className="space-y-4">
+      <div style={{ display: 'grid', gap: 16 }}>
         {/* Recent Trigger Events */}
         {recentTriggerEvents.length > 0 && (
           <>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Последние события</h4>
-            <div className="space-y-2">
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              color: 'var(--text)', 
+              marginBottom: 8 
+            }}>
+              Последние события
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
               {recentTriggerEvents.slice(0, 5).map((event) => (
                 <div
                   key={event.id}
-                  className="flex items-center justify-between p-2 rounded hover:bg-gray-50"
+                  className="row"
+                  style={{ 
+                    padding: 8, 
+                    borderRadius: 8, 
+                    background: 'rgba(255, 255, 255, 0.5)',
+                    border: '1px solid rgba(0, 0, 0, 0.03)',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.transform = 'translateX(4px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                    e.currentTarget.style.transform = 'translateX(0)';
+                  }}
                 >
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
                       {event.trigger_name}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>
                       {event.customer_name} · {formatTime(event.created_at)}
                     </div>
                   </div>
-                  <div className="ml-3">
+                  <div style={{ marginLeft: 12 }}>
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(event.status)}`}
+                      style={{
+                        ...getStatusColor(event.status),
+                        padding: '2px 8px',
+                        borderRadius: '999px',
+                        fontSize: 11,
+                        fontWeight: 500,
+                        display: 'inline-flex',
+                        alignItems: 'center'
+                      }}
                     >
                       {event.status === 'processed' ? 'Успешно' : 
                        event.status === 'pending' ? 'В ожидании' : 'Ошибка'}
@@ -97,20 +143,27 @@ export const MarketingWidget: React.FC<MarketingWidgetProps> = ({
         {/* Trigger Stats */}
         {Object.keys(triggerStats).length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">События за 24ч</h4>
-            <div className="flex space-x-2">
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              color: 'var(--text)', 
+              marginBottom: 8 
+            }}>
+              События за 24ч
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {triggerStats.processed > 0 && (
-                <div className="bg-green-50 px-2 py-1 rounded text-xs text-green-700">
+                <div className="pill pillGood" style={{ fontSize: 11 }}>
                   Успешно: {triggerStats.processed}
                 </div>
               )}
               {triggerStats.pending > 0 && (
-                <div className="bg-yellow-50 px-2 py-1 rounded text-xs text-yellow-700">
+                <div className="pill pillWarn" style={{ fontSize: 11 }}>
                   В ожидании: {triggerStats.pending}
                 </div>
               )}
               {triggerStats.failed > 0 && (
-                <div className="bg-red-50 px-2 py-1 rounded text-xs text-red-700">
+                <div className="pill pillBad" style={{ fontSize: 11 }}>
                   Ошибки: {triggerStats.failed}
                 </div>
               )}
@@ -121,12 +174,37 @@ export const MarketingWidget: React.FC<MarketingWidgetProps> = ({
         {/* Upcoming Campaigns */}
         {upcomingCampaigns.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Предстоящие кампании</h4>
-            <div className="space-y-2">
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              color: 'var(--text)', 
+              marginBottom: 8 
+            }}>
+              Предстоящие кампании
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
               {upcomingCampaigns.slice(0, 3).map((campaign) => (
-                <div key={campaign.id} className="flex items-center justify-between p-2 rounded hover:bg-gray-50">
-                  <div className="text-sm text-gray-900">{campaign.name}</div>
-                  <div className="text-xs text-gray-500">
+                <div
+                  key={campaign.id}
+                  className="row"
+                  style={{ 
+                    padding: 8, 
+                    borderRadius: 8, 
+                    background: 'rgba(255, 255, 255, 0.5)',
+                    border: '1px solid rgba(0, 0, 0, 0.03)',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.transform = 'translateX(4px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                    e.currentTarget.style.transform = 'translateX(0)';
+                  }}
+                >
+                  <div style={{ fontSize: 13, color: 'var(--text)' }}>{campaign.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>
                     {new Date(campaign.scheduled_at).toLocaleDateString('ru-RU')}
                   </div>
                 </div>
@@ -137,8 +215,8 @@ export const MarketingWidget: React.FC<MarketingWidgetProps> = ({
 
         {/* Empty State */}
         {recentTriggerEvents.length === 0 && Object.keys(triggerStats).length === 0 && upcomingCampaigns.length === 0 && (
-          <div className="text-center py-8">
-            <div className="text-gray-500">Нет недавних маркетинговых событий</div>
+          <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--muted)', fontSize: 13 }}>
+            Нет недавних маркетинговых событий
           </div>
         )}
       </div>

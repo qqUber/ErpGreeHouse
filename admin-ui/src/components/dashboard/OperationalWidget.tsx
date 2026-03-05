@@ -31,44 +31,48 @@ interface OperationalWidgetProps {
 
 export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Оперативные данные</h3>
-        <span className="text-sm text-gray-600">
+    <div className="card cardFull">
+      <div className="row mb-4">
+        <div style={{ fontWeight: 800, fontSize: 16 }}>Оперативные данные</div>
+        <span style={{ fontSize: 13, color: 'var(--muted)' }}>
           Дата: {new Date(data.date).toLocaleDateString('ru-RU')}
         </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Key Metrics */}
-        <div className="space-y-4">
+        <div style={{ display: 'grid', gap: 16 }}>
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="text-sm text-gray-600">Активный персонал</div>
-              <div className="text-2xl font-semibold text-gray-900">{data.active_staff}</div>
+            <div className="card" style={{ padding: 12 }}>
+              <div style={{ fontSize: 13, color: 'var(--muted)' }}>Активный персонал</div>
+              <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6 }}>{data.active_staff}</div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="text-sm text-gray-600">Всего транз.</div>
-              <div className="text-2xl font-semibold text-gray-900">{data.total_transactions}</div>
+            <div className="card" style={{ padding: 12 }}>
+              <div style={{ fontSize: 13, color: 'var(--muted)' }}>Всего транз.</div>
+              <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6 }}>{data.total_transactions}</div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="text-sm text-gray-600">Сумма продаж</div>
-              <div className="text-2xl font-semibold text-gray-900">
+            <div className="card" style={{ padding: 12 }}>
+              <div style={{ fontSize: 13, color: 'var(--muted)' }}>Сумма продаж</div>
+              <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6 }}>
                 {data.total_revenue.toFixed(2)} ₽
               </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="text-sm text-gray-600">Средний чек</div>
-              <div className="text-2xl font-semibold text-gray-900">
+            <div className="card" style={{ padding: 12 }}>
+              <div style={{ fontSize: 13, color: 'var(--muted)' }}>Средний чек</div>
+              <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6 }}>
                 {data.average_check.toFixed(2)} ₽
               </div>
             </div>
           </div>
 
           {/* Peak Hour */}
-          <div className="bg-blue-50 rounded-lg p-3">
-            <div className="text-sm text-blue-600">Пиковый час</div>
-            <div className="text-2xl font-semibold text-blue-900">
+          <div className="card" style={{ 
+            background: 'rgba(59, 130, 246, 0.06)', 
+            borderColor: 'rgba(59, 130, 246, 0.25)',
+            padding: 12
+          }}>
+            <div style={{ fontSize: 13, color: 'var(--primary)' }}>Пиковый час</div>
+            <div style={{ fontSize: 24, fontWeight: 800, marginTop: 6, color: 'var(--primary)' }}>
               {data.peak_hour}:00 ({data.peak_hour_transactions} транз.)
             </div>
           </div>
@@ -76,22 +80,46 @@ export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) =>
 
         {/* Top Products */}
         <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Топ товаров</h4>
-          <div className="space-y-2">
+          <div style={{ 
+            fontSize: 13, 
+            fontWeight: 600, 
+            color: 'var(--text)', 
+            marginBottom: 8 
+          }}>
+            Топ товаров
+          </div>
+          <div style={{ display: 'grid', gap: 8 }}>
             {data.top_products.slice(0, 5).map((product) => (
               <div
                 key={product.code}
-                className="flex items-center justify-between p-2 rounded hover:bg-gray-50"
+                className="row"
+                style={{ 
+                  padding: 8, 
+                  borderRadius: 8, 
+                  background: 'rgba(255, 255, 255, 0.5)',
+                  border: '1px solid rgba(0, 0, 0, 0.03)',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                  e.currentTarget.style.transform = 'translateX(4px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                  e.currentTarget.style.transform = 'translateX(0)';
+                }}
               >
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                  <div className="text-xs text-gray-500">{product.code}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                    {product.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{product.code}</div>
                 </div>
-                <div className="ml-3 text-right">
-                  <div className="text-sm font-semibold text-gray-900">
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
                     {product.quantity} шт
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>
                     {product.revenue.toFixed(2)} ₽
                   </div>
                 </div>
@@ -103,17 +131,27 @@ export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) =>
 
       {/* Hourly Breakdown */}
       {data.hourly_breakdown.length > 0 && (
-        <div className="mt-6">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Продажи по часам</h4>
-          <div className="bg-gray-50 rounded-lg p-4">
+        <div style={{ marginTop: 24 }}>
+          <div style={{ 
+            fontSize: 13, 
+            fontWeight: 600, 
+            color: 'var(--text)', 
+            marginBottom: 8 
+          }}>
+            Продажи по часам
+          </div>
+          <div className="card" style={{ 
+            background: 'rgba(255, 255, 255, 0.5)',
+            padding: 16
+          }}>
             <div className="grid grid-cols-12 gap-2">
               {data.hourly_breakdown.map((hourData) => (
                 <div
                   key={hourData.hour}
-                  className="text-center"
+                  style={{ textAlign: 'center' }}
                 >
-                  <div className="text-xs text-gray-600">{hourData.hour}:00</div>
-                  <div className="text-sm font-semibold text-gray-900">
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{hourData.hour}:00</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
                     {hourData.transactions}
                   </div>
                 </div>

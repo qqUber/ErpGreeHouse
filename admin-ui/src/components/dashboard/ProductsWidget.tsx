@@ -35,9 +35,9 @@ interface ProductsWidgetProps {
 
 export const ProductsWidget: React.FC<ProductsWidgetProps> = ({ data }) => {
   const getGrowthColor = (growth: number) => {
-    if (growth > 0) return 'text-green-600';
-    if (growth < 0) return 'text-red-600';
-    return 'text-gray-600';
+    if (growth > 0) return 'var(--good)';
+    if (growth < 0) return 'var(--bad)';
+    return 'var(--muted)';
   };
 
   const getGrowthIcon = (growth: number) => {
@@ -47,34 +47,58 @@ export const ProductsWidget: React.FC<ProductsWidgetProps> = ({ data }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Товары</h3>
-        <span className="text-sm text-gray-600">
+    <div className="card cardFull">
+      <div className="row mb-4">
+        <div style={{ fontWeight: 800, fontSize: 16 }}>Товары</div>
+        <span style={{ fontSize: 13, color: 'var(--muted)' }}>
           Дата: {new Date(data.date).toLocaleDateString('ru-RU')}
         </span>
       </div>
 
-      <div className="space-y-4">
+      <div style={{ display: 'grid', gap: 16 }}>
         {/* Top Products Today */}
         {data.top_products_today.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Топ товаров сегодня</h4>
-            <div className="space-y-2">
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              color: 'var(--text)', 
+              marginBottom: 8 
+            }}>
+              Топ товаров сегодня
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
               {data.top_products_today.slice(0, 5).map((product) => (
                 <div
                   key={product.code}
-                  className="flex items-center justify-between p-2 rounded hover:bg-gray-50"
+                  className="row"
+                  style={{ 
+                    padding: 8, 
+                    borderRadius: 8, 
+                    background: 'rgba(255, 255, 255, 0.5)',
+                    border: '1px solid rgba(0, 0, 0, 0.03)',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.transform = 'translateX(4px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                    e.currentTarget.style.transform = 'translateX(0)';
+                  }}
                 >
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                    <div className="text-xs text-gray-500">{product.code}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                      {product.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{product.code}</div>
                   </div>
-                  <div className="ml-3 text-right">
-                    <div className="text-sm font-semibold text-gray-900">
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
                       {product.quantity} шт
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>
                       {product.revenue.toFixed(2)} ₽
                     </div>
                   </div>
@@ -87,15 +111,37 @@ export const ProductsWidget: React.FC<ProductsWidgetProps> = ({ data }) => {
         {/* Category Performance */}
         {data.category_performance.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Категории</h4>
-            <div className="space-y-2">
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              color: 'var(--text)', 
+              marginBottom: 8 
+            }}>
+              Категории
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
               {data.category_performance.map((category) => (
                 <div
                   key={category.category}
-                  className="flex items-center justify-between p-2 rounded hover:bg-gray-50"
+                  className="row"
+                  style={{ 
+                    padding: 8, 
+                    borderRadius: 8, 
+                    background: 'rgba(255, 255, 255, 0.5)',
+                    border: '1px solid rgba(0, 0, 0, 0.03)',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.transform = 'translateX(4px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                    e.currentTarget.style.transform = 'translateX(0)';
+                  }}
                 >
-                  <div className="text-sm text-gray-900">{category.category}</div>
-                  <div className="text-sm text-gray-600">
+                  <div style={{ fontSize: 13, color: 'var(--text)' }}>{category.category}</div>
+                  <div style={{ fontSize: 13, color: 'var(--muted)' }}>
                     {category.items_sold} шт · {category.revenue.toFixed(2)} ₽
                   </div>
                 </div>
@@ -107,22 +153,49 @@ export const ProductsWidget: React.FC<ProductsWidgetProps> = ({ data }) => {
         {/* Trending Products */}
         {data.trending_products.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Тренды</h4>
-            <div className="space-y-2">
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              color: 'var(--text)', 
+              marginBottom: 8 
+            }}>
+              Тренды
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
               {data.trending_products.slice(0, 3).map((product) => (
                 <div
                   key={product.code}
-                  className="flex items-center justify-between p-2 rounded hover:bg-gray-50"
+                  className="row"
+                  style={{ 
+                    padding: 8, 
+                    borderRadius: 8, 
+                    background: 'rgba(255, 255, 255, 0.5)',
+                    border: '1px solid rgba(0, 0, 0, 0.03)',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.transform = 'translateX(4px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                    e.currentTarget.style.transform = 'translateX(0)';
+                  }}
                 >
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                    <div className="text-xs text-gray-500">{product.code}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                      {product.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{product.code}</div>
                   </div>
-                  <div className="ml-3 text-right">
-                    <div className="text-sm font-semibold text-gray-900">
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
                       {product.this_week} шт
                     </div>
-                    <div className={`text-xs ${getGrowthColor(product.growth_percent)}`}>
+                    <div style={{ 
+                      fontSize: 11, 
+                      color: getGrowthColor(product.growth_percent)
+                    }}>
                       {getGrowthIcon(product.growth_percent)} {Math.abs(product.growth_percent).toFixed(1)}%
                     </div>
                   </div>

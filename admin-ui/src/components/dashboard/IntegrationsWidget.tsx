@@ -47,13 +47,29 @@ export const IntegrationsWidget: React.FC<IntegrationsWidgetProps> = ({
   const getDeliveryStatusColor = (status: string) => {
     switch (status) {
       case 'success':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return {
+          background: 'rgba(4, 120, 87, 0.06)',
+          color: 'var(--good)',
+          border: '1px solid rgba(4, 120, 87, 0.25)'
+        };
       case 'failed':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return {
+          background: 'rgba(185, 28, 28, 0.06)',
+          color: 'var(--bad)',
+          border: '1px solid rgba(185, 28, 28, 0.25)'
+        };
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return {
+          background: 'rgba(180, 83, 9, 0.06)',
+          color: 'var(--warn)',
+          border: '1px solid rgba(180, 83, 9, 0.25)'
+        };
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return {
+          background: 'rgba(107, 114, 128, 0.06)',
+          color: 'var(--muted)',
+          border: '1px solid rgba(107, 114, 128, 0.25)'
+        };
     }
   };
 
@@ -74,47 +90,70 @@ export const IntegrationsWidget: React.FC<IntegrationsWidgetProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Интеграции</h3>
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-600">
+    <div className="card cardFull">
+      <div className="row mb-4">
+        <div style={{ fontWeight: 800, fontSize: 16 }}>Интеграции</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 13, color: 'var(--muted)' }}>
             Успешность: {successRate.toFixed(1)}%
           </span>
           {pendingCount > 0 && (
-            <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-0.5 rounded-full">
+            <span className="pill pillWarn" style={{ fontSize: 11 }}>
               {pendingCount} в очереди
             </span>
           )}
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div style={{ display: 'grid', gap: 16 }}>
         {/* Integration Status Grid */}
         {integrations.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Статус интеграций</h4>
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              color: 'var(--text)', 
+              marginBottom: 8 
+            }}>
+              Статус интеграций
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {integrations.map((integration, index) => (
                 <div
                   key={index}
-                  className="bg-gray-50 rounded-lg p-3 border border-gray-200"
+                  className="card"
+                  style={{ 
+                    padding: 12,
+                    background: 'rgba(255, 255, 255, 0.5)'
+                  }}
                 >
-                  <div className="flex items-center space-x-2">
-                    <div className="text-2xl">{getIntegrationIcon(integration.kind)}</div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">
+                  <div className="row">
+                    <div style={{ fontSize: 24 }}>{getIntegrationIcon(integration.kind)}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
                         {integration.name}
                       </div>
-                      <div className="text-xs text-gray-500">{integration.kind}</div>
+                      <div style={{ fontSize: 11, color: 'var(--muted)' }}>{integration.kind}</div>
                     </div>
                     <div>
                       <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          integration.status === 'online'
-                            ? 'bg-green-100 text-green-800 border-green-200'
-                            : 'bg-red-100 text-red-800 border-red-200'
-                        }`}
+                        style={{
+                          ...(integration.status === 'online' ? {
+                            background: 'rgba(4, 120, 87, 0.06)',
+                            color: 'var(--good)',
+                            border: '1px solid rgba(4, 120, 87, 0.25)'
+                          } : {
+                            background: 'rgba(185, 28, 28, 0.06)',
+                            color: 'var(--bad)',
+                            border: '1px solid rgba(185, 28, 28, 0.25)'
+                          }),
+                          padding: '2px 8px',
+                          borderRadius: '999px',
+                          fontSize: 11,
+                          fontWeight: 500,
+                          display: 'inline-flex',
+                          alignItems: 'center'
+                        }}
                       >
                         {integration.status === 'online' ? 'Онлайн' : 'Оффлайн'}
                       </span>
@@ -129,25 +168,55 @@ export const IntegrationsWidget: React.FC<IntegrationsWidgetProps> = ({
         {/* Recent Deliveries */}
         {recentDeliveries.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Последние события</h4>
-            <div className="space-y-2">
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              color: 'var(--text)', 
+              marginBottom: 8 
+            }}>
+              Последние события
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
               {recentDeliveries.slice(0, 5).map((delivery) => (
                 <div
                   key={delivery.id}
-                  className="flex items-center justify-between p-2 rounded hover:bg-gray-50"
+                  className="row"
+                  style={{ 
+                    padding: 8, 
+                    borderRadius: 8, 
+                    background: 'rgba(255, 255, 255, 0.5)',
+                    border: '1px solid rgba(0, 0, 0, 0.03)',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.transform = 'translateX(4px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                    e.currentTarget.style.transform = 'translateX(0)';
+                  }}
                 >
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
                       {delivery.event_type}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>
                       {formatTime(delivery.created_at)}
                       {delivery.http_status && ` · HTTP ${delivery.http_status}`}
                     </div>
                   </div>
-                  <div className="ml-3">
+                  <div style={{ marginLeft: 12 }}>
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getDeliveryStatusColor(delivery.status)}`}
+                      style={{
+                        ...getDeliveryStatusColor(delivery.status),
+                        padding: '2px 8px',
+                        borderRadius: '999px',
+                        fontSize: 11,
+                        fontWeight: 500,
+                        display: 'inline-flex',
+                        alignItems: 'center'
+                      }}
                     >
                       {delivery.status === 'success' ? 'Успех' : 
                        delivery.status === 'pending' ? 'В очереди' : 'Ошибка'}
@@ -162,20 +231,27 @@ export const IntegrationsWidget: React.FC<IntegrationsWidgetProps> = ({
         {/* Delivery Stats */}
         {Object.keys(deliveryStats).length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Статистика за 24ч</h4>
-            <div className="flex space-x-2">
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              color: 'var(--text)', 
+              marginBottom: 8 
+            }}>
+              Статистика за 24ч
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {deliveryStats.success > 0 && (
-                <div className="bg-green-50 px-2 py-1 rounded text-xs text-green-700">
+                <div className="pill pillGood" style={{ fontSize: 11 }}>
                   Успех: {deliveryStats.success}
                 </div>
               )}
               {deliveryStats.failed > 0 && (
-                <div className="bg-red-50 px-2 py-1 rounded text-xs text-red-700">
+                <div className="pill pillBad" style={{ fontSize: 11 }}>
                   Ошибки: {deliveryStats.failed}
                 </div>
               )}
               {deliveryStats.pending > 0 && (
-                <div className="bg-yellow-50 px-2 py-1 rounded text-xs text-yellow-700">
+                <div className="pill pillWarn" style={{ fontSize: 11 }}>
                   В очереди: {deliveryStats.pending}
                 </div>
               )}
@@ -186,15 +262,37 @@ export const IntegrationsWidget: React.FC<IntegrationsWidgetProps> = ({
         {/* Last Syncs */}
         {Object.keys(lastSyncs).length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Последние синхронизации</h4>
-            <div className="space-y-2">
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              color: 'var(--text)', 
+              marginBottom: 8 
+            }}>
+              Последние синхронизации
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
               {Object.entries(lastSyncs).map(([integration, syncData]) => (
                 <div
                   key={integration}
-                  className="flex items-center justify-between p-2 rounded hover:bg-gray-50"
+                  className="row"
+                  style={{ 
+                    padding: 8, 
+                    borderRadius: 8, 
+                    background: 'rgba(255, 255, 255, 0.5)',
+                    border: '1px solid rgba(0, 0, 0, 0.03)',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.transform = 'translateX(4px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                    e.currentTarget.style.transform = 'translateX(0)';
+                  }}
                 >
-                  <div className="text-sm text-gray-900">{integration}</div>
-                  <div className="text-xs text-gray-500">
+                  <div style={{ fontSize: 13, color: 'var(--text)' }}>{integration}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>
                     {new Date(syncData).toLocaleString('ru-RU')}
                   </div>
                 </div>
@@ -205,8 +303,8 @@ export const IntegrationsWidget: React.FC<IntegrationsWidgetProps> = ({
 
         {/* Empty State */}
         {integrations.length === 0 && recentDeliveries.length === 0 && Object.keys(deliveryStats).length === 0 && (
-          <div className="text-center py-8">
-            <div className="text-gray-500">Интеграции не настроены</div>
+          <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--muted)', fontSize: 13 }}>
+            Интеграции не настроены
           </div>
         )}
       </div>
