@@ -27,58 +27,143 @@ export function ConsentTable({ customerId }: { customerId?: number }) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+    <div style={{ overflowX: 'auto' }}>
+      <table className="table" style={{ minWidth: '100%' }}>
+        <thead style={{ background: 'rgba(243, 244, 246, 0.5)' }}>
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th style={{ 
+              padding: '12px 16px', 
+              textAlign: 'left', 
+              fontSize: 12, 
+              fontWeight: 600, 
+              color: 'var(--muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
               Дата и время
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th style={{ 
+              padding: '12px 16px', 
+              textAlign: 'left', 
+              fontSize: 12, 
+              fontWeight: 600, 
+              color: 'var(--muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
               Тип согласия
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th style={{ 
+              padding: '12px 16px', 
+              textAlign: 'left', 
+              fontSize: 12, 
+              fontWeight: 600, 
+              color: 'var(--muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
               Версия политики
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th style={{ 
+              padding: '12px 16px', 
+              textAlign: 'left', 
+              fontSize: 12, 
+              fontWeight: 600, 
+              color: 'var(--muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
               Источник
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th style={{ 
+              padding: '12px 16px', 
+              textAlign: 'left', 
+              fontSize: 12, 
+              fontWeight: 600, 
+              color: 'var(--muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
               Текст согласия
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody style={{ background: 'var(--panel)' }}>
           {loading ? (
             <tr>
-              <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+              <td colSpan={5} style={{ 
+                padding: '16px', 
+                textAlign: 'center', 
+                color: 'var(--muted)',
+                fontSize: 13
+              }}>
                 Загрузка...
               </td>
             </tr>
           ) : consents.length === 0 ? (
             <tr>
-              <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+              <td colSpan={5} style={{ 
+                padding: '16px', 
+                textAlign: 'center', 
+                color: 'var(--muted)',
+                fontSize: 13
+              }}>
                 Нет записей о согласиях
               </td>
             </tr>
           ) : (
             consents.map((consent) => (
-              <tr key={consent.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <tr key={consent.id} style={{ 
+                transition: 'background-color 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(243, 244, 246, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'var(--panel)';
+              }}>
+                <td style={{ 
+                  padding: '12px 16px', 
+                  whiteSpace: 'nowrap', 
+                  fontSize: 13, 
+                  color: 'var(--text)'
+                }}>
                   {new Date(consent.accepted_at).toLocaleString()}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td style={{ 
+                  padding: '12px 16px', 
+                  whiteSpace: 'nowrap', 
+                  fontSize: 13, 
+                  color: 'var(--text)'
+                }}>
                   {consent.consent_type === 'data_processing' ? 'Обработка данных' : 
                    consent.consent_type === 'marketing' ? 'Маркетинговые коммуникации' : 
                    'Оба типа'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td style={{ 
+                  padding: '12px 16px', 
+                  whiteSpace: 'nowrap', 
+                  fontSize: 13, 
+                  color: 'var(--text)'
+                }}>
                   {consent.consent_version}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td style={{ 
+                  padding: '12px 16px', 
+                  whiteSpace: 'nowrap', 
+                  fontSize: 13, 
+                  color: 'var(--text)'
+                }}>
                   {consent.source === 'tg' ? 'Telegram' : 'VK'}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                <td style={{ 
+                  padding: '12px 16px', 
+                  fontSize: 13, 
+                  color: 'var(--text)',
+                  maxWidth: '200px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>
                   {consent.consent_text}
                 </td>
               </tr>
