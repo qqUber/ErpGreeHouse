@@ -192,7 +192,7 @@ export const WIDGET_REGISTRY: Record<WidgetId, WidgetMetadata> = {
   },
   'shared.products': {
     id: 'shared.products',
-    name: 'Товары',
+    name: 'Products',
     description: 'Product catalog access (used across roles)',
     requiredPermissions: [Permissions.PRODUCT_READ],
     requiredRoles: [Role.OPERATOR, Role.MANAGER, Role.ADMIN],

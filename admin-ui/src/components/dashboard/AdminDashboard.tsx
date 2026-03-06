@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dashboard } from '../../api';
 
 interface AdminDashboardProps {
@@ -7,6 +8,7 @@ interface AdminDashboardProps {
 }
 
 export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
+  const { t } = useTranslation();
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
   const toggleSection = (section: string) => {
@@ -26,7 +28,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
       {/* System Status Overview */}
       <div className="card cardFull" data-testid="admin_widget_system_overview_en">
         <div className="flex items-center justify-between mb-6">
-          <div className="font-bold text-lg">Обзор системы</div>
+          <div className="font-bold text-lg">{t('dashboardAdmin.systemOverview')}</div>
           <div className="flex gap-2">
             <span className="pill pillGood">API: Ok</span>
             <span className="pill pillGood">Database: Ok</span>
@@ -37,19 +39,19 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="text-center">
             <div className="text-3xl font-bold text-blue-600">{dash?.customers_total || 0}</div>
-            <div className="text-muted">Всего клиентов</div>
+            <div className="text-muted">{t('dashboardAdmin.totalCustomers')}</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-green-600">{dash?.sales_count || 0}</div>
-            <div className="text-muted">Продаж за день</div>
+            <div className="text-muted">{t('dashboardAdmin.salesToday')}</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-purple-600">{formatCurrency(dash?.sales_total || 0)}</div>
-            <div className="text-muted">Выручка за день</div>
+            <div className="text-muted">{t('dashboardAdmin.revenueToday')}</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-orange-600">{ (dash?.bonus_earned || 0) - (dash?.bonus_used || 0) }</div>
-            <div className="text-muted">Чистый баланс</div>
+            <div className="text-muted">{t('dashboardAdmin.netBalance')}</div>
           </div>
         </div>
       </div>
@@ -62,7 +64,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
         >
           <div className="font-bold text-lg flex items-center gap-2">
             <span>🏥</span>
-            System Health
+            {t('dashboardAdmin.systemHealth')}
           </div>
           <div className="text-muted">{collapsedSections['health'] ? '▶' : '▼'}</div>
         </div>
@@ -71,16 +73,16 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
           <div className="p-4 border-t">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="p-4 bg-green-50 rounded-lg">
-                <div className="font-semibold mb-2">Database</div>
-                <div className="text-muted text-sm">Connected • 12ms latency</div>
+                <div className="font-semibold mb-2">{t('dashboardAdmin.database')}</div>
+                <div className="text-muted text-sm">{t('dashboardAdmin.connected')} • 12ms {t('dashboardAdmin.latency')}</div>
               </div>
               <div className="p-4 bg-green-50 rounded-lg">
-                <div className="font-semibold mb-2">Redis</div>
-                <div className="text-muted text-sm">Connected • 2ms latency</div>
+                <div className="font-semibold mb-2">{t('dashboardAdmin.redis')}</div>
+                <div className="text-muted text-sm">{t('dashboardAdmin.connected')} • 2ms {t('dashboardAdmin.latency')}</div>
               </div>
               <div className="p-4 bg-green-50 rounded-lg">
-                <div className="font-semibold mb-2">Workers</div>
-                <div className="text-muted text-sm">2 active • 0 failed</div>
+                <div className="font-semibold mb-2">{t('dashboardAdmin.workers')}</div>
+                <div className="text-muted text-sm">2 {t('dashboardAdmin.active')} • 0 {t('dashboardAdmin.failed')}</div>
               </div>
             </div>
           </div>
@@ -95,7 +97,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
         >
           <div className="font-bold text-lg flex items-center gap-2">
             <span>🔒</span>
-            Security & Access
+            {t('dashboardAdmin.securityAccess')}
           </div>
           <div className="text-muted">{collapsedSections['security'] ? '▶' : '▼'}</div>
         </div>
@@ -104,23 +106,23 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
           <div className="p-4 border-t">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <div className="font-semibold mb-2">Active Sessions</div>
-                <div className="text-muted text-sm">3 users logged in</div>
+                <div className="font-semibold mb-2">{t('dashboardAdmin.activeSessions')}</div>
+                <div className="text-muted text-sm">3 {t('dashboardAdmin.usersLoggedIn')}</div>
                 <div className="mt-2">
                   <button 
                     className="btn btnPrimary"
                     onClick={() => onNavigate('settings')}
                   >
-                    Manage Users
+                    {t('dashboardAdmin.manageUsers')}
                   </button>
                 </div>
               </div>
               <div>
                 <div className="font-semibold mb-2">System Status</div>
-                <div className="text-muted text-sm">All systems operational</div>
+                <div className="text-muted text-sm">{t('dashboardAdmin.allSystemsOperational')}</div>
                 <div className="mt-2">
                   <button className="btn">
-                    System Logs
+                    {t('dashboardAdmin.systemLogs')}
                   </button>
                 </div>
               </div>
@@ -137,7 +139,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
         >
           <div className="font-bold text-lg flex items-center gap-2">
             <span>⚡</span>
-            Performance
+            {t('dashboardAdmin.performance')}
           </div>
           <div className="text-muted">{collapsedSections['performance'] ? '▶' : '▼'}</div>
         </div>
@@ -147,15 +149,15 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center">
                 <div className="text-2xl font-bold">125ms</div>
-                <div className="text-muted text-sm">Avg Response Time</div>
+                <div className="text-muted text-sm">{t('dashboardAdmin.avgResponseTime')}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">98.5%</div>
-                <div className="text-muted text-sm">Success Rate</div>
+                <div className="text-muted text-sm">{t('dashboardAdmin.successRate')}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">24</div>
-                <div className="text-muted text-sm">Active Connections</div>
+                <div className="text-muted text-sm">{t('dashboardAdmin.activeConnections')}</div>
               </div>
             </div>
           </div>
@@ -170,7 +172,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
         >
           <div className="font-bold text-lg flex items-center gap-2">
             <span>📊</span>
-            Recent Activity
+            {t('dashboardAdmin.recentActivity')}
           </div>
           <div className="text-muted">{collapsedSections['activity'] ? '▶' : '▼'}</div>
         </div>
@@ -179,7 +181,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
           <div className="p-4 border-t">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <div className="font-semibold mb-4">Last Transactions</div>
+                <div className="font-semibold mb-4">{t('dashboardAdmin.lastTransactions')}</div>
                 <div className="space-y-3">
                   {dash.recent_activity.transactions.slice(0, 3).map((tx) => (
                     <div key={tx.id} className="flex items-center justify-between">
@@ -201,7 +203,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
               </div>
 
               <div>
-                <div className="font-semibold mb-4">System Events</div>
+                <div className="font-semibold mb-4">{t('dashboardAdmin.systemEvents')}</div>
                 <div className="space-y-3">
                   {[1, 2, 3].map((event) => (
                     <div key={event} className="flex items-center justify-between">
@@ -211,7 +213,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
                         </div>
                         <div>
                           <div className="font-medium">Event {event}</div>
-                          <div className="text-muted text-sm">Completed successfully</div>
+                          <div className="text-muted text-sm">{t('dashboardAdmin.completedSuccessfully')}</div>
                         </div>
                       </div>
                       <div className="text-muted text-sm">{new Date().toLocaleTimeString()}</div>
@@ -227,7 +229,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
       {/* Quick Actions */}
       <div className="card cardFull" data-testid="admin_widget_quick_actions_en">
         <div className="flex items-center justify-between mb-6">
-          <div className="font-bold text-lg">Quick Actions</div>
+          <div className="font-bold text-lg">{t('dashboardAdmin.quickActions')}</div>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -236,28 +238,28 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
             onClick={() => onNavigate('settings')}
             data-testid="admin_btn_settings_en"
           >
-            ⚙️ Settings
+            ⚙️ {t('dashboardAdmin.settings')}
           </button>
           <button 
             className="btn"
             onClick={() => onNavigate('analytics')}
             data-testid="admin_btn_analytics_en"
           >
-            📈 Analytics
+            📈 {t('dashboardAdmin.analytics')}
           </button>
           <button 
             className="btn"
             onClick={() => onNavigate('customers')}
             data-testid="admin_btn_customers_en"
           >
-            👥 Customers
+            👥 {t('dashboardAdmin.customers')}
           </button>
           <button 
             className="btn"
             onClick={() => onNavigate('products')}
             data-testid="admin_btn_products_en"
           >
-            📦 Products
+            📦 {t('dashboardAdmin.products')}
           </button>
         </div>
       </div>

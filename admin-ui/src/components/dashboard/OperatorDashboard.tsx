@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dashboard } from '../../api';
 
 interface OperatorDashboardProps {
@@ -7,6 +8,7 @@ interface OperatorDashboardProps {
 }
 
 export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) {
+  const { t } = useTranslation();
   // Helper to format currency
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ru-RU').format(value) + ' ₽';
@@ -22,8 +24,8 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
           data-testid="operator_btn_new_sale_en"
         >
           <div className="text-4xl mb-4">💰</div>
-          <div className="font-bold text-lg">Новая продажа</div>
-          <div className="text-muted mt-2">Сканировать QR или вводить телефон</div>
+          <div className="font-bold text-lg">{t('dashboardOperator.newSale')}</div>
+          <div className="text-muted mt-2">{t('dashboardOperator.scanQRorPhone')}</div>
         </button>
         
         <button
@@ -32,8 +34,8 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
           data-testid="operator_btn_identify_customer_en"
         >
           <div className="text-4xl mb-4">🔍</div>
-          <div className="font-bold text-lg">Идентифицировать клиента</div>
-          <div className="text-muted mt-2">Поиск по телефону или QR</div>
+          <div className="font-bold text-lg">{t('dashboardOperator.identifyCustomer')}</div>
+          <div className="text-muted mt-2">{t('dashboardOperator.searchByPhoneQR')}</div>
         </button>
         
         <button
@@ -42,8 +44,8 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
           data-testid="operator_btn_catalog_en"
         >
           <div className="text-4xl mb-4">📦</div>
-          <div className="font-bold text-lg">Каталог товаров</div>
-          <div className="text-muted mt-2">Просмотреть и обновить ассортимент</div>
+          <div className="font-bold text-lg">{t('dashboardOperator.productCatalog')}</div>
+          <div className="text-muted mt-2">{t('dashboardOperator.viewUpdateStock')}</div>
         </button>
       </div>
 
@@ -52,7 +54,7 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" data-testid="operator_widget_shift_stats_en">
           <div className="card">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-muted text-sm">Продаж за день</span>
+              <span className="text-muted text-sm">{t('dashboardOperator.salesPerDay')}</span>
               <span className="text-2xl">👥</span>
             </div>
             <div className="text-3xl font-bold">{dash.sales_count}</div>
@@ -60,7 +62,7 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
 
           <div className="card">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-muted text-sm">Выручка</span>
+              <span className="text-muted text-sm">{t('dashboardOperator.revenue')}</span>
               <span className="text-2xl">💵</span>
             </div>
             <div className="text-3xl font-bold">{formatCurrency(dash.sales_total)}</div>
@@ -68,7 +70,7 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
 
           <div className="card">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-muted text-sm">Начислено баллов</span>
+              <span className="text-muted text-sm">{t('dashboardOperator.pointsAccrued')}</span>
               <span className="text-2xl text-green-500">📈</span>
             </div>
             <div className="text-3xl font-bold">{dash.bonus_earned}</div>
@@ -76,7 +78,7 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
 
           <div className="card">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-muted text-sm">Списано баллов</span>
+              <span className="text-muted text-sm">{t('dashboardOperator.pointsWrittenOff')}</span>
               <span className="text-2xl text-orange-500">📉</span>
             </div>
             <div className="text-3xl font-bold">{dash.bonus_used}</div>
@@ -88,8 +90,8 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
       {dash && dash.recent_activity.transactions.length > 0 && (
         <div className="card cardFull" data-testid="operator_widget_recent_transactions_en">
           <div className="flex items-center justify-between mb-6">
-            <div className="font-bold text-lg">Последние операции</div>
-            <span className="text-muted text-sm">Показано {Math.min(5, dash.recent_activity.transactions.length)} из {dash.recent_activity.transactions.length}</span>
+            <div className="font-bold text-lg">{t('dashboardOperator.recentOperations')}</div>
+            <span className="text-muted text-sm">{t('dashboardOperator.showingOf', { shown: Math.min(5, dash.recent_activity.transactions.length), total: dash.recent_activity.transactions.length })}</span>
           </div>
           
           <div className="space-y-4">
@@ -100,13 +102,13 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
                     <span className="text-primary font-bold">#{tx.id}</span>
                   </div>
                   <div>
-                    <div className="font-semibold">{tx.customer_name || 'Клиент'}</div>
+                    <div className="font-semibold">{tx.customer_name || t('dashboardOperator.customer')}</div>
                     <div className="text-muted text-sm">{new Date(tx.created_at).toLocaleTimeString()}</div>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="font-bold">{formatCurrency(tx.total_amount)}</div>
-                  <div className="text-green-500 text-sm">+{tx.bonus_earned} баллов</div>
+                  <div className="text-green-500 text-sm">{t('dashboardOperator.bonusPoints', { count: tx.bonus_earned })}</div>
                 </div>
               </div>
             ))}
@@ -118,7 +120,7 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
               onClick={() => onNavigate('pos')}
               data-testid="operator_btn_new_operation_en"
             >
-              Провести новую операцию
+              {t('dashboardOperator.newOperation')}
             </button>
           </div>
         </div>
@@ -128,14 +130,14 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
       {(!dash || dash.recent_activity.transactions.length === 0) && (
         <div className="card cardFull text-center py-12" data-testid="operator_widget_empty_state_en">
           <div className="text-6xl mb-4">📊</div>
-          <div className="font-bold text-lg mb-2">Нет операций за сегодня</div>
-          <div className="text-muted mb-6">Начните с первой продажи</div>
+          <div className="font-bold text-lg mb-2">{t('dashboardOperator.noOperationsToday')}</div>
+          <div className="text-muted mb-6">{t('dashboardOperator.startWithFirstSale')}</div>
           <button 
             className="btn btnPrimary"
             onClick={() => onNavigate('pos')}
             data-testid="operator_btn_first_sale_en"
           >
-            Провести первую продажу
+            {t('dashboardOperator.firstSale')}
           </button>
         </div>
       )}

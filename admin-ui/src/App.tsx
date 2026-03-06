@@ -65,14 +65,6 @@ type AuthFlow = {
   steps: Array<{ label: string; done: boolean }>;
 };
 
-function roleLabel(role: string) {
-  const r = String(role || '').toLowerCase();
-  if (r === 'owner') return 'Админ';
-  if (r === 'operator') return 'Оператор';
-  if (r === 'marketer') return 'Менеджер';
-  return r || '—';
-}
-
 function money(n: number) {
   return new Intl.NumberFormat('ru-RU').format(n);
 }
@@ -80,6 +72,16 @@ function money(n: number) {
 function App() {
   // Use auth context for authentication state
   const { t } = useTranslation();
+
+  // Role label helper - uses translation from component scope
+  function roleLabel(role: string) {
+    const r = String(role || '').toLowerCase();
+    if (r === 'owner') return t('roles.owner');
+    if (r === 'operator') return t('roles.operator');
+    if (r === 'marketer') return t('roles.marketer');
+    return r || '—';
+  }
+
   const {
     isAuthenticated,
     isLoading: authLoading,
@@ -450,34 +452,34 @@ function App() {
     setError(null);
     try {
       const signal = startAuthFlowSteps([
-        'Подключение к серверу',
-        'Проверка ключа',
-        'Создание сессии',
+        t('authFlow.connecting'),
+        t('authFlow.checkingKey'),
+        t('authFlow.creatingSession'),
       ]);
-      setAuthStep(0, 'Подключение к серверу...');
+      setAuthStep(0, t('authFlow.connectingServer'));
       await Api.publicStatus(signal);
       markAuthStepDone(0);
 
-      setAuthStep(1, 'Проверка ключа...');
+      setAuthStep(1, t('authFlow.checkingKey_'));
       setMustChangePassword(false);
       setAdminSecret(adminKey.trim());
       markAuthStepDone(1);
 
-      setAuthStep(2, 'Создание сессии...');
+      setAuthStep(2, t('authFlow.creatingSession_'));
       await bootstrap();
       markAuthStepDone(2);
-      showNotice('ok', 'Вход выполнен.');
+      showNotice('ok', t('auth.loginSuccess'));
       stopAuthFlow();
     } catch (e: any) {
       console.log(`[App] Login failed: ${e?.message || e}`);
       if (
-        String(e?.name || '')
-          .toLowerCase()
-          .includes('abort')
+      String(e?.name || '')
+      .toLowerCase()
+      .includes('abort')
       ) {
-        showNotice('warn', 'Вход отменён.');
+      showNotice('warn', t('auth.loginCancelled'));
       } else {
-        showNotice('err', String(e?.message || e));
+      showNotice('err', String(e?.message || e));
       }
       stopAuthFlow();
     }
@@ -494,15 +496,15 @@ function App() {
     setError(null);
     try {
       const signal = startAuthFlowSteps([
-        'Подключение к серверу',
-        'Проверка учетных данных',
-        'Создание сессии',
+        t('authFlow.connecting'),
+        t('authFlow.checkingCredentials'),
+        t('authFlow.creatingSession'),
       ]);
-      setAuthStep(0, 'Подключение к серверу...');
+      setAuthStep(0, t('authFlow.connectingServer'));
       await Promise.all([Api.publicStatus(signal), Api.authStatus(signal)]);
       markAuthStepDone(0);
 
-      setAuthStep(1, 'Проверка учетных данных...');
+      setAuthStep(1, t('authFlow.verifyingCredentials'));
       // Use auth context login which handles JWT cookies automatically
       await authLogin(username.trim(), password);
       console.log(
@@ -516,26 +518,26 @@ function App() {
       // Note: JWT tokens are in httpOnly cookies, no need to setAdminSecret
       markAuthStepDone(1);
 
-      setAuthStep(2, 'Создание сессии...');
+      setAuthStep(2, t('authFlow.creatingSession_'));
       console.log('[App] Calling bootstrap with user:', user);
       await bootstrap();
       markAuthStepDone(2);
       if (authMustChangePassword || mustChangePassword) {
         setTab('settings');
       }
-      showNotice('ok', 'Вход выполнен.');
+      showNotice('ok', t('auth.loginSuccess'));
       stopAuthFlow();
     } catch (e: any) {
       console.error(`[App] Login failed (catch):`, e);
       console.error(`[App] Login failed message:`, e.message);
       if (
-        String(e?.name || '')
-          .toLowerCase()
-          .includes('abort')
+      String(e?.name || '')
+      .toLowerCase()
+      .includes('abort')
       ) {
-        showNotice('warn', 'Вход отменён.');
+      showNotice('warn', t('auth.loginCancelled'));
       } else {
-        showNotice('err', String(e?.message || e));
+      showNotice('err', String(e?.message || e));
       }
       stopAuthFlow();
     }
@@ -545,56 +547,56 @@ function App() {
     setError(null);
     try {
       const signal = startAuthFlowSteps([
-        'Подключение к серверу',
-        'Проверка данных',
-        'Сброс пароля',
+        t('authFlow.connecting'),
+        t('authFlow.checkingData'),
+        t('authFlow.resettingPassword'),
       ]);
-      setAuthStep(0, 'Подключение к серверу...');
+      setAuthStep(0, t('authFlow.connectingServer'));
       await Promise.all([Api.publicStatus(signal), Api.authStatus(signal)]);
       markAuthStepDone(0);
 
-      setAuthStep(1, 'Проверка данных...');
+      setAuthStep(1, t('authFlow.checkingData_'));
       markAuthStepDone(1);
 
-      setAuthStep(2, 'Сброс пароля...');
+      setAuthStep(2, t('authFlow.resettingPassword_'));
       await Api.recoverPassword(username.trim(), newPassword, recoverySecret, signal);
       markAuthStepDone(2);
       setRecoverySecret('');
       setNewPassword('');
       setPassword('');
       setLoginMode('password');
-      showNotice('ok', 'Пароль восстановлен. Выполните вход.');
+      showNotice('ok', t('auth.passwordResetSuccess'));
       stopAuthFlow();
     } catch (e: any) {
       if (
-        String(e?.name || '')
-          .toLowerCase()
-          .includes('abort')
+      String(e?.name || '')
+      .toLowerCase()
+      .includes('abort')
       ) {
-        showNotice('warn', 'Операция отменена.');
+      showNotice('warn', t('auth.operationCancelled'));
       } else {
-        showNotice('err', String(e?.message || e));
+      showNotice('err', String(e?.message || e));
       }
       stopAuthFlow();
-    }
-  }
+      }
+      }
 
   async function doChangePassword() {
     setError(null);
     try {
       const signal = startAuthFlowSteps([
-        'Проверка учетных данных',
-        'Обновление пароля',
-        'Завершение',
+        t('authFlow.checkingCredentials'),
+        t('authFlow.updatingPassword'),
+        t('authFlow.completing'),
       ]);
-      setAuthStep(0, 'Проверка учетных данных...');
+      setAuthStep(0, t('authFlow.verifyingCredentials'));
       markAuthStepDone(0);
 
-      setAuthStep(1, 'Обновление пароля...');
+      setAuthStep(1, t('authFlow.updatingPassword_'));
       await Api.changePassword(oldPassword, settingsNewPassword, signal);
       markAuthStepDone(1);
 
-      setAuthStep(2, 'Завершение...');
+      setAuthStep(2, t('authFlow.completing'));
       setOldPassword('');
       setSettingsNewPassword('');
       setAdminSecret('');
@@ -603,7 +605,7 @@ function App() {
       setMustChangePassword(false);
       setTab('dashboard');
       markAuthStepDone(2);
-      showNotice('ok', 'Пароль изменён. Войдите заново.');
+      showNotice('ok', t('auth.passwordChanged'));
       stopAuthFlow();
     } catch (e: any) {
       if (
@@ -632,7 +634,7 @@ function App() {
       setMustChangePassword(false);
       setMe(null);
       setTab('dashboard');
-      showNotice('ok', 'Вы вышли из системы.');
+      showNotice('ok', t('auth.loggedOut'));
     }
   }
 
@@ -682,7 +684,7 @@ function App() {
     <div className="container">
       <div className="header">
         <div className="brand">
-          <div style={{ fontWeight: 800 }}>Панель управления</div>
+        <div style={{ fontWeight: 800 }}>{t('app.controlPanel')}</div>
         </div>
         <div className="tabs">
           {allowedTabs.includes('dashboard') ? (
@@ -778,7 +780,7 @@ function App() {
               aria-controls="compliance-panel"
               data-testid="admin_nav_compliance_en"
             >
-              Комплаенс
+              {t('menu.compliance')}
             </button>
           ) : null}
           {allowedTabs.includes('analytics') ? (
@@ -790,11 +792,11 @@ function App() {
               aria-controls="analytics-panel"
               data-testid="admin_nav_analytics_en"
             >
-              Аналитика
+              {t('menu.analytics')}
             </button>
           ) : null}
         </div>
-        {authReady ? <div className="pill">Роль: {roleLabel(me?.role || '')}</div> : null}
+        {authReady ? <div className="pill">{t('common.role')}: {roleLabel(me?.role || '')}</div> : null}
         <LanguageSwitcher />
       </div>
 
@@ -809,12 +811,12 @@ function App() {
           <div className="card cardFull">
             <div className="row">
               <div>
-                <div style={{ fontWeight: 800, fontSize: 16 }}>Вход</div>
+                <div style={{ fontWeight: 800, fontSize: 16 }}>{t('auth.login')}</div>
                 <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
-                  Используйте вход по паролю или по ключу x-admin-secret.
+                  {t('auth.accessSettingsDesc')}
                 </div>
               </div>
-              <div className="pill">API: {publicStatus?.api || 'недоступен'}</div>
+              <div className="pill">{t('auth.apiStatus')}: {publicStatus?.api || t('auth.apiUnavailable')}</div>
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
               <button
@@ -822,24 +824,24 @@ function App() {
                 onClick={() => setLoginMode('password')}
                 data-testid="common_btn_password_login_en"
               >
-                По паролю
+                {t('auth.byPassword')}
               </button>
               <button
                 className={`btn ${loginMode === 'key' ? 'btnPrimary' : ''}`}
                 onClick={() => setLoginMode('key')}
                 data-testid="common_btn_key_login_en"
               >
-                По ключу
+                {t('auth.byKey')}
               </button>
               <button
                 className={`btn ${loginMode === 'recover' ? 'btnPrimary' : ''}`}
                 onClick={() => setLoginMode('recover')}
                 data-testid="common_btn_recovery_en"
               >
-                Восстановление
+                {t('auth.recovery')}
               </button>
               <button className="btn" onClick={() => void loadPublicStatus()} data-testid="common_btn_api_status_en">
-                Статус API
+                {t('auth.apiStatus')}
               </button>
             </div>
 
@@ -851,7 +853,7 @@ function App() {
                       className="input"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Логин"
+                      placeholder={t('auth.loginPlaceholder')}
                       autoComplete="off"
                       spellCheck={false}
                       data-testid="common_input_username_en"
@@ -863,7 +865,7 @@ function App() {
                         className="input"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Пароль"
+                        placeholder={t('auth.passwordPlaceholder')}
                         type={showPassword ? 'text' : 'password'}
                         autoComplete="off"
                         spellCheck={false}
@@ -872,11 +874,11 @@ function App() {
                       <button
                         className="btn"
                         onClick={() => setShowPassword((v) => !v)}
-                        aria-label="Показать пароль"
+                        aria-label={t('forms.labels.showPassword')}
                         type="button"
                         data-testid="common_btn_toggle_password_en"
                       >
-                        {showPassword ? 'Скрыть' : 'Показать'}
+                        {showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                       </button>
                     </div>
                   </div>
@@ -886,13 +888,13 @@ function App() {
                     disabled={!username.trim() || !password}
                     data-testid="common_btn_login_en"
                   >
-                    Войти
+                    {t('auth.loginButton')}
                   </button>
                 </div>
                 <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
                   {authStatus?.default_admin_present
-                    ? `Дефолтный админ: ${authStatus.default_admin_username}`
-                    : 'Дефолтный админ не создан. Проверьте ADMIN_BOOTSTRAP_DEFAULT.'}
+                    ? `${t('auth.defaultAdmin')}: ${authStatus.default_admin_username}`
+                    : t('auth.defaultAdminNotCreated')}
                 </div>
               </div>
             ) : null}
@@ -916,7 +918,7 @@ function App() {
                   disabled={!adminKey.trim()}
                   data-testid="common_btn_key_login_submit_en"
                 >
-                  Войти
+                  {t('auth.loginButton')}
                 </button>
               </div>
             ) : null}
@@ -929,7 +931,7 @@ function App() {
                       className="input"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Логин"
+                      placeholder={t('auth.loginPlaceholder')}
                       autoComplete="off"
                       spellCheck={false}
                       data-testid="common_input_recover_username_en"
@@ -941,7 +943,7 @@ function App() {
                         className="input"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Новый пароль"
+                        placeholder={t('auth.newPasswordPlaceholder')}
                         type={showNewPassword ? 'text' : 'password'}
                         autoComplete="off"
                         spellCheck={false}
@@ -950,11 +952,11 @@ function App() {
                       <button
                         className="btn"
                         onClick={() => setShowNewPassword((v) => !v)}
-                        aria-label="Показать пароль"
+                        aria-label={t('forms.labels.showPassword')}
                         type="button"
                         data-testid="common_btn_toggle_new_password_en"
                       >
-                        {showNewPassword ? 'Скрыть' : 'Показать'}
+                        {showNewPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                       </button>
                     </div>
                   </div>
@@ -965,7 +967,7 @@ function App() {
                       className="input"
                       value={recoverySecret}
                       onChange={(e) => setRecoverySecret(e.target.value)}
-                      placeholder="Код восстановления"
+                      placeholder={t('auth.recoveryCode')}
                       type="password"
                       autoComplete="off"
                       spellCheck={false}
@@ -978,7 +980,7 @@ function App() {
                     disabled={!username.trim() || newPassword.length < 8 || !recoverySecret}
                     data-testid="common_btn_reset_password_en"
                   >
-                    Сбросить пароль
+                    {t('auth.resetPassword')}
                   </button>
                 </div>
               </div>
@@ -986,7 +988,7 @@ function App() {
 
             {mustChangePassword ? (
               <div style={{ marginTop: 12, color: '#8b0000' }}>
-                Требуется смена пароля. Откройте вкладку «Настройки».
+                {t('auth.requirePasswordChange')}
               </div>
             ) : null}
           </div>
@@ -1030,14 +1032,14 @@ function App() {
                 onClick={() => setIntegrationSubTab('settings')}
                 data-testid="admin_tab_integration_settings_en"
               >
-                Настройки ботов
+                {t('integrations.botSettings')}
               </div>
               <div
                 className={`tab ${integrationSubTab === 'webhooks' ? 'tabActive' : ''}`}
                 onClick={() => setIntegrationSubTab('webhooks')}
                 data-testid="admin_tab_webhooks_en"
               >
-                Подключения
+                {t('integrations.connections')}
               </div>
             </div>
 
@@ -1095,17 +1097,17 @@ function App() {
           <div className="card cardFull" data-testid="settings_view_en">
             <div className="row">
               <div>
-                <div style={{ fontWeight: 900, fontSize: 18 }}>Настройки доступа</div>
+                <div style={{ fontWeight: 900, fontSize: 18 }}>{t('auth.accessSettings')}</div>
                 <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
                   {mustChangePassword
-                    ? 'Требуется смена пароля. После смены потребуется вход заново.'
-                    : 'Смена пароля администратора.'}
+                    ? t('auth.requirePasswordChangeSettings')
+                    : t('auth.accessSettingsDesc')}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <div className="pill">Сессия активна</div>
+                <div className="pill">{t('auth.sessionActive')}</div>
                 <button className="btn" onClick={() => void doLogout()} type="button" data-testid="admin_btn_logout_en">
-                  Выйти
+                  {t('auth.logout')}
                 </button>
               </div>
             </div>
@@ -1118,7 +1120,7 @@ function App() {
                       className="input"
                       value={oldPassword}
                       onChange={(e) => setOldPassword(e.target.value)}
-                      placeholder="Текущий пароль"
+                      placeholder={t('auth.currentPassword')}
                       type={showSettingsOld ? 'text' : 'password'}
                       autoComplete="off"
                       spellCheck={false}
@@ -1130,7 +1132,7 @@ function App() {
                       type="button"
                       data-testid="admin_btn_toggle_old_password_en"
                     >
-                      {showSettingsOld ? 'Скрыть' : 'Показать'}
+                      {showSettingsOld ? t('auth.hidePassword') : t('auth.showPassword')}
                     </button>
                   </div>
                 </div>
@@ -1140,7 +1142,7 @@ function App() {
                       className="input"
                       value={settingsNewPassword}
                       onChange={(e) => setSettingsNewPassword(e.target.value)}
-                      placeholder="Новый пароль (мин. 8 символов)"
+                      placeholder={t('auth.newPassword')}
                       type={showSettingsNew ? 'text' : 'password'}
                       autoComplete="off"
                       spellCheck={false}
@@ -1152,7 +1154,7 @@ function App() {
                       type="button"
                       data-testid="admin_btn_toggle_new_password_en"
                     >
-                      {showSettingsNew ? 'Скрыть' : 'Показать'}
+                      {showSettingsNew ? t('auth.hidePassword') : t('auth.showPassword')}
                     </button>
                   </div>
                 </div>
@@ -1162,12 +1164,11 @@ function App() {
                   disabled={!oldPassword || settingsNewPassword.length < 8}
                   data-testid="admin_btn_change_password_en"
                 >
-                  Сменить пароль
+                  {t('auth.changePassword')}
                 </button>
               </div>
               <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
-                Восстановление выполняется через endpoint /api/v1/public/auth/recover с заголовком
-                x-admin-recovery (значение ADMIN_RECOVERY_SECRET).
+                {t('auth.recoveryInstructions')}
               </div>
             </div>
           </div>
@@ -1195,10 +1196,10 @@ function App() {
             <div className="row">
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div className="spinner" />
-                <div style={{ fontWeight: 800 }}>Авторизация</div>
+                <div style={{ fontWeight: 800 }}>{t('authFlow.authorization')}</div>
               </div>
               <button className="btn" onClick={() => stopAuthFlow()} type="button">
-                Отменить
+                {t('authFlow.cancel')}
               </button>
             </div>
             <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.65)', fontSize: 13 }}>
@@ -1218,7 +1219,7 @@ function App() {
                 <div key={idx} className="row" style={{ fontSize: 12, color: 'rgba(0,0,0,0.65)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span className={`pill ${s.done ? 'pillGood' : 'pillWarn'}`}>
-                      {s.done ? 'Готово' : '...'}
+                      {s.done ? t('authFlow.done') : '...'}
                     </span>
                     <span>{s.label}</span>
                   </div>
@@ -1244,6 +1245,7 @@ function App() {
 }
 
 function StatusBar({ notice }: { notice: Notice }) {
+  const { t } = useTranslation();
   useEffect(() => {
     console.log('[App] StatusBar MOUNTED');
     return () => console.log('[App] StatusBar UNMOUNTED');
@@ -1272,6 +1274,7 @@ function StatusBar({ notice }: { notice: Notice }) {
 }
 
 function SalesTrend() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<SalesStats | null>(null);
 
   useEffect(() => {
@@ -1292,7 +1295,7 @@ function SalesTrend() {
           fontSize: 12,
         }}
       >
-        Аналитика собирается...
+        {t('analytics.collecting')}
       </div>
     );
   }
@@ -1313,7 +1316,7 @@ function SalesTrend() {
   return (
     <div className="card cardFull glass" style={{ marginTop: 20 }}>
       <div className="flex justify-between items-center mb-4">
-        <div style={{ fontWeight: 800 }}>Тренд выручки (14 дней)</div>
+        <div style={{ fontWeight: 800 }}>{t('analytics.revenueTrend')}</div>
         <div className="pill pillGood">
           +
           {Math.round(
@@ -1379,6 +1382,7 @@ function DashboardView({
   reload: () => Promise<void>;
   onNavigate: (tab: string, params?: Record<string, string | number>) => void;
 }) {
+  const { t } = useTranslation();
   const { data, loading, error, refresh } = useDashboard();
 
   // Use DashboardWrapper for role-based rendering
@@ -1398,6 +1402,7 @@ function CustomersView(props: {
   search: () => Promise<void>;
   refresh: () => Promise<void>;
 }) {
+  const { t } = useTranslation();
   const { q, setQ, customers, select, selected, details, search, refresh } = props;
 
   const [showCreateForm, setShowCreateForm] = React.useState(false);
@@ -1407,14 +1412,14 @@ function CustomersView(props: {
 
   async function createCustomer() {
     if (!newCustomer.full_name) {
-      setNotice('ФИО обязательно');
+      setNotice(t('clients.fullNameRequiredError'));
       return;
     }
     setBusy(true);
     setNotice(null);
     try {
       await Api.createCustomer(newCustomer);
-      setNotice('Клиент успешно создан');
+      setNotice(t('clients.customerCreated'));
       setShowCreateForm(false);
       setNewCustomer({ full_name: '', phone: '', notes: '' });
       await refresh();
@@ -1428,7 +1433,7 @@ function CustomersView(props: {
   function copyQrToken() {
     if (details?.customer.qr_token) {
       navigator.clipboard.writeText(details.customer.qr_token);
-      setNotice('QR токен скопирован');
+      setNotice(t('clients.qrTokenCopied'));
       setTimeout(() => setNotice(null), 2000);
     }
   }
@@ -1442,19 +1447,19 @@ function CustomersView(props: {
               className="input"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Поиск по телефону или ФИО"
+              placeholder={t('clients.searchByPhoneOrName')}
               data-testid="admin_input_customer_search_en"
             />
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btnPrimary" onClick={() => void search()} data-testid="admin_btn_customer_search_en">
-              Поиск
+              {t('clients.searchButton')}
             </button>
             <button className="btn" onClick={() => void refresh()} data-testid="admin_btn_customer_reset_en">
-              Сброс
+              {t('common.refresh')}
             </button>
             <button className="btn btnPrimary" onClick={() => setShowCreateForm(true)} data-testid="admin_btn_new_customer_en">
-              Новый клиент
+              {t('clients.newClient')}
             </button>
           </div>
         </div>
@@ -1463,54 +1468,54 @@ function CustomersView(props: {
       {showCreateForm ? (
         <div className="card cardFull" data-testid="customers_create_form_en">
           <div className="row">
-            <div style={{ fontWeight: 900, fontSize: 18 }}>Создание клиента</div>
+            <div style={{ fontWeight: 900, fontSize: 18 }}>{t('clients.createClient')}</div>
             <button className="btn" onClick={() => setShowCreateForm(false)} data-testid="admin_btn_close_create_form_en">
-              Закрыть
+              {t('common.close')}
             </button>
           </div>
           <div style={{ display: 'grid', gap: 10, marginTop: 12, maxWidth: 600 }}>
             <div>
-              <div style={{ marginBottom: 6, fontWeight: 600 }}>ФИО (обязательно)</div>
+              <div style={{ marginBottom: 6, fontWeight: 600 }}>{t('clients.fullNameRequired')}</div>
               <input
                 className="input"
                 value={newCustomer.full_name}
                 onChange={(e) => setNewCustomer((p) => ({ ...p, full_name: e.target.value }))}
-                placeholder="Иванов Иван Иванович"
+                placeholder={t('clients.fullNamePlaceholder')}
                 data-testid="admin_input_customer_fullname_en"
               />
             </div>
             <div>
-              <div style={{ marginBottom: 6, fontWeight: 600 }}>Телефон</div>
+              <div style={{ marginBottom: 6, fontWeight: 600 }}>{t('clients.clientPhone')}</div>
               <input
                 className="input"
                 value={newCustomer.phone}
                 onChange={(e) => setNewCustomer((p) => ({ ...p, phone: e.target.value }))}
-                placeholder="+79991234567"
+                placeholder={t('clients.phonePlaceholder')}
                 data-testid="admin_input_customer_phone_en"
               />
             </div>
             <div>
-              <div style={{ marginBottom: 6, fontWeight: 600 }}>Заметки</div>
+              <div style={{ marginBottom: 6, fontWeight: 600 }}>{t('clients.notes')}</div>
               <textarea
                 className="input"
                 value={newCustomer.notes}
                 onChange={(e) => setNewCustomer((p) => ({ ...p, notes: e.target.value }))}
-                placeholder="Комментарий к клиенту"
+                placeholder={t('clients.notesPlaceholder')}
                 rows={3}
                 data-testid="admin_input_customer_notes_en"
               />
             </div>
             {notice && (
-              <div style={{ color: notice.includes('успешно') ? '#047857' : '#b91c1c' }}>
+              <div style={{ color: notice.includes('успешно') || notice.includes('success') ? '#047857' : '#b91c1c' }}>
                 {notice}
               </div>
             )}
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn btnPrimary" onClick={createCustomer} disabled={busy} data-testid="admin_btn_create_customer_en">
-                Создать
+                {t('common.create')}
               </button>
               <button className="btn" onClick={() => setShowCreateForm(false)} data-testid="admin_btn_cancel_create_en">
-                Отмена
+                {t('common.cancel')}
               </button>
             </div>
           </div>
@@ -1518,14 +1523,14 @@ function CustomersView(props: {
       ) : null}
 
       <div className="card cardWide">
-        <div style={{ fontWeight: 800, marginBottom: 10 }}>Список клиентов</div>
+        <div style={{ fontWeight: 800, marginBottom: 10 }}>{t('clients.customerList')}</div>
         <table className="table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Телефон</th>
-              <th>ФИО</th>
-              <th>Баланс</th>
+              <th>{t('table.id')}</th>
+              <th>{t('table.phone')}</th>
+              <th>{t('table.fullName')}</th>
+              <th>{t('table.balance')}</th>
             </tr>
           </thead>
           <tbody>
@@ -1551,24 +1556,24 @@ function CustomersView(props: {
       </div>
 
       <div className="card cardWide">
-        <div style={{ fontWeight: 800, marginBottom: 10 }}>Карточка клиента</div>
+        <div style={{ fontWeight: 800, marginBottom: 10 }}>{t('clients.customerCard')}</div>
         {!details ? (
-          <div style={{ color: 'rgba(0,0,0,0.55)' }}>Выберите клиента в списке</div>
+          <div style={{ color: 'rgba(0,0,0,0.55)' }}>{t('clients.selectCustomer')}</div>
         ) : (
           <div>
             <div className="row" style={{ marginBottom: 10 }}>
               <div>
                 <div style={{ fontSize: 18, fontWeight: 900 }}>
-                  {details.customer.full_name || 'Без имени'}
+                  {details.customer.full_name || t('clients.noName')}
                 </div>
                 <div style={{ color: 'rgba(0,0,0,0.55)', marginTop: 6 }}>
                   {details.customer.phone || '—'}
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div className="pill pillGood">Баланс {details.customer.balance_points}</div>
+                <div className="pill pillGood">{t('clients.balanceLabel')} {details.customer.balance_points}</div>
                 <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12, marginTop: 6 }}>
-                  Telegram ID: {details.customer.telegram_id || '—'}
+                  {t('clients.telegramId')}: {details.customer.telegram_id || '—'}
                 </div>
                 {details.customer.qr_token && (
                   <button
@@ -1577,7 +1582,7 @@ function CustomersView(props: {
                     onClick={copyQrToken}
                     data-testid="admin_btn_copy_qr_en"
                   >
-                    📋 Копировать QR
+                    📋 {t('clients.copyQR')}
                   </button>
                 )}
               </div>
@@ -1586,15 +1591,15 @@ function CustomersView(props: {
             {notice && <div style={{ color: '#047857', marginBottom: 10 }}>{notice}</div>}
 
             <div style={{ marginTop: 10, fontWeight: 800 }}>
-              История операций
+              {t('clients.transactionHistory')}
               {details.transactions.length > 0 && (
                 <span style={{ fontWeight: 400, color: 'var(--muted)', marginLeft: 8 }}>
                   ({details.transactions.length}{' '}
                   {details.transactions.length === 1
-                    ? 'покупка'
+                    ? t('clients.purchase')
                     : details.transactions.length < 5
-                      ? 'покупки'
-                      : 'покупок'}
+                      ? t('clients.purchases')
+                      : t('clients.purchasesGen')}
                   )
                 </span>
               )}
@@ -1602,32 +1607,32 @@ function CustomersView(props: {
             <table className="table" style={{ marginTop: 8 }}>
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Дата</th>
-                  <th>Товары</th>
-                  <th>Сумма</th>
-                  <th>Списано</th>
-                  <th>Начислено</th>
-                  <th>Документ</th>
+                  <th>{t('table.id')}</th>
+                  <th>{t('clients.date')}</th>
+                  <th>{t('clients.items')}</th>
+                  <th>{t('clients.amount')}</th>
+                  <th>{t('clients.writtenOff')}</th>
+                  <th>{t('clients.accrued')}</th>
+                  <th>{t('clients.document')}</th>
                 </tr>
               </thead>
               <tbody>
-                {details.transactions.map((t) => (
-                  <tr key={t.id}>
+                {details.transactions.map((tx) => (
+                  <tr key={tx.id}>
                     <td>
                       <a
-                        href={`#orders?order=${t.id}`}
+                        href={`#orders?order=${tx.id}`}
                         style={{
                           cursor: 'pointer',
                           color: 'var(--primary)',
                           textDecoration: 'underline',
                         }}
-                        title="Открыть детали заказа"
+                        title={t('clients.openOrderDetails')}
                       >
-                        #{t.id}
+                        #{tx.id}
                       </a>
                     </td>
-                    <td>{t.created_at}</td>
+                    <td>{tx.created_at}</td>
                     <td
                       style={{
                         maxWidth: 200,
@@ -1636,14 +1641,14 @@ function CustomersView(props: {
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {t.items && t.items.length > 0 ? t.items.map((i) => i.name).join(', ') : '—'}
+                      {tx.items && tx.items.length > 0 ? tx.items.map((i) => i.name).join(', ') : '—'}
                     </td>
-                    <td>{money(t.total_amount)} ₽</td>
-                    <td>{t.bonus_used}</td>
-                    <td>{t.bonus_earned}</td>
+                    <td>{money(tx.total_amount)} ₽</td>
+                    <td>{tx.bonus_used}</td>
+                    <td>{tx.bonus_earned}</td>
                     <td>
-                      <a href={Api.receiptUrl(t.id)} target="_blank" rel="noreferrer">
-                        Чек (PDF)
+                      <a href={Api.receiptUrl(tx.id)} target="_blank" rel="noreferrer">
+                        {t('clients.receiptPDF')}
                       </a>
                     </td>
                   </tr>
@@ -1677,6 +1682,7 @@ function ProductsView(props: {
   }) => Promise<void>;
   setShowProductImport?: (show: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const { items, reload, canEdit, create, setShowProductImport } = props;
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
@@ -1699,7 +1705,7 @@ function ProductsView(props: {
       setCode('');
       setName('');
       setPrice(0);
-      setInfo('Создано.');
+      setInfo(t('products.created'));
     } catch (e: any) {
       setInfo(String(e?.message || e));
     } finally {
@@ -1712,18 +1718,18 @@ function ProductsView(props: {
       <div className="card cardFull" data-testid="products_view_en">
         <div className="row">
           <div>
-            <div style={{ fontWeight: 900, fontSize: 18 }}>Товары / услуги</div>
+            <div style={{ fontWeight: 900, fontSize: 18 }}>{t('products.productsServices')}</div>
             <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
-              Каталог для быстрой продажи и демо-сценариев.
+              {t('products.catalogDescription')}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn" onClick={() => void reload()} disabled={busy} data-testid="admin_btn_products_reload_en">
-              Обновить
+              {t('common.refresh')}
             </button>
             {canEdit && (
               <button className="btn btnPrimary" onClick={() => setShowProductImport?.(true)} data-testid="admin_btn_products_import_en">
-                Импорт
+                {t('common.import')}
               </button>
             )}
           </div>
@@ -1738,7 +1744,7 @@ function ProductsView(props: {
                 className="input"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                placeholder="Код (например E2E_COFFEE)"
+                placeholder={t('products.productCodePlaceholder')}
                 data-testid="admin_input_product_code_en"
               />
             </div>
@@ -1747,7 +1753,7 @@ function ProductsView(props: {
                 className="input"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Название"
+                placeholder={t('products.productNamePlaceholder')}
                 data-testid="admin_input_product_name_en"
               />
             </div>
@@ -1756,7 +1762,7 @@ function ProductsView(props: {
                 className="input"
                 value={kind}
                 onChange={(e) => setKind(e.target.value)}
-                placeholder="Тип"
+                placeholder={t('products.productKindPlaceholder')}
                 data-testid="admin_input_product_kind_en"
               />
             </div>
@@ -1765,7 +1771,7 @@ function ProductsView(props: {
                 className="input"
                 value={price}
                 onChange={(e) => setPrice(Math.max(0, Number(e.target.value || 0)))}
-                placeholder="Цена"
+                placeholder={t('products.productPrice')}
                 data-testid="admin_input_product_price_en"
               />
             </div>
@@ -1775,28 +1781,28 @@ function ProductsView(props: {
               onClick={() => void onCreate()}
               data-testid="admin_btn_create_product_en"
             >
-              Создать
+              {t('common.create')}
             </button>
           </div>
           {info ? <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.65)' }}>{info}</div> : null}
         </div>
       ) : (
         <div className="card cardFull" style={{ color: 'rgba(0,0,0,0.55)' }}>
-          У вас нет прав на создание/изменение каталога.
+          {t('products.noEditRights')}
         </div>
       )}
 
       <div className="card cardFull">
-        <div style={{ fontWeight: 800, marginBottom: 10 }}>Список</div>
+        <div style={{ fontWeight: 800, marginBottom: 10 }}>{t('products.list')}</div>
         <table className="table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Код</th>
-              <th>Название</th>
-              <th>Тип</th>
-              <th>Цена</th>
-              <th>Активен</th>
+              <th>{t('table.id')}</th>
+              <th>{t('products.productCode')}</th>
+              <th>{t('products.productName')}</th>
+              <th>{t('products.productKind')}</th>
+              <th>{t('products.productPrice')}</th>
+              <th>{t('products.active')}</th>
             </tr>
           </thead>
           <tbody>
@@ -1808,9 +1814,9 @@ function ProductsView(props: {
                 <td>{p.kind}</td>
                 <td>{money(p.price)} ₽</td>
                 <td>
-                  <span className={`pill ${p.active ? 'pillGood' : 'pillWarn'}`}>
-                    {p.active ? 'Да' : 'Нет'}
-                  </span>
+                <span className={`pill ${p.active ? 'pillGood' : 'pillWarn'}`}>
+                {p.active ? t('common.yesShort') : t('common.noShort')}
+                </span>
                 </td>
               </tr>
             ))}
@@ -1834,6 +1840,7 @@ function PosView(props: {
   }>;
   reloadProducts: () => Promise<void>;
 }) {
+  const { t } = useTranslation();
   const { refreshCustomers, onSaleDone, products, reloadProducts } = props;
 
   const [mode, setMode] = useState<'phone' | 'qr' | 'name'>('phone');
@@ -1842,8 +1849,8 @@ function PosView(props: {
   const [items, setItems] = useState<
     Array<{ code: string; name: string; price: number; qty: number }>
   >([
-    { code: 'COFFEE', name: 'Капучино', price: 240, qty: 1 },
-    { code: 'DESSERT', name: 'Чизкейк', price: 190, qty: 1 },
+    { code: 'COFFEE', name: t('products.cappuccino'), price: 240, qty: 1 },
+    { code: 'DESSERT', name: t('products.cheesecake'), price: 190, qty: 1 },
   ]);
   const [productPick, setProductPick] = useState<number | ''>('');
   const [bonus, setBonus] = useState(50);
@@ -1868,7 +1875,7 @@ function PosView(props: {
         if (r.items.length === 1) {
           setFound(r.items[0].id);
         } else {
-          setInfo(`Найдено: ${r.items.length}. Уточните параметры поиска.`);
+          setInfo(`${t('sales.found')}: ${r.items.length}. ${t('sales.refineSearch')}`);
         }
       }
       await refreshCustomers();
@@ -1886,7 +1893,7 @@ function PosView(props: {
     try {
       const res = await Api.createSale({ customer_id: found, items, requested_bonus: bonus });
       setInfo(
-        `Операция выполнена. Списано ${res.bonus_used}, начислено ${res.bonus_earned}, баланс ${res.balance}.`
+        `${t('sales.operationComplete')} ${t('sales.bonusUsed')} ${res.bonus_used}, ${t('sales.bonusEarned')} ${res.bonus_earned}, ${t('sales.balance')} ${res.balance}.`
       );
       await onSaleDone(found);
     } catch (e: any) {
@@ -1900,28 +1907,28 @@ function PosView(props: {
     <div className="grid">
       <div className="card cardFull" data-testid="pos_view_en">
         <div className="row">
-          <div style={{ fontWeight: 900, fontSize: 18 }}>Операция продажи</div>
+          <div style={{ fontWeight: 900, fontSize: 18 }}>{t('sales.saleOperation')}</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               className={`btn ${mode === 'phone' ? 'btnPrimary' : ''}`}
               onClick={() => setMode('phone')}
               data-testid="operator_btn_mode_phone_en"
             >
-              Телефон
+              {t('sales.identifyByPhone')}
             </button>
             <button
               className={`btn ${mode === 'name' ? 'btnPrimary' : ''}`}
               onClick={() => setMode('name')}
               data-testid="operator_btn_mode_name_en"
             >
-              ФИО
+              {t('sales.identifyByName')}
             </button>
             <button
               className={`btn ${mode === 'qr' ? 'btnPrimary' : ''}`}
               onClick={() => setMode('qr')}
               data-testid="operator_btn_mode_qr_en"
             >
-              QR
+              {t('sales.identifyByQR')}
             </button>
           </div>
         </div>
@@ -1932,25 +1939,25 @@ function PosView(props: {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={
-                mode === 'phone' ? '+79991234567' : mode === 'qr' ? 'QR токен' : 'Иванов Иван'
+                mode === 'phone' ? t('clients.phonePlaceholder') : mode === 'qr' ? t('pos.qrToken') : t('clients.fullNamePlaceholder')
               }
               data-testid="operator_input_identify_en"
             />
           </div>
           <button className="btn btnPrimary" disabled={busy} onClick={() => void identify()} data-testid="operator_btn_identify_en">
-            Идентифицировать
+            {t('sales.identify')}
           </button>
-          <div className="pill">Клиент: {found || '—'}</div>
+          <div className="pill">{t('sales.customer')}: {found || '—'}</div>
         </div>
         {info ? <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.65)' }}>{info}</div> : null}
       </div>
 
       <div className="card cardWide" data-testid="pos_catalog_en">
         <div className="row" style={{ marginBottom: 10 }}>
-          <div style={{ fontWeight: 800 }}>Каталог</div>
+          <div style={{ fontWeight: 800 }}>{t('sales.catalog')}</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn" disabled={busy} onClick={() => void reloadProducts()} data-testid="operator_btn_reload_products_en">
-              Обновить
+              {t('common.refresh')}
             </button>
           </div>
         </div>
@@ -1962,7 +1969,7 @@ function PosView(props: {
             style={{ maxWidth: 520 }}
             data-testid="operator_select_product_en"
           >
-            <option value="">Выберите товар/услугу</option>
+            <option value="">{t('sales.selectProduct')}</option>
             {products
               .filter((p) => p.active)
               .map((p) => (
@@ -1988,20 +1995,20 @@ function PosView(props: {
             }}
             data-testid="operator_btn_add_to_cart_en"
           >
-            Добавить в чек
+            {t('sales.addToReceipt')}
           </button>
         </div>
       </div>
 
       <div className="card cardWide" data-testid="pos_cart_en">
-        <div style={{ fontWeight: 800, marginBottom: 10 }}>Состав</div>
+        <div style={{ fontWeight: 800, marginBottom: 10 }}>{t('sales.cart')}</div>
         <table className="table" data-testid="cart-table">
           <thead>
             <tr>
-              <th>Код</th>
-              <th>Наименование</th>
-              <th>Цена</th>
-              <th>Кол-во</th>
+              <th>{t('products.productCode')}</th>
+              <th>{t('products.productName')}</th>
+              <th>{t('products.productPrice')}</th>
+              <th>{t('pos.quantity')}</th>
             </tr>
           </thead>
           <tbody>
@@ -2028,10 +2035,10 @@ function PosView(props: {
       </div>
 
       <div className="card cardWide" data-testid="pos_loyalty_en">
-        <div style={{ fontWeight: 800, marginBottom: 10 }}>Лояльность</div>
+        <div style={{ fontWeight: 800, marginBottom: 10 }}>{t('sales.loyalty')}</div>
         <div className="row" style={{ marginBottom: 10 }}>
-          <div className="pill">Сумма {money(total)} ₽</div>
-          <div className="pill pillWarn">Списание {bonus}</div>
+          <div className="pill">{t('sales.total')} {money(total)} ₽</div>
+          <div className="pill pillWarn">{t('sales.writeoff')} {bonus}</div>
         </div>
         <input
           className="input"
@@ -2046,10 +2053,10 @@ function PosView(props: {
           onClick={() => void sale()}
           data-testid="operator_btn_complete_sale_en"
         >
-          Провести
+          {t('sales.complete')}
         </button>
         <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
-          Чек сохраняется в PDF. При наличии Telegram ID отправляется уведомление.
+          {t('sales.receiptSaved')}
         </div>
       </div>
     </div>
@@ -2073,6 +2080,7 @@ function IntegrationsView(props: {
   remove: (id: number) => Promise<void>;
   refreshDeliveries: (id: number) => Promise<void>;
 }) {
+  const { t } = useTranslation();
   const {
     items,
     templates,
@@ -2126,7 +2134,7 @@ function IntegrationsView(props: {
   async function copyWithAutoClear(text: string) {
     try {
       await navigator.clipboard.writeText(text);
-      setInfo('Скопировано.');
+      setInfo(t('common.copied'));
       window.setTimeout(async () => {
         try {
           const current = await navigator.clipboard.readText();
@@ -2136,7 +2144,7 @@ function IntegrationsView(props: {
         } catch {}
       }, 12000);
     } catch {
-      setInfo('Не удалось скопировать.');
+      setInfo(t('common.copyFailed'));
     }
   }
 
@@ -2150,10 +2158,10 @@ function IntegrationsView(props: {
         setKind('pos_webhook');
         setEnabled(true);
         setConfigText('{}');
-        setInfo('Интеграция создана.');
+        setInfo(t('integrations.integrationCreated'));
       } else if (mode === 'edit' && selected) {
         await update(selected.id, { name: name.trim(), kind: kind.trim(), enabled, config: cfg });
-        setInfo('Изменения сохранены.');
+        setInfo(t('integrations.changesSaved'));
       }
     } catch (e: any) {
       setInfo(String(e?.message || e));
@@ -2168,20 +2176,20 @@ function IntegrationsView(props: {
     <div className="grid">
       <div className="card cardWide">
         <div className="row" style={{ marginBottom: 10 }}>
-          <div style={{ fontWeight: 800 }}>Подключения</div>
+          <div style={{ fontWeight: 800 }}>{t('integrations.connections')}</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn" disabled={busy} onClick={() => void reload()}>
-              Обновить
+              {t('common.refresh')}
             </button>
           </div>
         </div>
         <table className="table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Наименование</th>
-              <th>Тип</th>
-              <th>Статус</th>
+              <th>{t('table.id')}</th>
+              <th>{t('integrations.name')}</th>
+              <th>{t('integrations.type')}</th>
+              <th>{t('integrations.status')}</th>
             </tr>
           </thead>
           <tbody>
@@ -2199,7 +2207,7 @@ function IntegrationsView(props: {
                 <td>{i.kind}</td>
                 <td>
                   <span className={`pill ${i.enabled ? 'pillGood' : 'pillWarn'}`}>
-                    {i.enabled ? 'Активна' : 'Отключена'}
+                    {i.enabled ? t('common.enabled') : t('common.disabled')}
                   </span>
                 </td>
               </tr>
@@ -2207,26 +2215,26 @@ function IntegrationsView(props: {
           </tbody>
         </table>
         <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
-          Типы: pos_webhook (входящий чек), outbound_webhook (исходящие события).
+          {t('integrations.integrationTypes')}
         </div>
       </div>
 
       <div className="card cardWide">
         <div className="row" style={{ marginBottom: 10 }}>
-          <div style={{ fontWeight: 800 }}>{mode === 'create' ? 'Создание' : 'Настройки'}</div>
+          <div style={{ fontWeight: 800 }}>{mode === 'create' ? t('integrations.createNew') : t('integrations.settingsTitle')}</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               className={`btn ${mode === 'create' ? 'btnPrimary' : ''}`}
               onClick={() => setMode('create')}
             >
-              Новая
+              {t('integrations.newIntegration')}
             </button>
             <button
               className={`btn ${mode === 'edit' ? 'btnPrimary' : ''}`}
               disabled={!selected}
               onClick={() => setMode('edit')}
             >
-              Редактирование
+              {t('integrations.editIntegration')}
             </button>
           </div>
         </div>
@@ -2234,13 +2242,13 @@ function IntegrationsView(props: {
         <div style={{ display: 'grid', gap: 10 }}>
           {mode === 'create' ? (
             <div>
-              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Шаблон</div>
+              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>{t('integrations.template')}</div>
               <select
                 className="input"
                 value={templateId}
                 onChange={(e) => setTemplateId(e.target.value)}
               >
-                <option value="">Без шаблона</option>
+                <option value="">{t('integrations.noTemplate')}</option>
                 {templates.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.region} · {t.name}
@@ -2250,36 +2258,36 @@ function IntegrationsView(props: {
               <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12, marginTop: 6 }}>
                 {templateId
                   ? templates.find((t) => t.id === templateId)?.description
-                  : 'Выберите типовой сценарий для быстрых настроек.'}
+                  : t('integrations.selectTemplate')}
               </div>
             </div>
           ) : null}
           <div>
             <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>
-              Наименование
+              {t('integrations.name')}
             </div>
             <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
 
           <div className="row">
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Тип</div>
+              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>{t('integrations.type')}</div>
               <input className="input" value={kind} onChange={(e) => setKind(e.target.value)} />
             </div>
             <div style={{ width: 180 }}>
-              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Статус</div>
+              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>{t('integrations.status')}</div>
               <button
                 className={`btn ${enabled ? 'btnPrimary' : ''}`}
                 onClick={() => setEnabled((v) => !v)}
               >
-                {enabled ? 'Активна' : 'Отключена'}
+                {enabled ? t('common.enabled') : t('common.disabled')}
               </button>
             </div>
           </div>
 
           <div>
             <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>
-              Конфигурация (JSON)
+              {t('integrations.configuration')}
             </div>
             <textarea
               className="input"
@@ -2295,15 +2303,15 @@ function IntegrationsView(props: {
               onClick={() => void onSave()}
               disabled={!name.trim() || !kind.trim()}
             >
-              Сохранить
+              {t('common.save')}
             </button>
             {mode === 'edit' && selected ? (
               <div style={{ display: 'flex', gap: 8 }}>
                 <button className="btn" onClick={() => void rotate(selected.id)}>
-                  Сменить ключ
+                  {t('integrations.copyKey')}
                 </button>
                 <button className="btn" onClick={() => void remove(selected.id)}>
-                  Удалить
+                  {t('common.delete')}
                 </button>
               </div>
             ) : (
@@ -2324,7 +2332,7 @@ function IntegrationsView(props: {
           {selected && selected.kind === 'pos_webhook' ? (
             <div>
               <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>
-                Webhook URL (приём чека)
+                {t('integrations.webhookReceipt')}
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input className="input" readOnly value={webhookUrl} />
@@ -2333,11 +2341,11 @@ function IntegrationsView(props: {
                   onClick={() => void copyWithAutoClear(webhookUrl)}
                   type="button"
                 >
-                  Копировать
+                  {t('common.copy')}
                 </button>
               </div>
               <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginTop: 8 }}>
-                Заголовок авторизации: x-integration-secret
+                {t('integrations.authorizationHeader')}
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                 <input className="input" readOnly value={selected.secret} />
@@ -2346,7 +2354,7 @@ function IntegrationsView(props: {
                   onClick={() => void copyWithAutoClear(selected.secret)}
                   type="button"
                 >
-                  Копировать
+                  {t('common.copy')}
                 </button>
               </div>
             </div>
@@ -2357,19 +2365,19 @@ function IntegrationsView(props: {
       {selected ? (
         <div className="card cardFull">
           <div className="row">
-            <div style={{ fontWeight: 800 }}>Доставка событий</div>
+            <div style={{ fontWeight: 800 }}>{t('integrations.eventDelivery')}</div>
             <button className="btn" onClick={() => void refreshDeliveries(selected.id)}>
-              Обновить
+              {t('common.refresh')}
             </button>
           </div>
           <table className="table" style={{ marginTop: 10 }}>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Событие</th>
-                <th>Статус</th>
+                <th>{t('table.id')}</th>
+                <th>{t('integrations.event')}</th>
+                <th>{t('integrations.status')}</th>
                 <th>HTTP</th>
-                <th>Дата</th>
+                <th>{t('clients.date')}</th>
               </tr>
             </thead>
             <tbody>
@@ -2389,7 +2397,7 @@ function IntegrationsView(props: {
             </tbody>
           </table>
           <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
-            Для outbound_webhook укажите config.url и (опционально) config.headers.
+            {t('integrations.outboundConfig')}
           </div>
         </div>
       ) : null}
@@ -2398,6 +2406,17 @@ function IntegrationsView(props: {
 }
 
 function PermissionsTable() {
+  const { t } = useTranslation();
+  
+  // Role label helper
+  function roleLabel(role: string) {
+    const r = String(role || '').toLowerCase();
+    if (r === 'owner') return t('roles.owner');
+    if (r === 'operator') return t('roles.operator');
+    if (r === 'marketer') return t('roles.marketer');
+    return r || '—';
+  }
+  
   const [data, setData] = useState<{
     items: Array<{ role: string; permissions: Array<{ permission: string; is_allowed: boolean }> }>;
     all_permissions: string[];
@@ -2474,21 +2493,21 @@ function PermissionsTable() {
     }
   }
 
-  if (!data) return <div style={{ padding: 20 }}>Загрузка прав доступа...</div>;
+  if (!data) return <div style={{ padding: 20 }}>{t('settings.loadPermissions')}</div>;
 
   return (
     <div className="card cardFull">
       <div className="row">
-        <div style={{ fontWeight: 800 }}>Управление доступом (Роли)</div>
+        <div style={{ fontWeight: 800 }}>{t('settings.accessManagement')}</div>
         <button className="btn" onClick={() => void load()} disabled={busy}>
-          Обновить
+          {t('common.refresh')}
         </button>
       </div>
       <div style={{ overflowX: 'auto', marginTop: 12 }}>
         <table className="table">
           <thead>
             <tr>
-              <th>Разрешение</th>
+              <th>{t('settings.permission')}</th>
               {data.items.map((r) => (
                 <th key={r.role} style={{ textAlign: 'center' }}>
                   {roleLabel(r.role)}
