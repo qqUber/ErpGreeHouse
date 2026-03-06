@@ -69,7 +69,7 @@ export const MarketingWidget: React.FC<MarketingWidgetProps> = ({
   };
 
   return (
-    <div className="card cardFull" data-testid="admin_widget_marketing_en">
+    <div className="card cardFull" data-testid="admin_widget_marketing_en" role="region" aria-label="Marketing Events">
       <div className="row mb-4">
         <div style={{ 
           fontWeight: 'var(--font-weight-extrabold)', 
