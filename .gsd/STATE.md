@@ -66,7 +66,7 @@ Plans: 7/7 completed
   - All 14 smoke tests pass successfully
 
 ## Next Up
-**Phase 15 completion → Phase 16: Foundation**
+**Phase 17: Role-Based UI System** — Implement role-based content rendering
 
 ## Configuration
 - **Git branch:** Current branch (to be set by execute-phase)
