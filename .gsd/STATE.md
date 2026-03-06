@@ -1,65 +1,67 @@
-# ErpGreeHouse - State
+# Project State: ErpGreeHouse v2.2 UI/UX Refactor
 
-## Position
-- **Phase:** 15 of 15
-- **Milestone:** v3.0 Production
-- **Progress:** 0%
+## Current Milestone
+**v2.2 UI/UX Refactor** - In Progress (Started: 2026-03-06)
 
-## Docker-Only Development
-**RULE: All development via Docker - no local machine dependencies**
+## Progress Overview
 
-```powershell
-# Start development
-docker-compose -f docker-compose.local.yml up -d
-
-# Services:
-# - Frontend: http://localhost:5173
-# - Backend:  http://localhost:8000
-# - Redis:    localhost:6379
+```
+Milestone Progress: █░░░░░░░░░░ 14%
+Phases: 1/7 completed
+Plans: 1/1 completed
 ```
 
-## Metrics
-- **Tests:** 693 total (561 pytest + 132 E2E)
-- **Plans:** 34/34 executed
-- **Security:** HIGH: 0, MEDIUM: 0, LOW: 5
-- **Docs:** 35 files (added accessibility-report.html)
+## Phase Status
 
-## Tech Stack
-- Backend: FastAPI, Python 3.14, SQLite/PostgreSQL, Redis
-- Frontend: React 19, Vite 7, TypeScript
-- Auth: JWT + refresh tokens
-- Channels: Telegram, VK, ERPNext
+| Phase | Name | Status | Plans |
+|-------|------|--------|-------|
+| 15 | Refactor Preparation & Audit | ✓ Complete | 1/1 |
+| 16 | Foundation | ○ Pending | 0 |
+| 16 | Foundation | ○ Pending | 0 |
+| 17 | Role-Based UI System | ○ Pending | 0 |
+| 18 | Enhanced Localization | ○ Pending | 0 |
+| 19 | Full HD Optimization | ○ Pending | 0 |
+| 20 | Accessibility Improvements | ○ Pending | 0 |
+| 21 | E2E Test Coverage | ○ Pending | 0 |
 
-## Current Focus
-v2.1 UI Enhancement complete - ready for v3.0 Production planning
+## Requirements Status
 
-## Completed Plans
-- Phase 11: Responsive Design - Analyze and fix responsive design issues
-- Phase 12: Visual Consistency - Establish visual consistency with unified design system
-- Phase 13: Accessibility - Improve accessibility for all users
-- **Phase 14: Professional UI Design Patterns - Completed 2026-03-06**
+### Must Have (Table Stakes)
+- [ ] Role-based dashboards (Operator/Manager/Admin)
+- [ ] Full HD responsive design
+- [ ] Consistent typography and spacing
+- [ ] Filters, sorting, and search for large datasets
+- [ ] Expandable views for tables and widgets
+- [ ] Fixed text alignment and layout stabilization
+- [ ] Universal role enum {OPERATOR, MANAGER, ADMIN}
+- [ ] Language localization map {RU, EN, SR}
+- [ ] Structured UI element identifiers
+- [ ] Stable data-testid attributes for E2E testing
 
-## Accumulated Context
+### Differentiators (Competitive)
+- [ ] QR code client identification
+- [ ] Real-time loyalty point management
+- [ ] Visual campaign performance tracking
+- [ ] Modular, collapsible admin interface
+- [ ] Integrated ERPNext connectivity
+- [ ] Telegram and VK social media campaign management
 
-### Pending Todos
+## Current Activity
+- Phase 15: Refactor Preparation & Audit ✓ Complete
+- Completed plan 15-01: Codebase Audit & Test Infrastructure Verification
+- Dependencies installed, TypeScript/Biome checks passed, Playwright verified, build successful
 
-- [ ] Plan v3.0 Production milestone
+## Next Up
+**Phase 15 completion → Phase 16: Foundation**
 
-## Docker Development (Required)
+## Configuration
+- **Git branch:** Current branch (to be set by execute-phase)
+- **Model profile:** balanced
+- **Commit docs:** true
+- **Branching strategy:** none
 
-**All work must be done via Docker - no local dependencies**
-
-```powershell
-# Start dev environment
-docker-compose -f docker-compose.local.yml up -d
-
-# Access services:
-# - Frontend: http://localhost:5173
-# - Backend:  http://localhost:8000/docs
-# - Redis:    localhost:6379
-```
-
-See `docs/DOCKER_COMMANDS.md` for full command reference.
-
-## Last Updated
-2026-03-06
+## System Info
+- **OS:** win32
+- **Working directory:** C:\Users\AASS\IdeaProjects\ErpGreeHouse
+- **Git repo:** Yes
+- **Date:** 2026-03-06
