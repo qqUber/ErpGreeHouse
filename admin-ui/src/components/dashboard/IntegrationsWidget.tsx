@@ -90,7 +90,7 @@ export const IntegrationsWidget: React.FC<IntegrationsWidgetProps> = ({
   };
 
   return (
-    <div className="card cardFull" data-testid="admin_widget_integrations_en">
+    <div className="card cardFull" data-testid="admin_widget_integrations_en" role="region" aria-label="Integrations">
       <div className="row mb-4">
         <div style={{ 
           fontWeight: 'var(--font-weight-extrabold)', 

@@ -41,7 +41,7 @@ interface CustomersWidgetProps {
 
 export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
   return (
-    <div className="card cardFull" data-testid="admin_widget_customers_en">
+    <div className="card cardFull" data-testid="admin_widget_customers_en" role="region" aria-label="Customers">
       <div className="row mb-4">
         <div style={{ 
           fontWeight: 'var(--font-weight-extrabold)', 
