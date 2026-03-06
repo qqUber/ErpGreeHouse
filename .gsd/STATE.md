@@ -17,7 +17,7 @@ Plans: 8/8 completed
 |-------|------|--------|-------|
 | 15 | Refactor Preparation & Audit | ✓ Complete | 5/5 |
 | 16 | Foundation | ✓ Complete | 1/1 |
-| 17 | Role-Based UI System | ✓ Complete | 1/1 |
+| 17 | Role-Based UI System | ✓ Complete | 3/3 |
 | 18 | Enhanced Localization | ○ Pending | 0 |
 | 19 | Full HD Optimization | ○ Pending | 0 |
 | 20 | Accessibility Improvements | ○ Pending | 0 |
@@ -66,6 +66,11 @@ Plans: 8/8 completed
   - All 14 smoke tests pass successfully
 
 ## Recent Activity
+- Completed plan 17-03: Refactor Dashboard to Use Role-Based Widgets
+  - Created DashboardWrapper component for role-based dashboard rendering
+  - Created widget registry with 20+ widgets mapped to roles/permissions
+  - Updated App.tsx to use DashboardWrapper instead of inline role checks
+  - Build succeeds with no TypeScript errors
 - Completed plan 17-02: Permission-Based Wrapper Components
   - Created PermissionGuard component for permission-based rendering
   - Created RoleGuard component for role-specific content
