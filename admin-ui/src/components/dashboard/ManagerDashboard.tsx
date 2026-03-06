@@ -18,7 +18,7 @@ export function ManagerDashboard({ dash, onNavigate }: ManagerDashboardProps) {
     <div className="space-y-6" data-testid="manager_dashboard_en">
       {/* KPI Cards - Focus on business performance */}
       {dash && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" data-testid="manager_widget_kpi_en">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-6" data-testid="manager_widget_kpi_en">
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <span className="text-muted text-sm">{t('dashboardManager.totalCustomers')}</span>
@@ -59,7 +59,7 @@ export function ManagerDashboard({ dash, onNavigate }: ManagerDashboardProps) {
       )}
 
       {/* Marketing & Campaign Performance */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-4 gap-6">
         {/* Active Campaigns */}
         <div className="card cardFull" data-testid="manager_widget_active_campaigns_en">
           <div className="flex items-center justify-between mb-6">
@@ -130,7 +130,7 @@ export function ManagerDashboard({ dash, onNavigate }: ManagerDashboardProps) {
       </div>
 
       {/* Sales Trend & Analytics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-4 gap-6">
         {/* Sales Trend Chart Placeholder */}
         <div className="card cardFull" data-testid="manager_widget_sales_trend_en">
           <div className="flex items-center justify-between mb-6">

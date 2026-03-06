@@ -17,7 +17,7 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
   return (
     <div className="space-y-6" data-testid="operator_dashboard_en">
       {/* Quick Actions - Operator's most frequent tasks */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="operator_widget_quick_actions_en">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-6" data-testid="operator_widget_quick_actions_en">
         <button
           className="card cardFull p-6 flex flex-col items-center justify-center hover:shadow-md transition-shadow"
           onClick={() => onNavigate('pos')}

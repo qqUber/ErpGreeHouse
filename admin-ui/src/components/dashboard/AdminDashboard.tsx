@@ -36,7 +36,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-6">
           <div className="text-center">
             <div className="text-3xl font-bold text-blue-600">{dash?.customers_total || 0}</div>
             <div className="text-muted">{t('dashboardAdmin.totalCustomers')}</div>
@@ -179,7 +179,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
 
         {!collapsedSections['activity'] && dash?.recent_activity && (
           <div className="p-4 border-t">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-4 gap-6">
               <div>
                 <div className="font-semibold mb-4">{t('dashboardAdmin.lastTransactions')}</div>
                 <div className="space-y-3">
@@ -232,7 +232,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
           <div className="font-bold text-lg">{t('dashboardAdmin.quickActions')}</div>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-4">
           <button 
             className="btn btnPrimary"
             onClick={() => onNavigate('settings')}
