@@ -1,0 +1,46 @@
+{
+  "formats": {
+    "ru": {
+      "date_only": {
+        "format": "DD.MM.YYYY",
+        "example": "15.01.2024"
+      },
+      "time_only": {
+        "format": "HH:mm",
+        "example": "14:30"
+      },
+      "datetime": {
+        "format": "DD.MM.YYYY HH:mm",
+        "example": "15.01.2024 14:30"
+      }
+    },
+    "en": {
+      "date_only": {
+        "format": "MM/DD/YYYY",
+        "example": "01/15/2024"
+      },
+      "time_only": {
+        "format": "h:mm A",
+        "example": "2:30 PM"
+      },
+      "datetime": {
+        "format": "MM/DD/YYYY h:mm A",
+        "example": "01/15/2024 2:30 PM"
+      }
+    },
+    "srb": {
+      "date_only": {
+        "format": "DD.MM.YYYY",
+        "example": "15.01.2024"
+      },
+      "time_only": {
+        "format": "HH:mm",
+        "example": "14:30"
+      },
+      "datetime": {
+        "format": "DD.MM.YYYY HH:mm",
+        "example": "15.01.2024 14:30"
+      }
+    }
+  }
+}
