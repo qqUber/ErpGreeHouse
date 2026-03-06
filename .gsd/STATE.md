@@ -66,6 +66,12 @@ Plans: 8/8 completed
   - All 14 smoke tests pass successfully
 
 ## Recent Activity
+- Completed plan 17-04: Create Role-Based Test Utilities
+  - Added RoleTestFixtures interface with asAdmin, asManager, asOperator helpers
+  - Added RolePermissions constant with role-based access maps
+  - Added expectNavVisible, expectAllTabsVisible, expectNoUnauthorizedTabs helpers
+  - Added expectApiAccess and hasPermission helpers
+  - All 6 role tests pass
 - Completed plan 17-03: Refactor Dashboard to Use Role-Based Widgets
   - Created DashboardWrapper component for role-based dashboard rendering
   - Created widget registry with 20+ widgets mapped to roles/permissions
@@ -85,7 +91,7 @@ Plans: 8/8 completed
   - TypeScript compilation passes
 
 ## Next Up
-**Phase 17: Role-Based UI System** — Implement role-based content rendering
+**Phase 18: Enhanced Localization** — Improve localization management
 
 ## Configuration
 - **Git branch:** Current branch (to be set by execute-phase)
