@@ -17,7 +17,7 @@ Plans: 7/7 completed
 |-------|------|--------|-------|
 | 15 | Refactor Preparation & Audit | ✓ Complete | 5/5 |
 | 16 | Foundation | ✓ Complete | 1/1 |
-| 17 | Role-Based UI System | ○ Pending | 0 |
+| 17 | Role-Based UI System | ○ Pending | 1/1 |
 | 18 | Enhanced Localization | ○ Pending | 0 |
 | 19 | Full HD Optimization | ○ Pending | 0 |
 | 20 | Accessibility Improvements | ○ Pending | 0 |
@@ -64,6 +64,15 @@ Plans: 7/7 completed
   - Created test utilities for data-testid selection in _shared.ts
   - Refactored 6 smoke tests to use data-testid selectors
   - All 14 smoke tests pass successfully
+
+## Recent Activity
+- Completed plan 17-01: Role Enum and Types
+  - Created Role enum: {OPERATOR, MANAGER, ADMIN}
+  - Added RoleLabel for Russian display names
+  - Added permission types and helper functions
+  - Added common Permissions constants
+  - Added RoleDefaultPermissions mapping
+  - TypeScript compilation passes
 
 ## Next Up
 **Phase 17: Role-Based UI System** — Implement role-based content rendering
