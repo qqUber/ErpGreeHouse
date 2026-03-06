@@ -38,9 +38,11 @@ middleware/.pytest_cache/
 coverage.xml
 .roo/mcp.json
 admin-ui/e2e/.test-credentials.json
-  
+   
 cookies.txt 
 
 # Generated test reports
 unit-report-2/
 middleware/test-reports/*.txt
+admin-ui/localhost_*.report.html
+localhost_*.report.html
