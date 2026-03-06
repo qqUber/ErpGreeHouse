@@ -682,129 +682,141 @@ function App() {
 
   return (
     <div className="container">
-      <div className="header">
+      <header role="banner" className="header">
         <div className="brand">
-        <div style={{ fontWeight: 800 }}>{t('app.controlPanel')}</div>
+          <h1 style={{ fontWeight: 800, fontSize: 'var(--font-size-xl)', margin: 0 }}>{t('app.controlPanel')}</h1>
         </div>
-        <div className="tabs">
-          {allowedTabs.includes('dashboard') ? (
-            <button
-              className={`tab ${safeTab === 'dashboard' ? 'tabActive' : ''}`}
-              onClick={() => setTab('dashboard')}
-              role="tab"
-              aria-selected={safeTab === 'dashboard'}
-              aria-controls="dashboard-panel"
-              data-testid="admin_nav_dashboard_en"
-            >
-              {t('menu.dashboard')}
-            </button>
-          ) : null}
-          {allowedTabs.includes('customers') ? (
-            <button
-              className={`tab ${safeTab === 'customers' ? 'tabActive' : ''}`}
-              onClick={() => setTab('customers')}
-              role="tab"
-              aria-selected={safeTab === 'customers'}
-              aria-controls="customers-panel"
-              data-testid="admin_nav_customers_en"
-            >
-              {t('menu.clients')}
-            </button>
-          ) : null}
-          {allowedTabs.includes('pos') ? (
-            <button
-              className={`tab ${safeTab === 'pos' ? 'tabActive' : ''}`}
-              onClick={() => setTab('pos')}
-              role="tab"
-              aria-selected={safeTab === 'pos'}
-              aria-controls="pos-panel"
-              data-testid="admin_nav_pos_en"
-            >
-              {t('sales.title')}
-            </button>
-          ) : null}
-          {allowedTabs.includes('integrations') ? (
-            <button
-              className={`tab ${safeTab === 'integrations' ? 'tabActive' : ''}`}
-              onClick={() => setTab('integrations')}
-              role="tab"
-              aria-selected={safeTab === 'integrations'}
-              aria-controls="integrations-panel"
-              data-testid="admin_nav_integrations_en"
-            >
-              {t('menu.integrations')}
-            </button>
-          ) : null}
-          {allowedTabs.includes('products') ? (
-            <button
-              className={`tab ${safeTab === 'products' ? 'tabActive' : ''}`}
-              onClick={() => setTab('products')}
-              role="tab"
-              aria-selected={safeTab === 'products'}
-              aria-controls="products-panel"
-              data-testid="admin_nav_products_en"
-            >
-              {t('menu.products')}
-            </button>
-          ) : null}
-          {allowedTabs.includes('settings') ? (
-            <button
-              className={`tab ${safeTab === 'settings' ? 'tabActive' : ''}`}
-              onClick={() => setTab('settings')}
-              role="tab"
-              aria-selected={safeTab === 'settings'}
-              aria-controls="settings-panel"
-              data-testid="admin_nav_settings_en"
-            >
-              {t('menu.settings')}
-            </button>
-          ) : null}
-          {allowedTabs.includes('marketing') ? (
-            <button
-              className={`tab ${safeTab === 'marketing' ? 'tabActive' : ''}`}
-              onClick={() => setTab('marketing')}
-              role="tab"
-              aria-selected={safeTab === 'marketing'}
-              aria-controls="marketing-panel"
-              data-testid="admin_nav_marketing_en"
-            >
-              {t('menu.marketing')}
-            </button>
-          ) : null}
-          {allowedTabs.includes('compliance') ? (
-            <button
-              className={`tab ${safeTab === 'compliance' ? 'tabActive' : ''}`}
-              onClick={() => setTab('compliance')}
-              role="tab"
-              aria-selected={safeTab === 'compliance'}
-              aria-controls="compliance-panel"
-              data-testid="admin_nav_compliance_en"
-            >
-              {t('menu.compliance')}
-            </button>
-          ) : null}
-          {allowedTabs.includes('analytics') ? (
-            <button
-              className={`tab ${safeTab === 'analytics' ? 'tabActive' : ''}`}
-              onClick={() => setTab('analytics')}
-              role="tab"
-              aria-selected={safeTab === 'analytics'}
-              aria-controls="analytics-panel"
-              data-testid="admin_nav_analytics_en"
-            >
-              {t('menu.analytics')}
-            </button>
-          ) : null}
-        </div>
+        <nav role="navigation" aria-label="Main navigation">
+          <div className="tabs" role="tablist" aria-label="Main navigation">
+            {allowedTabs.includes('dashboard') ? (
+              <button
+                id="dashboard-tab"
+                className={`tab ${safeTab === 'dashboard' ? 'tabActive' : ''}`}
+                onClick={() => setTab('dashboard')}
+                role="tab"
+                aria-selected={safeTab === 'dashboard'}
+                aria-controls="dashboard-panel"
+                data-testid="admin_nav_dashboard_en"
+              >
+                {t('menu.dashboard')}
+              </button>
+            ) : null}
+            {allowedTabs.includes('customers') ? (
+              <button
+                id="customers-tab"
+                className={`tab ${safeTab === 'customers' ? 'tabActive' : ''}`}
+                onClick={() => setTab('customers')}
+                role="tab"
+                aria-selected={safeTab === 'customers'}
+                aria-controls="customers-panel"
+                data-testid="admin_nav_customers_en"
+              >
+                {t('menu.clients')}
+              </button>
+            ) : null}
+            {allowedTabs.includes('pos') ? (
+              <button
+                id="pos-tab"
+                className={`tab ${safeTab === 'pos' ? 'tabActive' : ''}`}
+                onClick={() => setTab('pos')}
+                role="tab"
+                aria-selected={safeTab === 'pos'}
+                aria-controls="pos-panel"
+                data-testid="admin_nav_pos_en"
+              >
+                {t('sales.title')}
+              </button>
+            ) : null}
+            {allowedTabs.includes('integrations') ? (
+              <button
+                id="integrations-tab"
+                className={`tab ${safeTab === 'integrations' ? 'tabActive' : ''}`}
+                onClick={() => setTab('integrations')}
+                role="tab"
+                aria-selected={safeTab === 'integrations'}
+                aria-controls="integrations-panel"
+                data-testid="admin_nav_integrations_en"
+              >
+                {t('menu.integrations')}
+              </button>
+            ) : null}
+            {allowedTabs.includes('products') ? (
+              <button
+                id="products-tab"
+                className={`tab ${safeTab === 'products' ? 'tabActive' : ''}`}
+                onClick={() => setTab('products')}
+                role="tab"
+                aria-selected={safeTab === 'products'}
+                aria-controls="products-panel"
+                data-testid="admin_nav_products_en"
+              >
+                {t('menu.products')}
+              </button>
+            ) : null}
+            {allowedTabs.includes('settings') ? (
+              <button
+                id="settings-tab"
+                className={`tab ${safeTab === 'settings' ? 'tabActive' : ''}`}
+                onClick={() => setTab('settings')}
+                role="tab"
+                aria-selected={safeTab === 'settings'}
+                aria-controls="settings-panel"
+                data-testid="admin_nav_settings_en"
+              >
+                {t('menu.settings')}
+              </button>
+            ) : null}
+            {allowedTabs.includes('marketing') ? (
+              <button
+                id="marketing-tab"
+                className={`tab ${safeTab === 'marketing' ? 'tabActive' : ''}`}
+                onClick={() => setTab('marketing')}
+                role="tab"
+                aria-selected={safeTab === 'marketing'}
+                aria-controls="marketing-panel"
+                data-testid="admin_nav_marketing_en"
+              >
+                {t('menu.marketing')}
+              </button>
+            ) : null}
+            {allowedTabs.includes('compliance') ? (
+              <button
+                id="compliance-tab"
+                className={`tab ${safeTab === 'compliance' ? 'tabActive' : ''}`}
+                onClick={() => setTab('compliance')}
+                role="tab"
+                aria-selected={safeTab === 'compliance'}
+                aria-controls="compliance-panel"
+                data-testid="admin_nav_compliance_en"
+              >
+                {t('menu.compliance')}
+              </button>
+            ) : null}
+            {allowedTabs.includes('analytics') ? (
+              <button
+                id="analytics-tab"
+                className={`tab ${safeTab === 'analytics' ? 'tabActive' : ''}`}
+                onClick={() => setTab('analytics')}
+                role="tab"
+                aria-selected={safeTab === 'analytics'}
+                aria-controls="analytics-panel"
+                data-testid="admin_nav_analytics_en"
+              >
+                {t('menu.analytics')}
+              </button>
+            ) : null}
+          </div>
+        </nav>
         {authReady ? <div className="pill">{t('common.role')}: {roleLabel(me?.role || '')}</div> : null}
         <LanguageSwitcher />
-      </div>
+      </header>
 
-      {notice ? (
-        <div className="grid">
-          <StatusBar notice={notice} />
-        </div>
-      ) : null}
+      <main role="main" aria-label="Main content">
+        {notice ? (
+          <div className="grid">
+            <StatusBar notice={notice} />
+          </div>
+        ) : null}
 
       {!authReady ? (
         <div className="grid">
@@ -996,198 +1008,216 @@ function App() {
       ) : null}
 
       {optimisticReady && safeTab === 'dashboard' ? (
-        <DashboardView dash={dash} reload={() => loadDashboard()} onNavigate={navigateTo} />
+        <div id="dashboard-panel" role="tabpanel" aria-labelledby="dashboard-tab">
+          <DashboardView dash={dash} reload={() => loadDashboard()} onNavigate={navigateTo} />
+        </div>
       ) : null}
       {optimisticReady && safeTab === 'customers' ? (
-        <CustomersView
-          q={q}
-          setQ={setQ}
-          customers={customers}
-          select={(id) => setSelectedId(id)}
-          selected={selected}
-          details={details}
-          search={() => loadCustomers(q)}
-          refresh={() => loadCustomers()}
-        />
+        <div id="customers-panel" role="tabpanel" aria-labelledby="customers-tab">
+          <CustomersView
+            q={q}
+            setQ={setQ}
+            customers={customers}
+            select={(id) => setSelectedId(id)}
+            selected={selected}
+            details={details}
+            search={() => loadCustomers(q)}
+            refresh={() => loadCustomers()}
+          />
+        </div>
       ) : null}
       {optimisticReady && safeTab === 'pos' ? (
-        <PosView
-          refreshCustomers={() => loadCustomers()}
-          products={products}
-          reloadProducts={() => loadProducts()}
-          onSaleDone={async (customerId: number) => {
-            await loadDashboard();
-            await loadCustomers();
-            setSelectedId(customerId);
-            setTab('customers');
-          }}
-        />
+        <div id="pos-panel" role="tabpanel" aria-labelledby="pos-tab">
+          <PosView
+            refreshCustomers={() => loadCustomers()}
+            products={products}
+            reloadProducts={() => loadProducts()}
+            onSaleDone={async (customerId: number) => {
+              await loadDashboard();
+              await loadCustomers();
+              setSelectedId(customerId);
+              setTab('customers');
+            }}
+          />
+        </div>
       ) : null}
       {optimisticReady && safeTab === 'integrations' ? (
-        <div className="grid">
-          <div className="card cardWide">
-            <div className="tabs" style={{ marginBottom: 15 }}>
-              <div
-                className={`tab ${integrationSubTab === 'settings' ? 'tabActive' : ''}`}
-                onClick={() => setIntegrationSubTab('settings')}
-                data-testid="admin_tab_integration_settings_en"
-              >
-                {t('integrations.botSettings')}
+        <div id="integrations-panel" role="tabpanel" aria-labelledby="integrations-tab">
+          <div className="grid">
+            <div className="card cardWide">
+              <div className="tabs" style={{ marginBottom: 15 }}>
+                <div
+                  className={`tab ${integrationSubTab === 'settings' ? 'tabActive' : ''}`}
+                  onClick={() => setIntegrationSubTab('settings')}
+                  data-testid="admin_tab_integration_settings_en"
+                >
+                  {t('integrations.botSettings')}
+                </div>
+                <div
+                  className={`tab ${integrationSubTab === 'webhooks' ? 'tabActive' : ''}`}
+                  onClick={() => setIntegrationSubTab('webhooks')}
+                  data-testid="admin_tab_webhooks_en"
+                >
+                  {t('integrations.connections')}
+                </div>
               </div>
-              <div
-                className={`tab ${integrationSubTab === 'webhooks' ? 'tabActive' : ''}`}
-                onClick={() => setIntegrationSubTab('webhooks')}
-                data-testid="admin_tab_webhooks_en"
-              >
-                {t('integrations.connections')}
-              </div>
-            </div>
 
-            {integrationSubTab === 'settings' ? (
-              <IntegrationSettings />
-            ) : (
-              <IntegrationsView
-                items={integrations}
-                templates={integrationTemplates}
-                busy={integrationsBusy}
-                selected={selectedIntegration}
-                deliveries={integrationDeliveries}
-                select={(id) => setSelectedIntegrationId(id)}
-                reload={() => loadIntegrations()}
-                create={async (p) => {
-                  await Api.createIntegration(p);
-                  await loadIntegrations();
-                }}
-                update={async (id, p) => {
-                  await Api.updateIntegration(id, p);
-                  await loadIntegrations();
-                }}
-                rotate={async (id) => {
-                  await Api.rotateIntegrationSecret(id);
-                  await loadIntegrations();
-                  setSelectedIntegrationId(id);
-                }}
-                remove={async (id) => {
-                  await Api.deleteIntegration(id);
-                  setSelectedIntegrationId(null);
-                  await loadIntegrations();
-                }}
-                refreshDeliveries={async (id) => {
-                  await loadDeliveries(id);
-                }}
-              />
-            )}
+              {integrationSubTab === 'settings' ? (
+                <IntegrationSettings />
+              ) : (
+                <IntegrationsView
+                  items={integrations}
+                  templates={integrationTemplates}
+                  busy={integrationsBusy}
+                  selected={selectedIntegration}
+                  deliveries={integrationDeliveries}
+                  select={(id) => setSelectedIntegrationId(id)}
+                  reload={() => loadIntegrations()}
+                  create={async (p) => {
+                    await Api.createIntegration(p);
+                    await loadIntegrations();
+                  }}
+                  update={async (id, p) => {
+                    await Api.updateIntegration(id, p);
+                    await loadIntegrations();
+                  }}
+                  rotate={async (id) => {
+                    await Api.rotateIntegrationSecret(id);
+                    await loadIntegrations();
+                    setSelectedIntegrationId(id);
+                  }}
+                  remove={async (id) => {
+                    await Api.deleteIntegration(id);
+                    setSelectedIntegrationId(null);
+                    await loadIntegrations();
+                  }}
+                  refreshDeliveries={async (id) => {
+                    await loadDeliveries(id);
+                  }}
+                />
+              )}
+            </div>
           </div>
         </div>
       ) : null}
       {optimisticReady && safeTab === 'products' ? (
-        <ProductsView
-          items={products}
-          reload={() => loadProducts()}
-          canEdit={(me?.permissions || []).includes('product.create')}
-          create={async (p) => {
-            await Api.createProduct(p);
-            await loadProducts();
-          }}
-          setShowProductImport={setShowProductImport}
-        />
+        <div id="products-panel" role="tabpanel" aria-labelledby="products-tab">
+          <ProductsView
+            items={products}
+            reload={() => loadProducts()}
+            canEdit={(me?.permissions || []).includes('product.create')}
+            create={async (p) => {
+              await Api.createProduct(p);
+              await loadProducts();
+            }}
+            setShowProductImport={setShowProductImport}
+          />
+        </div>
       ) : null}
       {optimisticReady && safeTab === 'settings' ? (
-        <div className="grid">
-          <div className="card cardFull" data-testid="settings_view_en">
-            <div className="row">
-              <div>
-                <div style={{ fontWeight: 900, fontSize: 18 }}>{t('auth.accessSettings')}</div>
-                <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
-                  {mustChangePassword
-                    ? t('auth.requirePasswordChangeSettings')
-                    : t('auth.accessSettingsDesc')}
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <div className="pill">{t('auth.sessionActive')}</div>
-                <button className="btn" onClick={() => void doLogout()} type="button" data-testid="admin_btn_logout_en">
-                  {t('auth.logout')}
-                </button>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+        <div id="settings-panel" role="tabpanel" aria-labelledby="settings-tab">
+          <div className="grid">
+            <div className="card cardFull" data-testid="settings_view_en">
               <div className="row">
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      className="input"
-                      value={oldPassword}
-                      onChange={(e) => setOldPassword(e.target.value)}
-                      placeholder={t('auth.currentPassword')}
-                      type={showSettingsOld ? 'text' : 'password'}
-                      autoComplete="off"
-                      spellCheck={false}
-                      data-testid="admin_input_old_password_en"
-                    />
-                    <button
-                      className="btn"
-                      onClick={() => setShowSettingsOld((v) => !v)}
-                      type="button"
-                      data-testid="admin_btn_toggle_old_password_en"
-                    >
-                      {showSettingsOld ? t('auth.hidePassword') : t('auth.showPassword')}
-                    </button>
+                <div>
+                  <div style={{ fontWeight: 900, fontSize: 18 }}>{t('auth.accessSettings')}</div>
+                  <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
+                    {mustChangePassword
+                      ? t('auth.requirePasswordChangeSettings')
+                      : t('auth.accessSettingsDesc')}
                   </div>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      className="input"
-                      value={settingsNewPassword}
-                      onChange={(e) => setSettingsNewPassword(e.target.value)}
-                      placeholder={t('auth.newPassword')}
-                      type={showSettingsNew ? 'text' : 'password'}
-                      autoComplete="off"
-                      spellCheck={false}
-                      data-testid="admin_input_new_password_en"
-                    />
-                    <button
-                      className="btn"
-                      onClick={() => setShowSettingsNew((v) => !v)}
-                      type="button"
-                      data-testid="admin_btn_toggle_new_password_en"
-                    >
-                      {showSettingsNew ? t('auth.hidePassword') : t('auth.showPassword')}
-                    </button>
-                  </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div className="pill">{t('auth.sessionActive')}</div>
+                  <button className="btn" onClick={() => void doLogout()} type="button" data-testid="admin_btn_logout_en">
+                    {t('auth.logout')}
+                  </button>
                 </div>
-                <button
-                  className="btn btnPrimary"
-                  onClick={() => void doChangePassword()}
-                  disabled={!oldPassword || settingsNewPassword.length < 8}
-                  data-testid="admin_btn_change_password_en"
-                >
-                  {t('auth.changePassword')}
-                </button>
               </div>
-              <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
-                {t('auth.recoveryInstructions')}
+
+              <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+                <div className="row">
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input
+                        className="input"
+                        value={oldPassword}
+                        onChange={(e) => setOldPassword(e.target.value)}
+                        placeholder={t('auth.currentPassword')}
+                        type={showSettingsOld ? 'text' : 'password'}
+                        autoComplete="off"
+                        spellCheck={false}
+                        data-testid="admin_input_old_password_en"
+                      />
+                      <button
+                        className="btn"
+                        onClick={() => setShowSettingsOld((v) => !v)}
+                        type="button"
+                        data-testid="admin_btn_toggle_old_password_en"
+                      >
+                        {showSettingsOld ? t('auth.hidePassword') : t('auth.showPassword')}
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input
+                        className="input"
+                        value={settingsNewPassword}
+                        onChange={(e) => setSettingsNewPassword(e.target.value)}
+                        placeholder={t('auth.newPassword')}
+                        type={showSettingsNew ? 'text' : 'password'}
+                        autoComplete="off"
+                        spellCheck={false}
+                        data-testid="admin_input_new_password_en"
+                      />
+                      <button
+                        className="btn"
+                        onClick={() => setShowSettingsNew((v) => !v)}
+                        type="button"
+                        data-testid="admin_btn_toggle_new_password_en"
+                      >
+                        {showSettingsNew ? t('auth.hidePassword') : t('auth.showPassword')}
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    className="btn btnPrimary"
+                    onClick={() => void doChangePassword()}
+                    disabled={!oldPassword || settingsNewPassword.length < 8}
+                    data-testid="admin_btn_change_password_en"
+                  >
+                    {t('auth.changePassword')}
+                  </button>
+                </div>
+                <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
+                  {t('auth.recoveryInstructions')}
+                </div>
               </div>
             </div>
-          </div>
 
-          {me?.role === 'owner' || (me?.permissions || []).includes('settings.access') ? (
-            <PermissionsTable />
-          ) : null}
+            {me?.role === 'owner' || (me?.permissions || []).includes('settings.access') ? (
+              <PermissionsTable />
+            ) : null}
+          </div>
         </div>
-       ) : null}
+      ) : null}
 
       {optimisticReady && safeTab === 'marketing' ? (
-        <MarketingView />
+        <div id="marketing-panel" role="tabpanel" aria-labelledby="marketing-tab">
+          <MarketingView />
+        </div>
       ) : null}
 
       {optimisticReady && safeTab === 'compliance' ? (
-        <ComplianceView />
+        <div id="compliance-panel" role="tabpanel" aria-labelledby="compliance-tab">
+          <ComplianceView />
+        </div>
       ) : null}
       {optimisticReady && safeTab === 'analytics' ? (
-        <AnalyticsView />
+        <div id="analytics-panel" role="tabpanel" aria-labelledby="analytics-tab">
+          <AnalyticsView />
+        </div>
       ) : null}
 
       {authFlow?.active ? (
@@ -1236,10 +1266,11 @@ function App() {
           </div>
         </div>
       ) : null}
-      <div className="footerVersion">
+      </main>
+      <footer role="contentinfo" className="footerVersion">
         v{__APP_VERSION__}
         {__BUILD_ID__ ? ` · ${String(__BUILD_ID__).slice(0, 10)}` : ''}
-      </div>
+      </footer>
     </div>
   );
 }
