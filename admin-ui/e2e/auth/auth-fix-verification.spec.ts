@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
-import { TestCredentials } from '../e2e/_shared';
+import { expect, test, APIRequestContext } from '@playwright/test';
+import { TestCredentials } from '../_shared';
 
 test.describe('Authentication Fix Verification', () => {
   test('should not inject test-secret-key into Authorization header', async ({ page }) => {

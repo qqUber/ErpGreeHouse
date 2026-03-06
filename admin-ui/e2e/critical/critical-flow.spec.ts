@@ -1,4 +1,5 @@
 import { attachConsole, expect, maybePause, retryBackoff, test } from '../_shared';
+import type { APIRequestContext } from '@playwright/test';
 
 /**
  * Critical Flow E2E Tests
