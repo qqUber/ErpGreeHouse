@@ -17,7 +17,7 @@
   --bad-light: rgba(185, 28, 28, 0.06);
   --brand-light: rgba(55, 65, 81, 0.06);
   
-  /* Responsive spacing */
+  /* Responsive spacing - enhanced for larger screens */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
@@ -26,6 +26,24 @@
   --spacing-2xl: 3rem;
   --spacing-3xl: 4rem;
   --spacing-4xl: 6rem;
+  
+  /* Extended spacing for 2xl/3xl breakpoints */
+  --spacing-5xl: 8rem;
+  --spacing-6xl: 10rem;
+  
+  /* Spacing scale - consistent increments */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+  --space-20: 5rem;    /* 80px */
+  --space-24: 6rem;    /* 96px */
   
   /* Typography */
   --font-size-xs: 0.75rem;
@@ -214,12 +232,30 @@ p {
 
 @media (min-width: 1536px) {
   .container {
-    padding: var(--spacing-xl);
+    padding: var(--spacing-lg);
   }
 }
 
 @media (min-width: 1920px) {
   .container {
+    padding: var(--spacing-2xl);
+  }
+}
+
+/* 2xl Container */
+@media (min-width: 1536px) {
+  .container-2xl {
+    max-width: 1536px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+  }
+}
+
+/* 3xl Container for Full HD */
+@media (min-width: 1920px) {
+  .container-3xl {
+    max-width: 1920px;
+    margin: 0 auto;
     padding: var(--spacing-2xl);
   }
 }
@@ -305,6 +341,26 @@ p {
 .gap-6 { gap: var(--spacing-lg); }
 .gap-8 { gap: var(--spacing-xl); }
 .gap-12 { gap: var(--spacing-2xl); }
+.gap-16 { gap: var(--spacing-3xl); }
+.gap-20 { gap: var(--spacing-4xl); }
+
+/* Responsive gap for larger screens */
+@media (min-width: 1536px) {
+  .\32xl\:gap-4 { gap: var(--spacing-md); }
+  .\32xl\:gap-6 { gap: var(--spacing-lg); }
+  .\32xl\:gap-8 { gap: var(--spacing-xl); }
+  .\32xl\:gap-12 { gap: var(--spacing-2xl); }
+  .\32xl\:gap-16 { gap: var(--spacing-3xl); }
+}
+
+@media (min-width: 1920px) {
+  .\33xl\:gap-4 { gap: var(--spacing-md); }
+  .\33xl\:gap-6 { gap: var(--spacing-lg); }
+  .\33xl\:gap-8 { gap: var(--spacing-xl); }
+  .\33xl\:gap-12 { gap: var(--spacing-2xl); }
+  .\33xl\:gap-16 { gap: var(--spacing-3xl); }
+  .\33xl\:gap-20 { gap: var(--spacing-4xl); }
+}
 
 /* Grid columns - mobile first */
 .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
@@ -351,6 +407,75 @@ p {
   .xl\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .xl\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .xl\:grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .xl\:grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+}
+
+/* Responsive grid columns for 2xl desktop (1536px) */
+@media (min-width: 1536px) {
+  .\32xl\:grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .\32xl\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .\32xl\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .\32xl\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .\32xl\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .\32xl\:grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .\32xl\:grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+}
+
+/* Responsive grid columns for 3xl Full HD (1920px) */
+@media (min-width: 1920px) {
+  .\33xl\:grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .\33xl\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .\33xl\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .\33xl\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .\33xl\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .\33xl\:grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .\33xl\:grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+}
+
+/* Column span utilities for 12-column grid */
+.col-span-1 { grid-column: span 1 / span 1; }
+.col-span-2 { grid-column: span 2 / span 2; }
+.col-span-3 { grid-column: span 3 / span 3; }
+.col-span-4 { grid-column: span 4 / span 4; }
+.col-span-5 { grid-column: span 5 / span 5; }
+.col-span-6 { grid-column: span 6 / span 6; }
+.col-span-7 { grid-column: span 7 / span 7; }
+.col-span-8 { grid-column: span 8 / span 8; }
+.col-span-9 { grid-column: span 9 / span 9; }
+.col-span-10 { grid-column: span 10 / span 10; }
+.col-span-11 { grid-column: span 11 / span 11; }
+.col-span-12 { grid-column: span 12 / span 12; }
+
+/* Responsive column spans for 2xl (1536px) */
+@media (min-width: 1536px) {
+  .\32xl\:col-span-1 { grid-column: span 1 / span 1; }
+  .\32xl\:col-span-2 { grid-column: span 2 / span 2; }
+  .\32xl\:col-span-3 { grid-column: span 3 / span 3; }
+  .\32xl\:col-span-4 { grid-column: span 4 / span 4; }
+  .\32xl\:col-span-5 { grid-column: span 5 / span 5; }
+  .\32xl\:col-span-6 { grid-column: span 6 / span 6; }
+  .\32xl\:col-span-7 { grid-column: span 7 / span 7; }
+  .\32xl\:col-span-8 { grid-column: span 8 / span 8; }
+  .\32xl\:col-span-9 { grid-column: span 9 / span 9; }
+  .\32xl\:col-span-10 { grid-column: span 10 / span 10; }
+  .\32xl\:col-span-11 { grid-column: span 11 / span 11; }
+  .\32xl\:col-span-12 { grid-column: span 12 / span 12; }
+}
+
+/* Responsive column spans for 3xl Full HD (1920px) */
+@media (min-width: 1920px) {
+  .\33xl\:col-span-1 { grid-column: span 1 / span 1; }
+  .\33xl\:col-span-2 { grid-column: span 2 / span 2; }
+  .\33xl\:col-span-3 { grid-column: span 3 / span 3; }
+  .\33xl\:col-span-4 { grid-column: span 4 / span 4; }
+  .\33xl\:col-span-5 { grid-column: span 5 / span 5; }
+  .\33xl\:col-span-6 { grid-column: span 6 / span 6; }
+  .\33xl\:col-span-7 { grid-column: span 7 / span 7; }
+  .\33xl\:col-span-8 { grid-column: span 8 / span 8; }
+  .\33xl\:col-span-9 { grid-column: span 9 / span 9; }
+  .\33xl\:col-span-10 { grid-column: span 10 / span 10; }
+  .\33xl\:col-span-11 { grid-column: span 11 / span 11; }
+  .\33xl\:col-span-12 { grid-column: span 12 / span 12; }
 }
 
 /* Modal styles */
