@@ -1,4 +1,4 @@
-import { test as base, Page, TestInfo } from '@playwright/test';
+import { test as base, Page, TestInfo, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -91,6 +91,207 @@ function setDefaultCredentials() {
 loadCredentialsFromFile();
 
 export type TestRole = keyof typeof TEST_CREDENTIALS;
+
+// ============================================================================
+// Role-Based Test Fixtures
+// ============================================================================
+
+/**
+ * Extended test fixture with role-based login helpers
+ * Provides clean way to test with different user roles
+ */
+export interface RoleTestFixtures {
+  /**
+   * Login as admin (owner) - has full access to all features
+   */
+  asAdmin: (page: Page) => Promise<void>;
+  /**
+   * Login as manager (marketer) - has marketing, customers, products, integrations access
+   * Cannot access POS operations or Settings
+   */
+  asManager: (page: Page) => Promise<void>;
+  /**
+   * Login as operator - has POS and Customers access only
+   * Cannot access Integrations, Settings, Marketing, Products
+   */
+  asOperator: (page: Page) => Promise<void>;
+}
+
+/**
+ * Create role-based test fixtures
+ * These can be used with Playwright's test.extend() to add role-specific login
+ */
+export function createRoleFixtures() {
+  return {
+    asAdmin: async (page: Page) => {
+      await login(page, 'admin');
+    },
+    asManager: async (page: Page) => {
+      await login(page, 'manager');
+    },
+    asOperator: async (page: Page) => {
+      await login(page, 'operator');
+    },
+  };
+}
+
+/**
+ * Get all available role names
+ */
+export function getAvailableRoles(): string[] {
+  return Object.keys(TEST_CREDENTIALS);
+}
+
+/**
+ * Get credentials for a specific role
+ */
+export function getCredentials(role: TestRole) {
+  return TEST_CREDENTIALS[role];
+}
+
+// ============================================================================
+// Permission Test Helpers
+// ============================================================================
+
+// Type for navigation items
+type NavTab = 'dashboard' | 'customers' | 'pos' | 'products' | 'marketing' | 'integrations' | 'settings' | 'compliance' | 'analytics';
+
+// Role name type
+type RoleName = 'owner' | 'marketer' | 'operator';
+
+/**
+ * Navigation items available to each role
+ */
+export const RolePermissions = {
+  /**
+   * Owner/Admin - has access to everything
+   */
+  owner: {
+    tabs: ['dashboard', 'customers', 'pos', 'products', 'marketing', 'integrations', 'settings', 'compliance', 'analytics'],
+    apiAccess: ['dashboard', 'customers', 'products', 'pos', 'integrations', 'marketing', 'settings', 'compliance', 'analytics'],
+  },
+  /**
+   * Manager/Marketer - has marketing, customers, products, integrations
+   * Cannot access POS operations or Settings
+   */
+  marketer: {
+    tabs: ['dashboard', 'customers', 'products', 'marketing', 'integrations'],
+    apiAccess: ['dashboard', 'customers', 'products', 'marketing', 'integrations'],
+  },
+  /**
+   * Operator - has POS and Customers only
+   * Cannot access Integrations, Settings, Marketing, Products
+   */
+  operator: {
+    tabs: ['customers', 'pos'],
+    apiAccess: ['customers', 'pos'],
+  },
+} as const satisfies Record<RoleName, { tabs: readonly NavTab[]; apiAccess: readonly string[] }>;
+
+// Type for navigation items that exist in TestIds.nav
+type NavItemKey = keyof typeof TestIds.nav;
+
+/**
+ * Verify that a specific navigation tab is visible for a role
+ * Throws if visibility doesn't match expected state
+ */
+export async function expectNavVisible(page: Page, navItem: NavItemKey, role: TestRole, shouldBeVisible: boolean): Promise<void> {
+  const roleKey = role === 'admin' ? 'owner' : role === 'manager' ? 'marketer' : 'operator';
+  const permissions = RolePermissions[roleKey];
+  const isAllowed = (permissions.tabs as readonly string[]).includes(navItem);
+  
+  const testId = TestIds.nav[navItem];
+  if (!testId) {
+    throw new Error(`Unknown nav item: ${navItem}`);
+  }
+  
+  const locator = page.getByTestId(testId);
+  
+  if (shouldBeVisible && isAllowed) {
+    // Should be visible - user has permission
+    await expect(locator).toBeVisible();
+  } else if (!shouldBeVisible && !isAllowed) {
+    // Should not be visible - user lacks permission
+    await expect(locator).toHaveCount(0);
+  }
+  // Otherwise: user has permission but we expect not visible (or vice versa) - that's a test error
+}
+
+/**
+ * Verify that all tabs in the permissions list are visible for a role
+ */
+export async function expectAllTabsVisible(page: Page, role: TestRole): Promise<void> {
+  const roleKey = role === 'admin' ? 'owner' : role === 'manager' ? 'marketer' : 'operator';
+  const permissions = RolePermissions[roleKey];
+  
+  for (const tab of permissions.tabs) {
+    const testId = TestIds.nav[tab as NavItemKey];
+    if (testId) {
+      await expect(page.getByTestId(testId)).toBeVisible();
+    }
+  }
+}
+
+/**
+ * Verify that tabs NOT in the permissions list are hidden for a role
+ */
+export async function expectNoUnauthorizedTabs(page: Page, role: TestRole): Promise<void> {
+  const roleKey = role === 'admin' ? 'owner' : role === 'manager' ? 'marketer' : 'operator';
+  const permissions = RolePermissions[roleKey];
+  
+  const allTabs: NavItemKey[] = ['dashboard', 'customers', 'pos', 'products', 'marketing', 'integrations', 'settings', 'compliance', 'analytics'];
+  const unauthorizedTabs = allTabs.filter(tab => !(permissions.tabs as readonly string[]).includes(tab));
+  
+  for (const tab of unauthorizedTabs) {
+    const testId = TestIds.nav[tab];
+    if (testId) {
+      await expect(page.getByTestId(testId)).toHaveCount(0);
+    }
+  }
+}
+
+/**
+ * Verify API returns expected status based on role permissions
+ * @param page - Playwright page for making requests
+ * @param apiPath - API endpoint path (e.g., '/api/v1/integrations')
+ * @param role - User role to test
+ * @param method - HTTP method (GET, POST, etc.)
+ * @param expectedStatus - Expected status: 200/201 for allowed, 401/403 for denied
+ * @param requestData - Optional request body for POST/PUT
+ */
+export async function expectApiAccess(
+  page: Page,
+  apiPath: string,
+  role: TestRole,
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
+  expectedStatus: number,
+  requestData?: Record<string, unknown>
+): Promise<void> {
+  // First login as the role
+  await login(page, role);
+  await page.waitForTimeout(1000);
+  
+  // Make the API request
+  const options: { headers?: Record<string, string>; data?: Record<string, unknown> } = {};
+  
+  const response = method === 'GET' 
+    ? await page.request.get(apiPath, options)
+    : method === 'POST'
+    ? await page.request.post(apiPath, { data: requestData })
+    : method === 'PUT'
+    ? await page.request.put(apiPath, { data: requestData })
+    : await page.request.delete(apiPath);
+  
+  expect(response.status()).toBe(expectedStatus);
+}
+
+/**
+ * Quick helper to check if role has permission for a specific feature
+ */
+export function hasPermission(role: TestRole, feature: string): boolean {
+  const roleKey = role === 'admin' ? 'owner' : role === 'manager' ? 'marketer' : 'operator';
+  return (RolePermissions[roleKey].apiAccess as readonly string[]).includes(feature);
+}
 
 /**
  * Login helper with proper error handling and waiting
