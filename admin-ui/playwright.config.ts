@@ -29,10 +29,14 @@ export default defineConfig({
   workers: 1,
 
   projects: [
-    { name: 'smoke', testDir: './e2e/smoke' },
-    { name: 'critical', testDir: './e2e/critical' },
-    { name: 'functional', testDir: './e2e/functional' },
-    { name: 'roles', testDir: './e2e/roles' },
-    { name: 'auth', testDir: './e2e/auth' },
+    // Default viewports for standard test suites
+    { name: 'smoke', testDir: './e2e/smoke', use: { viewport: { width: 1280, height: 720 } } },
+    { name: 'critical', testDir: './e2e/critical', use: { viewport: { width: 1280, height: 720 } } },
+    { name: 'functional', testDir: './e2e/functional', use: { viewport: { width: 1280, height: 720 } } },
+    { name: 'roles', testDir: './e2e/roles', use: { viewport: { width: 1280, height: 720 } } },
+    { name: 'auth', testDir: './e2e/auth', use: { viewport: { width: 1280, height: 720 } } },
+    
+    // Full HD (1920x1080) viewport for high-resolution testing
+    { name: 'fullhd', testDir: './e2e/smoke', use: { viewport: { width: 1920, height: 1080 } } },
   ],
 });
