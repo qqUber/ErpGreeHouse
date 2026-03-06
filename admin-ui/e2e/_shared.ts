@@ -2,6 +2,11 @@ import { test as base, Page, TestInfo } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Import i18n utilities
+import { setTestLanguage, Menu, Common, Dashboard, Sales, Clients, Products, Marketing, Auth, t } from './i18n-test';
+
+export { t, Menu, Common, Dashboard, Sales, Clients, Products, Marketing, Auth };
+
 export const test = base;
 export { expect } from '@playwright/test';
 
@@ -141,10 +146,14 @@ export async function login(page: Page, role: TestRole = 'admin') {
 
   // Set up init script for language preference only
   // Do NOT set admin_session_token in localStorage - use httpOnly cookies instead
+  // IMPORTANT: Set language to English as the default for tests
   await page.addInitScript(() => {
     window.sessionStorage.setItem('auth_validation_state', 'valid');
     window.localStorage.setItem('language', 'en');
   });
+
+  // Set the test i18n language to match what we configured in the app
+  setTestLanguage('en');
 
   // Navigate directly to dashboard - the auth context will validate the token
   // and the user will be authenticated. We bypass the login page navigation issue.

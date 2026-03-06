@@ -1,15 +1,28 @@
 # ErpGreeHouse - State
 
 ## Position
-- **Phase:** 13 of 13 (Accessibility)
-- **Milestone:** v2.0 Redesign complete
+- **Phase:** 14 of 14 (Professional UI)
+- **Milestone:** v2.1 UI Enhancement
 - **Progress:** 100%
+
+## Docker-Only Development
+**RULE: All development via Docker - no local machine dependencies**
+
+```powershell
+# Start development
+docker-compose -f docker-compose.local.yml up -d
+
+# Services:
+# - Frontend: http://localhost:5173
+# - Backend:  http://localhost:8000
+# - Redis:    localhost:6379
+```
 
 ## Metrics
 - **Tests:** 693 total (561 pytest + 132 E2E)
-- **Plans:** 33/33 executed
+- **Plans:** 34/34 executed
 - **Security:** HIGH: 0, MEDIUM: 0, LOW: 5
-- **Docs:** 34 files (added accessibility-report.html)
+- **Docs:** 35 files (added accessibility-report.html)
 
 ## Tech Stack
 - Backend: FastAPI, Python 3.14, SQLite/PostgreSQL, Redis
@@ -18,15 +31,13 @@
 - Channels: Telegram, VK, ERPNext
 
 ## Current Focus
-v2.0 Redesign - UI experience and visual proportional view for all widgets, views, and pages across typical displays and resolutions. This milestone includes responsive design improvements, visual consistency fixes, and accessibility enhancements.
+Phase 14: Professional UI Design Patterns - **COMPLETED**
 
 ## Completed Plans
 - Phase 11: Responsive Design - Analyze and fix responsive design issues
 - Phase 12: Visual Consistency - Establish visual consistency with unified design system
 - Phase 13: Accessibility - Improve accessibility for all users
-
-## Next Plan
-None - v2.0 Redesign complete
+- **Phase 14: Professional UI Design Patterns - Completed 2026-03-06**
 
 ## Accumulated Context
 
@@ -42,5 +53,21 @@ None - v2.0 Redesign complete
    - Micro-interactions (loading spinners, toast notifications)
    - WCAG-compliant accessibility, responsive design
 
+## Docker Development (Required)
+
+**All work must be done via Docker - no local dependencies**
+
+```powershell
+# Start dev environment
+docker-compose -f docker-compose.local.yml up -d
+
+# Access services:
+# - Frontend: http://localhost:5173
+# - Backend:  http://localhost:8000/docs
+# - Redis:    localhost:6379
+```
+
+See `docs/DOCKER_COMMANDS.md` for full command reference.
+
 ## Last Updated
-2026-03-05
+2026-03-06

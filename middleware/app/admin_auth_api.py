@@ -152,15 +152,24 @@ def _get_jwt_cookie_settings() -> dict[str, Any]:
             "JWT tokens will be sent over HTTP (insecure). Set ADMIN_COOKIE_SECURE=true in production!"
         )
 
+    # Allow cookie domain to be configured via environment variable
+    # Empty string = use current domain (default for Docker/E2E)
+    # "localhost" = only send to localhost (breaks in Docker with different hostnames)
+    cookie_domain = os.getenv("ADMIN_COOKIE_DOMAIN", "")
+    
     cookie_settings = {
         "httponly": True,
         "samesite": "lax",
         "secure": cookie_secure,
         "path": "/",
-        "domain": "localhost",
     }
+    
+    # Only set domain if explicitly configured (not empty)
+    if cookie_domain:
+        cookie_settings["domain"] = cookie_domain
+    
     logger.info(
-        f"JWT cookie settings: httponly={cookie_settings['httponly']}, samesite={cookie_settings['samesite']}, secure={cookie_settings['secure']}, path={cookie_settings['path']}"
+        f"JWT cookie settings: httponly={cookie_settings['httponly']}, samesite={cookie_settings['samesite']}, secure={cookie_settings['secure']}, path={cookie_settings['path']}, domain={cookie_settings.get('domain', '(none)')}"
     )
 
     return cookie_settings

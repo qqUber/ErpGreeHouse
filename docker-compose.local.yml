@@ -1,0 +1,67 @@
+# Docker Compose for Local Development
+# Usage: docker-compose -f docker-compose.local.yml up --build
+
+version: '3.8'
+
+services:
+  # Redis for caching
+  redis:
+    image: redis:8.0-alpine
+    container_name: erp_local_redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - redis_data:/data
+
+  # Backend API
+  backend:
+    build:
+      context: ./middleware
+      dockerfile: Dockerfile
+    container_name: erp_local_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=sqlite:///app/data/dev.db
+      - ENVIRONMENT=development
+      - JWT_SECRET=dev-secret-key-change-in-production
+    volumes:
+      - ./middleware/app:/app/app
+      - ./middleware/data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Frontend
+  frontend:
+    build:
+      context: ./admin-ui
+      dockerfile: Dockerfile
+    container_name: erp_local_frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    volumes:
+      - ./admin-ui/src:/app/src
+      - ./admin-ui/public:/app/public
+    depends_on:
+      backend:
+        condition: service_healthy
+    command: npm run dev -- --host
+
+volumes:
+  redis_data:

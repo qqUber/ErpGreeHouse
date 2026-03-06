@@ -28,6 +28,12 @@
         "@modelcontextprotocol/server-everything"
       ]
     },
+	"playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest"
+      ]
+	},
     "context7": {
       "command": "npx",
       "args": [

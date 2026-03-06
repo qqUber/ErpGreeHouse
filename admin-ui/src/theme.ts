@@ -58,7 +58,18 @@ export interface Theme {
       lg: string;
       xl: string;
       '2xl': string;
+      '3xl': string;
+      '4xl': string;
     };
+    h1: string;
+    h2: string;
+    h3: string;
+    h4: string;
+    h5: string;
+    h6: string;
+    body: string;
+    caption: string;
+    small: string;
     fontWeight: {
       normal: number;
       medium: number;
@@ -128,13 +139,25 @@ export const theme: Theme = {
   },
   typography: {
     fontSize: {
-      xs: '0.75rem',
-      sm: '0.875rem',
-      base: '1rem',
-      lg: '1.125rem',
-      xl: '1.25rem',
-      '2xl': '1.5rem',
+      xs: '0.75rem',     // 12px - caption
+      sm: '0.875rem',    // 14px - small
+      base: '1rem',      // 16px - body
+      lg: '1.125rem',    // 18px - large body
+      xl: '1.25rem',     // 20px - h4
+      '2xl': '1.5rem',   // 24px - h3
+      '3xl': '1.875rem', // 30px - h2
+      '4xl': '2.25rem',  // 36px - h1
     },
+    // Heading font sizes (for reference)
+    h1: '2.25rem',    // 36px
+    h2: '1.875rem',   // 30px
+    h3: '1.5rem',     // 24px
+    h4: '1.25rem',    // 20px
+    h5: '1.125rem',   // 18px
+    h6: '1rem',       // 16px
+    body: '1rem',      // 16px
+    caption: '0.75rem', // 12px
+    small: '0.875rem', // 14px
     fontWeight: {
       normal: 400,
       medium: 500,

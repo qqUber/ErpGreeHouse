@@ -20,9 +20,10 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    allowedHosts: ['frontend-e2e', 'localhost'],
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: process.env.E2E_API_BASE_URL || 'http://localhost:8000',
         changeOrigin: true,
         secure: false,
         // Configure proxy to pass cookies

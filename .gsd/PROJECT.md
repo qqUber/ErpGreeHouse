@@ -4,13 +4,14 @@
 Saves 50-100k ₽/month for coffee shops by replacing expensive third-party CRM and loyalty solutions with open-source alternative.
 
 ## Current State
-**v1.1 Security shipped (March 4, 2026)** - All 29 plans complete
+**v2.1 UI Enhancement shipped (March 6, 2026)** - All 34 plans complete
 
 | Milestone | Status | Date |
 |-----------|--------|------|
 | v1.0 MVP | ✅ | 2026-03-03 |
 | v1.1 Security | ✅ | 2026-03-04 |
-| v2.0 UI Experience & Responsive Design | 📋 | - |
+| v2.0 UI Experience & Responsive Design | ✅ | 2026-03-05 |
+| v2.1 Professional UI Design Patterns | ✅ | 2026-03-06 |
 
 ## Key Features
 - Loyalty program (points, tiers, redemption)
