@@ -47,7 +47,7 @@ export const ProductsWidget: React.FC<ProductsWidgetProps> = ({ data }) => {
   };
 
   return (
-    <div className="card cardFull">
+    <div className="card cardFull" data-testid="admin_widget_products_en">
       <div className="row mb-4">
         <div style={{ 
           fontWeight: 'var(--font-weight-extrabold)', 

@@ -13,12 +13,13 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="operator_dashboard_en">
       {/* Quick Actions - Operator's most frequent tasks */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="operator_widget_quick_actions_en">
         <button
           className="card cardFull p-6 flex flex-col items-center justify-center hover:shadow-md transition-shadow"
           onClick={() => onNavigate('pos')}
+          data-testid="operator_btn_new_sale_en"
         >
           <div className="text-4xl mb-4">💰</div>
           <div className="font-bold text-lg">Новая продажа</div>
@@ -28,6 +29,7 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
         <button
           className="card cardFull p-6 flex flex-col items-center justify-center hover:shadow-md transition-shadow"
           onClick={() => onNavigate('customers')}
+          data-testid="operator_btn_identify_customer_en"
         >
           <div className="text-4xl mb-4">🔍</div>
           <div className="font-bold text-lg">Идентифицировать клиента</div>
@@ -37,6 +39,7 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
         <button
           className="card cardFull p-6 flex flex-col items-center justify-center hover:shadow-md transition-shadow"
           onClick={() => onNavigate('products')}
+          data-testid="operator_btn_catalog_en"
         >
           <div className="text-4xl mb-4">📦</div>
           <div className="font-bold text-lg">Каталог товаров</div>
@@ -46,7 +49,7 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
 
       {/* Current Shift Stats - Focus on today's performance */}
       {dash && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" data-testid="operator_widget_shift_stats_en">
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <span className="text-muted text-sm">Продаж за день</span>
@@ -83,7 +86,7 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
 
       {/* Recent Transactions - Show only last 5 for quick reference */}
       {dash && dash.recent_activity.transactions.length > 0 && (
-        <div className="card cardFull">
+        <div className="card cardFull" data-testid="operator_widget_recent_transactions_en">
           <div className="flex items-center justify-between mb-6">
             <div className="font-bold text-lg">Последние операции</div>
             <span className="text-muted text-sm">Показано {Math.min(5, dash.recent_activity.transactions.length)} из {dash.recent_activity.transactions.length}</span>
@@ -113,6 +116,7 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
             <button 
               className="btn btnPrimary"
               onClick={() => onNavigate('pos')}
+              data-testid="operator_btn_new_operation_en"
             >
               Провести новую операцию
             </button>
@@ -122,13 +126,14 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
 
       {/* Empty State if No Recent Transactions */}
       {(!dash || dash.recent_activity.transactions.length === 0) && (
-        <div className="card cardFull text-center py-12">
+        <div className="card cardFull text-center py-12" data-testid="operator_widget_empty_state_en">
           <div className="text-6xl mb-4">📊</div>
           <div className="font-bold text-lg mb-2">Нет операций за сегодня</div>
           <div className="text-muted mb-6">Начните с первой продажи</div>
           <button 
             className="btn btnPrimary"
             onClick={() => onNavigate('pos')}
+            data-testid="operator_btn_first_sale_en"
           >
             Провести первую продажу
           </button>

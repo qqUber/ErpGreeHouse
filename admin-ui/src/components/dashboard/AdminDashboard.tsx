@@ -22,9 +22,9 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="admin_dashboard_en">
       {/* System Status Overview */}
-      <div className="card cardFull">
+      <div className="card cardFull" data-testid="admin_widget_system_overview_en">
         <div className="flex items-center justify-between mb-6">
           <div className="font-bold text-lg">Обзор системы</div>
           <div className="flex gap-2">
@@ -55,7 +55,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
       </div>
 
       {/* System Health Section */}
-      <div className="card cardFull">
+      <div className="card cardFull" data-testid="admin_widget_system_health_en">
         <div 
           className="flex items-center justify-between cursor-pointer p-4"
           onClick={() => toggleSection('health')}
@@ -88,7 +88,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
       </div>
 
       {/* Security & Access Section */}
-      <div className="card cardFull">
+      <div className="card cardFull" data-testid="admin_widget_security_en">
         <div 
           className="flex items-center justify-between cursor-pointer p-4"
           onClick={() => toggleSection('security')}
@@ -130,7 +130,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
       </div>
 
       {/* Performance Metrics Section */}
-      <div className="card cardFull">
+      <div className="card cardFull" data-testid="admin_widget_performance_en">
         <div 
           className="flex items-center justify-between cursor-pointer p-4"
           onClick={() => toggleSection('performance')}
@@ -163,7 +163,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
       </div>
 
       {/* Recent Activity Section */}
-      <div className="card cardFull">
+      <div className="card cardFull" data-testid="admin_widget_recent_activity_en">
         <div 
           className="flex items-center justify-between cursor-pointer p-4"
           onClick={() => toggleSection('activity')}
@@ -225,7 +225,7 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
       </div>
 
       {/* Quick Actions */}
-      <div className="card cardFull">
+      <div className="card cardFull" data-testid="admin_widget_quick_actions_en">
         <div className="flex items-center justify-between mb-6">
           <div className="font-bold text-lg">Quick Actions</div>
         </div>
@@ -234,24 +234,28 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
           <button 
             className="btn btnPrimary"
             onClick={() => onNavigate('settings')}
+            data-testid="admin_btn_settings_en"
           >
             ⚙️ Settings
           </button>
           <button 
             className="btn"
             onClick={() => onNavigate('analytics')}
+            data-testid="admin_btn_analytics_en"
           >
             📈 Analytics
           </button>
           <button 
             className="btn"
             onClick={() => onNavigate('customers')}
+            data-testid="admin_btn_customers_en"
           >
             👥 Customers
           </button>
           <button 
             className="btn"
             onClick={() => onNavigate('products')}
+            data-testid="admin_btn_products_en"
           >
             📦 Products
           </button>

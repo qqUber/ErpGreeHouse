@@ -31,7 +31,7 @@ interface OperationalWidgetProps {
 
 export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) => {
   return (
-    <div className="card cardFull">
+    <div className="card cardFull" data-testid="admin_widget_operational_en">
       <div className="row mb-4">
         <div style={{ 
           fontWeight: 'var(--font-weight-extrabold)', 

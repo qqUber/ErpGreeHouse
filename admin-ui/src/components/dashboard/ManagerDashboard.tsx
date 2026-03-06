@@ -13,10 +13,10 @@ export function ManagerDashboard({ dash, onNavigate }: ManagerDashboardProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="manager_dashboard_en">
       {/* KPI Cards - Focus on business performance */}
       {dash && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" data-testid="manager_widget_kpi_en">
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <span className="text-muted text-sm">Всего клиентов</span>
@@ -59,12 +59,13 @@ export function ManagerDashboard({ dash, onNavigate }: ManagerDashboardProps) {
       {/* Marketing & Campaign Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Active Campaigns */}
-        <div className="card cardFull">
+        <div className="card cardFull" data-testid="manager_widget_active_campaigns_en">
           <div className="flex items-center justify-between mb-6">
             <div className="font-bold text-lg">Активные кампании</div>
             <button 
               className="btn btnPrimary"
               onClick={() => onNavigate('marketing')}
+              data-testid="manager_btn_manage_campaigns_en"
             >
               Управлять
             </button>
@@ -92,12 +93,13 @@ export function ManagerDashboard({ dash, onNavigate }: ManagerDashboardProps) {
         </div>
 
         {/* Recent Marketing Events */}
-        <div className="card cardFull">
+        <div className="card cardFull" data-testid="manager_widget_recent_events_en">
           <div className="flex items-center justify-between mb-6">
             <div className="font-bold text-lg">Последние события</div>
             <button 
               className="btn"
               onClick={() => onNavigate('marketing')}
+              data-testid="manager_btn_view_all_events_en"
             >
               Смотреть все
             </button>
@@ -128,12 +130,13 @@ export function ManagerDashboard({ dash, onNavigate }: ManagerDashboardProps) {
       {/* Sales Trend & Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Sales Trend Chart Placeholder */}
-        <div className="card cardFull">
+        <div className="card cardFull" data-testid="manager_widget_sales_trend_en">
           <div className="flex items-center justify-between mb-6">
             <div className="font-bold text-lg">Тренд продаж</div>
             <button 
               className="btn"
               onClick={() => onNavigate('analytics')}
+              data-testid="manager_btn_analytics_en"
             >
               Аналитика
             </button>
@@ -145,12 +148,13 @@ export function ManagerDashboard({ dash, onNavigate }: ManagerDashboardProps) {
         </div>
 
         {/* Top Products */}
-        <div className="card cardFull">
+        <div className="card cardFull" data-testid="manager_widget_top_products_en">
           <div className="flex items-center justify-between mb-6">
             <div className="font-bold text-lg">Популярные товары</div>
             <button 
               className="btn"
               onClick={() => onNavigate('products')}
+              data-testid="manager_btn_catalog_en"
             >
               Каталог
             </button>
@@ -179,7 +183,7 @@ export function ManagerDashboard({ dash, onNavigate }: ManagerDashboardProps) {
       </div>
 
       {/* Integrations Status */}
-      <div className="card cardFull">
+      <div className="card cardFull" data-testid="manager_widget_integrations_en">
         <div className="flex items-center justify-between mb-6">
           <div className="font-bold text-lg">Интеграции</div>
           <div className="flex gap-2">

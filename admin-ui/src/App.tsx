@@ -691,6 +691,7 @@ function App() {
               role="tab"
               aria-selected={safeTab === 'dashboard'}
               aria-controls="dashboard-panel"
+              data-testid="admin_nav_dashboard_en"
             >
               {t('menu.dashboard')}
             </button>
@@ -702,6 +703,7 @@ function App() {
               role="tab"
               aria-selected={safeTab === 'customers'}
               aria-controls="customers-panel"
+              data-testid="admin_nav_customers_en"
             >
               {t('menu.clients')}
             </button>
@@ -713,6 +715,7 @@ function App() {
               role="tab"
               aria-selected={safeTab === 'pos'}
               aria-controls="pos-panel"
+              data-testid="admin_nav_pos_en"
             >
               {t('sales.title')}
             </button>
@@ -724,6 +727,7 @@ function App() {
               role="tab"
               aria-selected={safeTab === 'integrations'}
               aria-controls="integrations-panel"
+              data-testid="admin_nav_integrations_en"
             >
               {t('menu.integrations')}
             </button>
@@ -735,6 +739,7 @@ function App() {
               role="tab"
               aria-selected={safeTab === 'products'}
               aria-controls="products-panel"
+              data-testid="admin_nav_products_en"
             >
               {t('menu.products')}
             </button>
@@ -746,6 +751,7 @@ function App() {
               role="tab"
               aria-selected={safeTab === 'settings'}
               aria-controls="settings-panel"
+              data-testid="admin_nav_settings_en"
             >
               {t('menu.settings')}
             </button>
@@ -757,6 +763,7 @@ function App() {
               role="tab"
               aria-selected={safeTab === 'marketing'}
               aria-controls="marketing-panel"
+              data-testid="admin_nav_marketing_en"
             >
               {t('menu.marketing')}
             </button>
@@ -768,6 +775,7 @@ function App() {
               role="tab"
               aria-selected={safeTab === 'compliance'}
               aria-controls="compliance-panel"
+              data-testid="admin_nav_compliance_en"
             >
               Комплаенс
             </button>
@@ -779,6 +787,7 @@ function App() {
               role="tab"
               aria-selected={safeTab === 'analytics'}
               aria-controls="analytics-panel"
+              data-testid="admin_nav_analytics_en"
             >
               Аналитика
             </button>
@@ -810,22 +819,25 @@ function App() {
               <button
                 className={`btn ${loginMode === 'password' ? 'btnPrimary' : ''}`}
                 onClick={() => setLoginMode('password')}
+                data-testid="common_btn_password_login_en"
               >
                 По паролю
               </button>
               <button
                 className={`btn ${loginMode === 'key' ? 'btnPrimary' : ''}`}
                 onClick={() => setLoginMode('key')}
+                data-testid="common_btn_key_login_en"
               >
                 По ключу
               </button>
               <button
                 className={`btn ${loginMode === 'recover' ? 'btnPrimary' : ''}`}
                 onClick={() => setLoginMode('recover')}
+                data-testid="common_btn_recovery_en"
               >
                 Восстановление
               </button>
-              <button className="btn" onClick={() => void loadPublicStatus()}>
+              <button className="btn" onClick={() => void loadPublicStatus()} data-testid="common_btn_api_status_en">
                 Статус API
               </button>
             </div>
@@ -841,6 +853,7 @@ function App() {
                       placeholder="Логин"
                       autoComplete="off"
                       spellCheck={false}
+                      data-testid="common_input_username_en"
                     />
                   </div>
                   <div style={{ flex: 1 }}>
@@ -853,12 +866,14 @@ function App() {
                         type={showPassword ? 'text' : 'password'}
                         autoComplete="off"
                         spellCheck={false}
+                        data-testid="common_input_password_en"
                       />
                       <button
                         className="btn"
                         onClick={() => setShowPassword((v) => !v)}
                         aria-label="Показать пароль"
                         type="button"
+                        data-testid="common_btn_toggle_password_en"
                       >
                         {showPassword ? 'Скрыть' : 'Показать'}
                       </button>
@@ -868,6 +883,7 @@ function App() {
                     className="btn btnPrimary"
                     onClick={() => void doLoginByPassword()}
                     disabled={!username.trim() || !password}
+                    data-testid="common_btn_login_en"
                   >
                     Войти
                   </button>
@@ -890,12 +906,14 @@ function App() {
                     placeholder="x-admin-secret"
                     autoComplete="off"
                     spellCheck={false}
+                    data-testid="common_input_admin_key_en"
                   />
                 </div>
                 <button
                   className="btn btnPrimary"
                   onClick={() => void doLoginByKey()}
                   disabled={!adminKey.trim()}
+                  data-testid="common_btn_key_login_submit_en"
                 >
                   Войти
                 </button>
@@ -913,6 +931,7 @@ function App() {
                       placeholder="Логин"
                       autoComplete="off"
                       spellCheck={false}
+                      data-testid="common_input_recover_username_en"
                     />
                   </div>
                   <div style={{ flex: 1 }}>
@@ -925,12 +944,14 @@ function App() {
                         type={showNewPassword ? 'text' : 'password'}
                         autoComplete="off"
                         spellCheck={false}
+                        data-testid="common_input_recover_new_password_en"
                       />
                       <button
                         className="btn"
                         onClick={() => setShowNewPassword((v) => !v)}
                         aria-label="Показать пароль"
                         type="button"
+                        data-testid="common_btn_toggle_new_password_en"
                       >
                         {showNewPassword ? 'Скрыть' : 'Показать'}
                       </button>
@@ -947,12 +968,14 @@ function App() {
                       type="password"
                       autoComplete="off"
                       spellCheck={false}
+                      data-testid="common_input_recovery_secret_en"
                     />
                   </div>
                   <button
                     className="btn btnPrimary"
                     onClick={() => void doRecoverPassword()}
                     disabled={!username.trim() || newPassword.length < 8 || !recoverySecret}
+                    data-testid="common_btn_reset_password_en"
                   >
                     Сбросить пароль
                   </button>
@@ -1004,12 +1027,14 @@ function App() {
               <div
                 className={`tab ${integrationSubTab === 'settings' ? 'tabActive' : ''}`}
                 onClick={() => setIntegrationSubTab('settings')}
+                data-testid="admin_tab_integration_settings_en"
               >
                 Настройки ботов
               </div>
               <div
                 className={`tab ${integrationSubTab === 'webhooks' ? 'tabActive' : ''}`}
                 onClick={() => setIntegrationSubTab('webhooks')}
+                data-testid="admin_tab_webhooks_en"
               >
                 Подключения
               </div>
@@ -1066,7 +1091,7 @@ function App() {
       ) : null}
       {optimisticReady && safeTab === 'settings' ? (
         <div className="grid">
-          <div className="card cardFull">
+          <div className="card cardFull" data-testid="settings_view_en">
             <div className="row">
               <div>
                 <div style={{ fontWeight: 900, fontSize: 18 }}>Настройки доступа</div>
@@ -1078,7 +1103,7 @@ function App() {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <div className="pill">Сессия активна</div>
-                <button className="btn" onClick={() => void doLogout()} type="button">
+                <button className="btn" onClick={() => void doLogout()} type="button" data-testid="admin_btn_logout_en">
                   Выйти
                 </button>
               </div>
@@ -1096,11 +1121,13 @@ function App() {
                       type={showSettingsOld ? 'text' : 'password'}
                       autoComplete="off"
                       spellCheck={false}
+                      data-testid="admin_input_old_password_en"
                     />
                     <button
                       className="btn"
                       onClick={() => setShowSettingsOld((v) => !v)}
                       type="button"
+                      data-testid="admin_btn_toggle_old_password_en"
                     >
                       {showSettingsOld ? 'Скрыть' : 'Показать'}
                     </button>
@@ -1116,11 +1143,13 @@ function App() {
                       type={showSettingsNew ? 'text' : 'password'}
                       autoComplete="off"
                       spellCheck={false}
+                      data-testid="admin_input_new_password_en"
                     />
                     <button
                       className="btn"
                       onClick={() => setShowSettingsNew((v) => !v)}
                       type="button"
+                      data-testid="admin_btn_toggle_new_password_en"
                     >
                       {showSettingsNew ? 'Скрыть' : 'Показать'}
                     </button>
@@ -1130,6 +1159,7 @@ function App() {
                   className="btn btnPrimary"
                   onClick={() => void doChangePassword()}
                   disabled={!oldPassword || settingsNewPassword.length < 8}
+                  data-testid="admin_btn_change_password_en"
                 >
                   Сменить пароль
                 </button>
@@ -1511,7 +1541,7 @@ function DashboardView({
 
 
       {/* Refresh and Export */}
-      <div className="card cardFull">
+      <div className="card cardFull" data-testid="admin_widget_refresh_export_en">
         <div className="row">
           <div>
             <div style={{ fontWeight: 800 }}>Оперативные данные</div>
@@ -1520,7 +1550,7 @@ function DashboardView({
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" onClick={() => Promise.all([reload(), refresh()])}>
+            <button className="btn" onClick={() => Promise.all([reload(), refresh()])} data-testid="admin_btn_dashboard_refresh_en">
               Обновить
             </button>
             <a
@@ -1528,6 +1558,7 @@ function DashboardView({
               href="/api/v1/exports/transactions.csv"
               target="_blank"
               rel="noreferrer"
+              data-testid="admin_btn_export_csv_en"
             >
               Экспорт CSV
             </a>
@@ -1601,7 +1632,7 @@ function CustomersView(props: {
 
   return (
     <div className="grid">
-      <div className="card cardFull">
+      <div className="card cardFull" data-testid="customers_view_en">
         <div className="row">
           <div style={{ width: '100%', maxWidth: 520 }}>
             <input
@@ -1609,16 +1640,17 @@ function CustomersView(props: {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Поиск по телефону или ФИО"
+              data-testid="admin_input_customer_search_en"
             />
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btnPrimary" onClick={() => void search()}>
+            <button className="btn btnPrimary" onClick={() => void search()} data-testid="admin_btn_customer_search_en">
               Поиск
             </button>
-            <button className="btn" onClick={() => void refresh()}>
+            <button className="btn" onClick={() => void refresh()} data-testid="admin_btn_customer_reset_en">
               Сброс
             </button>
-            <button className="btn btnPrimary" onClick={() => setShowCreateForm(true)}>
+            <button className="btn btnPrimary" onClick={() => setShowCreateForm(true)} data-testid="admin_btn_new_customer_en">
               Новый клиент
             </button>
           </div>
@@ -1626,10 +1658,10 @@ function CustomersView(props: {
       </div>
 
       {showCreateForm ? (
-        <div className="card cardFull">
+        <div className="card cardFull" data-testid="customers_create_form_en">
           <div className="row">
             <div style={{ fontWeight: 900, fontSize: 18 }}>Создание клиента</div>
-            <button className="btn" onClick={() => setShowCreateForm(false)}>
+            <button className="btn" onClick={() => setShowCreateForm(false)} data-testid="admin_btn_close_create_form_en">
               Закрыть
             </button>
           </div>
@@ -1641,6 +1673,7 @@ function CustomersView(props: {
                 value={newCustomer.full_name}
                 onChange={(e) => setNewCustomer((p) => ({ ...p, full_name: e.target.value }))}
                 placeholder="Иванов Иван Иванович"
+                data-testid="admin_input_customer_fullname_en"
               />
             </div>
             <div>
@@ -1650,6 +1683,7 @@ function CustomersView(props: {
                 value={newCustomer.phone}
                 onChange={(e) => setNewCustomer((p) => ({ ...p, phone: e.target.value }))}
                 placeholder="+79991234567"
+                data-testid="admin_input_customer_phone_en"
               />
             </div>
             <div>
@@ -1660,6 +1694,7 @@ function CustomersView(props: {
                 onChange={(e) => setNewCustomer((p) => ({ ...p, notes: e.target.value }))}
                 placeholder="Комментарий к клиенту"
                 rows={3}
+                data-testid="admin_input_customer_notes_en"
               />
             </div>
             {notice && (
@@ -1668,10 +1703,10 @@ function CustomersView(props: {
               </div>
             )}
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btnPrimary" onClick={createCustomer} disabled={busy}>
+              <button className="btn btnPrimary" onClick={createCustomer} disabled={busy} data-testid="admin_btn_create_customer_en">
                 Создать
               </button>
-              <button className="btn" onClick={() => setShowCreateForm(false)}>
+              <button className="btn" onClick={() => setShowCreateForm(false)} data-testid="admin_btn_cancel_create_en">
                 Отмена
               </button>
             </div>
@@ -1737,6 +1772,7 @@ function CustomersView(props: {
                     className="btn"
                     style={{ marginTop: 8, fontSize: 12, padding: '4px 8px' }}
                     onClick={copyQrToken}
+                    data-testid="admin_btn_copy_qr_en"
                   >
                     📋 Копировать QR
                   </button>
@@ -1870,7 +1906,7 @@ function ProductsView(props: {
 
   return (
     <div className="grid">
-      <div className="card cardFull">
+      <div className="card cardFull" data-testid="products_view_en">
         <div className="row">
           <div>
             <div style={{ fontWeight: 900, fontSize: 18 }}>Товары / услуги</div>
@@ -1879,11 +1915,11 @@ function ProductsView(props: {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" onClick={() => void reload()} disabled={busy}>
+            <button className="btn" onClick={() => void reload()} disabled={busy} data-testid="admin_btn_products_reload_en">
               Обновить
             </button>
             {canEdit && (
-              <button className="btn btnPrimary" onClick={() => setShowProductImport?.(true)}>
+              <button className="btn btnPrimary" onClick={() => setShowProductImport?.(true)} data-testid="admin_btn_products_import_en">
                 Импорт
               </button>
             )}
@@ -1892,7 +1928,7 @@ function ProductsView(props: {
       </div>
 
       {canEdit ? (
-        <div className="card cardFull">
+        <div className="card cardFull" data-testid="products_create_form_en">
           <div className="row">
             <div style={{ flex: 1 }}>
               <input
@@ -1900,6 +1936,7 @@ function ProductsView(props: {
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 placeholder="Код (например E2E_COFFEE)"
+                data-testid="admin_input_product_code_en"
               />
             </div>
             <div style={{ flex: 2 }}>
@@ -1908,6 +1945,7 @@ function ProductsView(props: {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Название"
+                data-testid="admin_input_product_name_en"
               />
             </div>
             <div style={{ width: 160 }}>
@@ -1916,6 +1954,7 @@ function ProductsView(props: {
                 value={kind}
                 onChange={(e) => setKind(e.target.value)}
                 placeholder="Тип"
+                data-testid="admin_input_product_kind_en"
               />
             </div>
             <div style={{ width: 140 }}>
@@ -1924,12 +1963,14 @@ function ProductsView(props: {
                 value={price}
                 onChange={(e) => setPrice(Math.max(0, Number(e.target.value || 0)))}
                 placeholder="Цена"
+                data-testid="admin_input_product_price_en"
               />
             </div>
             <button
               className="btn btnPrimary"
               disabled={busy || !code.trim() || !name.trim()}
               onClick={() => void onCreate()}
+              data-testid="admin_btn_create_product_en"
             >
               Создать
             </button>
@@ -2054,25 +2095,28 @@ function PosView(props: {
 
   return (
     <div className="grid">
-      <div className="card cardFull">
+      <div className="card cardFull" data-testid="pos_view_en">
         <div className="row">
           <div style={{ fontWeight: 900, fontSize: 18 }}>Операция продажи</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               className={`btn ${mode === 'phone' ? 'btnPrimary' : ''}`}
               onClick={() => setMode('phone')}
+              data-testid="operator_btn_mode_phone_en"
             >
               Телефон
             </button>
             <button
               className={`btn ${mode === 'name' ? 'btnPrimary' : ''}`}
               onClick={() => setMode('name')}
+              data-testid="operator_btn_mode_name_en"
             >
               ФИО
             </button>
             <button
               className={`btn ${mode === 'qr' ? 'btnPrimary' : ''}`}
               onClick={() => setMode('qr')}
+              data-testid="operator_btn_mode_qr_en"
             >
               QR
             </button>
@@ -2087,9 +2131,10 @@ function PosView(props: {
               placeholder={
                 mode === 'phone' ? '+79991234567' : mode === 'qr' ? 'QR токен' : 'Иванов Иван'
               }
+              data-testid="operator_input_identify_en"
             />
           </div>
-          <button className="btn btnPrimary" disabled={busy} onClick={() => void identify()}>
+          <button className="btn btnPrimary" disabled={busy} onClick={() => void identify()} data-testid="operator_btn_identify_en">
             Идентифицировать
           </button>
           <div className="pill">Клиент: {found || '—'}</div>
@@ -2097,11 +2142,11 @@ function PosView(props: {
         {info ? <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.65)' }}>{info}</div> : null}
       </div>
 
-      <div className="card cardWide">
+      <div className="card cardWide" data-testid="pos_catalog_en">
         <div className="row" style={{ marginBottom: 10 }}>
           <div style={{ fontWeight: 800 }}>Каталог</div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" disabled={busy} onClick={() => void reloadProducts()}>
+            <button className="btn" disabled={busy} onClick={() => void reloadProducts()} data-testid="operator_btn_reload_products_en">
               Обновить
             </button>
           </div>
@@ -2112,6 +2157,7 @@ function PosView(props: {
             value={productPick}
             onChange={(e) => setProductPick((e.target.value ? Number(e.target.value) : '') as any)}
             style={{ maxWidth: 520 }}
+            data-testid="operator_select_product_en"
           >
             <option value="">Выберите товар/услугу</option>
             {products
@@ -2137,13 +2183,14 @@ function PosView(props: {
               });
               setProductPick('');
             }}
+            data-testid="operator_btn_add_to_cart_en"
           >
             Добавить в чек
           </button>
         </div>
       </div>
 
-      <div className="card cardWide">
+      <div className="card cardWide" data-testid="pos_cart_en">
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Состав</div>
         <table className="table" data-testid="cart-table">
           <thead>
@@ -2177,7 +2224,7 @@ function PosView(props: {
         </table>
       </div>
 
-      <div className="card cardWide">
+      <div className="card cardWide" data-testid="pos_loyalty_en">
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Лояльность</div>
         <div className="row" style={{ marginBottom: 10 }}>
           <div className="pill">Сумма {money(total)} ₽</div>
@@ -2187,12 +2234,14 @@ function PosView(props: {
           className="input"
           value={bonus}
           onChange={(e) => setBonus(Math.max(0, Number(e.target.value || 0)))}
+          data-testid="operator_input_bonus_en"
         />
         <button
           className="btn btnPrimary"
           style={{ marginTop: 12, width: '100%' }}
           disabled={!found || busy}
           onClick={() => void sale()}
+          data-testid="operator_btn_complete_sale_en"
         >
           Провести
         </button>
