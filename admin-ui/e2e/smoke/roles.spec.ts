@@ -1,4 +1,4 @@
-import { attachConsole, expect, login, retryBackoff, test } from '../_shared';
+import { attachConsole, expect, login, retryBackoff, test, TestIds } from '../_shared';
 
 const consoleFlush = new Map<string, () => Promise<void>>();
 
@@ -20,22 +20,23 @@ test('owner sees all tabs', async ({ page }) => {
   await login(page, 'admin');
   await page.waitForTimeout(2000);
   // Owner should see all tabs: Dashboard, Clients, Products, Sales, Marketing, Integrations, Settings
-  await expect(page.getByText('Dashboard', { exact: true })).toBeVisible();
-  await expect(page.getByText('Clients', { exact: true })).toBeVisible();
-  await expect(page.getByText('Products', { exact: true })).toBeVisible();
-  await expect(page.getByText('Sales', { exact: true })).toBeVisible();
-  await expect(page.getByText('Marketing', { exact: true })).toBeVisible();
-  await expect(page.getByText('Integrations', { exact: true })).toBeVisible();
+  // Using data-testid for stable, language-independent selectors
+  await expect(page.getByTestId(TestIds.nav.dashboard)).toBeVisible();
+  await expect(page.getByTestId(TestIds.nav.customers)).toBeVisible();
+  await expect(page.getByTestId(TestIds.nav.products)).toBeVisible();
+  await expect(page.getByTestId(TestIds.nav.pos)).toBeVisible();
+  await expect(page.getByTestId(TestIds.nav.marketing)).toBeVisible();
+  await expect(page.getByTestId(TestIds.nav.integrations)).toBeVisible();
   // Use exact match for Settings tab (not "Settings access")
-  await expect(page.getByText('Settings', { exact: true })).toBeVisible();
+  await expect(page.getByTestId(TestIds.nav.settings)).toBeVisible();
 });
 
 test('operator cannot see integrations', async ({ page }) => {
   await login(page, 'operator');
   await page.waitForTimeout(2000);
-  // Operator sees Sales tab but not Integrations
-  await expect(page.getByText('Sales', { exact: true })).toBeVisible();
-  await expect(page.getByText('Integrations', { exact: true })).toHaveCount(0);
+  // Operator sees Sales tab but not Integrations (using data-testid)
+  await expect(page.getByTestId(TestIds.nav.pos)).toBeVisible();
+  await expect(page.getByTestId(TestIds.nav.integrations)).toHaveCount(0);
 
   const resp = await page.request.get('/api/v1/integrations');
   // API returns 401 when user is authenticated but lacks permission
@@ -45,9 +46,9 @@ test('operator cannot see integrations', async ({ page }) => {
 test('manager cannot see pos operations', async ({ page }) => {
   await login(page, 'manager');
   await page.waitForTimeout(2000);
-  // Manager sees Integrations but not Sales (POS operations)
-  await expect(page.getByText('Integrations', { exact: true })).toBeVisible();
-  await expect(page.getByText('Sales', { exact: true })).toHaveCount(0);
+  // Manager sees Integrations but not Sales (POS operations) - using data-testid
+  await expect(page.getByTestId(TestIds.nav.integrations)).toBeVisible();
+  await expect(page.getByTestId(TestIds.nav.pos)).toHaveCount(0);
 
   const resp = await page.request.post('/api/v1/pos/sale', {
     data: {

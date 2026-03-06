@@ -1,4 +1,4 @@
-import { attachConsole, expect, login, retryBackoff, test } from '../_shared';
+import { attachConsole, expect, login, retryBackoff, test, TestIds } from '../_shared';
 
 const consoleFlush = new Map<string, () => Promise<void>>();
 
@@ -17,9 +17,8 @@ test('analytics recent sales links to customer profile', async ({ page }) => {
   // Login as operator
   await login(page, 'operator');
 
-  // Wait for dashboard to load - operator sees recent operations
-  // The operator dashboard shows "Последние операции" (Recent Operations)
-  await expect(page.getByText('Последние операции')).toBeVisible({ timeout: 10000 });
+  // Wait for dashboard to load - using data-testid for operator dashboard
+  await expect(page.getByTestId(TestIds.operatorDashboard.recentTransactions)).toBeVisible({ timeout: 10000 });
   await page.waitForTimeout(2000);
 
   // Find the activity list in the Recent Operations widget
@@ -56,19 +55,15 @@ test('analytics dashboard shows summary metrics', async ({ page }) => {
   // Login as operator
   await login(page, 'operator');
 
-  // Wait for dashboard to load - operator sees their KPIs
-  await expect(page.getByText('Продаж за день')).toBeVisible({ timeout: 10000 });
+  // Wait for dashboard to load - operator sees their KPIs using data-testid
+  await expect(page.getByTestId(TestIds.operatorDashboard.shiftStats)).toBeVisible({ timeout: 10000 });
   await page.waitForTimeout(2000);
 
   // Verify key dashboard elements are present for operator
-  // Check for the 4 KPI cards: Sales, Revenue, Points Earned, Points Redeemed
-  await expect(page.getByText('Продаж за день')).toBeVisible();
-  await expect(page.getByText('Выручка')).toBeVisible();
-  await expect(page.getByText('Начислено баллов')).toBeVisible();
-  await expect(page.getByText('Списано баллов')).toBeVisible();
-
-  // Verify Recent Operations section exists
-  await expect(page.getByText('Последние операции')).toBeVisible();
+  // Using operator dashboard widgets with data-testid
+  await expect(page.getByTestId(TestIds.operatorDashboard.quickActions)).toBeVisible();
+  await expect(page.getByTestId(TestIds.operatorDashboard.shiftStats)).toBeVisible();
+  await expect(page.getByTestId(TestIds.operatorDashboard.recentTransactions)).toBeVisible();
 
   console.log('[Test] Operator dashboard metrics loaded successfully');
 });
