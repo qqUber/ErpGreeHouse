@@ -35,7 +35,7 @@ export default defineConfig({
     { name: 'functional', testDir: './e2e/functional', use: { viewport: { width: 1280, height: 720 } } },
     { name: 'roles', testDir: './e2e/roles', use: { viewport: { width: 1280, height: 720 } } },
     { name: 'auth', testDir: './e2e/auth', use: { viewport: { width: 1280, height: 720 } } },
-    { name: 'accessibility', testDir: './e2e/accessibility', use: { viewport: { width: 1280, height: 720 }, baseURL: 'http://localhost:5174' } },
+    { name: 'accessibility', testDir: './e2e/accessibility', use: { viewport: { width: 1280, height: 720 } } },
     
     // Full HD (1920x1080) viewport for high-resolution testing
     { name: 'fullhd', testDir: './e2e/smoke', use: { viewport: { width: 1920, height: 1080 } } },
