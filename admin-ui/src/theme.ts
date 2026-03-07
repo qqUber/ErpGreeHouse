@@ -1,5 +1,6 @@
 export interface Theme {
   colors: {
+    // Primary palette
     bg: string;
     panel: string;
     border: string;
@@ -10,12 +11,39 @@ export interface Theme {
     good: string;
     warn: string;
     bad: string;
-    // Additional color variants for consistency
+    // Light variants for backgrounds
     primaryLight: string;
     goodLight: string;
     warnLight: string;
     badLight: string;
     brandLight: string;
+    // Dark variants for hover/states
+    primaryDark: string;
+    goodDark: string;
+    warnDark: string;
+    badDark: string;
+    brandDark: string;
+    // Neutral colors
+    neutral50: string;
+    neutral100: string;
+    neutral200: string;
+    neutral300: string;
+    neutral400: string;
+    neutral500: string;
+    neutral600: string;
+    neutral700: string;
+    neutral800: string;
+    neutral900: string;
+    // Semantic colors
+    success: string;
+    warning: string;
+    error: string;
+    info: string;
+    // Semantic light variants
+    successLight: string;
+    warningLight: string;
+    errorLight: string;
+    infoLight: string;
   };
   spacing: {
     xs: string;
@@ -49,6 +77,8 @@ export interface Theme {
     sm: string;
     md: string;
     lg: string;
+    xl: string;
+    '2xl': string;
   };
   typography: {
     fontSize: {
@@ -82,27 +112,66 @@ export interface Theme {
       normal: string;
       relaxed: string;
     };
+    letterSpacing: {
+      tight: string;
+      normal: string;
+      wide: string;
+    };
+  };
+  // Micro-interaction durations
+  transitions: {
+    fast: string;
+    normal: string;
+    slow: string;
   };
 }
 
 export const theme: Theme = {
   colors: {
-    bg: '#f6f7fb',
+    // Primary palette
+    bg: '#f8fafc',
     panel: '#ffffff',
-    border: '#e6e8ef',
-    text: '#111827',
-    muted: '#585e6b', /* Improved contrast */
-    brand: '#2d3748', /* Darker brand color for better contrast */
-    primary: '#2563eb', /* Darker blue for better contrast */
-    good: '#059669', /* Darker green for better contrast */
-    warn: '#d97706', /* Darker orange for better contrast */
-    bad: '#dc2626', /* Darker red for better contrast */
+    border: '#e2e8f0',
+    text: '#1e293b',
+    muted: '#64748b',
+    brand: '#334155',
+    primary: '#2563eb',
+    good: '#059669',
+    warn: '#d97706',
+    bad: '#dc2626',
     // Light variants for backgrounds
-    primaryLight: 'rgba(59, 130, 246, 0.06)',
-    goodLight: 'rgba(4, 120, 87, 0.06)',
-    warnLight: 'rgba(180, 83, 9, 0.06)',
-    badLight: 'rgba(185, 28, 28, 0.06)',
-    brandLight: 'rgba(55, 65, 81, 0.06)',
+    primaryLight: 'rgba(37, 99, 235, 0.08)',
+    goodLight: 'rgba(5, 150, 105, 0.08)',
+    warnLight: 'rgba(217, 119, 6, 0.08)',
+    badLight: 'rgba(220, 38, 38, 0.08)',
+    brandLight: 'rgba(51, 65, 85, 0.08)',
+    // Dark variants for hover/states
+    primaryDark: '#1d4ed8',
+    goodDark: '#047857',
+    warnDark: '#b45309',
+    badDark: '#b91c1c',
+    brandDark: '#1e293b',
+    // Neutral colors
+    neutral50: '#f8fafc',
+    neutral100: '#f1f5f9',
+    neutral200: '#e2e8f0',
+    neutral300: '#cbd5e1',
+    neutral400: '#94a3b8',
+    neutral500: '#64748b',
+    neutral600: '#475569',
+    neutral700: '#334155',
+    neutral800: '#1e293b',
+    neutral900: '#0f172a',
+    // Semantic colors
+    success: '#10b981',
+    warning: '#f59e0b',
+    error: '#ef4444',
+    info: '#3b82f6',
+    // Semantic light variants
+    successLight: 'rgba(16, 185, 129, 0.1)',
+    warningLight: 'rgba(245, 158, 11, 0.1)',
+    errorLight: 'rgba(239, 68, 68, 0.1)',
+    infoLight: 'rgba(59, 130, 246, 0.1)',
   },
   spacing: {
     xs: '0.25rem',
@@ -136,6 +205,8 @@ export const theme: Theme = {
     sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
     md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
     lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+    xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
   },
   typography: {
     fontSize: {
@@ -170,6 +241,16 @@ export const theme: Theme = {
       normal: '1.5',
       relaxed: '1.75',
     },
+    letterSpacing: {
+      tight: '-0.025em',
+      normal: '0',
+      wide: '0.025em',
+    },
+  },
+  transitions: {
+    fast: '150ms',
+    normal: '200ms',
+    slow: '300ms',
   },
 };
 
