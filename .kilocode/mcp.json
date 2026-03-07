@@ -17,9 +17,7 @@
     },
     "fetch": {
       "command": "uvx",
-      "args": [
-        "mcp-server-fetch"
-      ]
+      "args": ["mcp-server-fetch"]
     },
     "everything": {
       "command": "npx",
@@ -30,10 +28,23 @@
     },
 	"playwright": {
       "command": "npx",
-      "args": [
-        "@playwright/mcp@latest"
-      ]
+      "args": ["@playwright/mcp@latest"]
 	},
+	"puppeteer": {
+      "command": "npx",
+      "args": [
+		"-y",
+		"@modelcontextprotocol/server-puppeteer"
+	  ]
+    },
+	"duckduckgo": {
+      "command": "uvx",
+      "args": ["ddg-mcp-server"]
+    },
+	"reactbits": {
+      "command": "npx",
+      "args": ["reactbits-dev-mcp-server"]
+    },
     "context7": {
       "command": "npx",
       "args": [
