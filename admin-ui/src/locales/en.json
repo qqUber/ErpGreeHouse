@@ -381,6 +381,9 @@
   },
   "dashboardOperator": {
     "newSale": "New Sale",
+    "newSaleTooltip": "Start a new sale transaction",
+    "identifyTooltip": "Find customer by phone or QR code",
+    "catalogTooltip": "Browse and manage product catalog",
     "scanQRorPhone": "Scan QR or enter phone",
     "identifyCustomer": "Identify Customer",
     "searchByPhoneQR": "Search by phone or QR",

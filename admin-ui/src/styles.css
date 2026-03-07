@@ -1636,3 +1636,214 @@ p {
 .table tbody tr:hover {
   background-color: rgba(0, 0, 0, 0.02);
 }
+
+/* ============================================================================
+ * Animation Classes - Fade in, slide in
+ * ============================================================================ */
+
+/* Fade in animation for cards */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Stagger children animations */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 350ms; }
+
+/* Slide in from right */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+/* Pulse animation for loading states */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Spin animation for spinners */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ============================================================================
+ * Tooltip - Show on hover with title attribute
+ * ============================================================================ */
+
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 12px;
+  white-space: nowrap;
+  border-radius: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ============================================================================
+ * Sticky Table Headers
+ * ============================================================================ */
+
+.table-container.sticky-header {
+  position: relative;
+}
+
+.table-container.sticky-header thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel, #fff);
+  z-index: 10;
+  box-shadow: 0 1px 0 var(--border, #e6e8ef);
+}
+
+/* ============================================================================
+ * Sortable Table Headers
+ * ============================================================================ */
+
+.table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.table th.sortable:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.table th.sortable .sort-icon {
+  margin-left: 4px;
+  opacity: 0.5;
+}
+
+.table th.sortable.asc .sort-icon,
+.table th.sortable.desc .sort-icon {
+  opacity: 1;
+}
+
+/* ============================================================================
+ * Filter Input Styles
+ * ============================================================================ */
+
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 1px solid var(--border, #e6e8ef);
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: var(--primary, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid var(--border, #e6e8ef);
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  min-width: 150px;
+}
+
+/* ============================================================================
+ * Progress disclosure - Show more/less
+ * ============================================================================ */
+
+.progressive-disclosure {
+  margin-top: 12px;
+}
+
+.progressive-disclosure summary {
+  cursor: pointer;
+  color: var(--primary, #2563eb);
+  font-size: 14px;
+  padding: 8px 0;
+}
+
+.progressive-disclosure summary:hover {
+  text-decoration: underline;
+}
+
+.progressive-disclosure[open] summary {
+  margin-bottom: 12px;
+}

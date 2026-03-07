@@ -24,9 +24,9 @@ export function AdminDashboard({ dash, onNavigate }: AdminDashboardProps) {
   };
 
   return (
-    <div className="space-y-6" data-testid="admin_dashboard_en">
+    <div className="space-y-6 stagger-children" data-testid="admin_dashboard_en">
       {/* System Status Overview */}
-      <div className="card cardFull" data-testid="admin_widget_system_overview_en">
+      <div className="card cardFull animate-fade-in" data-testid="admin_widget_system_overview_en">
         <div className="flex items-center justify-between mb-6">
           <div className="font-bold text-lg">{t('dashboardAdmin.systemOverview')}</div>
           <div className="flex gap-2">

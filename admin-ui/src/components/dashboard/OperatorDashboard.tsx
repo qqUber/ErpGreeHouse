@@ -15,13 +15,14 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
   };
 
   return (
-    <div className="space-y-6" data-testid="operator_dashboard_en">
+    <div className="space-y-6 stagger-children" data-testid="operator_dashboard_en">
       {/* Quick Actions - Operator's most frequent tasks */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-6" data-testid="operator_widget_quick_actions_en">
         <button
-          className="card cardFull p-6 flex flex-col items-center justify-center hover:shadow-md transition-shadow"
+          className="card cardFull p-6 flex flex-col items-center justify-center hover:shadow-md transition-shadow tooltip"
           onClick={() => onNavigate('pos')}
           data-testid="operator_btn_new_sale_en"
+          data-tooltip={t('dashboardOperator.newSaleTooltip')}
         >
           <div className="text-4xl mb-4">💰</div>
           <div className="font-bold text-lg">{t('dashboardOperator.newSale')}</div>
@@ -29,9 +30,10 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
         </button>
         
         <button
-          className="card cardFull p-6 flex flex-col items-center justify-center hover:shadow-md transition-shadow"
+          className="card cardFull p-6 flex flex-col items-center justify-center hover:shadow-md transition-shadow tooltip"
           onClick={() => onNavigate('customers')}
           data-testid="operator_btn_identify_customer_en"
+          data-tooltip={t('dashboardOperator.identifyTooltip')}
         >
           <div className="text-4xl mb-4">🔍</div>
           <div className="font-bold text-lg">{t('dashboardOperator.identifyCustomer')}</div>
@@ -39,9 +41,10 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
         </button>
         
         <button
-          className="card cardFull p-6 flex flex-col items-center justify-center hover:shadow-md transition-shadow"
+          className="card cardFull p-6 flex flex-col items-center justify-center hover:shadow-md transition-shadow tooltip"
           onClick={() => onNavigate('products')}
           data-testid="operator_btn_catalog_en"
+          data-tooltip={t('dashboardOperator.catalogTooltip')}
         >
           <div className="text-4xl mb-4">📦</div>
           <div className="font-bold text-lg">{t('dashboardOperator.productCatalog')}</div>

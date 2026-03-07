@@ -381,6 +381,9 @@
   },
   "dashboardOperator": {
     "newSale": "Новая продажа",
+    "newSaleTooltip": "Начать новую продажу",
+    "identifyTooltip": "Найти клиента по телефону или QR-коду",
+    "catalogTooltip": "Просмотр и управление каталогом товаров",
     "scanQRorPhone": "Сканировать QR или вводить телефон",
     "identifyCustomer": "Идентифицировать клиента",
     "searchByPhoneQR": "Поиск по телефону или QR",

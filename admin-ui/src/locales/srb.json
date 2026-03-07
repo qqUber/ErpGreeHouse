@@ -381,6 +381,9 @@
   },
   "dashboardOperator": {
     "newSale": "Нова продаја",
+    "newSaleTooltip": "Започни нову продају",
+    "identifyTooltip": "Пронађи купца по телефону или QR коду",
+    "catalogTooltip": "Преглед и управљање каталогом производа",
     "scanQRorPhone": "Скенирај QR или унеси телефон",
     "identifyCustomer": "Идентификуј клијента",
     "searchByPhoneQR": "Претрага по телефону или QR",
