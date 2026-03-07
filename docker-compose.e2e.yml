@@ -31,8 +31,10 @@ services:
       - REDIS_URL=redis://redis-e2e:6379/0
       - DATABASE_URL=sqlite:///app/data/e2e.db
       - ENVIRONMENT=development
+      - ADMIN_UI_DIST=/app/admin-ui/dist
     volumes:
       - ./middleware/app:/app/app
+      - ./admin-ui/dist:/app/admin-ui/dist:ro
       - e2e_data:/app/data
     depends_on:
       redis-e2e:

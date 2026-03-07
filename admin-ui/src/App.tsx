@@ -818,7 +818,8 @@ function App() {
           </div>
         ) : null}
 
-      {!authReady ? (
+      {/* Show login form when not authenticated OR when auth is still loading */}
+      {!authReady || (!user && authReady) ? (
         <div className="grid">
           <div className="card cardFull">
             <div className="row">
