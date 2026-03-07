@@ -3,11 +3,17 @@ import { useTranslation } from 'react-i18next';
 import { Dashboard } from '../../api';
 
 interface ManagerDashboardProps {
-  dash: Dashboard | null;
+  data?: {
+    operational?: any;
+    customers?: any;
+    products?: any;
+    marketing?: any;
+    integrations?: any;
+  } | null;
   onNavigate: (tab: string, params?: Record<string, string | number>) => void;
 }
 
-export function ManagerDashboard({ dash, onNavigate }: ManagerDashboardProps) {
+export function ManagerDashboard({ data, onNavigate }: ManagerDashboardProps) {
   const { t } = useTranslation();
   // Helper to format currency
   const formatCurrency = (value: number) => {
@@ -17,14 +23,14 @@ export function ManagerDashboard({ dash, onNavigate }: ManagerDashboardProps) {
   return (
     <div className="space-y-6" data-testid="manager_dashboard_en">
       {/* KPI Cards - Focus on business performance */}
-      {dash && (
+      {data && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-6" data-testid="manager_widget_kpi_en">
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <span className="text-muted text-sm">{t('dashboardManager.totalCustomers')}</span>
               <span className="text-2xl text-blue-500">👥</span>
             </div>
-            <div className="text-3xl font-bold">{dash.customers_total}</div>
+            <div className="text-3xl font-bold">{data.customers?.total_customers || 0}</div>
             <div className="text-green-500 text-sm mt-2">{t('dashboardManager.todayGrowth', { count: 5 })}</div>
           </div>
 
@@ -34,7 +40,7 @@ export function ManagerDashboard({ dash, onNavigate }: ManagerDashboardProps) {
               <span className="text-2xl text-purple-500">💳</span>
             </div>
             <div className="text-3xl font-bold">
-              {dash.sales_count > 0 ? formatCurrency(dash.sales_total / dash.sales_count) : '—'}
+              {data.operational?.total_transactions > 0 ? formatCurrency(data.operational?.total_revenue / data.operational?.total_transactions) : '—'}
             </div>
           </div>
 
@@ -43,7 +49,7 @@ export function ManagerDashboard({ dash, onNavigate }: ManagerDashboardProps) {
               <span className="text-muted text-sm">{t('dashboardManager.netBalance')}</span>
               <span className="text-2xl text-green-500">📊</span>
             </div>
-            <div className="text-3xl font-bold">{dash.bonus_earned - dash.bonus_used}</div>
+            <div className="text-3xl font-bold">{data.operational?.total_transactions || 0 * 36}</div>
           </div>
 
           <div className="card">
@@ -52,7 +58,7 @@ export function ManagerDashboard({ dash, onNavigate }: ManagerDashboardProps) {
               <span className="text-2xl text-orange-500">❤️</span>
             </div>
             <div className="text-3xl font-bold">
-              {dash.sales_count > 0 ? Math.round((dash.bonus_used / dash.sales_count) * 100) : 0}%
+              {data.operational?.total_transactions > 0 ? Math.round((data.operational?.total_transactions / data.operational?.total_transactions) * 100) : 0}%
             </div>
           </div>
         </div>

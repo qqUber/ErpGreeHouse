@@ -603,7 +603,7 @@ def seed_test_data(
                         bonus_earned,
                         json.dumps(items),
                         hour,
-                        f"-{random.randint(1, 90)} days",
+                        f"-{random.randint(0, 2)} days",  # Last 2 days (including today)
                     ),
                 )
                 stats["transactions"] += 1

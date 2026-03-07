@@ -5,9 +5,16 @@ import { Dashboard } from '../../api';
 import { OperatorDashboard } from './OperatorDashboard';
 import { ManagerDashboard } from './ManagerDashboard';
 import { AdminDashboard } from './AdminDashboard';
+import type { OperationalData, CustomerData, ProductData, MarketingData } from '../../hooks/useDashboard';
 
 interface DashboardWrapperProps {
-  dash: Dashboard | null;
+  data?: {
+    operational?: OperationalData | null;
+    customers?: CustomerData | null;
+    products?: ProductData | null;
+    marketing?: MarketingData | null;
+    integrations?: any;
+  } | null;
   onNavigate: (tab: string, params?: Record<string, string | number>) => void;
 }
 
@@ -22,7 +29,7 @@ interface DashboardWrapperProps {
  * - marketer (MANAGER) - Business analytics and marketing features
  * - operator (OPERATOR) - Basic POS and customer lookup
  */
-export function DashboardWrapper({ dash, onNavigate }: DashboardWrapperProps) {
+export function DashboardWrapper({ data, onNavigate }: DashboardWrapperProps) {
   const { user } = useAuth();
   
   // Show loading state while user data is being fetched
@@ -41,7 +48,7 @@ export function DashboardWrapper({ dash, onNavigate }: DashboardWrapperProps) {
     case 'operator':
       return (
         <OperatorDashboard 
-          dash={dash} 
+          data={data} 
           onNavigate={onNavigate} 
         />
       );
@@ -49,7 +56,7 @@ export function DashboardWrapper({ dash, onNavigate }: DashboardWrapperProps) {
     case 'marketer':
       return (
         <ManagerDashboard 
-          dash={dash} 
+          data={data} 
           onNavigate={onNavigate} 
         />
       );
@@ -58,7 +65,7 @@ export function DashboardWrapper({ dash, onNavigate }: DashboardWrapperProps) {
     case 'admin':
       return (
         <AdminDashboard 
-          dash={dash} 
+          data={data} 
           onNavigate={onNavigate} 
         />
       );
@@ -67,7 +74,7 @@ export function DashboardWrapper({ dash, onNavigate }: DashboardWrapperProps) {
       // Fallback for unknown roles - render operator dashboard by default
       return (
         <OperatorDashboard 
-          dash={dash} 
+          data={data} 
           onNavigate={onNavigate} 
         />
       );

@@ -1420,7 +1420,7 @@ function DashboardView({
   // Use DashboardWrapper for role-based rendering
   // The wrapper handles role detection and renders the appropriate dashboard
   return (
-    <DashboardWrapper dash={dash} onNavigate={onNavigate} />
+    <DashboardWrapper data={data} onNavigate={onNavigate} />
   );
 }
 

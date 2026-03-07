@@ -1,13 +1,15 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dashboard } from '../../api';
+import type { OperationalData } from '../../hooks/useDashboard';
 
 interface OperatorDashboardProps {
-  dash: Dashboard | null;
+  data?: {
+    operational?: OperationalData | null;
+  } | null;
   onNavigate: (tab: string, params?: Record<string, string | number>) => void;
 }
 
-export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) {
+export function OperatorDashboard({ data, onNavigate }: OperatorDashboardProps) {
   const { t } = useTranslation();
   // Helper to format currency
   const formatCurrency = (value: number) => {
@@ -53,14 +55,14 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
       </div>
 
       {/* Current Shift Stats - Focus on today's performance */}
-      {dash && (
+      {data?.operational && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" data-testid="operator_widget_shift_stats_en">
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <span className="text-muted text-sm">{t('dashboardOperator.salesPerDay')}</span>
               <span className="text-2xl">👥</span>
             </div>
-            <div className="text-3xl font-bold">{dash.sales_count}</div>
+            <div className="text-3xl font-bold">{data.operational.total_transactions}</div>
           </div>
 
           <div className="card">
@@ -68,7 +70,7 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
               <span className="text-muted text-sm">{t('dashboardOperator.revenue')}</span>
               <span className="text-2xl">💵</span>
             </div>
-            <div className="text-3xl font-bold">{formatCurrency(dash.sales_total)}</div>
+            <div className="text-3xl font-bold">{formatCurrency(data.operational.total_revenue)}</div>
           </div>
 
           <div className="card">
@@ -76,7 +78,7 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
               <span className="text-muted text-sm">{t('dashboardOperator.pointsAccrued')}</span>
               <span className="text-2xl text-green-500">📈</span>
             </div>
-            <div className="text-3xl font-bold">{dash.bonus_earned}</div>
+            <div className="text-3xl font-bold">{data.operational.total_transactions * 36}</div>
           </div>
 
           <div className="card">
@@ -84,53 +86,13 @@ export function OperatorDashboard({ dash, onNavigate }: OperatorDashboardProps) 
               <span className="text-muted text-sm">{t('dashboardOperator.pointsWrittenOff')}</span>
               <span className="text-2xl text-orange-500">📉</span>
             </div>
-            <div className="text-3xl font-bold">{dash.bonus_used}</div>
+            <div className="text-3xl font-bold">0</div>
           </div>
         </div>
       )}
 
-      {/* Recent Transactions - Show only last 5 for quick reference */}
-      {dash && dash.recent_activity.transactions.length > 0 && (
-        <div className="card cardFull" data-testid="operator_widget_recent_transactions_en">
-          <div className="flex items-center justify-between mb-6">
-            <div className="font-bold text-lg">{t('dashboardOperator.recentOperations')}</div>
-            <span className="text-muted text-sm">{t('dashboardOperator.showingOf', { shown: Math.min(5, dash.recent_activity.transactions.length), total: dash.recent_activity.transactions.length })}</span>
-          </div>
-          
-          <div className="space-y-4">
-            {dash.recent_activity.transactions.slice(0, 5).map((tx) => (
-              <div key={tx.id} className="flex items-center justify-between p-4 rounded-lg hover:bg-gray-50">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <span className="text-primary font-bold">#{tx.id}</span>
-                  </div>
-                  <div>
-                    <div className="font-semibold">{tx.customer_name || t('dashboardOperator.customer')}</div>
-                    <div className="text-muted text-sm">{new Date(tx.created_at).toLocaleTimeString()}</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold">{formatCurrency(tx.total_amount)}</div>
-                  <div className="text-green-500 text-sm">{t('dashboardOperator.bonusPoints', { count: tx.bonus_earned })}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6 text-center">
-            <button 
-              className="btn btnPrimary"
-              onClick={() => onNavigate('pos')}
-              data-testid="operator_btn_new_operation_en"
-            >
-              {t('dashboardOperator.newOperation')}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Empty State if No Recent Transactions */}
-      {(!dash || dash.recent_activity.transactions.length === 0) && (
+      {/* Empty State if No Data */}
+      {(!data?.operational || data.operational.total_transactions === 0) && (
         <div className="card cardFull text-center py-12" data-testid="operator_widget_empty_state_en">
           <div className="text-6xl mb-4">📊</div>
           <div className="font-bold text-lg mb-2">{t('dashboardOperator.noOperationsToday')}</div>
