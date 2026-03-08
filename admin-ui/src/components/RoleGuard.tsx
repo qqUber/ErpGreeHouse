@@ -25,31 +25,26 @@ interface RoleGuardProps {
 
 /**
  * Guard component that conditionally renders content based on user role.
- * 
+ *
  * @example
  * // Single role
  * <RoleGuard role={Role.ADMIN}>
  *   <AdminPanel />
  * </RoleGuard>
- * 
+ *
  * @example
  * // Multiple roles (user needs ANY of them)
  * <RoleGuard role={[Role.ADMIN, Role.MANAGER]}>
  *   <AnalyticsView />
  * </RoleGuard>
- * 
+ *
  * @example
  * // With fallback
  * <RoleGuard role={Role.ADMIN} fallback={<AccessDenied />}>
  *   <Settings />
  * </RoleGuard>
  */
-export function RoleGuard({
-  role,
-  children,
-  fallback = null,
-  requireAll = false,
-}: RoleGuardProps) {
+export function RoleGuard({ role, children, fallback = null, requireAll = false }: RoleGuardProps) {
   const { user } = useAuth();
 
   if (!user) {

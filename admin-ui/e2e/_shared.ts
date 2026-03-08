@@ -3,7 +3,18 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 // Import i18n utilities
-import { setTestLanguage, Menu, Common, Dashboard, Sales, Clients, Products, Marketing, Auth, t } from './i18n-test';
+import {
+  setTestLanguage,
+  Menu,
+  Common,
+  Dashboard,
+  Sales,
+  Clients,
+  Products,
+  Marketing,
+  Auth,
+  t,
+} from './i18n-test';
 
 export { t, Menu, Common, Dashboard, Sales, Clients, Products, Marketing, Auth };
 
@@ -154,7 +165,16 @@ export function getCredentials(role: TestRole) {
 // ============================================================================
 
 // Type for navigation items
-type NavTab = 'dashboard' | 'customers' | 'pos' | 'products' | 'marketing' | 'integrations' | 'settings' | 'compliance' | 'analytics';
+type NavTab =
+  | 'dashboard'
+  | 'customers'
+  | 'pos'
+  | 'products'
+  | 'marketing'
+  | 'integrations'
+  | 'settings'
+  | 'compliance'
+  | 'analytics';
 
 // Role name type
 type RoleName = 'owner' | 'marketer' | 'operator';
@@ -167,8 +187,28 @@ export const RolePermissions = {
    * Owner/Admin - has access to everything
    */
   owner: {
-    tabs: ['dashboard', 'customers', 'pos', 'products', 'marketing', 'integrations', 'settings', 'compliance', 'analytics'],
-    apiAccess: ['dashboard', 'customers', 'products', 'pos', 'integrations', 'marketing', 'settings', 'compliance', 'analytics'],
+    tabs: [
+      'dashboard',
+      'customers',
+      'pos',
+      'products',
+      'marketing',
+      'integrations',
+      'settings',
+      'compliance',
+      'analytics',
+    ],
+    apiAccess: [
+      'dashboard',
+      'customers',
+      'products',
+      'pos',
+      'integrations',
+      'marketing',
+      'settings',
+      'compliance',
+      'analytics',
+    ],
   },
   /**
    * Manager/Marketer - has marketing, customers, products, integrations
@@ -195,18 +235,23 @@ type NavItemKey = keyof typeof TestIds.nav;
  * Verify that a specific navigation tab is visible for a role
  * Throws if visibility doesn't match expected state
  */
-export async function expectNavVisible(page: Page, navItem: NavItemKey, role: TestRole, shouldBeVisible: boolean): Promise<void> {
+export async function expectNavVisible(
+  page: Page,
+  navItem: NavItemKey,
+  role: TestRole,
+  shouldBeVisible: boolean
+): Promise<void> {
   const roleKey = role === 'admin' ? 'owner' : role === 'manager' ? 'marketer' : 'operator';
   const permissions = RolePermissions[roleKey];
   const isAllowed = (permissions.tabs as readonly string[]).includes(navItem);
-  
+
   const testId = TestIds.nav[navItem];
   if (!testId) {
     throw new Error(`Unknown nav item: ${navItem}`);
   }
-  
+
   const locator = page.getByTestId(testId);
-  
+
   if (shouldBeVisible && isAllowed) {
     // Should be visible - user has permission
     await expect(locator).toBeVisible();
@@ -223,7 +268,7 @@ export async function expectNavVisible(page: Page, navItem: NavItemKey, role: Te
 export async function expectAllTabsVisible(page: Page, role: TestRole): Promise<void> {
   const roleKey = role === 'admin' ? 'owner' : role === 'manager' ? 'marketer' : 'operator';
   const permissions = RolePermissions[roleKey];
-  
+
   for (const tab of permissions.tabs) {
     const testId = TestIds.nav[tab as NavItemKey];
     if (testId) {
@@ -238,10 +283,22 @@ export async function expectAllTabsVisible(page: Page, role: TestRole): Promise<
 export async function expectNoUnauthorizedTabs(page: Page, role: TestRole): Promise<void> {
   const roleKey = role === 'admin' ? 'owner' : role === 'manager' ? 'marketer' : 'operator';
   const permissions = RolePermissions[roleKey];
-  
-  const allTabs: NavItemKey[] = ['dashboard', 'customers', 'pos', 'products', 'marketing', 'integrations', 'settings', 'compliance', 'analytics'];
-  const unauthorizedTabs = allTabs.filter(tab => !(permissions.tabs as readonly string[]).includes(tab));
-  
+
+  const allTabs: NavItemKey[] = [
+    'dashboard',
+    'customers',
+    'pos',
+    'products',
+    'marketing',
+    'integrations',
+    'settings',
+    'compliance',
+    'analytics',
+  ];
+  const unauthorizedTabs = allTabs.filter(
+    (tab) => !(permissions.tabs as readonly string[]).includes(tab)
+  );
+
   for (const tab of unauthorizedTabs) {
     const testId = TestIds.nav[tab];
     if (testId) {
@@ -270,18 +327,19 @@ export async function expectApiAccess(
   // First login as the role
   await login(page, role);
   await page.waitForTimeout(1000);
-  
+
   // Make the API request
   const options: { headers?: Record<string, string>; data?: Record<string, unknown> } = {};
-  
-  const response = method === 'GET' 
-    ? await page.request.get(apiPath, options)
-    : method === 'POST'
-    ? await page.request.post(apiPath, { data: requestData })
-    : method === 'PUT'
-    ? await page.request.put(apiPath, { data: requestData })
-    : await page.request.delete(apiPath);
-  
+
+  const response =
+    method === 'GET'
+      ? await page.request.get(apiPath, options)
+      : method === 'POST'
+        ? await page.request.post(apiPath, { data: requestData })
+        : method === 'PUT'
+          ? await page.request.put(apiPath, { data: requestData })
+          : await page.request.delete(apiPath);
+
   expect(response.status()).toBe(expectedStatus);
 }
 
@@ -473,7 +531,12 @@ export function getNavTestId(page: Page, navItem: string, lang: string = 'en') {
  * Get a data-testid locator for button elements
  * Common patterns: admin_btn_save_en, operator_btn_new_sale_en, etc.
  */
-export function getButtonTestId(page: Page, prefix: string, buttonName: string, lang: string = 'en') {
+export function getButtonTestId(
+  page: Page,
+  prefix: string,
+  buttonName: string,
+  lang: string = 'en'
+) {
   return page.getByTestId(`${prefix}_btn_${buttonName}_${lang}`);
 }
 

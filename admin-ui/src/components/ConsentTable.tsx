@@ -41,66 +41,84 @@ export function ConsentTable({ customerId }: { customerId?: number }) {
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={5} style={{ 
-                padding: 'var(--spacing-lg)', 
-                textAlign: 'center', 
-                color: 'var(--muted)',
-                fontSize: 'var(--font-size-sm)'
-              }}>
+              <td
+                colSpan={5}
+                style={{
+                  padding: 'var(--spacing-lg)',
+                  textAlign: 'center',
+                  color: 'var(--muted)',
+                  fontSize: 'var(--font-size-sm)',
+                }}
+              >
                 Загрузка...
               </td>
             </tr>
           ) : consents.length === 0 ? (
             <tr>
-              <td colSpan={5} style={{ 
-                padding: 'var(--spacing-lg)', 
-                textAlign: 'center', 
-                color: 'var(--muted)',
-                fontSize: 'var(--font-size-sm)'
-              }}>
+              <td
+                colSpan={5}
+                style={{
+                  padding: 'var(--spacing-lg)',
+                  textAlign: 'center',
+                  color: 'var(--muted)',
+                  fontSize: 'var(--font-size-sm)',
+                }}
+              >
                 Нет записей о согласиях
               </td>
             </tr>
           ) : (
             consents.map((consent) => (
               <tr key={consent.id}>
-                <td style={{ 
-                  whiteSpace: 'nowrap', 
-                  fontSize: 'var(--font-size-sm)', 
-                  color: 'var(--text)'
-                }}>
+                <td
+                  style={{
+                    whiteSpace: 'nowrap',
+                    fontSize: 'var(--font-size-sm)',
+                    color: 'var(--text)',
+                  }}
+                >
                   {new Date(consent.accepted_at).toLocaleString()}
                 </td>
-                <td style={{ 
-                  whiteSpace: 'nowrap', 
-                  fontSize: 'var(--font-size-sm)', 
-                  color: 'var(--text)'
-                }}>
-                  {consent.consent_type === 'data_processing' ? 'Обработка данных' : 
-                   consent.consent_type === 'marketing' ? 'Маркетинговые коммуникации' : 
-                   'Оба типа'}
+                <td
+                  style={{
+                    whiteSpace: 'nowrap',
+                    fontSize: 'var(--font-size-sm)',
+                    color: 'var(--text)',
+                  }}
+                >
+                  {consent.consent_type === 'data_processing'
+                    ? 'Обработка данных'
+                    : consent.consent_type === 'marketing'
+                      ? 'Маркетинговые коммуникации'
+                      : 'Оба типа'}
                 </td>
-                <td style={{ 
-                  whiteSpace: 'nowrap', 
-                  fontSize: 'var(--font-size-sm)', 
-                  color: 'var(--text)'
-                }}>
+                <td
+                  style={{
+                    whiteSpace: 'nowrap',
+                    fontSize: 'var(--font-size-sm)',
+                    color: 'var(--text)',
+                  }}
+                >
                   {consent.consent_version}
                 </td>
-                <td style={{ 
-                  whiteSpace: 'nowrap', 
-                  fontSize: 'var(--font-size-sm)', 
-                  color: 'var(--text)'
-                }}>
+                <td
+                  style={{
+                    whiteSpace: 'nowrap',
+                    fontSize: 'var(--font-size-sm)',
+                    color: 'var(--text)',
+                  }}
+                >
                   {consent.source === 'tg' ? 'Telegram' : 'VK'}
                 </td>
-                <td style={{ 
-                  fontSize: 'var(--font-size-sm)', 
-                  color: 'var(--text)',
-                  maxWidth: '200px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
+                <td
+                  style={{
+                    fontSize: 'var(--font-size-sm)',
+                    color: 'var(--text)',
+                    maxWidth: '200px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
                   {consent.consent_text}
                 </td>
               </tr>

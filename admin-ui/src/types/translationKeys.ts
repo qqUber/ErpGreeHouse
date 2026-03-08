@@ -256,4 +256,4 @@ export const TranslationKeys = {
 } as const;
 
 // Type for any translation key
-export type TranslationKey = typeof TranslationKeys[keyof typeof TranslationKeys];
+export type TranslationKey = (typeof TranslationKeys)[keyof typeof TranslationKeys];

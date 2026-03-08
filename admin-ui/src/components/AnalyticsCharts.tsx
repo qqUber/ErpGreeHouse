@@ -62,11 +62,13 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
     <div className="grid gap-6">
       {/* Sales Dynamics Line Chart */}
       <div className="card cardFull">
-        <h3 style={{ 
-          fontSize: 'var(--font-size-lg)', 
-          fontWeight: 'var(--font-weight-semibold)', 
-          marginBottom: 'var(--spacing-md)'
-        }}>
+        <h3
+          style={{
+            fontSize: 'var(--font-size-lg)',
+            fontWeight: 'var(--font-weight-semibold)',
+            marginBottom: 'var(--spacing-md)',
+          }}
+        >
           Динамика продаж
         </h3>
         <ReactECharts
@@ -79,11 +81,13 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Top Products Bar Chart */}
         <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-size-lg)', 
-            fontWeight: 'var(--font-weight-semibold)', 
-            marginBottom: 'var(--spacing-md)'
-          }}>
+          <h3
+            style={{
+              fontSize: 'var(--font-size-lg)',
+              fontWeight: 'var(--font-weight-semibold)',
+              marginBottom: 'var(--spacing-md)',
+            }}
+          >
             Топ товаров
           </h3>
           <ReactECharts
@@ -95,11 +99,13 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
 
         {/* Category Distribution Pie Chart */}
         <div className="card">
-          <h3 style={{ 
-            fontSize: 'var(--font-size-lg)', 
-            fontWeight: 'var(--font-weight-semibold)', 
-            marginBottom: 'var(--spacing-md)'
-          }}>
+          <h3
+            style={{
+              fontSize: 'var(--font-size-lg)',
+              fontWeight: 'var(--font-weight-semibold)',
+              marginBottom: 'var(--spacing-md)',
+            }}
+          >
             Распределение по категориям
           </h3>
           <ReactECharts

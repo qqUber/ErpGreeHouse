@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Api, MarketingCampaign, MarketingSegment, MarketingTrigger, baseUrl, injectAuthHeaders } from './api';
+import {
+  Api,
+  MarketingCampaign,
+  MarketingSegment,
+  MarketingTrigger,
+  baseUrl,
+  injectAuthHeaders,
+} from './api';
 import { AnalyticsCharts } from './components/AnalyticsCharts';
 
 export function MarketingView() {
@@ -208,15 +215,18 @@ function CampaignsManager({
           {newContentType !== 'text' && (
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                {newContentType === 'media_group' ? 'URLы медиа файлов (JSON массив)' : 'URL медиа файла'}
+                {newContentType === 'media_group'
+                  ? 'URLы медиа файлов (JSON массив)'
+                  : 'URL медиа файла'}
               </label>
               <textarea
                 className="input w-full h-12"
                 value={newMediaUrls}
                 onChange={(e) => setNewMediaUrls(e.target.value)}
-                placeholder={newContentType === 'media_group' 
-                  ? '[{"type":"photo","path":"https://example.com/image1.jpg"},{"type":"video","path":"https://example.com/video1.mp4"}]'
-                  : 'https://example.com/image.jpg'
+                placeholder={
+                  newContentType === 'media_group'
+                    ? '[{"type":"photo","path":"https://example.com/image1.jpg"},{"type":"video","path":"https://example.com/video1.mp4"}]'
+                    : 'https://example.com/image.jpg'
                 }
               />
             </div>
@@ -369,22 +379,24 @@ function SegmentsManager({
         name: `PREVIEW_${newName}`,
         criteria,
       });
-      
+
       // Get preview
-      const response = await fetch(`${baseUrl()}/api/v1/marketing/segments/${tempSegment.id}/preview?limit=10`, {
-        headers: injectAuthHeaders(),
-        credentials: 'include',
-      });
+      const response = await fetch(
+        `${baseUrl()}/api/v1/marketing/segments/${tempSegment.id}/preview?limit=10`,
+        {
+          headers: injectAuthHeaders(),
+          credentials: 'include',
+        }
+      );
       const data = await response.json();
       setPreview(data.customers);
-      
+
       // Delete temporary segment
       await fetch(`${baseUrl()}/api/v1/marketing/segments/${tempSegment.id}`, {
         method: 'DELETE',
         headers: injectAuthHeaders(),
         credentials: 'include',
       });
-      
     } catch (e) {
       setError(String(e));
     } finally {
@@ -433,10 +445,8 @@ function SegmentsManager({
   }
 
   const togglePreference = (preference: string) => {
-    setSelectedPreferences(prev => 
-      prev.includes(preference) 
-        ? prev.filter(p => p !== preference) 
-        : [...prev, preference]
+    setSelectedPreferences((prev) =>
+      prev.includes(preference) ? prev.filter((p) => p !== preference) : [...prev, preference]
     );
   };
 
@@ -459,7 +469,7 @@ function SegmentsManager({
 
           <div className="border-t pt-4 mt-2">
             <h4 className="text-sm font-bold mb-2">Критерии фильтрации</h4>
-            
+
             <div className="grid gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -488,7 +498,9 @@ function SegmentsManager({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-gray-500">Минимальная сумма покупки (₽)</label>
+                  <label className="block text-xs text-gray-500">
+                    Минимальная сумма покупки (₽)
+                  </label>
                   <input
                     className="input w-full"
                     type="number"
@@ -498,7 +510,9 @@ function SegmentsManager({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500">Количество покупок (не менее)</label>
+                  <label className="block text-xs text-gray-500">
+                    Количество покупок (не менее)
+                  </label>
                   <input
                     className="input w-full"
                     type="number"
@@ -548,7 +562,7 @@ function SegmentsManager({
               <div>
                 <label className="block text-xs text-gray-500">Предпочтения (выберите)</label>
                 <div className="grid grid-cols-3 gap-2 mt-1">
-                  {['coffee', 'tea', 'pastries', 'breakfast', 'lunch'].map(preference => (
+                  {['coffee', 'tea', 'pastries', 'breakfast', 'lunch'].map((preference) => (
                     <label key={preference} className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
@@ -597,17 +611,10 @@ function SegmentsManager({
           )}
 
           <div className="flex gap-2 justify-end">
-            <button 
-              className="btn btn-secondary" 
-              onClick={() => setIsCreating(false)}
-            >
+            <button className="btn btn-secondary" onClick={() => setIsCreating(false)}>
               Отмена
             </button>
-            <button 
-              className="btn btn-outline" 
-              onClick={handlePreview}
-              disabled={isPreviewing}
-            >
+            <button className="btn btn-outline" onClick={handlePreview} disabled={isPreviewing}>
               {isPreviewing ? 'Просмотр...' : 'Предварительный просмотр'}
             </button>
             <button className="btn btn-primary" onClick={handleCreate}>
@@ -637,14 +644,17 @@ function SegmentsManager({
               <tr key={s.id} className="border-b last:border-0 hover:bg-gray-50">
                 <td className="p-2 text-gray-500">#{s.id}</td>
                 <td className="p-2 font-medium">{s.name}</td>
-                <td className="p-2 text-xs text-gray-600 font-mono max-w-xs truncate" title={JSON.stringify(s.criteria)}>
+                <td
+                  className="p-2 text-xs text-gray-600 font-mono max-w-xs truncate"
+                  title={JSON.stringify(s.criteria)}
+                >
                   {JSON.stringify(s.criteria)}
                 </td>
                 <td className="p-2 text-gray-500">
                   {s.created_at ? new Date(s.created_at).toLocaleDateString() : '—'}
                 </td>
                 <td className="p-2">
-                  <button 
+                  <button
                     className="text-blue-600 hover:underline text-xs"
                     onClick={async () => {
                       try {

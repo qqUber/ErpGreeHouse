@@ -1,6 +1,6 @@
 /**
  * Centralized Translation Loader
- * 
+ *
  * Provides utilities for loading, caching, and managing translations
  * from the centralized locale directory.
  */
@@ -21,11 +21,7 @@ export const TRANSLATION_RESOURCES: Record<Language, Record<string, unknown>> = 
 /**
  * Available languages in the application
  */
-export const AVAILABLE_LANGUAGES: Language[] = [
-  Language.EN,
-  Language.RU,
-  Language.SR,
-];
+export const AVAILABLE_LANGUAGES: Language[] = [Language.EN, Language.RU, Language.SR];
 
 /**
  * Language display names
@@ -44,17 +40,17 @@ export const LANGUAGE_NAMES: Record<Language, string> = {
  */
 export function getAllKeys(obj: Record<string, unknown>, prefix = ''): string[] {
   const keys: string[] = [];
-  
+
   for (const [key, value] of Object.entries(obj)) {
     const fullKey = prefix ? `${prefix}.${key}` : key;
-    
+
     if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
       keys.push(...getAllKeys(value as Record<string, unknown>, fullKey));
     } else {
       keys.push(fullKey);
     }
   }
-  
+
   return keys;
 }
 
@@ -79,12 +75,12 @@ export class TranslationLoader {
    */
   initialize(): void {
     if (this.initialized) return;
-    
+
     // Pre-load all translations into cache
     for (const lang of AVAILABLE_LANGUAGES) {
       this.cache.set(lang, TRANSLATION_RESOURCES[lang]);
     }
-    
+
     this.initialized = true;
   }
 
@@ -95,11 +91,7 @@ export class TranslationLoader {
    * @param options - Interpolation options
    * @returns Translated string or key if not found
    */
-  getTranslation(
-    language: Language,
-    key: string,
-    options?: Record<string, unknown>
-  ): string {
+  getTranslation(language: Language, key: string, options?: Record<string, unknown>): string {
     const translations = this.cache.get(language);
     if (!translations) {
       console.warn(`Language ${language} not found in cache`);
@@ -109,7 +101,7 @@ export class TranslationLoader {
     // Navigate to the nested key
     const keys = key.split('.');
     let value: unknown = translations;
-    
+
     for (const k of keys) {
       if (value && typeof value === 'object' && k in value) {
         value = (value as Record<string, unknown>)[k];
@@ -147,7 +139,7 @@ export class TranslationLoader {
   getKeys(language: Language): string[] {
     const translations = this.cache.get(language);
     if (!translations) return [];
-    
+
     return getAllKeys(translations);
   }
 
@@ -170,10 +162,10 @@ export class TranslationLoader {
   hasKey(language: Language, key: string): boolean {
     const translations = this.cache.get(language);
     if (!translations) return false;
-    
+
     const keys = key.split('.');
     let value: unknown = translations;
-    
+
     for (const k of keys) {
       if (value && typeof value === 'object' && k in value) {
         value = (value as Record<string, unknown>)[k];
@@ -181,7 +173,7 @@ export class TranslationLoader {
         return false;
       }
     }
-    
+
     return typeof value === 'string';
   }
 
@@ -197,7 +189,7 @@ export class TranslationLoader {
   } {
     const keys = this.getKeys(language);
     const namespaces = new Set(keys.map(getNamespace));
-    
+
     return {
       totalKeys: keys.length,
       namespaces: Array.from(namespaces).sort(),

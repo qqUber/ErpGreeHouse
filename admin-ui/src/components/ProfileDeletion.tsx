@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { Api } from '../api';
 
-export function ProfileDeletion({ customerId, onDeleted }: { customerId: number; onDeleted: () => void }) {
+export function ProfileDeletion({
+  customerId,
+  onDeleted,
+}: {
+  customerId: number;
+  onDeleted: () => void;
+}) {
   const [loading, setLoading] = useState(false);
   const [confirmText, setConfirmText] = useState('');
 
@@ -27,14 +33,13 @@ export function ProfileDeletion({ customerId, onDeleted }: { customerId: number;
   return (
     <div className="bg-red-50 p-6 rounded-lg">
       <h3 className="text-lg font-medium text-red-800 mb-4">Удаление профиля пользователя</h3>
-      
+
       <div className="mb-4">
         <p className="text-red-700 mb-2">
-          Это действие нельзя отменить. Все данные пользователя будут permanently удалены из системы.
+          Это действие нельзя отменить. Все данные пользователя будут permanently удалены из
+          системы.
         </p>
-        <p className="text-sm text-red-600">
-          Введите "УДАЛИТЬ" для подтверждения:
-        </p>
+        <p className="text-sm text-red-600">Введите "УДАЛИТЬ" для подтверждения:</p>
         <input
           type="text"
           value={confirmText}

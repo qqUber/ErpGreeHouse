@@ -210,23 +210,23 @@ export const theme: Theme = {
   },
   typography: {
     fontSize: {
-      xs: '0.75rem',     // 12px - caption
-      sm: '0.875rem',    // 14px - small
-      base: '1rem',      // 16px - body
-      lg: '1.125rem',    // 18px - large body
-      xl: '1.25rem',     // 20px - h4
-      '2xl': '1.5rem',   // 24px - h3
+      xs: '0.75rem', // 12px - caption
+      sm: '0.875rem', // 14px - small
+      base: '1rem', // 16px - body
+      lg: '1.125rem', // 18px - large body
+      xl: '1.25rem', // 20px - h4
+      '2xl': '1.5rem', // 24px - h3
       '3xl': '1.875rem', // 30px - h2
-      '4xl': '2.25rem',  // 36px - h1
+      '4xl': '2.25rem', // 36px - h1
     },
     // Heading font sizes (for reference)
-    h1: '2.25rem',    // 36px
-    h2: '1.875rem',   // 30px
-    h3: '1.5rem',     // 24px
-    h4: '1.25rem',    // 20px
-    h5: '1.125rem',   // 18px
-    h6: '1rem',       // 16px
-    body: '1rem',      // 16px
+    h1: '2.25rem', // 36px
+    h2: '1.875rem', // 30px
+    h3: '1.5rem', // 24px
+    h4: '1.25rem', // 20px
+    h5: '1.125rem', // 18px
+    h6: '1rem', // 16px
+    body: '1rem', // 16px
     caption: '0.75rem', // 12px
     small: '0.875rem', // 14px
     fontWeight: {

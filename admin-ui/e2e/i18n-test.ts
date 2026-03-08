@@ -1,16 +1,16 @@
 /**
  * i18n Test Utilities
- * 
+ *
  * Provides language-aware selectors for E2E tests.
  * English keys are the source of truth - use these in tests.
  * The utility handles translation to other languages.
- * 
+ *
  * Usage:
  *   import { t, getMenuLabel, getButtonLabel } from './i18n-test';
- * 
+ *
  *   // Get translated label for menu item
  *   await page.getByText(t('menu.sales')).click();
- * 
+ *
  *   // Or use convenience functions
  *   await page.getByText(getMenuLabel('sales')).click();
  */
@@ -57,7 +57,7 @@ function getNestedValue(obj: any, path: string): string | undefined {
 
 /**
  * Get translated text by i18n key
- * 
+ *
  * @param key - Dot-notation key (e.g., 'menu.sales', 'common.search')
  * @param lang - Optional language override (defaults to current test language)
  * @returns Translated text
@@ -65,13 +65,13 @@ function getNestedValue(obj: any, path: string): string | undefined {
 export function t(key: string, lang?: Language): string {
   const targetLang = lang || currentLanguage;
   const value = getNestedValue(locales[targetLang], key);
-  
+
   if (!value) {
     console.warn(`[i18n] Missing translation for key: ${key} in ${targetLang}`);
     // Fallback to English
     return getNestedValue(locales.en, key) || key;
   }
-  
+
   return value;
 }
 

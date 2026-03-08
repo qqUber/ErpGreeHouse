@@ -25,19 +25,19 @@ interface PermissionGuardProps {
 
 /**
  * Guard component that conditionally renders content based on user permissions.
- * 
+ *
  * @example
  * // Single permission
  * <PermissionGuard permission="customer.read">
  *   <CustomerList />
  * </PermissionGuard>
- * 
+ *
  * @example
  * // Multiple permissions (all required)
  * <PermissionGuard permission={['customer.read', 'customer.create']}>
  *   <CustomerManager />
  * </PermissionGuard>
- * 
+ *
  * @example
  * // With fallback
  * <PermissionGuard permission="settings.update" fallback={<NoAccess />}>

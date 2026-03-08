@@ -495,5 +495,11 @@
     "birthdays": "Birthdays",
     "loyalty": "Loyalty",
     "transactions": "trans."
+  },
+  "pagination": {
+    "showing": "Showing {{start}}-{{end}} of {{total}}",
+    "prev": "Previous",
+    "next": "Next",
+    "page": "Page {{page}} of {{total}}"
   }
 }

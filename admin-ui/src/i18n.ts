@@ -49,25 +49,25 @@ i18n
  * Priority order: English > Russian > Serbian
  */
 export const FALLBACK_CHAIN = ['en', 'ru', 'srb'] as const;
-export type FallbackLanguage = typeof FALLBACK_CHAIN[number];
+export type FallbackLanguage = (typeof FALLBACK_CHAIN)[number];
 
 /**
  * Get fallback language for a given language.
  * Uses the fallback chain: EN → RU → SR
- * 
+ *
  * @param language - The language to get fallback for
  * @returns The fallback language code
  */
 export function getFallbackLanguage(language: string): string {
   // If already English, no fallback needed
   if (language === 'en') return 'en';
-  
+
   // Russian falls back to English
   if (language === 'ru') return 'en';
-  
+
   // Serbian falls back to Russian, then English
   if (language === 'srb') return 'ru';
-  
+
   // Default fallback
   return 'en';
 }
@@ -75,16 +75,16 @@ export function getFallbackLanguage(language: string): string {
 /**
  * Get the full fallback chain for a language.
  * Returns array of fallback languages in priority order.
- * 
+ *
  * @param language - The language to get chain for
  * @returns Array of fallback languages (e.g., ['ru', 'en'] for 'srb')
  */
 export function getFallbackChain(language: string): string[] {
   const chain: string[] = [];
-  
+
   let current = language;
   const visited = new Set<string>();
-  
+
   while (current && !visited.has(current)) {
     visited.add(current);
     const fallback = getFallbackLanguage(current);
@@ -95,14 +95,14 @@ export function getFallbackChain(language: string): string[] {
       break;
     }
   }
-  
+
   return chain;
 }
 
 /**
  * Get language priority for translation lookup.
  * Current language first, then fallbacks in order.
- * 
+ *
  * @param currentLanguage - The current active language
  * @returns Array of languages to try for translation
  */

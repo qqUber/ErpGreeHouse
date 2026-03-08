@@ -3,13 +3,13 @@ import { Role, Permission, Permissions } from '../../types/roles';
 /**
  * Widget identifier type - unique key for each dashboard widget
  */
-export type WidgetId = 
+export type WidgetId =
   // Operator widgets
   | 'operator.quick_actions'
   | 'operator.shift_stats'
   | 'operator.recent_transactions'
   | 'operator.empty_state'
-  
+
   // Manager widgets
   | 'manager.kpi_cards'
   | 'manager.active_campaigns'
@@ -17,7 +17,7 @@ export type WidgetId =
   | 'manager.sales_trend'
   | 'manager.top_products'
   | 'manager.integrations_status'
-  
+
   // Admin widgets
   | 'admin.system_overview'
   | 'admin.system_health'
@@ -25,7 +25,7 @@ export type WidgetId =
   | 'admin.performance_metrics'
   | 'admin.recent_activity'
   | 'admin.quick_actions'
-  
+
   // Shared widgets (available to all roles)
   | 'shared.customers'
   | 'shared.products'
@@ -51,8 +51,13 @@ export const WIDGET_REGISTRY: Record<WidgetId, WidgetMetadata> = {
   'operator.quick_actions': {
     id: 'operator.quick_actions',
     name: 'Быстрые действия',
-    description: 'Quick access buttons for common operator tasks (new sale, find customer, catalog)',
-    requiredPermissions: [Permissions.POS_SALE, Permissions.CUSTOMER_LIST, Permissions.PRODUCT_READ],
+    description:
+      'Quick access buttons for common operator tasks (new sale, find customer, catalog)',
+    requiredPermissions: [
+      Permissions.POS_SALE,
+      Permissions.CUSTOMER_LIST,
+      Permissions.PRODUCT_READ,
+    ],
     requiredRoles: [Role.OPERATOR],
     category: 'operations',
   },
@@ -213,13 +218,13 @@ export const WIDGET_REGISTRY: Record<WidgetId, WidgetMetadata> = {
  */
 export function getWidgetsForRole(role: Role): WidgetId[] {
   const widgets: WidgetId[] = [];
-  
+
   for (const [widgetId, metadata] of Object.entries(WIDGET_REGISTRY)) {
     if (metadata.requiredRoles.includes(role)) {
       widgets.push(widgetId as WidgetId);
     }
   }
-  
+
   return widgets;
 }
 
@@ -228,18 +233,18 @@ export function getWidgetsForRole(role: Role): WidgetId[] {
  */
 export function getWidgetsForPermissions(permissions: Set<Permission>): WidgetId[] {
   const widgets: WidgetId[] = [];
-  
+
   for (const [widgetId, metadata] of Object.entries(WIDGET_REGISTRY)) {
     // Check if user has all required permissions
     const hasAllPermissions = metadata.requiredPermissions.every(
-      perm => permissions.has(perm) || permissions.has('*')
+      (perm) => permissions.has(perm) || permissions.has('*')
     );
-    
+
     if (hasAllPermissions) {
       widgets.push(widgetId as WidgetId);
     }
   }
-  
+
   return widgets;
 }
 
@@ -253,22 +258,22 @@ export function isWidgetAccessible(
 ): boolean {
   const widget = WIDGET_REGISTRY[widgetId];
   if (!widget) return false;
-  
+
   // Check role access first
   if (role && widget.requiredRoles.includes(role)) {
     return true;
   }
-  
+
   // Check permission access
   if (permissions) {
     const hasAllPermissions = widget.requiredPermissions.every(
-      perm => permissions.has(perm) || permissions.has('*')
+      (perm) => permissions.has(perm) || permissions.has('*')
     );
     if (hasAllPermissions) {
       return true;
     }
   }
-  
+
   return false;
 }
 
@@ -278,17 +283,17 @@ export function isWidgetAccessible(
 export function getWidgetsByCategory(role: Role): Record<string, WidgetId[]> {
   const widgets = getWidgetsForRole(role);
   const grouped: Record<string, WidgetId[]> = {};
-  
+
   for (const widgetId of widgets) {
     const widget = WIDGET_REGISTRY[widgetId];
     const category = widget.category;
-    
+
     if (!grouped[category]) {
       grouped[category] = [];
     }
     grouped[category].push(widgetId);
   }
-  
+
   return grouped;
 }
 

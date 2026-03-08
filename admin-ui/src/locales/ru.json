@@ -495,5 +495,11 @@
     "birthdays": "Дни рождения",
     "loyalty": "Лояльность",
     "transactions": "транз."
+  },
+  "pagination": {
+    "showing": "Показано {{start}}-{{end}} из {{total}}",
+    "prev": "Назад",
+    "next": "Далее",
+    "page": "Страница {{page}} из {{total}}"
   }
 }

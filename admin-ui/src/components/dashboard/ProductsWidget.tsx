@@ -47,18 +47,27 @@ export const ProductsWidget: React.FC<ProductsWidgetProps> = ({ data }) => {
   };
 
   return (
-    <div className="card cardFull" data-testid="admin_widget_products_en" role="region" aria-label="Products">
+    <div
+      className="card cardFull"
+      data-testid="admin_widget_products_en"
+      role="region"
+      aria-label="Products"
+    >
       <div className="row mb-4">
-        <div style={{ 
-          fontWeight: 'var(--font-weight-extrabold)', 
-          fontSize: 'var(--font-size-xl)'
-        }}>
+        <div
+          style={{
+            fontWeight: 'var(--font-weight-extrabold)',
+            fontSize: 'var(--font-size-xl)',
+          }}
+        >
           Товары
         </div>
-        <span style={{ 
-          fontSize: 'var(--font-size-sm)', 
-          color: 'var(--muted)'
-        }}>
+        <span
+          style={{
+            fontSize: 'var(--font-size-sm)',
+            color: 'var(--muted)',
+          }}
+        >
           Дата: {new Date(data.date).toLocaleDateString('ru-RU')}
         </span>
       </div>
@@ -67,12 +76,14 @@ export const ProductsWidget: React.FC<ProductsWidgetProps> = ({ data }) => {
         {/* Top Products Today */}
         {data.top_products_today.length > 0 && (
           <div>
-            <div style={{ 
-              fontSize: 'var(--font-size-sm)', 
-              fontWeight: 'var(--font-weight-semibold)', 
-              color: 'var(--text)', 
-              marginBottom: 'var(--spacing-sm)'
-            }}>
+            <div
+              style={{
+                fontSize: 'var(--font-size-sm)',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text)',
+                marginBottom: 'var(--spacing-sm)',
+              }}
+            >
               Топ товаров сегодня
             </div>
             <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
@@ -80,13 +91,13 @@ export const ProductsWidget: React.FC<ProductsWidgetProps> = ({ data }) => {
                 <div
                   key={product.code}
                   className="row"
-                  style={{ 
-                    padding: 'var(--spacing-sm)', 
-                    borderRadius: 'var(--radius-md)', 
+                  style={{
+                    padding: 'var(--spacing-sm)',
+                    borderRadius: 'var(--radius-md)',
                     background: 'var(--brand-light)',
                     border: '1px solid var(--border)',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'var(--primary-light)';
@@ -98,32 +109,40 @@ export const ProductsWidget: React.FC<ProductsWidgetProps> = ({ data }) => {
                   }}
                 >
                   <div style={{ flex: 1 }}>
-                    <div style={{ 
-                      fontSize: 'var(--font-size-sm)', 
-                      fontWeight: 'var(--font-weight-semibold)', 
-                      color: 'var(--text)'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--font-size-sm)',
+                        fontWeight: 'var(--font-weight-semibold)',
+                        color: 'var(--text)',
+                      }}
+                    >
                       {product.name}
                     </div>
-                    <div style={{ 
-                      fontSize: 'var(--font-size-xs)', 
-                      color: 'var(--muted)'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--font-size-xs)',
+                        color: 'var(--muted)',
+                      }}
+                    >
                       {product.code}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ 
-                      fontSize: 'var(--font-size-sm)', 
-                      fontWeight: 'var(--font-weight-bold)', 
-                      color: 'var(--text)'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--font-size-sm)',
+                        fontWeight: 'var(--font-weight-bold)',
+                        color: 'var(--text)',
+                      }}
+                    >
                       {product.quantity} шт
                     </div>
-                    <div style={{ 
-                      fontSize: 'var(--font-size-xs)', 
-                      color: 'var(--muted)'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--font-size-xs)',
+                        color: 'var(--muted)',
+                      }}
+                    >
                       {product.revenue.toFixed(2)} ₽
                     </div>
                   </div>
@@ -136,12 +155,14 @@ export const ProductsWidget: React.FC<ProductsWidgetProps> = ({ data }) => {
         {/* Category Performance */}
         {data.category_performance.length > 0 && (
           <div>
-            <div style={{ 
-              fontSize: 'var(--font-size-sm)', 
-              fontWeight: 'var(--font-weight-semibold)', 
-              color: 'var(--text)', 
-              marginBottom: 'var(--spacing-sm)'
-            }}>
+            <div
+              style={{
+                fontSize: 'var(--font-size-sm)',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text)',
+                marginBottom: 'var(--spacing-sm)',
+              }}
+            >
               Категории
             </div>
             <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
@@ -149,13 +170,13 @@ export const ProductsWidget: React.FC<ProductsWidgetProps> = ({ data }) => {
                 <div
                   key={category.category}
                   className="row"
-                  style={{ 
-                    padding: 'var(--spacing-sm)', 
-                    borderRadius: 'var(--radius-md)', 
+                  style={{
+                    padding: 'var(--spacing-sm)',
+                    borderRadius: 'var(--radius-md)',
                     background: 'var(--brand-light)',
                     border: '1px solid var(--border)',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'var(--primary-light)';
@@ -181,12 +202,14 @@ export const ProductsWidget: React.FC<ProductsWidgetProps> = ({ data }) => {
         {/* Trending Products */}
         {data.trending_products.length > 0 && (
           <div>
-            <div style={{ 
-              fontSize: 'var(--font-size-sm)', 
-              fontWeight: 'var(--font-weight-semibold)', 
-              color: 'var(--text)', 
-              marginBottom: 'var(--spacing-sm)'
-            }}>
+            <div
+              style={{
+                fontSize: 'var(--font-size-sm)',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text)',
+                marginBottom: 'var(--spacing-sm)',
+              }}
+            >
               Тренды
             </div>
             <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
@@ -194,13 +217,13 @@ export const ProductsWidget: React.FC<ProductsWidgetProps> = ({ data }) => {
                 <div
                   key={product.code}
                   className="row"
-                  style={{ 
-                    padding: 'var(--spacing-sm)', 
-                    borderRadius: 'var(--radius-md)', 
+                  style={{
+                    padding: 'var(--spacing-sm)',
+                    borderRadius: 'var(--radius-md)',
                     background: 'var(--brand-light)',
                     border: '1px solid var(--border)',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'var(--primary-light)';
@@ -212,33 +235,42 @@ export const ProductsWidget: React.FC<ProductsWidgetProps> = ({ data }) => {
                   }}
                 >
                   <div style={{ flex: 1 }}>
-                    <div style={{ 
-                      fontSize: 'var(--font-size-sm)', 
-                      fontWeight: 'var(--font-weight-semibold)', 
-                      color: 'var(--text)'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--font-size-sm)',
+                        fontWeight: 'var(--font-weight-semibold)',
+                        color: 'var(--text)',
+                      }}
+                    >
                       {product.name}
                     </div>
-                    <div style={{ 
-                      fontSize: 'var(--font-size-xs)', 
-                      color: 'var(--muted)'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--font-size-xs)',
+                        color: 'var(--muted)',
+                      }}
+                    >
                       {product.code}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ 
-                      fontSize: 'var(--font-size-sm)', 
-                      fontWeight: 'var(--font-weight-bold)', 
-                      color: 'var(--text)'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--font-size-sm)',
+                        fontWeight: 'var(--font-weight-bold)',
+                        color: 'var(--text)',
+                      }}
+                    >
                       {product.this_week} шт
                     </div>
-                    <div style={{ 
-                      fontSize: 'var(--font-size-xs)', 
-                      color: getGrowthColor(product.growth_percent)
-                    }}>
-                      {getGrowthIcon(product.growth_percent)} {Math.abs(product.growth_percent).toFixed(1)}%
+                    <div
+                      style={{
+                        fontSize: 'var(--font-size-xs)',
+                        color: getGrowthColor(product.growth_percent),
+                      }}
+                    >
+                      {getGrowthIcon(product.growth_percent)}{' '}
+                      {Math.abs(product.growth_percent).toFixed(1)}%
                     </div>
                   </div>
                 </div>

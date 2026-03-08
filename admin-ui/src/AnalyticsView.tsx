@@ -1,6 +1,13 @@
 import ReactECharts from 'echarts-for-react';
 import { useEffect, useState } from 'react';
-import { Api, DashboardOverview, ChartData, LoyaltyReportOverview, LoyaltyDetailedReport, CustomerSegmentation } from './api';
+import {
+  Api,
+  DashboardOverview,
+  ChartData,
+  LoyaltyReportOverview,
+  LoyaltyDetailedReport,
+  CustomerSegmentation,
+} from './api';
 
 export function AnalyticsView() {
   const [timeRange, setTimeRange] = useState<string>('7d');
@@ -92,7 +99,8 @@ export function AnalyticsView() {
     }
   }
 
-  if (loading) {
+  // Add a proper loading state for charts
+  if (loading && !overview && !salesChart) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-gray-500">Загрузка аналитики...</div>
@@ -100,11 +108,16 @@ export function AnalyticsView() {
     );
   }
 
+  // Add a proper error state display
   if (error) {
     return (
       <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
         <div className="text-red-600">{error}</div>
-        <button onClick={loadAnalyticsData} className="mt-2 text-sm text-red-700 underline">
+        <button 
+          onClick={loadAnalyticsData} 
+          className="mt-2 text-sm text-red-700 underline"
+          data-testid="analytics_retry_button"
+        >
           Повторить
         </button>
       </div>
@@ -146,12 +159,12 @@ export function AnalyticsView() {
           <button
             onClick={() => handleExport('customers')}
             className="btn btnPrimary"
-            style={{ 
+            style={{
               background: 'var(--primary)',
               color: 'white',
               borderColor: 'rgba(59, 130, 246, 0.3)',
               fontSize: 13,
-              padding: '8px 16px'
+              padding: '8px 16px',
             }}
           >
             Экспорт клиентов
@@ -159,26 +172,30 @@ export function AnalyticsView() {
         </div>
       </div>
 
-       {/* Key Metrics Overview */}
-       {overview && (
-         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Key Metrics Overview */}
+      {overview && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="card" style={{ padding: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ flexShrink: 0 }}>
-                <div style={{ 
-                  width: 32, 
-                  height: 32, 
-                  background: 'var(--primary)', 
-                  borderRadius: '50%', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center'
-                }}>
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    background: 'var(--primary)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
                   <span style={{ color: 'white', fontWeight: 'bold' }}>👥</span>
                 </div>
               </div>
               <div style={{ marginLeft: 16 }}>
-                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>Общее число клиентов</p>
+                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>
+                  Общее число клиентов
+                </p>
                 <p style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>
                   {overview.metrics.total_customers}
                 </p>
@@ -189,20 +206,24 @@ export function AnalyticsView() {
           <div className="card" style={{ padding: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ flexShrink: 0 }}>
-                <div style={{ 
-                  width: 32, 
-                  height: 32, 
-                  background: 'var(--good)', 
-                  borderRadius: '50%', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center'
-                }}>
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    background: 'var(--good)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
                   <span style={{ color: 'white', fontWeight: 'bold' }}>📈</span>
                 </div>
               </div>
               <div style={{ marginLeft: 16 }}>
-                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>Новые клиенты</p>
+                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>
+                  Новые клиенты
+                </p>
                 <p style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>
                   {overview.metrics.new_customers}
                 </p>
@@ -213,15 +234,17 @@ export function AnalyticsView() {
           <div className="card" style={{ padding: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ flexShrink: 0 }}>
-                <div style={{ 
-                  width: 32, 
-                  height: 32, 
-                  background: 'rgba(168, 85, 247, 0.8)', 
-                  borderRadius: '50%', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center'
-                }}>
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    background: 'rgba(168, 85, 247, 0.8)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
                   <span style={{ color: 'white', fontWeight: 'bold' }}>💰</span>
                 </div>
               </div>
@@ -237,15 +260,17 @@ export function AnalyticsView() {
           <div className="card" style={{ padding: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ flexShrink: 0 }}>
-                <div style={{ 
-                  width: 32, 
-                  height: 32, 
-                  background: 'var(--warn)', 
-                  borderRadius: '50%', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center'
-                }}>
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    background: 'var(--warn)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
                   <span style={{ color: 'white', fontWeight: 'bold' }}>🎯</span>
                 </div>
               </div>
@@ -265,7 +290,9 @@ export function AnalyticsView() {
         {/* Sales Chart */}
         {salesChart && (
           <div className="card cardFull" style={{ padding: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text)', marginBottom: 16 }}>
+            <h3
+              style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text)', marginBottom: 16 }}
+            >
               Динамика продаж
             </h3>
             <ReactECharts
@@ -279,7 +306,9 @@ export function AnalyticsView() {
         {/* Customers Chart */}
         {customerChart && (
           <div className="card cardFull" style={{ padding: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text)', marginBottom: 16 }}>
+            <h3
+              style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text)', marginBottom: 16 }}
+            >
               Динамика клиентов
             </h3>
             <ReactECharts

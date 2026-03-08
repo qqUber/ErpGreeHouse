@@ -4,7 +4,7 @@
  */
 
 // Root translation namespace keys
-export type TranslationNamespace = 
+export type TranslationNamespace =
   | 'app'
   | 'roles'
   | 'menu'

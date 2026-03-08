@@ -19,15 +19,17 @@ test('analytics recent sales links to customer profile', async ({ page }) => {
 
   // Wait for operator dashboard to load - using data-testid
   // The quick actions are always visible, use this as base wait
-  await expect(page.getByTestId(TestIds.operatorDashboard.quickActions)).toBeVisible({ timeout: 10000 });
+  await expect(page.getByTestId(TestIds.operatorDashboard.quickActions)).toBeVisible({
+    timeout: 10000,
+  });
   await page.waitForTimeout(2000);
 
   // Check if there are any widgets visible
   // The recent transactions widget is conditionally rendered when there are transactions
   // So we just verify the dashboard loads successfully
   const recentTransactions = page.getByTestId(TestIds.operatorDashboard.recentTransactions);
-  const hasRecentTransactions = await recentTransactions.count() > 0;
-  
+  const hasRecentTransactions = (await recentTransactions.count()) > 0;
+
   if (hasRecentTransactions) {
     // Click on the first transaction if available
     const activityList = page.locator('.space-y-3').first();
@@ -54,16 +56,18 @@ test('analytics dashboard shows summary metrics', async ({ page }) => {
   await login(page, 'operator');
 
   // Wait for dashboard to load - using data-testid for operator dashboard
-  await expect(page.getByTestId(TestIds.operatorDashboard.quickActions)).toBeVisible({ timeout: 10000 });
+  await expect(page.getByTestId(TestIds.operatorDashboard.quickActions)).toBeVisible({
+    timeout: 10000,
+  });
   await page.waitForTimeout(2000);
 
   // Verify key dashboard elements are present for operator
   // Using operator dashboard widgets with data-testid
   await expect(page.getByTestId(TestIds.operatorDashboard.quickActions)).toBeVisible();
-  
+
   // Shift stats is conditionally rendered (only when there's an active shift)
   const shiftStats = page.getByTestId(TestIds.operatorDashboard.shiftStats);
-  const hasShiftStats = await shiftStats.count() > 0;
+  const hasShiftStats = (await shiftStats.count()) > 0;
   if (hasShiftStats) {
     await expect(shiftStats).toBeVisible();
   } else {

@@ -13,14 +13,16 @@ export function ComplianceView() {
         <h1 style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>Комплаенс</h1>
       </div>
 
-      <div style={{ 
-        display: 'flex', 
-        gap: 24, 
-        borderBottom: '1px solid var(--border)',
-        paddingBottom: 8
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 24,
+          borderBottom: '1px solid var(--border)',
+          paddingBottom: 8,
+        }}
+      >
         <button
-          style={{ 
+          style={{
             padding: '8px 0',
             fontSize: 13,
             borderBottom: tab === 'consents' ? '2px solid var(--primary)' : 'none',
@@ -28,7 +30,7 @@ export function ComplianceView() {
             fontWeight: tab === 'consents' ? '600' : 'normal',
             cursor: 'pointer',
             background: 'none',
-            border: 'none'
+            border: 'none',
           }}
           onMouseEnter={(e) => {
             if (tab !== 'consents') {
@@ -45,7 +47,7 @@ export function ComplianceView() {
           Согласия
         </button>
         <button
-          style={{ 
+          style={{
             padding: '8px 0',
             fontSize: 13,
             borderBottom: tab === 'delete' ? '2px solid var(--primary)' : 'none',
@@ -53,7 +55,7 @@ export function ComplianceView() {
             fontWeight: tab === 'delete' ? '600' : 'normal',
             cursor: 'pointer',
             background: 'none',
-            border: 'none'
+            border: 'none',
           }}
           onMouseEnter={(e) => {
             if (tab !== 'delete') {
@@ -95,13 +97,15 @@ export function ComplianceView() {
 
           <div className="card cardFull" style={{ padding: 24 }}>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ 
-                display: 'block', 
-                fontSize: 13, 
-                fontWeight: '600', 
-                color: 'var(--text)', 
-                marginBottom: 8 
-              }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: 13,
+                  fontWeight: '600',
+                  color: 'var(--text)',
+                  marginBottom: 8,
+                }}
+              >
                 Введите ID пользователя для удаления:
               </label>
               <input

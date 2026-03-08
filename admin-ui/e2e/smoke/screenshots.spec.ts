@@ -12,7 +12,10 @@ test('capture screenshots with production data', async ({ page }) => {
     console.log(`Capturing ${tabText}...`);
 
     // Click tab (specifically target the tab element with exact text match)
-    await page.locator('.tab').filter({ hasText: new RegExp(`^${tabText}$`) }).click();
+    await page
+      .locator('.tab')
+      .filter({ hasText: new RegExp(`^${tabText}$`) })
+      .click();
     await page.waitForTimeout(3000);
 
     // Take screenshot

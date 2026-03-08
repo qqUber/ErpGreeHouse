@@ -495,5 +495,11 @@
     "birthdays": "Рођендани",
     "loyalty": "Лојалност",
     "transactions": "транз."
+  },
+  "pagination": {
+    "showing": "Приказ {{start}}-{{end}} од {{total}}",
+    "prev": "Претходна",
+    "next": "Следећа",
+    "page": "Страница {{page}} од {{total}}"
   }
 }

@@ -24,14 +24,19 @@ export function ManagerDashboard({ data, onNavigate }: ManagerDashboardProps) {
     <div className="space-y-6" data-testid="manager_dashboard_en">
       {/* KPI Cards - Focus on business performance */}
       {data && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-6" data-testid="manager_widget_kpi_en">
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-6"
+          data-testid="manager_widget_kpi_en"
+        >
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <span className="text-muted text-sm">{t('dashboardManager.totalCustomers')}</span>
               <span className="text-2xl text-blue-500">👥</span>
             </div>
             <div className="text-3xl font-bold">{data.customers?.total_customers || 0}</div>
-            <div className="text-green-500 text-sm mt-2">{t('dashboardManager.todayGrowth', { count: 5 })}</div>
+            <div className="text-green-500 text-sm mt-2">
+              {t('dashboardManager.todayGrowth', { count: 5 })}
+            </div>
           </div>
 
           <div className="card">
@@ -40,7 +45,11 @@ export function ManagerDashboard({ data, onNavigate }: ManagerDashboardProps) {
               <span className="text-2xl text-purple-500">💳</span>
             </div>
             <div className="text-3xl font-bold">
-              {data.operational?.total_transactions > 0 ? formatCurrency(data.operational?.total_revenue / data.operational?.total_transactions) : '—'}
+              {data.operational?.total_transactions > 0
+                ? formatCurrency(
+                    data.operational?.total_revenue / data.operational?.total_transactions
+                  )
+                : '—'}
             </div>
           </div>
 
@@ -49,7 +58,9 @@ export function ManagerDashboard({ data, onNavigate }: ManagerDashboardProps) {
               <span className="text-muted text-sm">{t('dashboardManager.netBalance')}</span>
               <span className="text-2xl text-green-500">📊</span>
             </div>
-            <div className="text-3xl font-bold">{data.operational?.total_transactions || 0 * 36}</div>
+            <div className="text-3xl font-bold">
+              {data.operational?.total_transactions || 0 * 36}
+            </div>
           </div>
 
           <div className="card">
@@ -58,7 +69,13 @@ export function ManagerDashboard({ data, onNavigate }: ManagerDashboardProps) {
               <span className="text-2xl text-orange-500">❤️</span>
             </div>
             <div className="text-3xl font-bold">
-              {data.operational?.total_transactions > 0 ? Math.round((data.operational?.total_transactions / data.operational?.total_transactions) * 100) : 0}%
+              {data.operational?.total_transactions > 0
+                ? Math.round(
+                    (data.operational?.total_transactions / data.operational?.total_transactions) *
+                      100
+                  )
+                : 0}
+              %
             </div>
           </div>
         </div>
@@ -70,7 +87,7 @@ export function ManagerDashboard({ data, onNavigate }: ManagerDashboardProps) {
         <div className="card cardFull" data-testid="manager_widget_active_campaigns_en">
           <div className="flex items-center justify-between mb-6">
             <div className="font-bold text-lg">{t('dashboardManager.activeCampaigns')}</div>
-            <button 
+            <button
               className="btn btnPrimary"
               onClick={() => onNavigate('marketing')}
               data-testid="manager_btn_manage_campaigns_en"
@@ -78,17 +95,24 @@ export function ManagerDashboard({ data, onNavigate }: ManagerDashboardProps) {
               {t('dashboardManager.manage')}
             </button>
           </div>
-          
+
           <div className="space-y-4">
             {[1, 2].map((campaign) => (
-              <div key={campaign} className="flex items-center justify-between p-4 rounded-lg bg-gray-50">
+              <div
+                key={campaign}
+                className="flex items-center justify-between p-4 rounded-lg bg-gray-50"
+              >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                     <span className="text-green-500 font-bold">📢</span>
                   </div>
                   <div>
-                    <div className="font-semibold">{t('dashboardManager.campaign', { number: campaign })}</div>
-                    <div className="text-muted text-sm">{t('dashboardManager.activeDays', { days: 2 })}</div>
+                    <div className="font-semibold">
+                      {t('dashboardManager.campaign', { number: campaign })}
+                    </div>
+                    <div className="text-muted text-sm">
+                      {t('dashboardManager.activeDays', { days: 2 })}
+                    </div>
                   </div>
                 </div>
                 <div className="text-right">
@@ -104,7 +128,7 @@ export function ManagerDashboard({ data, onNavigate }: ManagerDashboardProps) {
         <div className="card cardFull" data-testid="manager_widget_recent_events_en">
           <div className="flex items-center justify-between mb-6">
             <div className="font-bold text-lg">{t('dashboardManager.recentEvents')}</div>
-            <button 
+            <button
               className="btn"
               onClick={() => onNavigate('marketing')}
               data-testid="manager_btn_view_all_events_en"
@@ -112,10 +136,13 @@ export function ManagerDashboard({ data, onNavigate }: ManagerDashboardProps) {
               {t('dashboardManager.viewAll')}
             </button>
           </div>
-          
+
           <div className="space-y-4">
             {[1, 2, 3].map((event) => (
-              <div key={event} className="flex items-center justify-between p-4 rounded-lg bg-gray-50">
+              <div
+                key={event}
+                className="flex items-center justify-between p-4 rounded-lg bg-gray-50"
+              >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                     <span className="text-blue-500 font-bold">✉️</span>
@@ -141,7 +168,7 @@ export function ManagerDashboard({ data, onNavigate }: ManagerDashboardProps) {
         <div className="card cardFull" data-testid="manager_widget_sales_trend_en">
           <div className="flex items-center justify-between mb-6">
             <div className="font-bold text-lg">{t('dashboardManager.salesTrend')}</div>
-            <button 
+            <button
               className="btn"
               onClick={() => onNavigate('analytics')}
               data-testid="manager_btn_analytics_en"
@@ -149,7 +176,7 @@ export function ManagerDashboard({ data, onNavigate }: ManagerDashboardProps) {
               {t('dashboardManager.analytics')}
             </button>
           </div>
-          
+
           <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
             <div className="text-muted">{t('dashboardManager.salesChart')}</div>
           </div>
@@ -159,7 +186,7 @@ export function ManagerDashboard({ data, onNavigate }: ManagerDashboardProps) {
         <div className="card cardFull" data-testid="manager_widget_top_products_en">
           <div className="flex items-center justify-between mb-6">
             <div className="font-bold text-lg">{t('dashboardManager.topProducts')}</div>
-            <button 
+            <button
               className="btn"
               onClick={() => onNavigate('products')}
               data-testid="manager_btn_catalog_en"
@@ -167,16 +194,21 @@ export function ManagerDashboard({ data, onNavigate }: ManagerDashboardProps) {
               {t('dashboardManager.catalog')}
             </button>
           </div>
-          
+
           <div className="space-y-4">
             {[1, 2, 3].map((product) => (
-              <div key={product} className="flex items-center justify-between p-4 rounded-lg bg-gray-50">
+              <div
+                key={product}
+                className="flex items-center justify-between p-4 rounded-lg bg-gray-50"
+              >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                     <span className="text-purple-500 font-bold">☕</span>
                   </div>
                   <div>
-                    <div className="font-semibold">{t('dashboardManager.product', { number: product })}</div>
+                    <div className="font-semibold">
+                      {t('dashboardManager.product', { number: product })}
+                    </div>
                     <div className="text-muted text-sm">{t('dashboardManager.categoryPrice')}</div>
                   </div>
                 </div>
@@ -199,15 +231,20 @@ export function ManagerDashboard({ data, onNavigate }: ManagerDashboardProps) {
             <span className="pill pillGood">VK ✓</span>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 border rounded-lg">
             <div className="font-semibold mb-2">{t('dashboardManager.telegramBot')}</div>
-            <div className="text-muted text-sm">{t('dashboardManager.published')} • {t('dashboardManager.subscribers', { count: 500 })}</div>
+            <div className="text-muted text-sm">
+              {t('dashboardManager.published')} •{' '}
+              {t('dashboardManager.subscribers', { count: 500 })}
+            </div>
           </div>
           <div className="p-4 border rounded-lg">
             <div className="font-semibold mb-2">{t('dashboardManager.vkCommunity')}</div>
-            <div className="text-muted text-sm">{t('dashboardManager.active')} • {t('dashboardManager.subscribers', { count: 300 })}</div>
+            <div className="text-muted text-sm">
+              {t('dashboardManager.active')} • {t('dashboardManager.subscribers', { count: 300 })}
+            </div>
           </div>
         </div>
       </div>

@@ -4,20 +4,20 @@ import { Permission, PermissionSet, hasPermission, createPermissionSet } from '.
 
 /**
  * Hook for programmatic permission checking in components.
- * 
+ *
  * @example
  * const { hasPermission, hasAnyPermission, hasAllPermissions, permissions } = usePermission();
- * 
+ *
  * // Check single permission
  * if (hasPermission('customer.read')) {
  *   // User can read customers
  * }
- * 
+ *
  * // Check multiple permissions (any)
  * if (hasAnyPermission(['customer.read', 'customer.create'])) {
  *   // User can read OR create customers
  * }
- * 
+ *
  * // Check multiple permissions (all)
  * if (hasAllPermissions(['customer.read', 'customer.create'])) {
  *   // User can read AND create customers

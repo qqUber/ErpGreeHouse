@@ -29,25 +29,25 @@ export const MarketingWidget: React.FC<MarketingWidgetProps> = ({
         return {
           background: 'var(--good-light)',
           color: 'var(--good)',
-          border: '1px solid rgba(4, 120, 87, 0.25)'
+          border: '1px solid rgba(4, 120, 87, 0.25)',
         };
       case 'pending':
         return {
           background: 'var(--warn-light)',
           color: 'var(--warn)',
-          border: '1px solid rgba(180, 83, 9, 0.25)'
+          border: '1px solid rgba(180, 83, 9, 0.25)',
         };
       case 'failed':
         return {
           background: 'var(--bad-light)',
           color: 'var(--bad)',
-          border: '1px solid rgba(185, 28, 28, 0.25)'
+          border: '1px solid rgba(185, 28, 28, 0.25)',
         };
       default:
         return {
           background: 'var(--brand-light)',
           color: 'var(--muted)',
-          border: '1px solid rgba(107, 114, 128, 0.25)'
+          border: '1px solid rgba(107, 114, 128, 0.25)',
         };
     }
   };
@@ -69,29 +69,36 @@ export const MarketingWidget: React.FC<MarketingWidgetProps> = ({
   };
 
   return (
-    <div className="card cardFull" data-testid="admin_widget_marketing_en" role="region" aria-label="Marketing Events">
+    <div
+      className="card cardFull"
+      data-testid="admin_widget_marketing_en"
+      role="region"
+      aria-label="Marketing Events"
+    >
       <div className="row mb-4">
-        <div style={{ 
-          fontWeight: 'var(--font-weight-extrabold)', 
-          fontSize: 'var(--font-size-xl)'
-        }}>
+        <div
+          style={{
+            fontWeight: 'var(--font-weight-extrabold)',
+            fontSize: 'var(--font-size-xl)',
+          }}
+        >
           Маркетинговые события
         </div>
-        <span className="pill pillGood">
-          {activeCampaigns} активных кампаний
-        </span>
+        <span className="pill pillGood">{activeCampaigns} активных кампаний</span>
       </div>
 
       <div style={{ display: 'grid', gap: 'var(--spacing-lg)' }}>
         {/* Recent Trigger Events */}
         {recentTriggerEvents.length > 0 && (
           <>
-            <div style={{ 
-              fontSize: 'var(--font-size-sm)', 
-              fontWeight: 'var(--font-weight-semibold)', 
-              color: 'var(--text)', 
-              marginBottom: 'var(--spacing-sm)'
-            }}>
+            <div
+              style={{
+                fontSize: 'var(--font-size-sm)',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text)',
+                marginBottom: 'var(--spacing-sm)',
+              }}
+            >
               Последние события
             </div>
             <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
@@ -99,13 +106,13 @@ export const MarketingWidget: React.FC<MarketingWidgetProps> = ({
                 <div
                   key={event.id}
                   className="row"
-                  style={{ 
-                    padding: 'var(--spacing-sm)', 
-                    borderRadius: 'var(--radius-md)', 
+                  style={{
+                    padding: 'var(--spacing-sm)',
+                    borderRadius: 'var(--radius-md)',
                     background: 'var(--brand-light)',
                     border: '1px solid var(--border)',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'var(--primary-light)';
@@ -117,17 +124,21 @@ export const MarketingWidget: React.FC<MarketingWidgetProps> = ({
                   }}
                 >
                   <div style={{ flex: 1 }}>
-                    <div style={{ 
-                      fontSize: 'var(--font-size-sm)', 
-                      fontWeight: 'var(--font-weight-semibold)', 
-                      color: 'var(--text)'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--font-size-sm)',
+                        fontWeight: 'var(--font-weight-semibold)',
+                        color: 'var(--text)',
+                      }}
+                    >
                       {event.trigger_name}
                     </div>
-                    <div style={{ 
-                      fontSize: 'var(--font-size-xs)', 
-                      color: 'var(--muted)'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--font-size-xs)',
+                        color: 'var(--muted)',
+                      }}
+                    >
                       {event.customer_name} · {formatTime(event.created_at)}
                     </div>
                   </div>
@@ -140,11 +151,14 @@ export const MarketingWidget: React.FC<MarketingWidgetProps> = ({
                         fontSize: 'var(--font-size-xs)',
                         fontWeight: 'var(--font-weight-medium)',
                         display: 'inline-flex',
-                        alignItems: 'center'
+                        alignItems: 'center',
                       }}
                     >
-                      {event.status === 'processed' ? 'Успешно' : 
-                       event.status === 'pending' ? 'В ожидании' : 'Ошибка'}
+                      {event.status === 'processed'
+                        ? 'Успешно'
+                        : event.status === 'pending'
+                          ? 'В ожидании'
+                          : 'Ошибка'}
                     </span>
                   </div>
                 </div>
@@ -156,29 +170,25 @@ export const MarketingWidget: React.FC<MarketingWidgetProps> = ({
         {/* Trigger Stats */}
         {Object.keys(triggerStats).length > 0 && (
           <div>
-            <div style={{ 
-              fontSize: 'var(--font-size-sm)', 
-              fontWeight: 'var(--font-weight-semibold)', 
-              color: 'var(--text)', 
-              marginBottom: 'var(--spacing-sm)'
-            }}>
+            <div
+              style={{
+                fontSize: 'var(--font-size-sm)',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text)',
+                marginBottom: 'var(--spacing-sm)',
+              }}
+            >
               События за 24ч
             </div>
             <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap' }}>
               {triggerStats.processed > 0 && (
-                <div className="pill pillGood">
-                  Успешно: {triggerStats.processed}
-                </div>
+                <div className="pill pillGood">Успешно: {triggerStats.processed}</div>
               )}
               {triggerStats.pending > 0 && (
-                <div className="pill pillWarn">
-                  В ожидании: {triggerStats.pending}
-                </div>
+                <div className="pill pillWarn">В ожидании: {triggerStats.pending}</div>
               )}
               {triggerStats.failed > 0 && (
-                <div className="pill pillBad">
-                  Ошибки: {triggerStats.failed}
-                </div>
+                <div className="pill pillBad">Ошибки: {triggerStats.failed}</div>
               )}
             </div>
           </div>
@@ -187,12 +197,14 @@ export const MarketingWidget: React.FC<MarketingWidgetProps> = ({
         {/* Upcoming Campaigns */}
         {upcomingCampaigns.length > 0 && (
           <div>
-            <div style={{ 
-              fontSize: 'var(--font-size-sm)', 
-              fontWeight: 'var(--font-weight-semibold)', 
-              color: 'var(--text)', 
-              marginBottom: 'var(--spacing-sm)'
-            }}>
+            <div
+              style={{
+                fontSize: 'var(--font-size-sm)',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text)',
+                marginBottom: 'var(--spacing-sm)',
+              }}
+            >
               Предстоящие кампании
             </div>
             <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
@@ -200,13 +212,13 @@ export const MarketingWidget: React.FC<MarketingWidgetProps> = ({
                 <div
                   key={campaign.id}
                   className="row"
-                  style={{ 
-                    padding: 'var(--spacing-sm)', 
-                    borderRadius: 'var(--radius-md)', 
+                  style={{
+                    padding: 'var(--spacing-sm)',
+                    borderRadius: 'var(--radius-md)',
                     background: 'var(--brand-light)',
                     border: '1px solid var(--border)',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'var(--primary-light)';
@@ -230,16 +242,20 @@ export const MarketingWidget: React.FC<MarketingWidgetProps> = ({
         )}
 
         {/* Empty State */}
-        {recentTriggerEvents.length === 0 && Object.keys(triggerStats).length === 0 && upcomingCampaigns.length === 0 && (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: 'var(--spacing-xl) var(--spacing-lg)', 
-            color: 'var(--muted)', 
-            fontSize: 'var(--font-size-sm)'
-          }}>
-            Нет недавних маркетинговых событий
-          </div>
-        )}
+        {recentTriggerEvents.length === 0 &&
+          Object.keys(triggerStats).length === 0 &&
+          upcomingCampaigns.length === 0 && (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: 'var(--spacing-xl) var(--spacing-lg)',
+                color: 'var(--muted)',
+                fontSize: 'var(--font-size-sm)',
+              }}
+            >
+              Нет недавних маркетинговых событий
+            </div>
+          )}
       </div>
     </div>
   );

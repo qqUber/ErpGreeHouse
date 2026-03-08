@@ -20,6 +20,7 @@ import {
   Integration,
   IntegrationDelivery,
   IntegrationTemplate,
+  Product,
   SalesStats,
   setAdminSecret,
 } from './api';
@@ -29,6 +30,8 @@ import { useAuth } from './stores/auth';
 import { ComplianceView } from './ComplianceView';
 import { MarketingView } from './MarketingView';
 import { AnalyticsView } from './AnalyticsView';
+import { CustomersTable } from './components/CustomersTable';
+import { ProductsTable } from './components/ProductsTable';
 
 type Tab =
   | 'dashboard'
@@ -100,6 +103,14 @@ function App() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [details, setDetails] = useState<CustomerDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Pagination state
+  const [customerPage, setCustomerPage] = useState(1);
+  const [customerTotal, setCustomerTotal] = useState(0);
+  const [customerLimit] = useState(50);
+  const [productPage, setProductPage] = useState(1);
+  const [productTotal, setProductTotal] = useState(0);
+  const [productLimit] = useState(50);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [authFlow, setAuthFlow] = useState<AuthFlow | null>(null);
   const authAbortRef = useRef<AbortController | null>(null);
@@ -233,10 +244,14 @@ function App() {
     setDash(d);
   }
 
-  async function loadCustomers(query?: string) {
+  async function loadCustomers(query?: string, page: number = 1) {
     setError(null);
-    const res = await Api.customers(query);
+    const res = await Api.customers(query, page, customerLimit);
     setCustomers(res.items);
+    if (res.pagination) {
+      setCustomerPage(res.pagination.page);
+      setCustomerTotal(res.pagination.total);
+    }
   }
 
   async function loadCustomer(id: number) {
@@ -268,10 +283,14 @@ function App() {
     setIntegrationTemplates(res.items);
   }
 
-  async function loadProducts() {
+  async function loadProducts(query?: string, page: number = 1) {
     setError(null);
-    const res = await Api.products();
+    const res = await Api.products(query, page, productLimit);
     setProducts(res.items);
+    if (res.pagination) {
+      setProductPage(res.pagination.page);
+      setProductTotal(res.pagination.total);
+    }
   }
 
   async function bootstrap() {
@@ -316,18 +335,54 @@ function App() {
     }
   }
 
-  // Bootstrap the app - only run after auth is initialized
-  // This prevents calling protected endpoints before knowing if user has a valid session
+  // Handle keyboard shortcuts for mouse-less operation
   useEffect(() => {
-    // Wait for auth to finish loading before bootstrapping
-    // This prevents the 401 refresh loop on initial page load when user is not logged in
-    if (authLoading) {
-      console.log('[App] Waiting for auth to finish loading before bootstrap...');
-      return;
-    }
-    console.log('[App] Auth loading complete, running bootstrap...');
-    bootstrap();
-  }, [authLoading, user]);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+1, Ctrl+2, etc. for tab switching (similar to browsers)
+      if (e.ctrlKey) {
+        switch (e.key) {
+          case '1':
+            e.preventDefault();
+            setTab('dashboard');
+            break;
+          case '2':
+            e.preventDefault();
+            setTab('customers');
+            break;
+          case '3':
+            e.preventDefault();
+            setTab('products');
+            break;
+          case '4':
+            e.preventDefault();
+            setTab('pos');
+            break;
+          case '5':
+            e.preventDefault();
+            setTab('marketing');
+            break;
+          case '6':
+            e.preventDefault();
+            setTab('analytics');
+            break;
+          case '7':
+            e.preventDefault();
+            setTab('settings');
+            break;
+        }
+      }
+      
+      // Escape key to clear search
+      if (e.key === 'Escape') {
+        setQ('');
+        setCustomerPage(1);
+        setProductPage(1);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [q, customerPage, productPage]);
 
   useEffect(() => {
     const onVis = () => {
@@ -414,6 +469,22 @@ function App() {
     }
   }, [selectedIntegrationId, authReady]);
 
+  // Handle customer pagination
+  useEffect(() => {
+    if (!authReady) return;
+    if (tab === 'customers') {
+      loadCustomers(q, customerPage).catch((e) => setError(String(e)));
+    }
+  }, [tab, authReady, q, customerPage]);
+
+  // Handle product pagination
+  useEffect(() => {
+    if (!authReady) return;
+    if (tab === 'products') {
+      loadProducts(q, productPage).catch((e) => setError(String(e)));
+    }
+  }, [tab, authReady, q, productPage]);
+
   function startAuthFlowSteps(labels: string[]) {
     stopAuthFlow();
     const ctrl = new AbortController();
@@ -473,13 +544,13 @@ function App() {
     } catch (e: any) {
       console.log(`[App] Login failed: ${e?.message || e}`);
       if (
-      String(e?.name || '')
-      .toLowerCase()
-      .includes('abort')
+        String(e?.name || '')
+          .toLowerCase()
+          .includes('abort')
       ) {
-      showNotice('warn', t('auth.loginCancelled'));
+        showNotice('warn', t('auth.loginCancelled'));
       } else {
-      showNotice('err', String(e?.message || e));
+        showNotice('err', String(e?.message || e));
       }
       stopAuthFlow();
     }
@@ -531,13 +602,13 @@ function App() {
       console.error(`[App] Login failed (catch):`, e);
       console.error(`[App] Login failed message:`, e.message);
       if (
-      String(e?.name || '')
-      .toLowerCase()
-      .includes('abort')
+        String(e?.name || '')
+          .toLowerCase()
+          .includes('abort')
       ) {
-      showNotice('warn', t('auth.loginCancelled'));
+        showNotice('warn', t('auth.loginCancelled'));
       } else {
-      showNotice('err', String(e?.message || e));
+        showNotice('err', String(e?.message || e));
       }
       stopAuthFlow();
     }
@@ -569,17 +640,17 @@ function App() {
       stopAuthFlow();
     } catch (e: any) {
       if (
-      String(e?.name || '')
-      .toLowerCase()
-      .includes('abort')
+        String(e?.name || '')
+          .toLowerCase()
+          .includes('abort')
       ) {
-      showNotice('warn', t('auth.operationCancelled'));
+        showNotice('warn', t('auth.operationCancelled'));
       } else {
-      showNotice('err', String(e?.message || e));
+        showNotice('err', String(e?.message || e));
       }
       stopAuthFlow();
-      }
-      }
+    }
+  }
 
   async function doChangePassword() {
     setError(null);
@@ -640,20 +711,57 @@ function App() {
 
   const allowedTabs: Tab[] = useMemo(() => {
     if (!effectiveAuthReady)
-      return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings', 'marketing', 'compliance'];
+      return [
+        'dashboard',
+        'customers',
+        'pos',
+        'integrations',
+        'products',
+        'settings',
+        'marketing',
+        'compliance',
+      ];
     const effectiveUser = user || me;
     // If authenticated but user data not yet loaded, show all tabs temporarily
     // This prevents race condition where effectiveAuthReady=true but me is still null
     if (!effectiveUser)
-      return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings', 'marketing', 'compliance'];
+      return [
+        'dashboard',
+        'customers',
+        'pos',
+        'integrations',
+        'products',
+        'settings',
+        'marketing',
+        'compliance',
+      ];
     const role = String(effectiveUser?.role || '').toLowerCase();
     if (role === 'owner')
-      return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings', 'marketing', 'compliance'];
+      return [
+        'dashboard',
+        'customers',
+        'pos',
+        'integrations',
+        'products',
+        'settings',
+        'marketing',
+        'compliance',
+      ];
 
     const perms = new Set(effectiveUser?.permissions || []);
     // If user has '*' permission, they see everything (though owner check above covers this usually)
     if (perms.has('*'))
-      return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings', 'marketing', 'compliance', 'analytics'];
+      return [
+        'dashboard',
+        'customers',
+        'pos',
+        'integrations',
+        'products',
+        'settings',
+        'marketing',
+        'compliance',
+        'analytics',
+      ];
 
     const tabs: Tab[] = [];
     if (perms.has('dashboard.read')) tabs.push('dashboard');
@@ -684,7 +792,9 @@ function App() {
     <div className="container">
       <header role="banner" className="header">
         <div className="brand">
-          <h1 style={{ fontWeight: 800, fontSize: 'var(--font-size-xl)', margin: 0 }}>{t('app.controlPanel')}</h1>
+          <h1 style={{ fontWeight: 800, fontSize: 'var(--font-size-xl)', margin: 0 }}>
+            {t('app.controlPanel')}
+          </h1>
         </div>
         <nav role="navigation" aria-label="Main navigation">
           <div className="tabs" role="tablist" aria-label="Main navigation">
@@ -807,7 +917,11 @@ function App() {
             ) : null}
           </div>
         </nav>
-        {authReady ? <div className="pill">{t('common.role')}: {roleLabel(me?.role || '')}</div> : null}
+        {authReady ? (
+          <div className="pill">
+            {t('common.role')}: {roleLabel(me?.role || '')}
+          </div>
+        ) : null}
         <LanguageSwitcher />
       </header>
 
@@ -818,455 +932,569 @@ function App() {
           </div>
         ) : null}
 
-      {/* Show login form when not authenticated OR when auth is still loading */}
-      {!authReady || (!user && authReady) ? (
-        <div className="grid">
-          <div className="card cardFull">
-            <div className="row">
-              <div>
-                <div style={{ fontWeight: 800, fontSize: 16 }}>{t('auth.login')}</div>
-                <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
-                  {t('auth.accessSettingsDesc')}
+        {/* Show login form when not authenticated OR when auth is still loading */}
+        {!authReady || (!user && authReady) ? (
+          <div className="grid">
+            <div className="card cardFull">
+              <div className="row">
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 16 }}>{t('auth.login')}</div>
+                  <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
+                    {t('auth.accessSettingsDesc')}
+                  </div>
+                </div>
+                <div className="pill">
+                  {t('auth.apiStatus')}: {publicStatus?.api || t('auth.apiUnavailable')}
                 </div>
               </div>
-              <div className="pill">{t('auth.apiStatus')}: {publicStatus?.api || t('auth.apiUnavailable')}</div>
-            </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-              <button
-                className={`btn ${loginMode === 'password' ? 'btnPrimary' : ''}`}
-                onClick={() => setLoginMode('password')}
-                data-testid="common_btn_password_login_en"
-              >
-                {t('auth.byPassword')}
-              </button>
-              <button
-                className={`btn ${loginMode === 'key' ? 'btnPrimary' : ''}`}
-                onClick={() => setLoginMode('key')}
-                data-testid="common_btn_key_login_en"
-              >
-                {t('auth.byKey')}
-              </button>
-              <button
-                className={`btn ${loginMode === 'recover' ? 'btnPrimary' : ''}`}
-                onClick={() => setLoginMode('recover')}
-                data-testid="common_btn_recovery_en"
-              >
-                {t('auth.recovery')}
-              </button>
-              <button className="btn" onClick={() => void loadPublicStatus()} data-testid="common_btn_api_status_en">
-                {t('auth.apiStatus')}
-              </button>
-            </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                <button
+                  className={`btn ${loginMode === 'password' ? 'btnPrimary' : ''}`}
+                  onClick={() => setLoginMode('password')}
+                  data-testid="common_btn_password_login_en"
+                >
+                  {t('auth.byPassword')}
+                </button>
+                <button
+                  className={`btn ${loginMode === 'key' ? 'btnPrimary' : ''}`}
+                  onClick={() => setLoginMode('key')}
+                  data-testid="common_btn_key_login_en"
+                >
+                  {t('auth.byKey')}
+                </button>
+                <button
+                  className={`btn ${loginMode === 'recover' ? 'btnPrimary' : ''}`}
+                  onClick={() => setLoginMode('recover')}
+                  data-testid="common_btn_recovery_en"
+                >
+                  {t('auth.recovery')}
+                </button>
+                <button
+                  className="btn"
+                  onClick={() => void loadPublicStatus()}
+                  data-testid="common_btn_api_status_en"
+                >
+                  {t('auth.apiStatus')}
+                </button>
+              </div>
 
-            {loginMode === 'password' ? (
-              <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
-                <div className="row">
-                  <div style={{ flex: 1 }}>
-                    <input
-                      className="input"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder={t('auth.loginPlaceholder')}
-                      autoComplete="off"
-                      spellCheck={false}
-                      data-testid="common_input_username_en"
-                    />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', gap: 8 }}>
+              {loginMode === 'password' ? (
+                <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+                  <div className="row">
+                    <div style={{ flex: 1 }}>
                       <input
                         className="input"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder={t('auth.passwordPlaceholder')}
-                        type={showPassword ? 'text' : 'password'}
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder={t('auth.loginPlaceholder')}
                         autoComplete="off"
                         spellCheck={false}
-                        data-testid="common_input_password_en"
+                        data-testid="common_input_username_en"
                       />
-                      <button
-                        className="btn"
-                        onClick={() => setShowPassword((v) => !v)}
-                        aria-label={t('forms.labels.showPassword')}
-                        type="button"
-                        data-testid="common_btn_toggle_password_en"
-                      >
-                        {showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
-                      </button>
                     </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          className="input"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder={t('auth.passwordPlaceholder')}
+                          type={showPassword ? 'text' : 'password'}
+                          autoComplete="off"
+                          spellCheck={false}
+                          data-testid="common_input_password_en"
+                        />
+                        <button
+                          className="btn"
+                          onClick={() => setShowPassword((v) => !v)}
+                          aria-label={t('forms.labels.showPassword')}
+                          type="button"
+                          data-testid="common_btn_toggle_password_en"
+                        >
+                          {showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      className="btn btnPrimary"
+                      onClick={() => void doLoginByPassword()}
+                      disabled={!username.trim() || !password}
+                      data-testid="common_btn_login_en"
+                    >
+                      {t('auth.loginButton')}
+                    </button>
+                  </div>
+                  <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
+                    {authStatus?.default_admin_present
+                      ? `${t('auth.defaultAdmin')}: ${authStatus.default_admin_username}`
+                      : t('auth.defaultAdminNotCreated')}
+                  </div>
+                </div>
+              ) : null}
+
+              {loginMode === 'key' ? (
+                <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1 1 320px' }}>
+                    <input
+                      className="input"
+                      value={adminKey}
+                      onChange={(e) => setAdminKey(e.target.value)}
+                      placeholder="x-admin-secret"
+                      autoComplete="off"
+                      spellCheck={false}
+                      data-testid="common_input_admin_key_en"
+                    />
                   </div>
                   <button
                     className="btn btnPrimary"
-                    onClick={() => void doLoginByPassword()}
-                    disabled={!username.trim() || !password}
-                    data-testid="common_btn_login_en"
+                    onClick={() => void doLoginByKey()}
+                    disabled={!adminKey.trim()}
+                    data-testid="common_btn_key_login_submit_en"
                   >
                     {t('auth.loginButton')}
                   </button>
                 </div>
-                <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
-                  {authStatus?.default_admin_present
-                    ? `${t('auth.defaultAdmin')}: ${authStatus.default_admin_username}`
-                    : t('auth.defaultAdminNotCreated')}
+              ) : null}
+
+              {loginMode === 'recover' ? (
+                <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+                  <div className="row">
+                    <div style={{ flex: 1 }}>
+                      <input
+                        className="input"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder={t('auth.loginPlaceholder')}
+                        autoComplete="off"
+                        spellCheck={false}
+                        data-testid="common_input_recover_username_en"
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          className="input"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder={t('auth.newPasswordPlaceholder')}
+                          type={showNewPassword ? 'text' : 'password'}
+                          autoComplete="off"
+                          spellCheck={false}
+                          data-testid="common_input_recover_new_password_en"
+                        />
+                        <button
+                          className="btn"
+                          onClick={() => setShowNewPassword((v) => !v)}
+                          aria-label={t('forms.labels.showPassword')}
+                          type="button"
+                          data-testid="common_btn_toggle_new_password_en"
+                        >
+                          {showNewPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="row">
+                    <div style={{ flex: 1 }}>
+                      <input
+                        className="input"
+                        value={recoverySecret}
+                        onChange={(e) => setRecoverySecret(e.target.value)}
+                        placeholder={t('auth.recoveryCode')}
+                        type="password"
+                        autoComplete="off"
+                        spellCheck={false}
+                        data-testid="common_input_recovery_secret_en"
+                      />
+                    </div>
+                    <button
+                      className="btn btnPrimary"
+                      onClick={() => void doRecoverPassword()}
+                      disabled={!username.trim() || newPassword.length < 8 || !recoverySecret}
+                      data-testid="common_btn_reset_password_en"
+                    >
+                      {t('auth.resetPassword')}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {mustChangePassword ? (
+                <div style={{ marginTop: 12, color: '#8b0000' }}>
+                  {t('auth.requirePasswordChange')}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {optimisticReady && safeTab === 'dashboard' ? (
+          <div id="dashboard-panel" role="tabpanel" aria-labelledby="dashboard-tab">
+            <DashboardView dash={dash} reload={() => loadDashboard()} onNavigate={navigateTo} />
+          </div>
+        ) : null}
+        {optimisticReady && safeTab === 'customers' ? (
+          <div id="customers-panel" role="tabpanel" aria-labelledby="customers-tab">
+            <div className="grid">
+              <div className="card cardFull">
+                <div className="row mb-4">
+                  <div className="flex-1">
+                    <input
+                      className="input"
+                      placeholder={t('customers.searchPlaceholder')}
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                      data-testid="customers_search_input_en"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      className="btn"
+                      onClick={() => {
+                        setCustomerPage(1); // Reset to first page on search
+                        loadCustomers(q, 1);
+                      }}
+                      data-testid="customers_search_button_en"
+                    >
+                      {t('customers.search')}
+                    </button>
+                    <button
+                      className="btn btnPrimary"
+                      onClick={() => {
+                        setQ('');
+                        setCustomerPage(1); // Reset to first page when clearing
+                        loadCustomers('', 1);
+                      }}
+                      data-testid="customers_clear_button_en"
+                    >
+                      {t('customers.clear')}
+                    </button>
+                  </div>
+                </div>
+                  <div className="flex gap-2">
+                    <button
+                      className="btn"
+                      onClick={() => {
+                        setCustomerPage(1); // Reset to first page on search
+                        loadCustomers(q, 1);
+                      }}
+                      data-testid="customers_search_button_en"
+                    >
+                      {t('customers.search')}
+                    </button>
+                    <button
+                      className="btn btnPrimary"
+                      onClick={() => {
+                        setQ('');
+                        setCustomerPage(1); // Reset to first page when clearing
+                        loadCustomers('', 1);
+                      }}
+                      data-testid="customers_clear_button_en"
+                    >
+                      {t('customers.clear')}
+                    </button>
+                  </div>
+                </div>
+                
+                <CustomersTable
+                  customers={customers}
+                  page={customerPage}
+                  total={customerTotal}
+                  limit={customerLimit}
+                  onPageChange={setCustomerPage}
+                  onCustomerSelect={setSelectedId}
+                  loading={false}
+                />
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {optimisticReady && safeTab === 'pos' ? (
+          <div id="pos-panel" role="tabpanel" aria-labelledby="pos-tab">
+            <PosView
+              refreshCustomers={() => loadCustomers()}
+              products={products}
+              reloadProducts={() => loadProducts()}
+              onSaleDone={async (customerId: number) => {
+                await loadDashboard();
+                await loadCustomers();
+                setSelectedId(customerId);
+                setTab('customers');
+              }}
+            />
+          </div>
+        ) : null}
+        {optimisticReady && safeTab === 'integrations' ? (
+          <div id="integrations-panel" role="tabpanel" aria-labelledby="integrations-tab">
+            <div className="grid">
+              <div className="card cardWide">
+                <div className="tabs" style={{ marginBottom: 15 }}>
+                  <div
+                    className={`tab ${integrationSubTab === 'settings' ? 'tabActive' : ''}`}
+                    onClick={() => setIntegrationSubTab('settings')}
+                    data-testid="admin_tab_integration_settings_en"
+                  >
+                    {t('integrations.botSettings')}
+                  </div>
+                  <div
+                    className={`tab ${integrationSubTab === 'webhooks' ? 'tabActive' : ''}`}
+                    onClick={() => setIntegrationSubTab('webhooks')}
+                    data-testid="admin_tab_webhooks_en"
+                  >
+                    {t('integrations.connections')}
+                  </div>
+                </div>
+
+                {integrationSubTab === 'settings' ? (
+                  <IntegrationSettings />
+                ) : (
+                  <IntegrationsView
+                    items={integrations}
+                    templates={integrationTemplates}
+                    busy={integrationsBusy}
+                    selected={selectedIntegration}
+                    deliveries={integrationDeliveries}
+                    select={(id) => setSelectedIntegrationId(id)}
+                    reload={() => loadIntegrations()}
+                    create={async (p) => {
+                      await Api.createIntegration(p);
+                      await loadIntegrations();
+                    }}
+                    update={async (id, p) => {
+                      await Api.updateIntegration(id, p);
+                      await loadIntegrations();
+                    }}
+                    rotate={async (id) => {
+                      await Api.rotateIntegrationSecret(id);
+                      await loadIntegrations();
+                      setSelectedIntegrationId(id);
+                    }}
+                    remove={async (id) => {
+                      await Api.deleteIntegration(id);
+                      setSelectedIntegrationId(null);
+                      await loadIntegrations();
+                    }}
+                    refreshDeliveries={async (id) => {
+                      await loadDeliveries(id);
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {optimisticReady && safeTab === 'products' ? (
+          <div id="products-panel" role="tabpanel" aria-labelledby="products-tab">
+            <div className="grid">
+              <div className="card cardFull">
+                <div className="row mb-4">
+                  <div className="flex-1">
+                    <input
+                      className="input"
+                      placeholder={t('products.searchPlaceholder')}
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                      data-testid="products_search_input_en"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      className="btn"
+                      onClick={() => {
+                        setProductPage(1); // Reset to first page on search
+                        loadProducts(q, 1);
+                      }}
+                      data-testid="products_search_button_en"
+                    >
+                      {t('products.search')}
+                    </button>
+                    <button
+                      className="btn btnPrimary"
+                      onClick={() => {
+                        setQ('');
+                        setProductPage(1); // Reset to first page when clearing
+                        loadProducts('', 1);
+                      }}
+                      data-testid="products_clear_button_en"
+                    >
+                      {t('products.clear')}
+                    </button>
+                  </div>
+                </div>
+                
+                <ProductsTable
+                  products={products}
+                  page={productPage}
+                  total={productTotal}
+                  limit={productLimit}
+                  onPageChange={setProductPage}
+                  loading={false}
+                />
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {optimisticReady && safeTab === 'settings' ? (
+          <div id="settings-panel" role="tabpanel" aria-labelledby="settings-tab">
+            <div className="grid">
+              <div className="card cardFull" data-testid="settings_view_en">
+                <div className="row">
+                  <div>
+                    <div style={{ fontWeight: 900, fontSize: 18 }}>{t('auth.accessSettings')}</div>
+                    <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
+                      {mustChangePassword
+                        ? t('auth.requirePasswordChangeSettings')
+                        : t('auth.accessSettingsDesc')}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <div className="pill">{t('auth.sessionActive')}</div>
+                    <button
+                      className="btn"
+                      onClick={() => void doLogout()}
+                      type="button"
+                      data-testid="admin_btn_logout_en"
+                    >
+                      {t('auth.logout')}
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+                  <div className="row">
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          className="input"
+                          value={oldPassword}
+                          onChange={(e) => setOldPassword(e.target.value)}
+                          placeholder={t('auth.currentPassword')}
+                          type={showSettingsOld ? 'text' : 'password'}
+                          autoComplete="off"
+                          spellCheck={false}
+                          data-testid="admin_input_old_password_en"
+                        />
+                        <button
+                          className="btn"
+                          onClick={() => setShowSettingsOld((v) => !v)}
+                          type="button"
+                          data-testid="admin_btn_toggle_old_password_en"
+                        >
+                          {showSettingsOld ? t('auth.hidePassword') : t('auth.showPassword')}
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          className="input"
+                          value={settingsNewPassword}
+                          onChange={(e) => setSettingsNewPassword(e.target.value)}
+                          placeholder={t('auth.newPassword')}
+                          type={showSettingsNew ? 'text' : 'password'}
+                          autoComplete="off"
+                          spellCheck={false}
+                          data-testid="admin_input_new_password_en"
+                        />
+                        <button
+                          className="btn"
+                          onClick={() => setShowSettingsNew((v) => !v)}
+                          type="button"
+                          data-testid="admin_btn_toggle_new_password_en"
+                        >
+                          {showSettingsNew ? t('auth.hidePassword') : t('auth.showPassword')}
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      className="btn btnPrimary"
+                      onClick={() => void doChangePassword()}
+                      disabled={!oldPassword || settingsNewPassword.length < 8}
+                      data-testid="admin_btn_change_password_en"
+                    >
+                      {t('auth.changePassword')}
+                    </button>
+                  </div>
+                  <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
+                    {t('auth.recoveryInstructions')}
+                  </div>
                 </div>
               </div>
-            ) : null}
 
-            {loginMode === 'key' ? (
-              <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
-                <div style={{ flex: '1 1 320px' }}>
-                  <input
-                    className="input"
-                    value={adminKey}
-                    onChange={(e) => setAdminKey(e.target.value)}
-                    placeholder="x-admin-secret"
-                    autoComplete="off"
-                    spellCheck={false}
-                    data-testid="common_input_admin_key_en"
-                  />
+              {me?.role === 'owner' || (me?.permissions || []).includes('settings.access') ? (
+                <PermissionsTable />
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {optimisticReady && safeTab === 'marketing' ? (
+          <div id="marketing-panel" role="tabpanel" aria-labelledby="marketing-tab">
+            <MarketingView />
+          </div>
+        ) : null}
+
+        {optimisticReady && safeTab === 'compliance' ? (
+          <div id="compliance-panel" role="tabpanel" aria-labelledby="compliance-tab">
+            <ComplianceView />
+          </div>
+        ) : null}
+        {optimisticReady && safeTab === 'analytics' ? (
+          <div id="analytics-panel" role="tabpanel" aria-labelledby="analytics-tab">
+            <AnalyticsView />
+          </div>
+        ) : null}
+
+        {authFlow?.active ? (
+          <div className="overlay" role="dialog" aria-modal="true">
+            <div className="overlayPanel">
+              <div className="row">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div className="spinner" />
+                  <div style={{ fontWeight: 800 }}>{t('authFlow.authorization')}</div>
                 </div>
-                <button
-                  className="btn btnPrimary"
-                  onClick={() => void doLoginByKey()}
-                  disabled={!adminKey.trim()}
-                  data-testid="common_btn_key_login_submit_en"
-                >
-                  {t('auth.loginButton')}
+                <button className="btn" onClick={() => stopAuthFlow()} type="button">
+                  {t('authFlow.cancel')}
                 </button>
               </div>
-            ) : null}
-
-            {loginMode === 'recover' ? (
-              <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
-                <div className="row">
-                  <div style={{ flex: 1 }}>
-                    <input
-                      className="input"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder={t('auth.loginPlaceholder')}
-                      autoComplete="off"
-                      spellCheck={false}
-                      data-testid="common_input_recover_username_en"
-                    />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input
-                        className="input"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder={t('auth.newPasswordPlaceholder')}
-                        type={showNewPassword ? 'text' : 'password'}
-                        autoComplete="off"
-                        spellCheck={false}
-                        data-testid="common_input_recover_new_password_en"
-                      />
-                      <button
-                        className="btn"
-                        onClick={() => setShowNewPassword((v) => !v)}
-                        aria-label={t('forms.labels.showPassword')}
-                        type="button"
-                        data-testid="common_btn_toggle_new_password_en"
-                      >
-                        {showNewPassword ? t('auth.hidePassword') : t('auth.showPassword')}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div className="row">
-                  <div style={{ flex: 1 }}>
-                    <input
-                      className="input"
-                      value={recoverySecret}
-                      onChange={(e) => setRecoverySecret(e.target.value)}
-                      placeholder={t('auth.recoveryCode')}
-                      type="password"
-                      autoComplete="off"
-                      spellCheck={false}
-                      data-testid="common_input_recovery_secret_en"
-                    />
-                  </div>
-                  <button
-                    className="btn btnPrimary"
-                    onClick={() => void doRecoverPassword()}
-                    disabled={!username.trim() || newPassword.length < 8 || !recoverySecret}
-                    data-testid="common_btn_reset_password_en"
-                  >
-                    {t('auth.resetPassword')}
-                  </button>
-                </div>
+              <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.65)', fontSize: 13 }}>
+                {authFlow.label}
               </div>
-            ) : null}
-
-            {mustChangePassword ? (
-              <div style={{ marginTop: 12, color: '#8b0000' }}>
-                {t('auth.requirePasswordChange')}
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-
-      {optimisticReady && safeTab === 'dashboard' ? (
-        <div id="dashboard-panel" role="tabpanel" aria-labelledby="dashboard-tab">
-          <DashboardView dash={dash} reload={() => loadDashboard()} onNavigate={navigateTo} />
-        </div>
-      ) : null}
-      {optimisticReady && safeTab === 'customers' ? (
-        <div id="customers-panel" role="tabpanel" aria-labelledby="customers-tab">
-          <CustomersView
-            q={q}
-            setQ={setQ}
-            customers={customers}
-            select={(id) => setSelectedId(id)}
-            selected={selected}
-            details={details}
-            search={() => loadCustomers(q)}
-            refresh={() => loadCustomers()}
-          />
-        </div>
-      ) : null}
-      {optimisticReady && safeTab === 'pos' ? (
-        <div id="pos-panel" role="tabpanel" aria-labelledby="pos-tab">
-          <PosView
-            refreshCustomers={() => loadCustomers()}
-            products={products}
-            reloadProducts={() => loadProducts()}
-            onSaleDone={async (customerId: number) => {
-              await loadDashboard();
-              await loadCustomers();
-              setSelectedId(customerId);
-              setTab('customers');
-            }}
-          />
-        </div>
-      ) : null}
-      {optimisticReady && safeTab === 'integrations' ? (
-        <div id="integrations-panel" role="tabpanel" aria-labelledby="integrations-tab">
-          <div className="grid">
-            <div className="card cardWide">
-              <div className="tabs" style={{ marginBottom: 15 }}>
+              <div style={{ marginTop: 10 }} className="progress" aria-label="progress">
                 <div
-                  className={`tab ${integrationSubTab === 'settings' ? 'tabActive' : ''}`}
-                  onClick={() => setIntegrationSubTab('settings')}
-                  data-testid="admin_tab_integration_settings_en"
-                >
-                  {t('integrations.botSettings')}
-                </div>
-                <div
-                  className={`tab ${integrationSubTab === 'webhooks' ? 'tabActive' : ''}`}
-                  onClick={() => setIntegrationSubTab('webhooks')}
-                  data-testid="admin_tab_webhooks_en"
-                >
-                  {t('integrations.connections')}
-                </div>
-              </div>
-
-              {integrationSubTab === 'settings' ? (
-                <IntegrationSettings />
-              ) : (
-                <IntegrationsView
-                  items={integrations}
-                  templates={integrationTemplates}
-                  busy={integrationsBusy}
-                  selected={selectedIntegration}
-                  deliveries={integrationDeliveries}
-                  select={(id) => setSelectedIntegrationId(id)}
-                  reload={() => loadIntegrations()}
-                  create={async (p) => {
-                    await Api.createIntegration(p);
-                    await loadIntegrations();
-                  }}
-                  update={async (id, p) => {
-                    await Api.updateIntegration(id, p);
-                    await loadIntegrations();
-                  }}
-                  rotate={async (id) => {
-                    await Api.rotateIntegrationSecret(id);
-                    await loadIntegrations();
-                    setSelectedIntegrationId(id);
-                  }}
-                  remove={async (id) => {
-                    await Api.deleteIntegration(id);
-                    setSelectedIntegrationId(null);
-                    await loadIntegrations();
-                  }}
-                  refreshDeliveries={async (id) => {
-                    await loadDeliveries(id);
-                  }}
+                  className="progressFill"
+                  style={{ width: `${Math.max(0, Math.min(100, authFlow.percent))}%` }}
                 />
-              )}
-            </div>
-          </div>
-        </div>
-      ) : null}
-      {optimisticReady && safeTab === 'products' ? (
-        <div id="products-panel" role="tabpanel" aria-labelledby="products-tab">
-          <ProductsView
-            items={products}
-            reload={() => loadProducts()}
-            canEdit={(me?.permissions || []).includes('product.create')}
-            create={async (p) => {
-              await Api.createProduct(p);
-              await loadProducts();
-            }}
-            setShowProductImport={setShowProductImport}
-          />
-        </div>
-      ) : null}
-      {optimisticReady && safeTab === 'settings' ? (
-        <div id="settings-panel" role="tabpanel" aria-labelledby="settings-tab">
-          <div className="grid">
-            <div className="card cardFull" data-testid="settings_view_en">
-              <div className="row">
-                <div>
-                  <div style={{ fontWeight: 900, fontSize: 18 }}>{t('auth.accessSettings')}</div>
-                  <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
-                    {mustChangePassword
-                      ? t('auth.requirePasswordChangeSettings')
-                      : t('auth.accessSettingsDesc')}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <div className="pill">{t('auth.sessionActive')}</div>
-                  <button className="btn" onClick={() => void doLogout()} type="button" data-testid="admin_btn_logout_en">
-                    {t('auth.logout')}
-                  </button>
-                </div>
               </div>
-
-              <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
-                <div className="row">
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input
-                        className="input"
-                        value={oldPassword}
-                        onChange={(e) => setOldPassword(e.target.value)}
-                        placeholder={t('auth.currentPassword')}
-                        type={showSettingsOld ? 'text' : 'password'}
-                        autoComplete="off"
-                        spellCheck={false}
-                        data-testid="admin_input_old_password_en"
-                      />
-                      <button
-                        className="btn"
-                        onClick={() => setShowSettingsOld((v) => !v)}
-                        type="button"
-                        data-testid="admin_btn_toggle_old_password_en"
-                      >
-                        {showSettingsOld ? t('auth.hidePassword') : t('auth.showPassword')}
-                      </button>
-                    </div>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input
-                        className="input"
-                        value={settingsNewPassword}
-                        onChange={(e) => setSettingsNewPassword(e.target.value)}
-                        placeholder={t('auth.newPassword')}
-                        type={showSettingsNew ? 'text' : 'password'}
-                        autoComplete="off"
-                        spellCheck={false}
-                        data-testid="admin_input_new_password_en"
-                      />
-                      <button
-                        className="btn"
-                        onClick={() => setShowSettingsNew((v) => !v)}
-                        type="button"
-                        data-testid="admin_btn_toggle_new_password_en"
-                      >
-                        {showSettingsNew ? t('auth.hidePassword') : t('auth.showPassword')}
-                      </button>
-                    </div>
-                  </div>
-                  <button
-                    className="btn btnPrimary"
-                    onClick={() => void doChangePassword()}
-                    disabled={!oldPassword || settingsNewPassword.length < 8}
-                    data-testid="admin_btn_change_password_en"
+              <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(0,0,0,0.55)' }}>
+                {Math.max(0, Math.min(100, authFlow.percent))}%
+              </div>
+              <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
+                {authFlow.steps.map((s, idx) => (
+                  <div
+                    key={idx}
+                    className="row"
+                    style={{ fontSize: 12, color: 'rgba(0,0,0,0.65)' }}
                   >
-                    {t('auth.changePassword')}
-                  </button>
-                </div>
-                <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
-                  {t('auth.recoveryInstructions')}
-                </div>
-              </div>
-            </div>
-
-            {me?.role === 'owner' || (me?.permissions || []).includes('settings.access') ? (
-              <PermissionsTable />
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-
-      {optimisticReady && safeTab === 'marketing' ? (
-        <div id="marketing-panel" role="tabpanel" aria-labelledby="marketing-tab">
-          <MarketingView />
-        </div>
-      ) : null}
-
-      {optimisticReady && safeTab === 'compliance' ? (
-        <div id="compliance-panel" role="tabpanel" aria-labelledby="compliance-tab">
-          <ComplianceView />
-        </div>
-      ) : null}
-      {optimisticReady && safeTab === 'analytics' ? (
-        <div id="analytics-panel" role="tabpanel" aria-labelledby="analytics-tab">
-          <AnalyticsView />
-        </div>
-      ) : null}
-
-      {authFlow?.active ? (
-        <div className="overlay" role="dialog" aria-modal="true">
-          <div className="overlayPanel">
-            <div className="row">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div className="spinner" />
-                <div style={{ fontWeight: 800 }}>{t('authFlow.authorization')}</div>
-              </div>
-              <button className="btn" onClick={() => stopAuthFlow()} type="button">
-                {t('authFlow.cancel')}
-              </button>
-            </div>
-            <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.65)', fontSize: 13 }}>
-              {authFlow.label}
-            </div>
-            <div style={{ marginTop: 10 }} className="progress" aria-label="progress">
-              <div
-                className="progressFill"
-                style={{ width: `${Math.max(0, Math.min(100, authFlow.percent))}%` }}
-              />
-            </div>
-            <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(0,0,0,0.55)' }}>
-              {Math.max(0, Math.min(100, authFlow.percent))}%
-            </div>
-            <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
-              {authFlow.steps.map((s, idx) => (
-                <div key={idx} className="row" style={{ fontSize: 12, color: 'rgba(0,0,0,0.65)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span className={`pill ${s.done ? 'pillGood' : 'pillWarn'}`}>
-                      {s.done ? t('authFlow.done') : '...'}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className={`pill ${s.done ? 'pillGood' : 'pillWarn'}`}>
+                        {s.done ? t('authFlow.done') : '...'}
+                      </span>
+                      <span>{s.label}</span>
+                    </div>
+                    <span>
+                      {s.done
+                        ? '100%'
+                        : idx === authFlow.step
+                          ? `${Math.max(0, Math.min(100, authFlow.percent))}%`
+                          : '0%'}
                     </span>
-                    <span>{s.label}</span>
                   </div>
-                  <span>
-                    {s.done
-                      ? '100%'
-                      : idx === authFlow.step
-                        ? `${Math.max(0, Math.min(100, authFlow.percent))}%`
-                        : '0%'}
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
       </main>
       <footer role="contentinfo" className="footerVersion">
         v{__APP_VERSION__}
@@ -1419,9 +1647,7 @@ function DashboardView({
 
   // Use DashboardWrapper for role-based rendering
   // The wrapper handles role detection and renders the appropriate dashboard
-  return (
-    <DashboardWrapper data={data} onNavigate={onNavigate} />
-  );
+  return <DashboardWrapper data={data} onNavigate={onNavigate} />;
 }
 
 function CustomersView(props: {
@@ -1484,13 +1710,25 @@ function CustomersView(props: {
             />
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btnPrimary" onClick={() => void search()} data-testid="admin_btn_customer_search_en">
+            <button
+              className="btn btnPrimary"
+              onClick={() => void search()}
+              data-testid="admin_btn_customer_search_en"
+            >
               {t('clients.searchButton')}
             </button>
-            <button className="btn" onClick={() => void refresh()} data-testid="admin_btn_customer_reset_en">
+            <button
+              className="btn"
+              onClick={() => void refresh()}
+              data-testid="admin_btn_customer_reset_en"
+            >
               {t('common.refresh')}
             </button>
-            <button className="btn btnPrimary" onClick={() => setShowCreateForm(true)} data-testid="admin_btn_new_customer_en">
+            <button
+              className="btn btnPrimary"
+              onClick={() => setShowCreateForm(true)}
+              data-testid="admin_btn_new_customer_en"
+            >
               {t('clients.newClient')}
             </button>
           </div>
@@ -1501,13 +1739,19 @@ function CustomersView(props: {
         <div className="card cardFull" data-testid="customers_create_form_en">
           <div className="row">
             <div style={{ fontWeight: 900, fontSize: 18 }}>{t('clients.createClient')}</div>
-            <button className="btn" onClick={() => setShowCreateForm(false)} data-testid="admin_btn_close_create_form_en">
+            <button
+              className="btn"
+              onClick={() => setShowCreateForm(false)}
+              data-testid="admin_btn_close_create_form_en"
+            >
               {t('common.close')}
             </button>
           </div>
           <div style={{ display: 'grid', gap: 10, marginTop: 12, maxWidth: 600 }}>
             <div>
-              <div style={{ marginBottom: 6, fontWeight: 600 }}>{t('clients.fullNameRequired')}</div>
+              <div style={{ marginBottom: 6, fontWeight: 600 }}>
+                {t('clients.fullNameRequired')}
+              </div>
               <input
                 className="input"
                 value={newCustomer.full_name}
@@ -1538,15 +1782,31 @@ function CustomersView(props: {
               />
             </div>
             {notice && (
-              <div style={{ color: notice.includes('успешно') || notice.includes('success') ? '#047857' : '#b91c1c' }}>
+              <div
+                style={{
+                  color:
+                    notice.includes('успешно') || notice.includes('success')
+                      ? '#047857'
+                      : '#b91c1c',
+                }}
+              >
                 {notice}
               </div>
             )}
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btnPrimary" onClick={createCustomer} disabled={busy} data-testid="admin_btn_create_customer_en">
+              <button
+                className="btn btnPrimary"
+                onClick={createCustomer}
+                disabled={busy}
+                data-testid="admin_btn_create_customer_en"
+              >
                 {t('common.create')}
               </button>
-              <button className="btn" onClick={() => setShowCreateForm(false)} data-testid="admin_btn_cancel_create_en">
+              <button
+                className="btn"
+                onClick={() => setShowCreateForm(false)}
+                data-testid="admin_btn_cancel_create_en"
+              >
                 {t('common.cancel')}
               </button>
             </div>
@@ -1603,7 +1863,9 @@ function CustomersView(props: {
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div className="pill pillGood">{t('clients.balanceLabel')} {details.customer.balance_points}</div>
+                <div className="pill pillGood">
+                  {t('clients.balanceLabel')} {details.customer.balance_points}
+                </div>
                 <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12, marginTop: 6 }}>
                   {t('clients.telegramId')}: {details.customer.telegram_id || '—'}
                 </div>
@@ -1673,7 +1935,9 @@ function CustomersView(props: {
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {tx.items && tx.items.length > 0 ? tx.items.map((i) => i.name).join(', ') : '—'}
+                      {tx.items && tx.items.length > 0
+                        ? tx.items.map((i) => i.name).join(', ')
+                        : '—'}
                     </td>
                     <td>{money(tx.total_amount)} ₽</td>
                     <td>{tx.bonus_used}</td>
@@ -1756,11 +2020,20 @@ function ProductsView(props: {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" onClick={() => void reload()} disabled={busy} data-testid="admin_btn_products_reload_en">
+            <button
+              className="btn"
+              onClick={() => void reload()}
+              disabled={busy}
+              data-testid="admin_btn_products_reload_en"
+            >
               {t('common.refresh')}
             </button>
             {canEdit && (
-              <button className="btn btnPrimary" onClick={() => setShowProductImport?.(true)} data-testid="admin_btn_products_import_en">
+              <button
+                className="btn btnPrimary"
+                onClick={() => setShowProductImport?.(true)}
+                data-testid="admin_btn_products_import_en"
+              >
                 {t('common.import')}
               </button>
             )}
@@ -1846,9 +2119,9 @@ function ProductsView(props: {
                 <td>{p.kind}</td>
                 <td>{money(p.price)} ₽</td>
                 <td>
-                <span className={`pill ${p.active ? 'pillGood' : 'pillWarn'}`}>
-                {p.active ? t('common.yesShort') : t('common.noShort')}
-                </span>
+                  <span className={`pill ${p.active ? 'pillGood' : 'pillWarn'}`}>
+                    {p.active ? t('common.yesShort') : t('common.noShort')}
+                  </span>
                 </td>
               </tr>
             ))}
@@ -1971,15 +2244,26 @@ function PosView(props: {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={
-                mode === 'phone' ? t('clients.phonePlaceholder') : mode === 'qr' ? t('pos.qrToken') : t('clients.fullNamePlaceholder')
+                mode === 'phone'
+                  ? t('clients.phonePlaceholder')
+                  : mode === 'qr'
+                    ? t('pos.qrToken')
+                    : t('clients.fullNamePlaceholder')
               }
               data-testid="operator_input_identify_en"
             />
           </div>
-          <button className="btn btnPrimary" disabled={busy} onClick={() => void identify()} data-testid="operator_btn_identify_en">
+          <button
+            className="btn btnPrimary"
+            disabled={busy}
+            onClick={() => void identify()}
+            data-testid="operator_btn_identify_en"
+          >
             {t('sales.identify')}
           </button>
-          <div className="pill">{t('sales.customer')}: {found || '—'}</div>
+          <div className="pill">
+            {t('sales.customer')}: {found || '—'}
+          </div>
         </div>
         {info ? <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.65)' }}>{info}</div> : null}
       </div>
@@ -1988,7 +2272,12 @@ function PosView(props: {
         <div className="row" style={{ marginBottom: 10 }}>
           <div style={{ fontWeight: 800 }}>{t('sales.catalog')}</div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" disabled={busy} onClick={() => void reloadProducts()} data-testid="operator_btn_reload_products_en">
+            <button
+              className="btn"
+              disabled={busy}
+              onClick={() => void reloadProducts()}
+              data-testid="operator_btn_reload_products_en"
+            >
               {t('common.refresh')}
             </button>
           </div>
@@ -2069,8 +2358,12 @@ function PosView(props: {
       <div className="card cardWide" data-testid="pos_loyalty_en">
         <div style={{ fontWeight: 800, marginBottom: 10 }}>{t('sales.loyalty')}</div>
         <div className="row" style={{ marginBottom: 10 }}>
-          <div className="pill">{t('sales.total')} {money(total)} ₽</div>
-          <div className="pill pillWarn">{t('sales.writeoff')} {bonus}</div>
+          <div className="pill">
+            {t('sales.total')} {money(total)} ₽
+          </div>
+          <div className="pill pillWarn">
+            {t('sales.writeoff')} {bonus}
+          </div>
         </div>
         <input
           className="input"
@@ -2253,7 +2546,9 @@ function IntegrationsView(props: {
 
       <div className="card cardWide">
         <div className="row" style={{ marginBottom: 10 }}>
-          <div style={{ fontWeight: 800 }}>{mode === 'create' ? t('integrations.createNew') : t('integrations.settingsTitle')}</div>
+          <div style={{ fontWeight: 800 }}>
+            {mode === 'create' ? t('integrations.createNew') : t('integrations.settingsTitle')}
+          </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               className={`btn ${mode === 'create' ? 'btnPrimary' : ''}`}
@@ -2274,7 +2569,9 @@ function IntegrationsView(props: {
         <div style={{ display: 'grid', gap: 10 }}>
           {mode === 'create' ? (
             <div>
-              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>{t('integrations.template')}</div>
+              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>
+                {t('integrations.template')}
+              </div>
               <select
                 className="input"
                 value={templateId}
@@ -2303,11 +2600,15 @@ function IntegrationsView(props: {
 
           <div className="row">
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>{t('integrations.type')}</div>
+              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>
+                {t('integrations.type')}
+              </div>
               <input className="input" value={kind} onChange={(e) => setKind(e.target.value)} />
             </div>
             <div style={{ width: 180 }}>
-              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>{t('integrations.status')}</div>
+              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>
+                {t('integrations.status')}
+              </div>
               <button
                 className={`btn ${enabled ? 'btnPrimary' : ''}`}
                 onClick={() => setEnabled((v) => !v)}
@@ -2439,7 +2740,7 @@ function IntegrationsView(props: {
 
 function PermissionsTable() {
   const { t } = useTranslation();
-  
+
   // Role label helper
   function roleLabel(role: string) {
     const r = String(role || '').toLowerCase();
@@ -2448,7 +2749,7 @@ function PermissionsTable() {
     if (r === 'marketer') return t('roles.marketer');
     return r || '—';
   }
-  
+
   const [data, setData] = useState<{
     items: Array<{ role: string; permissions: Array<{ permission: string; is_allowed: boolean }> }>;
     all_permissions: string[];

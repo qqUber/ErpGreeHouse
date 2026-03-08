@@ -132,6 +132,15 @@ export type CustomerListItem = {
   created_at: string;
 };
 
+export type PaginationInfo = {
+  page: number;
+  limit: number;
+  total: number;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
+};
+
 export type TransactionItem = {
   id: number;
   created_at: string;
@@ -742,11 +751,17 @@ export const Api = {
     }),
 
   dashboard: (signal?: AbortSignal) => api<Dashboard>('/api/v1/dashboard', { signal }),
-  customers: (q?: string, signal?: AbortSignal) =>
-    api<{ items: CustomerListItem[] }>(
-      `/api/v1/customers${q ? `?q=${encodeURIComponent(q)}` : ''}`,
+  customers: (q?: string, page?: number, limit?: number, signal?: AbortSignal) => {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (page) params.set('page', String(page));
+    if (limit) params.set('limit', String(limit));
+    const query = params.toString();
+    return api<{ items: CustomerListItem[]; pagination: PaginationInfo }>(
+      `/api/v1/customers${query ? `?${query}` : ''}`,
       { signal }
-    ),
+    );
+  },
   customer: (id: number) => api<CustomerDetails>(`/api/v1/customers/${id}`),
   createCustomer: (payload: { full_name: string; phone?: string; notes?: string }) =>
     api<{ id: number; qr_token: string }>('/api/v1/customers', {
@@ -797,11 +812,20 @@ export const Api = {
       method: 'GET',
       headers: {},
     }),
-  products: (q?: string) =>
-    api<{ items: Product[] }>(`/api/v1/products${q ? `?q=${encodeURIComponent(q)}` : ''}`, {
-      method: 'GET',
-      headers: {},
-    }),
+  products: (q?: string, page?: number, limit?: number) => {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (page) params.set('page', String(page));
+    if (limit) params.set('limit', String(limit));
+    const query = params.toString();
+    return api<{ items: Product[]; pagination: PaginationInfo }>(
+      `/api/v1/products${query ? `?${query}` : ''}`,
+      {
+        method: 'GET',
+        headers: {},
+      }
+    );
+  },
   createProduct: (payload: {
     code: string;
     name: string;
@@ -891,24 +915,39 @@ export const Api = {
   dashboardOverview: (timeRange: string = '7d') =>
     api<DashboardOverview>(`/api/v1/analytics/dashboard/overview?time_range=${timeRange}`),
   salesChart: (timeRange: string = '7d', interval: string = 'day') =>
-    api<ChartData>(`/api/v1/analytics/dashboard/sales?time_range=${timeRange}&interval=${interval}`),
+    api<ChartData>(
+      `/api/v1/analytics/dashboard/sales?time_range=${timeRange}&interval=${interval}`
+    ),
   customerChart: (timeRange: string = '7d', interval: string = 'day') =>
-    api<ChartData>(`/api/v1/analytics/dashboard/customers?time_range=${timeRange}&interval=${interval}`),
+    api<ChartData>(
+      `/api/v1/analytics/dashboard/customers?time_range=${timeRange}&interval=${interval}`
+    ),
   loyaltyChart: (timeRange: string = '7d', interval: string = 'day') =>
-    api<ChartData>(`/api/v1/analytics/dashboard/loyalty?time_range=${timeRange}&interval=${interval}`),
-  
+    api<ChartData>(
+      `/api/v1/analytics/dashboard/loyalty?time_range=${timeRange}&interval=${interval}`
+    ),
+
   // New enterprise dashboard endpoints
-  dashboardOperational: () => api<import('./hooks/useDashboard').OperationalData>('/api/v1/dashboard/operational'),
-  dashboardMarketing: () => api<import('./hooks/useDashboard').MarketingData>('/api/v1/dashboard/marketing'),
-  dashboardCustomers: () => api<import('./hooks/useDashboard').CustomerData>('/api/v1/dashboard/customers'),
-  dashboardProducts: () => api<import('./hooks/useDashboard').ProductData>('/api/v1/dashboard/products'),
-  dashboardIntegrations: () => api<import('./hooks/useDashboard').IntegrationData>('/api/v1/dashboard/integrations'),
+  dashboardOperational: () =>
+    api<import('./hooks/useDashboard').OperationalData>('/api/v1/dashboard/operational'),
+  dashboardMarketing: () =>
+    api<import('./hooks/useDashboard').MarketingData>('/api/v1/dashboard/marketing'),
+  dashboardCustomers: () =>
+    api<import('./hooks/useDashboard').CustomerData>('/api/v1/dashboard/customers'),
+  dashboardProducts: () =>
+    api<import('./hooks/useDashboard').ProductData>('/api/v1/dashboard/products'),
+  dashboardIntegrations: () =>
+    api<import('./hooks/useDashboard').IntegrationData>('/api/v1/dashboard/integrations'),
 
   // Loyalty reports
   loyaltyReportOverview: (timeRange: string = '30d') =>
-    api<LoyaltyReportOverview>(`/api/v1/analytics/reports/loyalty/overview?time_range=${timeRange}`),
+    api<LoyaltyReportOverview>(
+      `/api/v1/analytics/reports/loyalty/overview?time_range=${timeRange}`
+    ),
   loyaltyDetailedReport: (timeRange: string = '30d') =>
-    api<LoyaltyDetailedReport>(`/api/v1/analytics/reports/loyalty/detailed?time_range=${timeRange}`),
+    api<LoyaltyDetailedReport>(
+      `/api/v1/analytics/reports/loyalty/detailed?time_range=${timeRange}`
+    ),
 
   // Customer segmentation
   customerSegmentation: () => api<CustomerSegmentation>('/api/v1/analytics/customers/segmentation'),
@@ -979,7 +1018,7 @@ export const Api = {
       method: 'POST',
       body: JSON.stringify({ access_token, group_id, api_version, enabled }),
     }),
-   setVkWebhook: (webhook_url?: string, secret?: string) =>
+  setVkWebhook: (webhook_url?: string, secret?: string) =>
     api<{ webhook_set: boolean; url: string; secret: string; note: string }>(
       '/api/v1/admin/integrations/vk/set_webhook',
       {

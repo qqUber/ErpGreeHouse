@@ -19,19 +19,19 @@ test('pos sale creates transaction visible in customer card', async ({ page }) =
 
   // Wait for operator dashboard to load - using data-testid for stability
   await expect(page.getByTestId(TestIds.operator.btnNewSale)).toBeVisible({ timeout: 10000 });
-  
+
   // Verify POS elements are present using data-testid
   const newSaleBtn = page.getByTestId(TestIds.operator.btnNewSale);
   const identifyBtn = page.getByTestId(TestIds.operator.btnIdentifyCustomer);
   const catalogBtn = page.getByTestId(TestIds.operator.btnCatalog);
-  
+
   await expect(newSaleBtn).toBeVisible();
   await expect(identifyBtn).toBeVisible();
   await expect(catalogBtn).toBeVisible();
-  
+
   // Click on New Sale button to verify it works
   await newSaleBtn.click();
   await page.waitForTimeout(2000);
-  
+
   console.log('[Test] POS functionality verified - operator can access POS features');
 });

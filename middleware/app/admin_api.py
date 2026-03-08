@@ -589,12 +589,14 @@ def list_customers(
     has_orders: bool | None = None,
     created_after: str | None = None,
     created_before: str | None = None,
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(50, ge=1, le=100, description="Items per page"),
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     check_permission(auth_result, "customer.list")
 
-    # Cache key depends on all filters
-    filters_key = f"{q or ''}:{min_balance}:{max_balance}:{has_orders}:{created_after}:{created_before}"
+    # Cache key depends on all filters and pagination
+    filters_key = f"{q or ''}:{min_balance}:{max_balance}:{has_orders}:{created_after}:{created_before}:{page}:{limit}"
     cache_key = f"crm:cache:customers:filter:{filters_key}"
 
     cached = _cache_get_json(cache_key)
@@ -634,14 +636,36 @@ def list_customers(
                 "EXISTS (SELECT 1 FROM transactions WHERE transactions.customer_id = customers.id)"
             )
 
+        # Get total count
+        count_sql = "SELECT COUNT(*) as total FROM customers"
+        if where:
+            count_sql += " WHERE " + " AND ".join(where)
+        count_cur = conn.execute(count_sql, tuple(args))
+        total = count_cur.fetchone()["total"] if count_cur.fetchone() else 0
+
+        # Get paginated data
+        offset = (page - 1) * limit
         sql = "SELECT id, phone, full_name, telegram_id, qr_token, balance_points, created_at FROM customers"
         if where:
             sql += " WHERE " + " AND ".join(where)
-        sql += " ORDER BY id DESC LIMIT 200"
+        sql += f" ORDER BY id DESC LIMIT {limit} OFFSET {offset}"
 
         cur = conn.execute(sql, tuple(args))
         items = [dict(r) for r in cur.fetchall()]
-        data = {"items": items}
+
+        # Calculate pagination info
+        total_pages = (total + limit - 1) // limit if limit > 0 else 0
+        data = {
+            "items": items,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total,
+                "total_pages": total_pages,
+                "has_next": page < total_pages,
+                "has_prev": page > 1,
+            },
+        }
 
         # Cache for shorter time if filtered
         _cache_set_json(cache_key, data, ttl_seconds=5)

@@ -7,7 +7,7 @@ import { TranslationKey } from '../types/translationKeys';
 
 /**
  * Custom hook that provides a type-safe translation function.
- * 
+ *
  * @returns Object containing:
  * - t: Type-safe translation function
  * - i18n: i18next instance for language control

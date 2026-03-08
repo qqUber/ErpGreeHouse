@@ -5,7 +5,12 @@ import { Dashboard } from '../../api';
 import { OperatorDashboard } from './OperatorDashboard';
 import { ManagerDashboard } from './ManagerDashboard';
 import { AdminDashboard } from './AdminDashboard';
-import type { OperationalData, CustomerData, ProductData, MarketingData } from '../../hooks/useDashboard';
+import type {
+  OperationalData,
+  CustomerData,
+  ProductData,
+  MarketingData,
+} from '../../hooks/useDashboard';
 
 interface DashboardWrapperProps {
   data?: {
@@ -20,10 +25,10 @@ interface DashboardWrapperProps {
 
 /**
  * DashboardWrapper - Role-specific dashboard renderer
- * 
+ *
  * This component determines which dashboard to render based on the user's role.
  * It serves as the entry point for all dashboard rendering in the application.
- * 
+ *
  * Role hierarchy:
  * - owner (ADMIN) - Full system access with all widgets
  * - marketer (MANAGER) - Business analytics and marketing features
@@ -31,7 +36,7 @@ interface DashboardWrapperProps {
  */
 export function DashboardWrapper({ data, onNavigate }: DashboardWrapperProps) {
   const { user } = useAuth();
-  
+
   // Show loading state while user data is being fetched
   if (!user) {
     return (
@@ -40,44 +45,24 @@ export function DashboardWrapper({ data, onNavigate }: DashboardWrapperProps) {
       </div>
     );
   }
-  
+
   // Render the appropriate dashboard based on role
   const role = user.role?.toLowerCase();
-  
+
   switch (role) {
     case 'operator':
-      return (
-        <OperatorDashboard 
-          data={data} 
-          onNavigate={onNavigate} 
-        />
-      );
-    
+      return <OperatorDashboard data={data} onNavigate={onNavigate} />;
+
     case 'marketer':
-      return (
-        <ManagerDashboard 
-          data={data} 
-          onNavigate={onNavigate} 
-        />
-      );
-    
+      return <ManagerDashboard data={data} onNavigate={onNavigate} />;
+
     case 'owner':
     case 'admin':
-      return (
-        <AdminDashboard 
-          data={data} 
-          onNavigate={onNavigate} 
-        />
-      );
-    
+      return <AdminDashboard data={data} onNavigate={onNavigate} />;
+
     default:
       // Fallback for unknown roles - render operator dashboard by default
-      return (
-        <OperatorDashboard 
-          data={data} 
-          onNavigate={onNavigate} 
-        />
-      );
+      return <OperatorDashboard data={data} onNavigate={onNavigate} />;
   }
 }
 
@@ -86,13 +71,13 @@ export function DashboardWrapper({ data, onNavigate }: DashboardWrapperProps) {
  */
 export function getUserRole(user: { role?: string | null } | null): Role | null {
   if (!user?.role) return null;
-  
+
   const role = user.role.toLowerCase();
-  
+
   if (role === 'owner' || role === 'admin') return Role.ADMIN;
   if (role === 'marketer' || role === 'manager') return Role.MANAGER;
   if (role === 'operator') return Role.OPERATOR;
-  
+
   return null;
 }
 

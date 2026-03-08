@@ -43,10 +43,10 @@ export function EmptyState({
 }
 
 // Common empty state examples
-export function EmptyStateNoData({ 
-  onRefresh, 
-  message = "No data available" 
-}: { 
+export function EmptyStateNoData({
+  onRefresh,
+  message = 'No data available',
+}: {
   onRefresh?: () => void;
   message?: string;
 }) {
@@ -66,10 +66,10 @@ export function EmptyStateNoData({
   );
 }
 
-export function EmptyStateNoResults({ 
-  onClear, 
-  searchQuery 
-}: { 
+export function EmptyStateNoResults({
+  onClear,
+  searchQuery,
+}: {
   onClear?: () => void;
   searchQuery?: string;
 }) {
@@ -77,9 +77,10 @@ export function EmptyStateNoResults({
     <EmptyState
       icon={<span style={{ fontSize: '48px' }}>🔍</span>}
       title="No results found"
-      description={searchQuery 
-        ? `No results for "${searchQuery}". Try different keywords or clear filters.`
-        : "No results match your current filters."
+      description={
+        searchQuery
+          ? `No results for "${searchQuery}". Try different keywords or clear filters.`
+          : 'No results match your current filters.'
       }
       action={
         onClear ? (
@@ -92,11 +93,11 @@ export function EmptyStateNoResults({
   );
 }
 
-export function EmptyStateAddFirst({ 
-  onAdd, 
-  title = "Add your first item",
-  description = "Get started by creating your first entry."
-}: { 
+export function EmptyStateAddFirst({
+  onAdd,
+  title = 'Add your first item',
+  description = 'Get started by creating your first entry.',
+}: {
   onAdd: () => void;
   title?: string;
   description?: string;

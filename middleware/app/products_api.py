@@ -7,7 +7,7 @@ import httpx
 import openpyxl
 from lxml import etree
 
-from fastapi import APIRouter, Header, HTTPException, UploadFile, File, Depends
+from fastapi import APIRouter, Header, HTTPException, UploadFile, File, Depends, Query
 from pydantic import BaseModel, Field
 
 from .admin_auth_api import require_jwt_auth
@@ -335,6 +335,8 @@ def validate_product(
 def list_products(
     q: str | None = None,
     active: bool | None = True,
+    page: int = 1,
+    limit: int = 50,
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     check_permission(auth_result, "product.read")
@@ -351,10 +353,21 @@ def list_products(
             where.append("(code LIKE ? OR name LIKE ?)")
             like = f"%{qv}%"
             args.extend([like, like])
+
+        # Get total count
+        count_sql = "SELECT COUNT(*) as total FROM products"
+        if where:
+            count_sql += " WHERE " + " AND ".join(where)
+        count_cur = conn.execute(count_sql, tuple(args))
+        total = count_cur.fetchone()["total"] if count_cur.fetchone() else 0
+
+        # Get paginated data
+        offset = (page - 1) * limit
         sql = "SELECT id, code, name, kind, price, active, created_at, updated_at FROM products"
         if where:
             sql += " WHERE " + " AND ".join(where)
-        sql += " ORDER BY id DESC LIMIT 200"
+        sql += f" ORDER BY id DESC LIMIT {limit} OFFSET {offset}"
+
         cur = conn.execute(sql, tuple(args))
         items = []
         for r in cur.fetchall():
@@ -370,7 +383,20 @@ def list_products(
                     "updated_at": str(r["updated_at"]),
                 }
             )
-        return {"items": items}
+
+        # Calculate pagination info
+        total_pages = (total + limit - 1) // limit if limit > 0 else 0
+        return {
+            "items": items,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total,
+                "total_pages": total_pages,
+                "has_next": page < total_pages,
+                "has_prev": page > 1,
+            },
+        }
     finally:
         conn.close()
 

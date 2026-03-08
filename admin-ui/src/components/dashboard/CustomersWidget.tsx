@@ -41,18 +41,27 @@ interface CustomersWidgetProps {
 
 export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
   return (
-    <div className="card cardFull" data-testid="admin_widget_customers_en" role="region" aria-label="Customers">
+    <div
+      className="card cardFull"
+      data-testid="admin_widget_customers_en"
+      role="region"
+      aria-label="Customers"
+    >
       <div className="row mb-4">
-        <div style={{ 
-          fontWeight: 'var(--font-weight-extrabold)', 
-          fontSize: 'var(--font-size-xl)'
-        }}>
+        <div
+          style={{
+            fontWeight: 'var(--font-weight-extrabold)',
+            fontSize: 'var(--font-size-xl)',
+          }}
+        >
           Клиенты
         </div>
-        <span style={{ 
-          fontSize: 'var(--font-size-sm)', 
-          color: 'var(--muted)'
-        }}>
+        <span
+          style={{
+            fontSize: 'var(--font-size-sm)',
+            color: 'var(--muted)',
+          }}
+        >
           Всего: {data.total_customers}
         </span>
       </div>
@@ -61,47 +70,59 @@ export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
         {/* New Customers */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="card cardCompact">
-            <div style={{ 
-              fontSize: 'var(--font-size-sm)', 
-              color: 'var(--muted)'
-            }}>
+            <div
+              style={{
+                fontSize: 'var(--font-size-sm)',
+                color: 'var(--muted)',
+              }}
+            >
               Сегодня
             </div>
-            <div style={{ 
-              fontSize: 'var(--font-size-2xl)', 
-              fontWeight: 'var(--font-weight-extrabold)', 
-              marginTop: 'var(--spacing-xs)'
-            }}>
+            <div
+              style={{
+                fontSize: 'var(--font-size-2xl)',
+                fontWeight: 'var(--font-weight-extrabold)',
+                marginTop: 'var(--spacing-xs)',
+              }}
+            >
               {data.new_customers.today}
             </div>
           </div>
           <div className="card cardCompact">
-            <div style={{ 
-              fontSize: 'var(--font-size-sm)', 
-              color: 'var(--muted)'
-            }}>
+            <div
+              style={{
+                fontSize: 'var(--font-size-sm)',
+                color: 'var(--muted)',
+              }}
+            >
               На неделе
             </div>
-            <div style={{ 
-              fontSize: 'var(--font-size-2xl)', 
-              fontWeight: 'var(--font-weight-extrabold)', 
-              marginTop: 'var(--spacing-xs)'
-            }}>
+            <div
+              style={{
+                fontSize: 'var(--font-size-2xl)',
+                fontWeight: 'var(--font-weight-extrabold)',
+                marginTop: 'var(--spacing-xs)',
+              }}
+            >
               {data.new_customers.this_week}
             </div>
           </div>
           <div className="card cardCompact">
-            <div style={{ 
-              fontSize: 'var(--font-size-sm)', 
-              color: 'var(--muted)'
-            }}>
+            <div
+              style={{
+                fontSize: 'var(--font-size-sm)',
+                color: 'var(--muted)',
+              }}
+            >
               В этом месяце
             </div>
-            <div style={{ 
-              fontSize: 'var(--font-size-2xl)', 
-              fontWeight: 'var(--font-weight-extrabold)', 
-              marginTop: 'var(--spacing-xs)'
-            }}>
+            <div
+              style={{
+                fontSize: 'var(--font-size-2xl)',
+                fontWeight: 'var(--font-weight-extrabold)',
+                marginTop: 'var(--spacing-xs)',
+              }}
+            >
               {data.new_customers.this_month}
             </div>
           </div>
@@ -110,12 +131,14 @@ export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
         {/* Top Customers */}
         {data.top_customers.length > 0 && (
           <div>
-            <div style={{ 
-              fontSize: 'var(--font-size-sm)', 
-              fontWeight: 'var(--font-weight-semibold)', 
-              color: 'var(--text)', 
-              marginBottom: 'var(--spacing-sm)'
-            }}>
+            <div
+              style={{
+                fontSize: 'var(--font-size-sm)',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text)',
+                marginBottom: 'var(--spacing-sm)',
+              }}
+            >
               Топ клиентов
             </div>
             <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
@@ -123,13 +146,13 @@ export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
                 <div
                   key={customer.id}
                   className="row"
-                  style={{ 
-                    padding: 'var(--spacing-sm)', 
-                    borderRadius: 'var(--radius-md)', 
+                  style={{
+                    padding: 'var(--spacing-sm)',
+                    borderRadius: 'var(--radius-md)',
                     background: 'var(--brand-light)',
                     border: '1px solid var(--border)',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'var(--primary-light)';
@@ -141,32 +164,40 @@ export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
                   }}
                 >
                   <div style={{ flex: 1 }}>
-                    <div style={{ 
-                      fontSize: 'var(--font-size-sm)', 
-                      fontWeight: 'var(--font-weight-semibold)', 
-                      color: 'var(--text)'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--font-size-sm)',
+                        fontWeight: 'var(--font-weight-semibold)',
+                        color: 'var(--text)',
+                      }}
+                    >
                       {customer.name}
                     </div>
-                    <div style={{ 
-                      fontSize: 'var(--font-size-xs)', 
-                      color: 'var(--muted)'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--font-size-xs)',
+                        color: 'var(--muted)',
+                      }}
+                    >
                       {customer.phone}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ 
-                      fontSize: 'var(--font-size-sm)', 
-                      fontWeight: 'var(--font-weight-bold)', 
-                      color: 'var(--text)'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--font-size-sm)',
+                        fontWeight: 'var(--font-weight-bold)',
+                        color: 'var(--text)',
+                      }}
+                    >
                       {customer.total_spent.toFixed(2)} ₽
                     </div>
-                    <div style={{ 
-                      fontSize: 'var(--font-size-xs)', 
-                      color: 'var(--muted)'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--font-size-xs)',
+                        color: 'var(--muted)',
+                      }}
+                    >
                       {customer.transactions} транз.
                     </div>
                   </div>
@@ -179,12 +210,14 @@ export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
         {/* Birthdays */}
         {data.birthdays_this_week.length > 0 && (
           <div>
-            <div style={{ 
-              fontSize: 'var(--font-size-sm)', 
-              fontWeight: 'var(--font-weight-semibold)', 
-              color: 'var(--text)', 
-              marginBottom: 'var(--spacing-sm)'
-            }}>
+            <div
+              style={{
+                fontSize: 'var(--font-size-sm)',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text)',
+                marginBottom: 'var(--spacing-sm)',
+              }}
+            >
               Дни рождения
             </div>
             <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
@@ -192,13 +225,13 @@ export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
                 <div
                   key={birthday.id}
                   className="row"
-                  style={{ 
-                    padding: 'var(--spacing-sm)', 
-                    borderRadius: 'var(--radius-md)', 
+                  style={{
+                    padding: 'var(--spacing-sm)',
+                    borderRadius: 'var(--radius-md)',
                     background: 'var(--brand-light)',
                     border: '1px solid var(--border)',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'var(--primary-light)';
@@ -224,12 +257,14 @@ export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
         {/* Loyalty Tiers */}
         {data.loyalty_tiers.length > 0 && (
           <div>
-            <div style={{ 
-              fontSize: 'var(--font-size-sm)', 
-              fontWeight: 'var(--font-weight-semibold)', 
-              color: 'var(--text)', 
-              marginBottom: 'var(--spacing-sm)'
-            }}>
+            <div
+              style={{
+                fontSize: 'var(--font-size-sm)',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text)',
+                marginBottom: 'var(--spacing-sm)',
+              }}
+            >
               Лояльность
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -237,22 +272,26 @@ export const CustomersWidget: React.FC<CustomersWidgetProps> = ({ data }) => {
                 <div
                   key={index}
                   className="card cardCompact"
-                  style={{ 
+                  style={{
                     textAlign: 'center',
-                    background: 'var(--brand-light)'
+                    background: 'var(--brand-light)',
                   }}
                 >
-                  <div style={{ 
-                    fontSize: 'var(--font-size-xs)', 
-                    color: 'var(--muted)'
-                  }}>
+                  <div
+                    style={{
+                      fontSize: 'var(--font-size-xs)',
+                      color: 'var(--muted)',
+                    }}
+                  >
                     {tier.tier}
                   </div>
-                  <div style={{ 
-                    fontSize: 'var(--font-size-lg)', 
-                    fontWeight: 'var(--font-weight-bold)', 
-                    color: 'var(--text)'
-                  }}>
+                  <div
+                    style={{
+                      fontSize: 'var(--font-size-lg)',
+                      fontWeight: 'var(--font-weight-bold)',
+                      color: 'var(--text)',
+                    }}
+                  >
                     {tier.count}
                   </div>
                 </div>

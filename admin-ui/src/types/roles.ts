@@ -1,6 +1,6 @@
 /**
  * Role-based access control types for the admin UI.
- * 
+ *
  * Backend roles: owner (admin), operator, marketer (manager)
  * Frontend enum maps to these backend roles.
  */
@@ -78,47 +78,47 @@ export const Permissions = {
   // Dashboard
   DASHBOARD_READ: 'dashboard.read',
   DASHBOARD_ANALYTICS: 'dashboard.analytics',
-  
+
   // Customers
   CUSTOMER_LIST: 'customer.list',
   CUSTOMER_READ: 'customer.read',
   CUSTOMER_CREATE: 'customer.create',
   CUSTOMER_DELETE: 'customer.delete',
-  
+
   // POS/Sales
   POS_SALE: 'pos.sale',
   POS_REFUND: 'pos.refund',
-  
+
   // Products
   PRODUCT_READ: 'product.read',
   PRODUCT_CREATE: 'product.create',
   PRODUCT_UPDATE: 'product.update',
   PRODUCT_DELETE: 'product.delete',
   PRODUCT_IMPORT: 'product.import',
-  
+
   // Integrations
   INTEGRATION_READ: 'integration.read',
   INTEGRATION_CREATE: 'integration.create',
   INTEGRATION_UPDATE: 'integration.update',
   INTEGRATION_DELETE: 'integration.delete',
-  
+
   // Marketing
   MARKETING_CAMPAIGN: 'marketing.campaign',
   MARKETING_SEGMENT: 'marketing.segment',
   MARKETING_TRIGGER: 'marketing.trigger',
-  
+
   // Analytics
   ANALYTICS_READ: 'analytics.read',
   ANALYTICS_EXPORT: 'analytics.export',
-  
+
   // Compliance
   COMPLIANCE_READ: 'compliance.read',
   COMPLIANCE_DELETE: 'compliance.delete',
-  
+
   // Settings
   SETTINGS_READ: 'settings.read',
   SETTINGS_UPDATE: 'settings.update',
-  
+
   // Roles/Permissions (admin only)
   ROLES_READ: 'roles.read',
   ROLES_UPDATE: 'roles.update',

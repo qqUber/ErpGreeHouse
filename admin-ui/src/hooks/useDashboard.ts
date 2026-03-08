@@ -123,14 +123,14 @@ export const useDashboard = () => {
     products: null,
     integrations: null,
   });
-  
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const [operational, marketing, customers, products, integrations] = await Promise.all([
         Api.dashboardOperational(),
@@ -139,7 +139,7 @@ export const useDashboard = () => {
         Api.dashboardProducts(),
         Api.dashboardIntegrations(),
       ]);
-      
+
       setData({
         operational,
         marketing,
