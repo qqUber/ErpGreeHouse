@@ -1,266 +1,377 @@
-# Architecture Overview
+# ARCHITECTURE.md - System Architecture
+
+## Overview
+
+ErpGreeHouse is a modern Customer Relationship Management (CRM) system with Telegram integration and ERPNext loyalty program support. The architecture follows a microservices approach with async Python backend, React frontend, and Docker containerization for production deployment.
 
 ## System Architecture
 
-ErpGreeHouse is a modern, two-tier SaaS application for small to medium-sized businesses that combines customer relationship management (CRM), point-of-sale (POS), and loyalty program management. The system follows a decoupled frontend-backend architecture with a RESTful API interface.
-
-### Frontend
-- **Technology Stack**: React 19 + TypeScript + Vite
-- **Deployment**: Served as static files from FastAPI backend
-- **Key Features**: Responsive UI, multi-role access, real-time dashboards, and offline capabilities
-
-### Backend
-- **Technology Stack**: FastAPI (Python 3.10+)
-- **Database**: SQLite (with WAL mode for concurrency)
-- **Key Features**: RESTful API, authentication/authorization, background jobs, and third-party integrations
-
-## Frontend-Backend Communication
-
-### API Architecture
-- **Base URL**: `/api/v1/`
-- **Communication Protocol**: HTTP/HTTPS with JSON payloads
-- **Authentication**: JWT tokens stored in httpOnly cookies
-- **Token Refresh**: Automatic refresh using refresh token endpoint
-
-### API Structure
-```
-/api/v1/
-├── public/             # Public endpoints (no auth required)
-│   ├── status         # Health check
-│   └── auth/          # Authentication (login, refresh, recover)
-├── auth/              # Protected endpoints
-│   └── me             # Get current user
-├── dashboard/         # Dashboard data
-├── customers/         # Customer management
-├── products/          # Product management
-├── pos/               # Point of sale
-├── integrations/      # Integration management
-├── marketing/         # Marketing campaigns
-└── analytics/         # Analytics endpoints
+```mermaid
+graph TD
+    A[Telegram Bot] --> B[FastAPI Middleware]
+    B --> C[Redis Cache]
+    B --> D[ERPNext API]
+    B --> E[Celery Worker]
+    E --> F[PostgreSQL Database]
 ```
 
-### Data Flow Patterns
+## Core Components
 
-#### Authentication Flow
-```
-1. User logs in with username/password
-2. Backend returns JWT access/refresh tokens in httpOnly cookies
-3. Frontend uses access token for API requests
-4. Token expires → frontend automatically refreshes using refresh token
-5. Refresh token expires → user is redirected to login
-```
+### 1. Telegram Bot (aiogram)
 
-#### Data Fetching
-```
-1. Component mounts → useEffect triggers data load
-2. API call is made using fetchWithAuth wrapper
-3. Response is parsed and stored in local state
-4. Component re-renders with new data
-5. Errors are caught and displayed as notifications
-```
+**Purpose**: User interaction interface through Telegram messaging.
 
-## Key Components
+**Key Features**:
+- Command handling (start, help, order, balance)
+- User registration and authentication
+- Order processing and status updates
+- Loyalty points management
+- Webhook integration for real-time updates
 
-### Frontend Components
+**Integration Points**:
+- `/webhook` - Telegram webhook endpoint
+- `middleware/app/handlers.py` - Command and callback handlers
 
-#### Core Components
-- **App.tsx**: Main application component with tab-based navigation
-- **AuthProvider**: Context provider for authentication state
-- **Api.ts**: API client with authentication interceptors
-- **Toast**: Notification system for user feedback
+### 2. FastAPI Middleware
 
-#### Views
-- **Dashboard**: Role-specific dashboards (Admin, Manager, Operator)
-- **Customers**: Customer list with search and pagination
-- **Products**: Product management with import/export
-- **POS**: Point-of-sale interface
-- **Integrations**: Integration settings (Telegram, VK)
-- **Marketing**: Campaign and trigger management
-- **Compliance**: Data compliance and consent management
-- **Analytics**: Detailed analytics and reports
+**Purpose**: API gateway and business logic layer.
 
-#### Hooks
-- **useAuth**: Authentication state and operations
-- **useDashboard**: Dashboard data fetching
-- **usePermission**: Permission checking
-- **useAppTranslation**: i18n translations
+**Key Features**:
+- RESTful API endpoints
+- Request validation and authentication
+- Rate limiting and circuit breaking
+- CORS support
+- Health checks
 
-### Backend Components
+**API Categories**:
+- `admin_api.py` - Admin UI endpoints
+- `admin_auth_api.py` - Authentication and authorization
+- `analytics_api.py` - Analytics and reporting
+- `auth.py` - JWT token management
+- `dashboard_api.py` - Dashboard and metrics
+- `integrations_api.py` - ERP integration settings
+- `marketing_api.py` - Marketing and campaigns
+- `products_api.py` - Product catalog management
+- `test_api.py` - Testing endpoints
+- `tma_api.py` - Telegram Mini App endpoints
 
-#### API Routers
-- **admin_auth_api.py**: Authentication endpoints
-- **admin_api.py**: Admin user management
-- **customers_api.py**: Customer management
-- **products_api.py**: Product management
-- **pos_api.py**: Point-of-sale operations
-- **marketing_api.py**: Marketing campaigns
-- **analytics_api.py**: Analytics endpoints
-- **integrations_api.py**: Integration management
-- **dashboard_api.py**: Dashboard data
+### 3. Database Layer
 
-#### Core Services
-- **auth.py**: JWT token generation and validation
-- **db.py**: Database connection and migrations
-- **config.py**: Configuration management
-- **worker.py**: Background job processing
-- **middleware.py**: Rate limiting and security
+**Purpose**: Data persistence and retrieval.
 
-#### Integrations
-- **telegram_handler.py**: Telegram bot integration
-- **vk_handler.py**: VKontakte bot integration
-- **erp_sync.py**: ERP system synchronization
+**Development (SQLite)**:
+- Single file database
+- No setup required
+- Stored in `crm.db`
 
-## State Management
+**Production (PostgreSQL)**:
+- Relational database
+- Supports multiple connections
+- Stored in PostgreSQL 15 database
 
-### Frontend State
+**Key Tables**:
+- `customers` - Customer profiles
+- `orders` - Order history
+- `transactions` - Financial transactions
+- `loyalty_points` - Loyalty points balance
+- `roles` - User roles
+- `role_permissions` - Role-based permissions
+- `products` - Product catalog
+- `campaigns` - Marketing campaigns
 
-#### Local Component State
-- React useState for component-specific state
-- useEffect for side effects (data fetching, event listeners)
+### 4. Redis Cache
 
-#### Global State (Context API)
-- **AuthContext**: Authentication state (user, isAuthenticated, isLoading)
-- **AuthProvider**: Manages login, logout, token refresh, and session restoration
+**Purpose**: Session management, caching, and task queue.
 
-#### Storage
-- **LocalStorage**: Stores legacy admin secrets (for backward compatibility)
-- **SessionStorage**: Stores token validation state (for secure session management)
-- **Cookies**: JWT tokens stored as httpOnly cookies (httponly, secure flags)
+**Key Uses**:
+- Session management (JWT token storage)
+- Cache for frequently accessed data
+- Celery task queue
+- Rate limiting
 
-#### Key State Variables (App.tsx)
-```typescript
-- isAuthenticated: boolean     // User logged in state
-- user: AdminMe | null         // Current user data
-- tab: Tab                     // Active tab
-- customers: CustomerListItem[] // Customer list
-- products: Product[]          // Product list
-- dash: Dashboard | null       // Dashboard data
-- details: CustomerDetails | null // Selected customer details
+**Configuration**:
+```bash
+REDIS_URL=redis://localhost:6379/0
 ```
 
-### Backend State
+### 5. Celery Workers
 
-#### Request Context
-- **Request state**: Stores authenticated user information (via middleware)
-- **Database connection**: SQLite connection per request (with row factory)
-- **Config**: Environment-specific settings (via Settings dataclass)
+**Purpose**: Background task processing.
 
-#### Database Tables
+**Key Features**:
+- Asynchronous task execution
+- Periodic tasks via Celery Beat
+- Task retry and error handling
+- Integration with ERPNext
+
+**Task Types**:
+- Order synchronization with ERPNext
+- Loyalty points calculation
+- Marketing campaign scheduling
+- Data export
+
+### 6. ERPNext Integration
+
+**Purpose**: Enterprise Resource Planning integration.
+
+**Key Features**:
+- Customer synchronization
+- Order management
+- Loyalty points integration
+- Product catalog synchronization
+- Mock mode for development
+
+**API Endpoints**:
+- `/api/method/frappe.client.get_list` - Get documents list
+- `/api/method/frappe.client.get` - Get single document
+- `/api/method/frappe.client.insert` - Create document
+- `/api/method/frappe.client.update` - Update document
+
+### 7. Admin UI (React)
+
+**Purpose**: Web interface for administrators.
+
+**Key Features**:
+- Dashboard with metrics and charts
+- Customer management
+- Order processing
+- Product catalog management
+- Marketing campaign management
+- Integration settings
+- User and role management
+
+**Technology**:
+- React 19 with TypeScript
+- Vite build tool
+- ECharts for data visualization
+- i18next for localization
+
+## Authentication and Authorization
+
+### JWT Authentication
+
+**Token Flow**:
 ```
-admin_users              # Admin user accounts
-admin_tokens             # JWT tokens
-role_permissions         # Role-based permissions
-customers                # Customer data
-transactions             # POS transactions
-products                 # Product catalog
-consents                 # Data consent records
-marketing_campaigns      # Marketing campaigns
-marketing_triggers       # Automated triggers
-integrations             # Third-party integrations
-vk_settings              # VKontakte settings
-sync_log                 # Sync history
+┌─────────┐    ┌──────────────┐    ┌─────────────────┐
+│  Login  │───▶│ Generate     │───▶│ Set cookies:    │
+│ /login  │    │ Tokens       │    │ - access_token  │
+└─────────┘    └──────────────┘    │ - refresh_token │
+                                    └─────────────────┘
+                                          │
+                                          ▼
+┌─────────┐    ┌──────────────┐    ┌─────────────────┐
+│  API    │◀───│ Validate     │◀───│ Include token   │
+│ Request │    │ JWT          │    │ in Authorization│
+└─────────┘    └──────────────┘    └─────────────────┘
+       │
+       │ (if expired)
+       ▼
+┌─────────┐    ┌──────────────┐    ┌─────────────────┐
+│ Refresh │───▶│ Validate     │───▶│ Generate new    │
+│ /refresh│    │ Refresh      │    │ Access token    │
+└─────────┘    └──────────────┘    └─────────────────┘
+       │
+       │ (on logout or invalid)
+       ▼
+┌─────────┐    ┌──────────────┐    ┌─────────────────┐
+│ Logout  │───▶│ Blacklist    │───▶│ Clear cookies   │
+│ /logout │    │ Tokens       │    │ (access/refresh)│
+└─────────┘    └──────────────┘    └─────────────────┘
 ```
 
-## Data Flow Diagrams
+**Token Types**:
+- **Access Token**: Short-lived (15-30 minutes), used for API access
+- **Refresh Token**: Long-lived (7 days), used to obtain new access tokens
 
-### User Authentication Flow
-```
-+----------------+         +----------------+         +----------------+
-|   Login Form   |         |   Auth API      |         |  Database      |
-+----------------+         +----------------+         +----------------+
-         |                          |                          |
-         | POST /api/v1/public/auth/login                          |
-         |------------------------->|                          |
-         |                          |                          |
-         |                          | Validate credentials     |
-         |                          |------------------------->|
-         |                          |                          |
-         |                          | Return JWT tokens        |
-         |<-------------------------|                          |
-         |                          |                          |
-         | Store tokens in cookies  |                          |
-         |------------------------->|                          |
-         |                          |                          |
-         | Fetch user data (me)    |                          |
-         |------------------------->|                          |
-         |                          |                          |
-         |                          | Return user info         |
-         |<-------------------------|                          |
-         |                          |                          |
-         | Update state            |                          |
-         |------------------------->|                          |
+**Configuration**:
+```bash
+JWT_SECRET_KEY=your-secret-key
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
 ```
 
-### Data Fetching Flow
+### Role-Based Access Control (RBAC)
+
+**Roles**:
+- **Owner**: Full system access
+- **Manager**: Access to most features, excluding sensitive settings
+- **Operator**: Limited access to customer and order management
+- **Marketer**: Access to marketing and campaigns
+
+**Permissions**:
+```python
+ALL_PERMISSIONS = [
+    "dashboard.read",
+    "customer.read",
+    "customer.create",
+    "customer.search",
+    "customer.list",
+    "pos.sale",
+    "transaction.read",
+    "product.read",
+    "product.create",
+    "product.update",
+    "product.import",
+    "integration.read",
+    "integration.update",
+    "settings.access",
+    "marketing.campaigns",
+    "marketing.users",
+    "receipt.manual",
+    "report.export",
+    "analytics.read",
+    "analytics.export",
+]
 ```
-+----------------+         +----------------+         +----------------+
-|   Component    |         |   API Client   |         |  Backend API   |
-+----------------+         +----------------+         +----------------+
-         |                          |                          |
-         | useEffect (mount)       |                          |
-         |------------------------->|                          |
-         |                          |                          |
-         | fetchWithAuth           |                          |
-         |------------------------->|                          |
-         |                          |                          |
-         |                          | API endpoint             |
-         |                          |------------------------->|
-         |                          |                          |
-         |                          | Query database           |
-         |                          |------------------------->|
-         |                          |                          |
-         |                          | Return JSON response     |
-         |<-------------------------|                          |
-         |                          |                          |
-         | Parse and validate      |                          |
-         |------------------------->|                          |
-         |                          |                          |
-         | Update component state  |                          |
-         |------------------------->|                          |
+
+## Data Flow
+
+### Customer Registration
+
+1. User sends `/start` command to Telegram bot
+2. Bot sends registration form
+3. User fills and submits form
+4. Middleware validates and saves customer data
+5. Customer is registered in both local database and ERPNext
+6. Loyalty points account is created
+
+### Order Processing
+
+1. User places order via Telegram bot or Admin UI
+2. Order is saved to local database
+3. Order is synchronized with ERPNext
+4. Customer receives order confirmation
+5. Order status is updated in real-time
+6. Loyalty points are awarded
+
+### Loyalty Points Redemption
+
+1. User requests to redeem points
+2. System checks point balance
+3. If sufficient, order total is discounted
+4. Points are deducted from user's balance
+5. Transaction is logged
+
+## Performance Features
+
+### Async Architecture
+
+All API endpoints are async using Python's asyncio framework, allowing for high concurrency.
+
+### Rate Limiting
+
+```python
+# Rate limiting configuration
+MAX_CONCURRENT_REQUESTS = 100
+RATE_LIMIT_PER_MINUTE = 60
 ```
 
-## Performance Optimizations
+### Circuit Breaker
 
-### Frontend
-- **Code Splitting**: Dynamic import for large components
-- **Lazy Loading**: Images and components loaded on demand
-- **Caching**: API responses cached with appropriate TTL
-- **Debouncing**: Search input debounced for better performance
+```python
+# Circuit breaker configuration
+CIRCUIT_BREAKER_ENABLED = True
+CIRCUIT_BREAKER_FAILURE_THRESHOLD = 5
+CIRCUIT_BREAKER_RECOVERY_TIMEOUT = 300  # 5 minutes
+```
 
-### Backend
-- **Database Indexes**: Optimized queries with indexes
-- **Connection Pooling**: SQLite with WAL mode for concurrency
-- **Response Compression**: GZip middleware for large responses
-- **Rate Limiting**: Sliding window rate limiting for API endpoints
+### Caching
 
-## Security Measures
+Frequently accessed data (products, customers) is cached in Redis with configurable TTL.
 
-### Authentication
-- **JWT Tokens**: Short-lived access tokens (30 mins), refresh tokens (30 days)
-- **httpOnly Cookies**: Tokens stored in httponly cookies to prevent XSS attacks
-- **Token Refresh**: Secure refresh token rotation
-- **Password Hashing**: PBKDF2 with salt and iterations
+## Security Features
 
-### Authorization
-- **Role-Based Access Control (RBAC)**: Owner, Manager, Operator, Marketer roles
-- **Permission Checks**: Granular permissions per endpoint
-- **Middleware Protection**: Auth middleware for all protected routes
+### Input Validation
 
-### Data Security
-- **Encryption**: Data transmitted over HTTPS
-- **Input Validation**: Request body validation with Pydantic
-- **SQL Injection Protection**: Parameterized queries with SQLite
-- **CORS Configuration**: Restricted to trusted origins
+All API endpoints validate inputs using Pydantic models.
 
-## Scalability Considerations
+### SQL Injection Prevention
 
-### Current Architecture
-- **Monolithic Backend**: All services in single FastAPI application
-- **SQLite Database**: File-based, suitable for small-scale deployments
-- **Background Jobs**: Simple async workers for Telegram updates
+All database queries use parameterized statements.
 
-### Future Improvements
-- **Database Sharding**: Partition large tables (customers, transactions)
-- **Cache Layer**: Redis for frequent queries
-- **Message Queue**: RabbitMQ/Kafka for background jobs
-- **Horizontal Scaling**: Load balancing across multiple instances
+### XSS Protection
+
+All user-generated content is properly escaped.
+
+### CORS
+
+```bash
+CORS_ORIGINS=http://localhost:5173,https://your-domain.com
+```
+
+### 152-FZ Compliance
+
+The system is compliant with Russian data protection law (152-FZ).
+
+## Deployment Architecture
+
+### Development Environment
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Telegram Bot   │────│  FastAPI        │────│  SQLite         │
+│  (aiogram)      │    │  (localhost:8000)│    │  (crm.db)       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                              │
+                              │
+                              ▼
+                     ┌─────────────────┐
+                     │  Redis          │
+                     │  (localhost:6379)│
+                     └─────────────────┘
+                              │
+                              │
+                              ▼
+                     ┌─────────────────┐
+                     │  React Dev      │
+                     │  (localhost:5173)│
+                     └─────────────────┘
+```
+
+### Production Environment
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Telegram Bot   │────│  Nginx          │────│  FastAPI        │
+│  (api.telegram.org)│ │  (reverse proxy)│    │  (uWSGI)        │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                                  │
+                                                  │
+                    ┌─────────────────┐          │          ┌─────────────────┐
+                    │  PostgreSQL     │──────────┼──────────│  Redis          │
+                    │  (15-alpine)    │          │          │  (8.0-alpine)    │
+                    └─────────────────┘          │          └─────────────────┘
+                                                  │
+                                                  ▼
+                                       ┌─────────────────┐
+                                       │  Celery Workers │
+                                       │  (4 concurrency)│
+                                       └─────────────────┘
+                                                  │
+                                                  │
+                                                  ▼
+                                       ┌─────────────────┐
+                                       │  ERPNext        │
+                                       │  (version-15)   │
+                                       └─────────────────┘
+```
+
+## Monitoring and Logging
+
+### Health Checks
+
+- `/health` - Application health check
+- `/health/db` - Database health check
+- `/health/redis` - Redis health check
+- `/health/erp` - ERPNext health check
+
+### Metrics
+
+Prometheus metrics are available at `/metrics`.
+
+### Logging
+
+- File logging with daily rotation
+- Log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+- Log file: `backend.log`

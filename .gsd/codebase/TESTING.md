@@ -1,339 +1,698 @@
-# Testing Conventions
+# TESTING.md - Testing Patterns and Configuration
 
-This document outlines the testing conventions and structure for the ErpGreeHouse project.
+## Overview
 
-## Test Framework Overview
+This document describes the testing approach for ErpGreeHouse, including test types, configuration, and how to run tests. The project uses a combination of unit tests, integration tests, and E2E tests to ensure reliability.
 
-### Python Tests (Middleware)
+## Test Types
 
-- **Framework**: pytest
-- **Configuration File**: `middleware/pytest.ini`
-- **Coverage Tool**: coverage.py
-- **Coverage Configuration**: Defined in `pytest.ini`
+### 1. Unit Tests
 
-### JavaScript/React Tests (Admin UI)
+**Purpose**: Test individual functions, methods, and classes in isolation.
 
-- **E2E Testing**: Playwright (version 1.58.2)
-- **Configuration File**: `admin-ui/playwright.config.ts`
-- **Reporting**: Allure (version 3.4.5)
+**Location**: `middleware/tests/unit/`
 
-## Python Test Structure
+**Framework**: pytest with pytest-asyncio
 
-### Directory Layout
+**Patterns**:
+- Test one function per test case
+- Use mocks for external dependencies
+- Focus on core business logic
 
+**Example**:
+```python
+import pytest
+from app.auth import create_access_token
+
+def test_create_access_token():
+    admin = {
+        "user_id": 1,
+        "username": "admin",
+        "role": "owner"
+    }
+    token = create_access_token(admin)
+    assert isinstance(token, str)
+    assert len(token) > 0
 ```
-middleware/
-├── tests/
-│   ├── conftest.py          # Shared fixtures for all tests
-│   ├── unit/                # Unit tests
-│   ├── integration/         # Integration tests
-│   └── init_db.py           # Database initialization for tests
-├── pytest.ini              # pytest configuration
-├── test-reports/           # Test report outputs
-└── test_*.db               # Test database files
+
+### 2. Integration Tests
+
+**Purpose**: Test interactions between multiple components.
+
+**Location**: `middleware/tests/integration/`
+
+**Framework**: pytest with pytest-asyncio and TestClient
+
+**Patterns**:
+- Test API endpoints with real HTTP requests
+- Use test database with seed data
+- Test integration with external APIs using mocks
+
+**Example**:
+```python
+import pytest
+from fastapi.testclient import TestClient
+from app.main import app
+
+@pytest.fixture
+def client():
+    return TestClient(app)
+
+def test_login(client):
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"username": "admin", "password": "admin"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "access_token" in data
+    assert "refresh_token" in data
 ```
 
-### Test Categorization
+### 3. E2E Tests
 
-#### Test Markers
+**Purpose**: Test the complete application flow from user perspective.
 
-Tests are categorized using pytest markers (configured in `pytest.ini`):
+**Location**: `admin-ui/e2e/`
 
-- **`@pytest.mark.unit`**: Unit tests (run by default in pre-push checks)
-- **`@pytest.mark.integration`**: Integration tests (not run in pre-push)
-- **`@pytest.mark.slow`**: Slow tests (deselected with `-m "not slow"`)
-- **`@pytest.mark.fast`**: Fast tests (run by default)
-- **`@pytest.mark.asyncio`**: Async tests
+**Framework**: Playwright
 
-#### Unit Tests
+**Patterns**:
+- Test user journeys (login, create customer, place order)
+- Use real browser interactions
+- Test against a running application
 
-Location: `middleware/tests/unit/`
+**Example**:
+```typescript
+import { test, expect } from "@playwright/test";
 
-Key unit test files:
-- `test_jwt_comprehensive.py`: JWT token handling
-- `test_jwt_security.py`: JWT security checks
-- `test_rbac.py`: Role-based access control
-- `test_consent_flow.py`: User consent management
-- `test_loyalty_core.py`: Loyalty program logic
-- `test_telegram_registration_flow.py`: Telegram user registration
-- `test_vk_handler.py`: VKontakte integration handler
+test("should login and view dashboard", async ({ page }) => {
+    await page.goto("/");
+    
+    // Login
+    await page.fill('input[name="username"]', "admin");
+    await page.fill('input[name="password"]', "admin");
+    await page.click('button[type="submit"]');
+    
+    // Wait for dashboard to load
+    await page.waitForSelector('[data-testid="dashboard"]');
+    
+    // Check if dashboard is displayed
+    expect(await page.isVisible('[data-testid="dashboard"]')).toBeTruthy();
+});
+```
 
-#### Integration Tests
+### 4. Smoke Tests
 
-Location: `middleware/tests/integration/`
+**Purpose**: Quick verification that the application is running correctly.
 
-Key integration test files:
-- `test_jwt_integration.py`: JWT integration with API endpoints
-- `test_jwt_roles_e2e.py`: End-to-end role-based authentication
-- `test_admin_api.py`: Admin API integration tests
-- `test_admin_auth.py`: Admin authentication flow
-- `test_erp_client_integration.py`: ERP system integration
-- `test_role_access.py`: Role-based access control integration
-- `test_telegram_integration.py`: Telegram bot integration
+**Location**: `admin-ui/e2e/smoke/`
 
-### Test Fixtures
+**Framework**: Playwright
 
-**Main Fixture File**: `middleware/tests/conftest.py`
+**Patterns**:
+- Test critical paths only
+- Run quickly (<5 minutes)
+- Focus on core functionality
 
-Key fixtures:
-- Database connection setup
-- Test client initialization
-- JWT token generation
-- Mock objects for external services
+### 5. Accessibility Tests
 
-### Test Data
+**Purpose**: Ensure the application is accessible to all users.
 
-- **Test Databases**: Separate SQLite databases for testing (`test_*.db`)
-- **Database Seeding**: `seed_data.py` for initializing test data
-- **Database Reset**: `init_db.py` for resetting test database
+**Location**: `admin-ui/e2e/accessibility/`
 
-### Test Execution
+**Framework**: Playwright with axe-core
 
-#### Running Tests
+**Patterns**:
+- Run axe accessibility checks
+- Test for common accessibility issues
+- Generate accessibility reports
 
+**Example**:
+```typescript
+import { test, expect } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+
+test("should have no accessibility issues", async ({ page }) => {
+    await page.goto("/");
+    const axeBuilder = new AxeBuilder({ page });
+    const accessibilityScanResults = await axeBuilder.analyze();
+    expect(accessibilityScanResults.violations).toEqual([]);
+});
+```
+
+## Test Configuration
+
+### 1. Pytest Configuration (Backend)
+
+**File**: `middleware/pytest.ini`
+
+**Key Configuration**:
+```ini
+[pytest]
+testpaths = tests
+norecursedirs = .venv venv Lib Scripts reports .pytest_cache node_modules vendor
+asyncio_mode = auto
+
+addopts =
+    --strict-markers
+    --tb=short
+    -ra
+
+markers =
+    slow: marks tests as slow (deselect with '-m "not slow"')
+    fast: marks tests as fast (run by default in pre-push)
+    integration: marks tests as integration tests (not run in pre-push)
+    unit: marks tests as unit tests (run in pre-push)
+    asyncio: marks tests as async tests
+
+[coverage:run]
+source = app
+omit =
+    */tests/*
+    */test_*.py
+    */.venv/*
+    */venv/*
+    */vendor/*
+    */node_modules/*
+    */__pycache__/*
+    */mypy_cache/*
+    */.pytest_cache/*
+
+[coverage:report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod
+precision = 2
+show_missing = True
+skip_covered = False
+
+[coverage:html]
+directory = htmlcov
+```
+
+### 2. Playwright Configuration (Frontend)
+
+**File**: `admin-ui/playwright.config.ts`
+
+**Key Configuration**:
+```typescript
+import { defineConfig } from '@playwright/test';
+import { fileURLToPath } from 'url';
+
+const uiMode = process.env.E2E_UI_MODE || 'auto';
+const isManual = uiMode === 'manual';
+
+export default defineConfig({
+  testDir: './e2e',
+  timeout: 90_000,
+  expect: { timeout: 20_000 },
+  retries: 1,
+  globalSetup: fileURLToPath(new URL('./e2e/global-setup.ts', import.meta.url)),
+  use: {
+    baseURL: process.env.E2E_BASE_URL || 'http://localhost:5173',
+    channel: process.env.E2E_BROWSER_CHANNEL || undefined,
+    headless: !isManual,
+    launchOptions: isManual ? { slowMo: Number(process.env.E2E_SLOWMO_MS || 250) } : undefined,
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    video: 'off',
+    actionTimeout: 90_000,
+    navigationTimeout: 90_000,
+  },
+
+  maxFailures: 0,
+  reporter: [['list'], ['html', { open: 'never' }]],
+  workers: 1,
+
+  projects: [
+    { name: 'smoke', testDir: './e2e/smoke', use: { viewport: { width: 1280, height: 720 } } },
+    { name: 'critical', testDir: './e2e/critical', use: { viewport: { width: 1280, height: 720 } } },
+    { name: 'functional', testDir: './e2e/functional', use: { viewport: { width: 1280, height: 720 } } },
+    { name: 'roles', testDir: './e2e/roles', use: { viewport: { width: 1280, height: 720 } } },
+    { name: 'auth', testDir: './e2e/auth', use: { viewport: { width: 1280, height: 720 } } },
+    { name: 'accessibility', testDir: './e2e/accessibility', use: { viewport: { width: 1280, height: 720 } } },
+    { name: 'fullhd', testDir: './e2e/smoke', use: { viewport: { width: 1920, height: 1080 } } },
+  ],
+});
+```
+
+### 3. Vitest Configuration (Frontend Unit Tests)
+
+**File**: `admin-ui/vite.config.test.ts`
+
+**Key Configuration**:
+```typescript
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './tests/setup.ts',
+    coverage: {
+      reporter: ['text', 'json', 'html'],
+      exclude: ['node_modules', 'e2e', 'tests/setup.ts'],
+    },
+  },
+});
+```
+
+## Test Setup
+
+### 1. Backend Test Setup
+
+**Prerequisites**:
+- Python 3.11+
+- pip
+
+**Setup**:
+```bash
+cd middleware
+pip install -r requirements.txt
+pip install pytest pytest-asyncio pytest-cov pytest-html pytest-mock fakeredis
+```
+
+**Run Tests**:
 ```bash
 # Run all tests
 pytest
 
-# Run only unit tests
-pytest -m unit
+# Run unit tests only
+pytest tests/unit/ -v
 
-# Run only fast tests
-pytest -m fast
+# Run integration tests only
+pytest tests/integration/ -v
+
+# Run with coverage
+pytest tests/unit/ -v --cov=app --cov-report=html
 
 # Run specific test file
-pytest tests/unit/test_jwt_comprehensive.py
+pytest tests/unit/test_auth.py -v
 
-# Run tests with coverage report
-pytest --cov=app --cov-report=html
-
-# Run tests in parallel
-pytest -n auto
+# Run specific test function
+pytest tests/unit/test_auth.py::test_create_access_token -v
 ```
 
-#### Test Reports
+### 2. Frontend Test Setup
 
-- **HTML Coverage Report**: Generated to `htmlcov/` directory
-- **Test Output**: Detailed reports in `test-reports/` directory
+**Prerequisites**:
+- Node.js 18+
+- npm
 
-## Admin UI Testing (E2E)
-
-### Test Framework
-
-- **Tool**: Playwright
-- **Configuration**: `admin-ui/playwright.config.ts`
-- **Timeout**: 90 seconds per test (increased for CI stability)
-- **Retries**: 1 retry for failed tests
-
-### Test Structure
-
-```
-admin-ui/
-├── e2e/
-│   ├── global-setup.ts       # Global test setup (runs once before all tests)
-│   ├── _shared.ts            # Shared utilities and helpers
-│   ├── smoke/                # Smoke tests
-│   ├── critical/             # Critical path tests
-│   ├── functional/           # Functional tests
-│   ├── roles/                # Role-based tests
-│   └── auth/                 # Authentication tests
-├── playwright-report/        # Playwright HTML report
-├── test-results/             # Test result artifacts
-└── allure-results/           # Allure report data
-```
-
-### Test Projects
-
-Playwright tests are organized into projects (configured in `playwright.config.ts`):
-
-1. **smoke**: Quick tests to verify basic functionality
-2. **critical**: Critical user flows
-3. **functional**: Full functionality testing
-4. **roles**: Role-based access control
-5. **auth**: Authentication and authorization
-
-### Test Execution
-
-#### Running Tests
-
+**Setup**:
 ```bash
-# Run all tests
+cd admin-ui
+npm install
+npx playwright install
+```
+
+**Run Tests**:
+```bash
+# Run all E2E tests
 npm run test:e2e
 
 # Run smoke tests
 npm run test:e2e:smoke
 
-# Run critical tests
+# Run critical path tests
 npm run test:e2e:critical
 
-# Run tests in manual mode (UI visible)
+# Run unit tests
+npm run test:unit
+
+# Run unit tests with coverage
+npm run test:unit:coverage
+
+# Run tests in UI mode
+npm run test:unit:ui
+
+# Run E2E tests in manual mode
 npm run test:e2e:manual
-
-# Generate Allure report
-npm run report:allure
 ```
 
-#### Test Configuration
+### 3. Docker Test Setup
 
-**Environment Variables**:
-- `E2E_BASE_URL`: Test server URL (default: http://localhost:5173)
-- `E2E_BROWSER_CHANNEL`: Browser channel (e.g., "chrome", "firefox")
-- `E2E_UI_MODE`: UI mode ("auto" or "manual")
-- `E2E_PAUSE`: Pause duration between actions (in seconds)
-- `E2E_SLOWMO_MS`: Slow motion delay (in milliseconds)
+**Prerequisites**:
+- Docker 20.10+
+- Docker Compose 2.0+
 
-### Test Credentials
+**Run E2E Tests in Docker**:
+```bash
+# From project root
+./run-e2e-docker.sh
+```
 
-- **File**: `admin-ui/e2e/.test-credentials.json` (gitignored)
-- **Format**:
-  ```json
-  {
-    "admin": {
-      "username": "admin",
-      "password": "password"
-    },
-    "manager": {
-      "username": "manager",
-      "password": "password"
-    }
-  }
-  ```
+**Docker Compose File**: `docker-compose.e2e.yml`
 
-## API Testing Patterns
+## Authentication in Tests
 
-### Test Client Setup
+### 1. Backend Authentication
 
+**Test Login**:
 ```python
-from fastapi.testclient import TestClient
-from app.main import app
-
-client = TestClient(app)
-
-def test_api_endpoint():
-    response = client.get("/api/v1/resource")
+def test_login(client):
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"username": "admin", "password": "admin"}
+    )
     assert response.status_code == 200
+    data = response.json()
+    assert "access_token" in data
+    assert "refresh_token" in data
 ```
 
-### Authentication in Tests
-
+**Using Tokens in Tests**:
 ```python
-def test_protected_endpoint():
-    token = get_test_token()
+def test_get_customers(client):
+    # Login first
+    login_response = client.post(
+        "/api/v1/auth/login",
+        json={"username": "admin", "password": "admin"}
+    )
+    access_token = login_response.json()["access_token"]
+    
+    # Use token to access protected endpoint
     response = client.get(
-        "/api/v1/protected",
-        headers={"Authorization": f"Bearer {token}"}
+        "/api/v1/customers",
+        headers={"Authorization": f"Bearer {access_token}"}
     )
     assert response.status_code == 200
 ```
 
-### Database Testing
+### 2. Frontend Authentication
 
-```python
-import pytest
-from app.db import get_db, Base
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-@pytest.fixture
-def test_db():
-    engine = create_engine("sqlite:///:memory:")
-    Base.metadata.create_all(engine)
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-    Base.metadata.drop_all(engine)
-```
-
-## Test Naming Conventions
-
-### Python Tests
-
-- Test files: `test_*.py`
-- Test functions: `test_<feature_being_tested>`
-- Test classes: `Test<Feature>`
-
-Example:
-```python
-def test_jwt_token_generation():
-    # Test code
-
-def test_invalid_credentials_are_rejected():
-    # Test code
-```
-
-### Playwright Tests
-
-- Test files: `*.spec.ts`
-- Test functions: `test('should <expected_behavior>', async ({ page }) => {})`
-
-Example:
+**E2E Test Login**:
 ```typescript
-test('should login with valid credentials', async ({ page }) => {
-    await page.goto('/login');
-    await page.fill('#username', 'admin');
-    await page.fill('#password', 'password');
-    await page.click('#login-button');
-    await expect(page).toHaveURL('/dashboard');
+import { test, expect } from "@playwright/test";
+
+test("should login and view dashboard", async ({ page }) => {
+    await page.goto("/");
+    
+    // Login
+    await page.fill('input[name="username"]', "admin");
+    await page.fill('input[name="password"]', "admin");
+    await page.click('button[type="submit"]');
+    
+    // Wait for dashboard to load
+    await page.waitForSelector('[data-testid="dashboard"]');
+    
+    // Check if dashboard is displayed
+    expect(await page.isVisible('[data-testid="dashboard"]')).toBeTruthy();
 });
 ```
 
+**API Login in E2E Tests**:
+```typescript
+import { test, expect } from "@playwright/test";
+
+test("should get customers via API", async ({ page, request }) => {
+    // Login via API
+    const loginResponse = await request.post("/api/v1/auth/login", {
+        data: { username: "admin", password: "admin" },
+    });
+    expect(loginResponse.ok()).toBeTruthy();
+    const loginData = await loginResponse.json();
+    expect(loginData.access_token).toBeDefined();
+    
+    // Get customers with token
+    const customersResponse = await request.get("/api/v1/customers", {
+        headers: { Authorization: `Bearer ${loginData.access_token}` },
+    });
+    expect(customersResponse.ok()).toBeTruthy();
+    const customersData = await customersResponse.json();
+    expect(customersData).toBeInstanceOf(Array);
+});
+```
+
+## Test Database
+
+### 1. SQLite (Development)
+
+**File**: `middleware/crm.db`
+
+**Seed Data**: `middleware/seed_data.py`
+
+**Run Seed Data**:
+```bash
+cd middleware
+python seed_data.py
+```
+
+### 2. PostgreSQL (Production)
+
+**Configuration**:
+```bash
+DATABASE_URL=postgresql://user:pass@localhost/telegram_crm
+```
+
+**Migrations**: Use SQLAlchemy ORM for migrations.
+
+## Mocking External Services
+
+### 1. Mocking ERPNext API
+
+**Pattern**:
+```python
+from unittest.mock import patch
+from app.integrations.erpnext import get_erpnext_client
+
+def test_get_erpnext_client_mock():
+    with patch('app.integrations.erpnext.requests.get') as mock_get:
+        # Mock ERPNext response
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = {
+            "data": {
+                "name": "ERPNext Client"
+            }
+        }
+        
+        client = get_erpnext_client()
+        assert client is not None
+```
+
+### 2. Mocking Redis
+
+**Pattern**:
+```python
+from unittest.mock import patch
+from app.cache import redis_cache
+
+def test_redis_cache_mock():
+    with patch('app.cache.redis.StrictRedis') as mock_redis:
+        mock_redis.return_value.get.return_value = b'"test value"'
+        
+        value = redis_cache.get("test_key")
+        assert value == "test value"
+```
+
+## Test Reports
+
+### 1. Pytest HTML Report
+
+**Generate Report**:
+```bash
+pytest tests/unit/ -v --html=report.html
+```
+
+### 2. Playwright HTML Report
+
+**Generate Report**:
+```bash
+npm run test:e2e -- --reporter=html
+```
+
+**View Report**:
+```bash
+open admin-ui/playwright-report/index.html
+```
+
+### 3. Vitest Coverage Report
+
+**Generate Report**:
+```bash
+npm run test:unit:coverage
+```
+
+**View Report**:
+```bash
+open admin-ui/coverage/index.html
+```
+
+## CI/CD
+
+### 1. GitHub Actions
+
+**Workflow File**: `.github/workflows/test.yml`
+
+**Key Features**:
+- Runs on push to main branch
+- Runs unit, integration, and E2E tests
+- Generates coverage reports
+- Checks for accessibility issues
+
+### 2. Pre-commit Hooks
+
+**Configuration**: `.pre-commit-config.yaml`
+
+**Hooks**:
+- Black formatter
+- Ruff linter
+- Mypy type checker
+- pytest for fast tests
+
 ## Test Best Practices
 
-### Python Tests
+### 1. Test Naming
 
-1. **Use fixtures for shared setup**: Define reusable fixtures in `conftest.py`
-2. **Test isolation**: Each test should run independently
-3. **Clear assertions**: Make assertions specific and readable
-4. **Mock external dependencies**: Use `unittest.mock` or `pytest-mock`
-5. **Parametrize tests**: Test multiple inputs with `@pytest.mark.parametrize`
-6. **Test error conditions**: Check that errors are properly handled
-7. **Keep tests focused**: Each test should test one thing
+**Pattern**: `test_<function_name>_<scenario>`
 
-### Playwright Tests
+**Examples**:
+```python
+test_create_access_token
+test_create_access_token_with_expired
+test_login_invalid_credentials
+test_get_customers_empty_list
+```
 
-1. **Use page objects**: Create reusable selectors and actions
-2. **Wait for elements**: Use `await page.waitForSelector()` instead of fixed waits
-3. **Handle navigation**: Wait for URL changes or network requests
-4. **Take screenshots**: Use `page.screenshot()` for debugging
-5. **Test responsive design**: Test on different viewport sizes
-6. **Clean up**: Use `test.afterAll()` for test cleanup
+### 2. Test Structure
 
-## CI/CD Testing
+**Arrange-Act-Assert**:
+```python
+def test_get_customer():
+    # Arrange
+    customer_id = 1
+    
+    # Act
+    customer = get_customer(customer_id)
+    
+    # Assert
+    assert customer is not None
+    assert customer.id == customer_id
+```
 
-### Pre-Commit Checks
+### 3. Fixtures
 
-- **Python**: Runs black, isort, flake8, bandit, and mypy
-- **Admin UI**: Runs Biome lint and format checks
+**Reusable Setup**:
+```python
+import pytest
+from app.db import get_db
 
-### GitHub Actions
+@pytest.fixture
+def db_session():
+    """Create a test database session."""
+    # Setup
+    db = get_db()
+    yield db
+    # Teardown
+    db.close()
 
-- **Test Matrix**: Tests run on multiple Python versions and OS
-- **Coverage Enforcement**: Fails if coverage drops below threshold
-- **Dependency Checks**: Runs safety checks for vulnerabilities
+def test_create_customer(db_session):
+    customer = create_customer(db_session, {"name": "John Doe"})
+    assert customer is not None
+```
 
-## Test Maintenance
+### 4. Mocking
 
-### Adding New Tests
+**External Dependencies**:
+```python
+from unittest.mock import patch
 
-1. Identify test category (unit or integration)
-2. Create test file following naming convention
-3. Write test function with clear name and purpose
-4. Use existing fixtures or create new ones
-5. Run test to ensure it passes
-6. Commit test file
+def test_send_email_mock():
+    with patch('app.notifications.send_email') as mock_send_email:
+        mock_send_email.return_value = True
+        
+        result = send_email("john@example.com", "Test Subject", "Test Body")
+        assert result is True
+```
 
-### Updating Tests
+### 5. Assertions
 
-1. Update tests when features change
-2. Fix broken tests immediately
-3. Refactor tests to improve readability
-4. Remove outdated tests
+**Specific Assertions**:
+```python
+# Good
+assert customer.name == "John Doe"
+assert len(customers) == 3
+assert customer.is_active is True
 
-### Test Coverage
+# Bad (too vague)
+assert customer
+assert customers
+```
 
-- Aim for high coverage but prioritize meaningful tests
-- Cover critical paths and error conditions
-- Don't chase 100% coverage at the expense of quality
+## Performance Testing
+
+### 1. Load Testing
+
+**Tool**: Locust
+
+**Pattern**:
+```python
+from locust import HttpUser, task, between
+
+class UserBehavior(HttpUser):
+    wait_time = between(1, 2.5)
+    
+    @task(1)
+    def login(self):
+        self.client.post("/api/v1/auth/login", json={"username": "admin", "password": "admin"})
+    
+    @task(2)
+    def get_customers(self):
+        self.client.get("/api/v1/customers")
+```
+
+**Run Load Test**:
+```bash
+locust -f locustfile.py --host=http://localhost:8000
+```
+
+### 2. Performance Metrics
+
+**Prometheus Metrics**: `/metrics`
+
+**Grafana Dashboard**: Use Prometheus data to create performance dashboards.
+
+## Troubleshooting Tests
+
+### 1. Test Failures
+
+**Common Issues**:
+- Database connection errors
+- External API failures
+- Timeout errors
+- Authentication issues
+
+**Debugging**:
+```bash
+# Run tests with verbose output
+pytest tests/unit/test_auth.py -v -s
+
+# Run tests with pdb debugger
+pytest tests/unit/test_auth.py -v -xvs --tb=short --no-header --no-summary
+```
+
+### 2. Test Performance
+
+**Slow Tests**:
+- Identify slow tests with `pytest --durations=10`
+- Optimize database queries
+- Use mocks for external dependencies
+
+### 3. Test Flakiness
+
+**Root Causes**:
+- Network latency
+- Database state
+- External API variability
+
+**Solutions**:
+- Use consistent test data
+- Retry flaky tests
+- Improve test isolation
