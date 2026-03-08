@@ -1,5 +1,20 @@
 # State
 
+## Project Reference
+
+See: .gsd/PROJECT.md (updated 2026-03-08)
+
+**Core value:** Saves 50-100k ₽/month for coffee shops by replacing expensive third-party CRM and loyalty solutions with open-source alternative.
+
+**Current focus:** Planning next milestone (UI/UX improvements and bug fixes based on user feedback)
+
+## Current Position
+
+Phase: Not started
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-03-08 — v2.2 UI/UX Refactor milestone complete
+
 ## Codebase Analysis Complete
 
 - **Coding Conventions**: Documented in `.gsd/codebase/CONVENTIONS.md`
@@ -27,4 +42,3 @@
 - GitHub Actions workflows
 - Pre-commit hooks
 - Dockerized E2E environment
-
