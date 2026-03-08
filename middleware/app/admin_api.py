@@ -641,7 +641,8 @@ def list_customers(
         if where:
             count_sql += " WHERE " + " AND ".join(where)
         count_cur = conn.execute(count_sql, tuple(args))
-        total = count_cur.fetchone()["total"] if count_cur.fetchone() else 0
+        count_result = count_cur.fetchone()
+        total = count_result["total"] if count_result else 0
 
         # Get paginated data
         offset = (page - 1) * limit

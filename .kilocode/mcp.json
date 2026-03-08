@@ -45,6 +45,10 @@
       "command": "npx",
       "args": ["reactbits-dev-mcp-server"]
     },
+	"docker-mcp": {
+      "command": "uvx",
+      "args": ["docker-mcp"]
+    },
     "context7": {
       "command": "npx",
       "args": [

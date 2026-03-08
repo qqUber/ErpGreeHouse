@@ -188,11 +188,14 @@ async def _auth_protection(request: Request, call_next):
         return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
     except Exception as e:
         # Log the error and return 500 instead of letting it propagate
+        import traceback
         logger.error(f"[AUTH] Middleware error: {type(e).__name__}: {e}")
+        logger.error(f"[AUTH] Traceback: {traceback.format_exc()}")
         return JSONResponse(
             status_code=500,
             content={"detail": "Internal server error in auth middleware"},
         )
+
 
 
 @app.middleware("http")
