@@ -13,5 +13,6 @@
     "strict": true,
     "types": ["vite/client", "@playwright/test", "node"]
   },
-  "include": ["src", "e2e"]
+  "include": ["src"],
+  "exclude": ["e2e", "test-report"]
 }
