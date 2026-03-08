@@ -1,0 +1,21 @@
+# Continuation Rules for Kilocode CLI
+
+## Principle
+- If context size exceeds limits, **do not truncate randomly**.
+- Always continue work by referencing **Docker environment** and existing `rules.md`.
+
+## Continuation Strategy
+- Split tasks into smaller prompts or phases.
+- Use `STATE.md` and `ROADMAP.md` to keep track of progress.
+- Always re‑load context from Dockerized environment before continuing.
+- Never generate manual scripts outside Docker.
+
+## Dependencies
+- When continuing, check for updated dependencies (`npm outdated`, `docker-compose build --pull`).
+- Update Dockerfile and docker-compose to reflect new versions.
+- Ensure reproducibility by locking versions where needed.
+
+## Outcome
+- Work continues seamlessly even if context is too large.
+- No loss of environment or business logic.
+- All development, testing, and automation remain inside Docker.

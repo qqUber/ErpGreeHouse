@@ -1,0 +1,51 @@
+# Docker Compose for UI Verification Testing
+# Use this to verify UI/UX, pagination, and design patterns
+
+version: '3.8'
+
+services:
+  # Redis for caching
+  redis:
+    image: redis:8.0-alpine
+    container_name: erp_verify_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  # Backend API
+  backend:
+    image: erp-backend:test
+    container_name: erp_verify_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - E2E_TEST_MODE=true
+      - E2E_ADMIN_SECRET=test-secret-key
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=sqlite:///app/data/crm.db
+      - ENVIRONMENT=development
+      - ADMIN_UI_DIST=/app/admin-ui/dist
+    volumes:
+      - ./middleware/app:/app/app
+      - ./admin-ui/dist:/app/admin-ui/dist:ro
+      - erp_data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Frontend (production build served by backend)
+  # Frontend is served by backend at /admin/
+  # No separate frontend container needed - backend serves static files
+
+volumes:
+  erp_data:
