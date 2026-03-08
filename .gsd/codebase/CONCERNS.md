@@ -4,7 +4,74 @@
 
 This document identifies potential technical debt, security vulnerabilities, performance bottlenecks, and other concerns in the Telegram CRM MVP + ERPNext Loyalty Integration project.
 
-## Security Concerns
+## Latest Security Scan Results (2026-03-08)
+
+**Files Scanned:** 11,988 lines in middleware/app/ (Python backend)
+**Scan Tool:** Bandit security scanner
+**High Priority Issues:** 2
+**Medium Priority Issues:** 6
+**Low Priority Issues:** 39
+
+## Additional Security Concerns (From Bandit Scan)
+
+### 1. SQL Injection Risks (B608) - MEDIUM
+
+**Location:** Multiple files in `app/integrations/bots/shared/` directory
+
+```python
+# Example from commands.py:48
+id_column = f"{source}_id"
+cur = conn.execute(
+    f"SELECT id, full_name FROM customers WHERE {id_column}=?", 
+    (user_id,)
+)
+```
+
+**Why it's bad:** String formatting of column names allows SQL injection if `source` is not properly validated.
+
+**Files affected:**
+- `app/handlers.py:121`
+- `app/integrations/bots/shared/commands.py:48,98,147,197,251`
+- `app/integrations/bots/shared/consent.py:77,169,179,221,242,297,303,367`
+- `app/integrations/bots/shared/registration.py:228,244`
+
+**Recommendation:**
+- Validate column names against an allowed list
+- Consider using an ORM for safer query building
+
+### 2. Silent Failures (B110) - MEDIUM
+
+**Location:** `app/admin_api.py:154`
+
+```python
+except Exception:
+    pass  # Silent fail for cache warming
+```
+
+**Why it's bad:** Catches all exceptions and ignores them, making debugging impossible.
+
+**Recommendations:**
+- Add proper logging of errors
+- Handle specific exceptions only
+- Consider adding monitoring for failures
+
+### 3. Weak Randomness (B311) - MEDIUM
+
+**Location:** `app/test_api.py` (multiple places)
+
+```python
+# Example: Generating test phone numbers
+def _generate_phone() -> str:
+    return f"79{random.randint(100000000, 999999999)}"
+```
+
+**Why it's bad:** Uses `random` module instead of `secrets` module for test data generation, which is not cryptographically secure.
+
+**Recommendations:**
+- Replace `random` with `secrets` module
+- For test data, use a deterministic seed for reproducibility
+
+## Original Security Concerns
 
 ### 1. Default Credentials (High Risk)
 
@@ -58,7 +125,39 @@ This document identifies potential technical debt, security vulnerabilities, per
 - Remove fallback to ADMIN_SECRET in production mode
 - Add documentation on generating secure JWT secrets
 
-## Performance Concerns
+## Additional Performance Concerns
+
+### 1. Missing Database Indexes - HIGH
+
+**Location:** Multiple API endpoints
+
+**Why it's bad:** Queries like `/api/customers` may be slow with large datasets because they:
+- Filter on `phone`, `email` without indexes
+- Join with multiple tables without foreign key indexes
+- Lack pagination in some endpoints
+
+**Recommendations:**
+- Add indexes on commonly filtered columns:
+  - `customers.phone`
+  - `customers.email`  
+  - `customers.full_name`
+  - `transactions.customer_id`
+- Add pagination to all list endpoints
+
+### 2. Redundant Queries in Auth - MEDIUM
+
+**Location:** `app/admin_auth_api.py`
+
+**Why it's bad:** The authentication system may be making redundant database queries:
+- `/api/auth/refresh` may fetch user data twice
+- Missing caching for frequently accessed user information
+
+**Recommendations:**
+- Implement request-level caching
+- Optimize refresh token logic
+- Add Redis caching for user sessions
+
+## Original Performance Concerns
 
 ### 1. Database Connection Management (Medium Risk)
 

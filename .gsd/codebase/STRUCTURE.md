@@ -1,227 +1,287 @@
-# STRUCTURE.md
+# Directory Structure
 
-## Project Root Structure
-
+## Root Level
 ```
 ErpGreeHouse/
 ├── admin-ui/                 # Frontend application (React + TypeScript)
-├── middleware/              # Backend application (FastAPI + aiogram)
-├── prod/                    # Production configuration (Docker)
-├── docs/                    # Documentation
-├── tests/                   # Test files and reports
-├── scripts/                 # Helper scripts
-├── unit-report-2/           # Unit test reports
-├── crm.db                   # SQLite database (development)
-├── .venv/                   # Python virtual environment
-├── .gsd/                    # GSD framework configuration
-├── .github/                 # GitHub workflows
-└── [Configuration files]    # .gitignore, .pre-commit-config.yaml, etc.
+├── middleware/               # Backend API (FastAPI + Python)
+├── docs/                     # Documentation files
+├── tests/                    # E2E and integration tests
+├── scripts/                  # Helper scripts
+├── screenshots/              # Test screenshots
+├── prod/                     # Production configuration
+├── .gsd/                     # GSD framework files
+├── docker-compose*.yml       # Docker Compose configurations
+└── README.md                 # Project overview
 ```
 
-## 1. admin-ui/ (Frontend)
+## Frontend Structure (admin-ui/)
 
 ```
 admin-ui/
-├── src/                     # Source code
+├── src/                      # Source code
+│   ├── components/          # Reusable React components
+│   │   ├── dashboard/      # Dashboard widgets and views
+│   │   ├── EmptyState.tsx  # Empty state component
+│   │   ├── Pagination.tsx  # Pagination component
+│   │   ├── Toast.tsx       # Notification component
+│   │   └── ...             # Other components
+│   ├── hooks/              # Custom React hooks
+│   │   ├── useAppTranslation.ts
+│   │   ├── useDashboard.ts
+│   │   ├── usePermission.ts
+│   │   └── ...
+│   ├── stores/             # Global state management
+│   │   └── auth.tsx        # Authentication context
+│   ├── types/              # TypeScript type definitions
+│   │   ├── roles.ts
+│   │   ├── language.ts
+│   │   └── ...
+│   ├── utils/              # Utility functions
+│   │   ├── keyboardNavigation.ts
+│   │   ├── translationHelpers.ts
+│   │   └── ...
+│   ├── api.ts              # API client with authentication
+│   ├── authWorker.ts       # Web worker for auth flow
+│   ├── i18n.ts             # Internationalization config
+│   ├── theme.ts            # Theme and styling
 │   ├── App.tsx             # Main application component
 │   ├── main.tsx            # Entry point
-│   ├── api.ts              # API client layer
-│   ├── authWorker.ts       # Token refresh logic
-│   ├── i18n.ts             # Internationalization setup
-│   ├── styles.css          # Global styles
-│   ├── vite-env.d.ts       # Vite environment declarations
-│   ├── stores/             # State management
-│   │   └── auth.tsx        # Auth state store
-│   ├── components/         # Reusable components
-│   │   ├── AnalyticsCharts.tsx       # Data visualization
-│   │   ├── IntegrationSettings.tsx   # ERP integration config
-│   │   ├── LanguageSwitcher.tsx      # Multi-language support
-│   │   └── ProductImport.tsx         # Product management
-│   ├── locales/            # Translation files
-│   │   ├── en.json         # English
-│   │   ├── ru.json         # Russian
-│   │   └── srb.json        # Serbian
-│   ├── LoyaltyTmaView.tsx  # Loyalty program management
-│   └── MarketingView.tsx   # Marketing campaigns
+│   ├── AnalyticsView.tsx   # Analytics dashboard
+│   ├── ComplianceView.tsx  # Compliance management
+│   ├── LoyaltyTmaView.tsx  # TMA loyalty program
+│   ├── MarketingView.tsx   # Marketing campaigns
+│   └── styles.css          # Global styles
+├── e2e/                     # Playwright E2E tests
+│   ├── auth/              # Authentication tests
+│   ├── critical/          # Critical flow tests
+│   ├── functional/        # Functional tests
+│   ├── roles/             # Role-specific tests
+│   ├── smoke/             # Smoke tests
+│   └── _shared.ts         # Shared test utilities
+├── public/                 # Static assets
 ├── dist/                   # Build output
-├── node_modules/           # NPM dependencies
-├── e2e/                    # Playwright E2E tests
-├── playwright-report/      # Test reports
-├── test-results/           # Test artifacts
-├── package.json            # NPM dependencies
-├── package-lock.json       # Dependency lock file
-├── tsconfig.json           # TypeScript configuration
-├── biome.json              # Code formatter config
-├── vite.config.ts          # Vite configuration
-├── playwright.config.ts     # Playwright configuration
-└── index.html              # HTML entry point
+├── screenshots/            # Test screenshots
+├── package.json            # Dependencies
+├── tsconfig.json           # TypeScript config
+├── vite.config.ts          # Vite config
+└── playwright.config.ts    # Playwright config
 ```
 
-**Key Files:**
-- `src/App.tsx` - Handles routing, layout, and main application flow
-- `src/api.ts` - All API endpoints and HTTP request/response handling
-- `src/authWorker.ts` - Background worker for token refresh logic
-- `src/stores/auth.tsx` - Auth state management with MobX
-
-## 2. middleware/ (Backend)
+## Backend Structure (middleware/)
 
 ```
 middleware/
-├── app/                    # Application source code
-│   ├── __init__.py         # Package marker
-│   ├── main.py             # FastAPI application entry point
+├── app/                     # FastAPI application
+│   ├── __init__.py
+│   ├── main.py             # Application entry point
 │   ├── config.py           # Configuration management
-│   ├── db.py               # Database session management
-│   ├── auth.py             # JWT token and authentication logic
-│   ├── handlers.py         # Telegram bot message handlers
-│   ├── loyalty.py          # Loyalty program logic
-│   ├── worker.py           # Celery task worker
-│   ├── middlewares.py      # FastAPI middleware
-│   ├── request_context.py  # Request context management
+│   ├── db.py               # Database connection
+│   ├── auth.py             # JWT token handling
 │   ├── security.py         # Security utilities
-│   ├── storage.py          # Storage helpers
-│   ├── identify.py         # User identification
-│   ├── menu.py             # Telegram bot menu configuration
-│   ├── pdfgen.py           # PDF generation (placeholder)
-│   ├── pos_templates.py    # POS templates
-│   ├── runtime.py          # Runtime configuration
-│   ├── trigger_engine.py   # Event trigger engine
-│   ├── integration_events.py # Integration event handlers
-│   ├── admin_api.py        # Admin API endpoints
-│   ├── admin_auth_api.py   # Auth API endpoints (login, refresh, logout)
-│   ├── integrations_api.py # Integration configuration API
-│   ├── marketing_api.py    # Marketing API endpoints
-│   ├── products_api.py     # Product management API
-│   ├── tma_api.py          # Telegram Mini App API
-│   ├── test_api.py         # Test endpoints
-│   ├── integrations/       # External integrations
-│   │   ├── __init__.py
-│   │   ├── erpnext.py      # ERPNext API client
-│   │   └── [other integrations]
-│   └── schemas/            # Pydantic data schemas
-│       ├── __init__.py
-│       └── [schema files]
-├── tests/                  # Test files (pytest)
-│   ├── unit/               # Unit tests
-│   └── integration/        # Integration tests
-├── .venv/                  # Python virtual environment
-├── requirements.txt        # Python dependencies
-├── requirements-dev.txt    # Development dependencies
-└── [Environment files]     # .env.example, .env (local)
+│   ├── storage.py          # Storage utilities
+│   ├── runtime.py          # Runtime environment detection
+│   ├── request_context.py  # Request context management
+│   ├── rate_limiter.py     # Rate limiting
+│   ├── middlewares.py      # Custom middlewares
+│   ├── handlers.py         # Request handlers
+│   ├── pos_templates.py    # POS receipt templates
+│   ├── pdfgen.py           # PDF generation
+│   ├── menu.py             # Menu management
+│   ├── loyalty.py          # Loyalty program
+│   ├── identify.py         # Customer identification
+│   ├── url_shortener.py    # URL shortening
+│   ├── worker.py           # Background job processing
+│   ├── erp_scheduler.py    # ERP sync scheduler
+│   ├── trigger_engine.py   # Marketing trigger engine
+│   ├── integration_events.py # Integration event handling
+│   ├── admin_auth_api.py   # Admin authentication endpoints
+│   ├── admin_api.py        # Admin user management
+│   ├── customers_api.py    # Customer management
+│   ├── products_api.py     # Product management
+│   ├── pos_api.py          # Point of sale
+│   ├── marketing_api.py    # Marketing campaigns
+│   ├── analytics_api.py    # Analytics endpoints
+│   ├── dashboard_api.py    # Dashboard data
+│   ├── integrations_api.py # Integration management
+│   ├── integration_settings_api.py # Integration settings
+│   ├── tma_api.py          # TMA (Telegram Mini App) endpoints
+│   └── test_api.py         # Test endpoints
+├── app/integrations/       # Third-party integrations
+│   ├── __init__.py
+│   ├── webhooks.py         # Webhook handlers
+│   ├── erp_sync.py         # ERP system synchronization
+│   ├── erpnext.py          # ERPNext integration
+│   └── bots/              # Messaging bots
+│       ├── telegram_handler.py
+│       ├── vk_handler.py
+│       └── shared/        # Shared bot utilities
+├── app/integrations/pos/   # POS integration
+│   ├── __init__.py
+│   └── erpnext_client.py   # ERPNext POS client
+├── app/models/             # Data models
+│   └── erp_sync.py         # ERP sync models
+├── data/                   # Data files
+├── receipts/               # Generated receipts
+├── reports/                # Analytics reports
+├── scripts/                # Helper scripts
+├── tests/                  # Python tests
+├── venv/                   # Virtual environment
+├── .env                    # Environment variables
+├── requirements.txt        # Dependencies
+└── mypy.ini                # Type checking config
 ```
 
-**Key Files:**
-- `app/main.py` - FastAPI app creation, middleware setup, CORS config
-- `app/admin_auth_api.py` - Auth endpoints with JWT token generation
-- `app/admin_api.py` - Admin operations (customers, orders, products)
-- `app/integrations/erpnext.py` - ERPNext integration client
-- `app/loyalty.py` - Loyalty points calculation and redemption
-- `app/worker.py` - Celery tasks for background processing
-
-## 3. prod/ (Production Configuration)
-
-```
-prod/
-├── docker-compose.yml              # Main Docker Compose file
-├── docker-compose.infrastructure.yml # Infrastructure (Postgres, Redis)
-├── Dockerfile                      # Middleware Docker image
-├── requirements.txt                # Production dependencies
-├── .env.production.example         # Example production environment
-└── README.md                       # Deployment instructions
-```
-
-**Production Stack:**
-- Nginx - Reverse proxy
-- PostgreSQL 15 - Database
-- Redis 7 - Cache and Celery broker
-- Middleware (FastAPI + aiogram)
-- Admin UI (static files)
-
-## 4. docs/ (Documentation)
+## Documentation Structure (docs/)
 
 ```
 docs/
-├── architecture/                 # System architecture
-│   ├── system_architecture.md    # Core architecture diagram
-│   └── auth_flow.md              # Authentication flow
-├── plans/                        # Development plans
-│   ├── development_plan.md       # Comprehensive roadmap
-│   ├── mvp_scope.md              # MVP features
-│   └── testing_strategy.md       # Testing approach
-├── testing/                      # Test documentation
-│   ├── test_report.html          # Test report
-│   └── [other test docs]
-└── [other docs]                  # pre-commit-checklist.md, etc.
+├── architecture/           # Architecture documents
+│   └── auth_flow.md        # Authentication flow details
+├── compliance/             # Data compliance
+│   └── data_storage_compliance.md
+├── deployment/             # Deployment guides
+│   └── development.md      # Local development setup
+├── integrations/           # Integration documentation
+│   └── frontend_backend.md # Frontend-backend communication
+├── security/               # Security guidelines
+│   └── production_security.md
+└── plans/                  # Project plans
+    └── mvp_scope.md        # MVP requirements
 ```
 
-## 5. tests/ (Test Files)
+## Key Files by Functionality
 
+### Authentication
 ```
-tests/
-├── fixtures/                     # Test fixtures
-├── artifacts/                    # Test artifacts (screenshots, logs)
-├── FINAL_TEST_REPORT.md          # Complete test report
-├── TEST_REPORT.md                # Intermediate test report
-└── PHASE_3_401_REFRESH_LOOP_TEST_PLAN.md # Refresh token test plan
-```
+Frontend:
+- src/stores/auth.tsx        # Auth context and state
+- src/api.ts                  # Auth API calls
+- src/authWorker.ts          # Auth flow web worker
 
-## 6. scripts/ (Helper Scripts)
-
-```
-scripts/
-├── logs/                         # Log files
-├── run-built.ps1                 # Run built application (Windows)
-├── run-e2e-new.ps1              # Run E2E tests (Windows)
-├── run-e2e-tests.ps1            # Run Playwright tests (Windows)
-├── run-e2e-tests.bat            # Run E2E tests (Windows CMD)
-├── stop-dev.ps1                 # Stop dev servers (Windows)
-├── test_auth_e2e.py             # E2E auth test
-├── verify_task.ps1              # Verify task completion (Windows)
-└── verify_task.sh               # Verify task completion (Linux/Mac)
+Backend:
+- app/admin_auth_api.py      # Auth endpoints
+- app/auth.py                # JWT handling
+- app/security.py            # Password hashing
 ```
 
-## 7. Configuration Files
-
-**Root Level:**
-- `.gitignore` - Git ignore rules
-- `.pre-commit-config.yaml` - Pre-commit hooks configuration
-- `.kilocodeignore` - KiloCode ignore rules
-- `.pytest_cache/` - pytest cache directory
-- `.mypy_cache/` - mypy type checker cache
-- `crm.db` - SQLite database (development)
-- `README.md` - Project documentation
-- `SETUP_GUIDE.md` - Setup instructions
-- `SECURITY.md` - Security information
-- `LICENSE` - MIT License
-
-## Key Interactions
-
-**Frontend → Backend:**
+### Customer Management
 ```
-admin-ui/src/api.ts → middleware/app/admin_api.py
-admin-ui/src/api.ts → middleware/app/admin_auth_api.py
-admin-ui/src/api.ts → middleware/app/products_api.py
+Frontend:
+- src/App.tsx (customers tab)
+- src/components/CustomersTable.tsx
+- src/api.ts (customers endpoints)
+
+Backend:
+- app/admin_api.py           # Customer endpoints
+- app/db.py (customers table)
 ```
 
-**Backend → External Services:**
+### Product Management
 ```
-middleware/app/integrations/erpnext.py → ERPNext API
-middleware/app/handlers.py → Telegram Bot API
-middleware/app/worker.py → Celery tasks via Redis
+Frontend:
+- src/App.tsx (products tab)
+- src/components/ProductsTable.tsx
+- src/components/ProductImport.tsx
+
+Backend:
+- app/products_api.py        # Product endpoints
+- app/db.py (products table)
 ```
 
-**Data Flow:**
+### Point of Sale
 ```
-Telegram Bot → handlers.py → business logic → db.py → SQLite/PostgreSQL
-Admin UI → API endpoints → business logic → db.py → SQLite/PostgreSQL
+Frontend:
+- src/App.tsx (POS tab)
+- src/api.ts (POS endpoints)
+
+Backend:
+- app/pos_api.py             # POS endpoints
+- app/pos_templates.py       # Receipt templates
+- app/pdfgen.py              # PDF generation
 ```
 
-## Development vs Production
+### Marketing
+```
+Frontend:
+- src/MarketingView.tsx
+- src/api.ts (marketing endpoints)
 
-| Aspect | Development | Production |
-|--------|-------------|------------|
-| **Backend** | Uvicorn dev server | Docker container |
-| **Frontend** | Vite dev server | Nginx static files |
-| **Database** | SQLite (crm.db) | PostgreSQL 15 |
-| **Cache** | Redis/Memurai | Redis 7 |
-| **ERP Integration** | Mock mode (ERP_MOCK_MODE=true) | Real ERPNext |
+Backend:
+- app/marketing_api.py       # Campaign endpoints
+- app/trigger_engine.py      # Trigger engine
+- app/db.py (campaigns, triggers)
+```
+
+### Analytics
+```
+Frontend:
+- src/AnalyticsView.tsx
+- src/components/AnalyticsCharts.tsx
+- src/api.ts (analytics endpoints)
+
+Backend:
+- app/analytics_api.py       # Analytics endpoints
+- app/db.py (analytics tables)
+```
+
+### Integrations
+```
+Frontend:
+- src/App.tsx (integrations tab)
+- src/components/IntegrationSettings.tsx
+
+Backend:
+- app/integrations_api.py    # Integration endpoints
+- app/integration_settings_api.py
+- app/integrations/bots/    # Bot handlers
+```
+
+### Testing
+```
+Frontend:
+- admin-ui/e2e/             # Playwright E2E tests
+- admin-ui/tests/           # Unit tests
+
+Backend:
+- middleware/tests/         # Python tests
+- tests/                    # E2E tests
+```
+
+## Configuration Files
+
+### Frontend
+```
+- admin-ui/package.json      # Dependencies and scripts
+- admin-ui/tsconfig.json     # TypeScript configuration
+- admin-ui/vite.config.ts    # Vite build configuration
+- admin-ui/playwright.config.ts # E2E test config
+- admin-ui/.env.test         # Test environment variables
+```
+
+### Backend
+```
+- middleware/requirements.txt # Python dependencies
+- middleware/.env            # Environment variables
+- middleware/.env.example    # Example config
+- middleware/mypy.ini        # Type checking
+- middleware/pytest.ini      # Test configuration
+```
+
+### Docker
+```
+- docker-compose.e2e.yml     # E2E test environment
+- docker-compose.local.yml   # Local development
+- docker-compose.verify.yml  # Verification environment
+- admin-ui/Dockerfile        # Frontend Dockerfile
+- middleware/Dockerfile      # Backend Dockerfile
+```
+
+### GSD Framework
+```
+.gsd/
+├── codebase/
+│   ├── ARCHITECTURE.md      # This file
+│   └── STRUCTURE.md         # Directory structure
+├── rules/                   # GSD rules
+└── config.json              # GSD configuration
