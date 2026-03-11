@@ -1,26 +1,26 @@
 /**
  * Test ID utilities for consistent E2E testing
  *
- * This file defines clean, non-localized data-testid patterns
- * that should be used across all E2E tests.
+ * This file defines test ID patterns that match the actual app components.
+ * Based on E2E_TEST_FIX_PLAN.md
  */
 
 export const TestIds = {
-  // Login form elements
-  login: {
+  // Common/Auth form elements (matching app's common_input_*_en pattern)
+  common: {
     input: {
-      username: 'login_input_username',
-      password: 'login_input_password',
-      adminKey: 'login_input_admin_key',
+      username: 'common_input_username_en',
+      password: 'common_input_password_en',
+      adminKey: 'common_input_admin_key_en',
     },
     button: {
-      submit: 'login_btn_submit',
-      togglePassword: 'login_btn_toggle_password',
-      recover: 'login_btn_recover',
+      login: 'common_btn_password_login_en',
+      togglePassword: 'common_btn_toggle_password_en',
+      recovery: 'common_btn_recovery_en',
     },
   },
-
-  // Navigation elements
+  
+  // Navigation elements (matching app's admin_nav_* pattern)
   nav: {
     dashboard: 'admin_nav_dashboard_en',
     customers: 'admin_nav_customers_en',
@@ -32,133 +32,110 @@ export const TestIds = {
     compliance: 'admin_nav_compliance_en',
     analytics: 'admin_nav_analytics_en',
   },
-
+  
   // Dashboard elements
   dashboard: {
     widget: {
-      customers: 'dashboard_widget_customers',
-      products: 'dashboard_widget_products',
-      sales: 'dashboard_widget_sales',
-      operational: 'dashboard_widget_operational',
-      integrations: 'dashboard_widget_integrations',
-      marketing: 'dashboard_widget_marketing',
+      customers: 'admin_widget_customers_en',
+      products: 'admin_widget_products_en',
+      sales: 'admin_widget_sales_en',
+      operational: 'admin_widget_operational_en',
+      integrations: 'admin_widget_integrations_en',
+      marketing: 'admin_widget_marketing_en',
     },
     button: {
-      refresh: 'dashboard_btn_refresh',
-      export: 'dashboard_btn_export',
-      viewAll: 'dashboard_btn_view_all',
+      refresh: 'admin_btn_dashboard_refresh_en',
+      export: 'admin_btn_export_csv_en',
+      viewAll: 'admin_widget_refresh_export_en',
     },
   },
-
+  
   // Customer management
   customer: {
     button: {
-      new: 'customer_btn_new',
-      search: 'customer_btn_search',
-      reset: 'customer_btn_reset',
-      create: 'customer_btn_create',
+      new: 'admin_btn_new_customer_en',
+      search: 'admin_btn_customer_search_en',
+      reset: 'admin_btn_customer_reset_en',
+      create: 'admin_btn_create_customer_en',
     },
     input: {
-      search: 'customer_input_search',
-      fullname: 'customer_input_fullname',
-      phone: 'customer_input_phone',
-      notes: 'customer_input_notes',
+      search: 'admin_input_customer_search_en',
+      fullname: 'admin_input_customer_fullname_en',
+      phone: 'admin_input_customer_phone_en',
+      notes: 'admin_input_customer_notes_en',
     },
   },
-
+  
   // Product management
   product: {
     button: {
-      reload: 'product_btn_reload',
-      import: 'product_btn_import',
-      create: 'product_btn_create',
+      reload: 'admin_btn_products_reload_en',
+      import: 'admin_btn_products_import_en',
+      create: 'admin_btn_create_product_en',
     },
     input: {
-      code: 'product_input_code',
-      name: 'product_input_name',
-      kind: 'product_input_kind',
-      price: 'product_input_price',
+      code: 'admin_input_product_code_en',
+      name: 'admin_input_product_name_en',
+      kind: 'admin_input_product_kind_en',
+      price: 'admin_input_product_price_en',
     },
   },
-
+  
   // POS interface
   pos: {
     button: {
-      newSale: 'pos_btn_new_sale',
-      identifyCustomer: 'pos_btn_identify_customer',
-      catalog: 'pos_btn_catalog',
-      modePhone: 'pos_btn_mode_phone',
-      modeName: 'pos_btn_mode_name',
-      modeQr: 'pos_btn_mode_qr',
-      identify: 'pos_btn_identify',
-      reloadProducts: 'pos_btn_reload_products',
-      addToCart: 'pos_btn_add_to_cart',
-      completeSale: 'pos_btn_complete_sale',
+      newSale: 'operator_btn_new_sale_en',
+      identifyCustomer: 'operator_btn_identify_customer_en',
+      catalog: 'operator_btn_catalog_en',
+      modePhone: 'operator_btn_mode_phone_en',
+      modeName: 'operator_btn_mode_name_en',
+      modeQr: 'operator_btn_mode_qr_en',
+      identify: 'operator_btn_identify_en',
+      reloadProducts: 'operator_btn_reload_products_en',
+      addToCart: 'operator_btn_add_to_cart_en',
+      completeSale: 'operator_btn_complete_sale_en',
     },
     input: {
-      bonus: 'pos_input_bonus',
-      identify: 'pos_input_identify',
+      bonus: 'operator_input_bonus_en',
+      identify: 'operator_input_identify_en',
     },
   },
-
+  
   // Settings
   settings: {
     button: {
-      save: 'settings_btn_save',
-      cancel: 'settings_btn_cancel',
+      save: 'settings_btn_save_en',
+      cancel: 'settings_btn_cancel_en',
     },
   },
-
-  // Common elements
-  common: {
-    button: {
-      save: 'common_btn_save',
-      cancel: 'common_btn_cancel',
-      delete: 'common_btn_delete',
-      edit: 'common_btn_edit',
-      add: 'common_btn_add',
-      refresh: 'common_btn_refresh',
-      export: 'common_btn_export',
-      import: 'common_btn_import',
-    },
-    input: {
-      search: 'common_input_search',
-    },
-  },
-
+  
   // Operator dashboard
   operator: {
     widget: {
-      quickActions: 'operator_widget_quick_actions',
-      shiftStats: 'operator_widget_shift_stats',
-      recentTransactions: 'operator_widget_recent_transactions',
-      emptyState: 'operator_widget_empty_state',
+      quickActions: 'operator_widget_quick_actions_en',
+      shiftStats: 'operator_widget_shift_stats_en',
+      recentTransactions: 'operator_widget_recent_transactions_en',
+      emptyState: 'operator_widget_empty_state_en',
     },
     button: {
-      firstSale: 'operator_btn_first_sale',
-      newOperation: 'operator_btn_new_operation',
+      firstSale: 'operator_btn_first_sale_en',
+      newOperation: 'operator_btn_new_operation_en',
     },
   },
-
-  operatorDashboard: {
-    quickActions: 'admin-dashboard-title',
-    shiftStats: 'admin_widget_customers_en',
-    recentTransactions: 'admin_widget_customers_en',
-  },
-
+  
   // Manager dashboard
   manager: {
     widget: {
-      kpi: 'manager_widget_kpi',
-      activeCampaigns: 'manager_widget_active_campaigns',
-      recentEvents: 'manager_widget_recent_events',
-      salesTrend: 'manager_widget_sales_trend',
-      topProducts: 'manager_widget_top_products',
+      kpi: 'manager_widget_kpi_en',
+      activeCampaigns: 'manager_widget_active_campaigns_en',
+      recentEvents: 'manager_widget_recent_events_en',
+      salesTrend: 'manager_widget_sales_trend_en',
+      topProducts: 'manager_widget_top_products_en',
     },
     button: {
-      manageCampaigns: 'manager_btn_manage_campaigns',
-      viewAllEvents: 'manager_btn_view_all_events',
-      analytics: 'manager_btn_analytics',
+      manageCampaigns: 'manager_btn_manage_campaigns_en',
+      viewAllEvents: 'manager_btn_view_all_events_en',
+      analytics: 'manager_btn_analytics_en',
     },
   },
 } as const;

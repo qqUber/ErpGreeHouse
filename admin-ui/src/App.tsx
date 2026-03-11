@@ -736,7 +736,7 @@ function App() {
                 role="tab"
                 aria-selected={safeTab === 'dashboard'}
                 aria-controls="dashboard-panel"
-                data-testid="admin_nav_dashboard_en"
+                data-testid="admin_nav_dashboard"
               >
                 {t('menu.dashboard')}
               </button>
@@ -749,7 +749,7 @@ function App() {
                 role="tab"
                 aria-selected={safeTab === 'customers'}
                 aria-controls="customers-panel"
-                data-testid="admin_nav_customers_en"
+                data-testid="admin_nav_customers"
               >
                 {t('menu.clients')}
               </button>
@@ -762,7 +762,7 @@ function App() {
                 role="tab"
                 aria-selected={safeTab === 'pos'}
                 aria-controls="pos-panel"
-                data-testid="admin_nav_pos_en"
+                data-testid="admin_nav_pos"
               >
                 {t('sales.title')}
               </button>
@@ -775,7 +775,7 @@ function App() {
                 role="tab"
                 aria-selected={safeTab === 'integrations'}
                 aria-controls="integrations-panel"
-                data-testid="admin_nav_integrations_en"
+                data-testid="admin_nav_integrations"
               >
                 {t('menu.integrations')}
               </button>
@@ -788,7 +788,7 @@ function App() {
                 role="tab"
                 aria-selected={safeTab === 'products'}
                 aria-controls="products-panel"
-                data-testid="admin_nav_products_en"
+                data-testid="admin_nav_products"
               >
                 {t('menu.products')}
               </button>
@@ -801,7 +801,7 @@ function App() {
                 role="tab"
                 aria-selected={safeTab === 'settings'}
                 aria-controls="settings-panel"
-                data-testid="admin_nav_settings_en"
+                data-testid="admin_nav_settings"
               >
                 {t('menu.settings')}
               </button>
@@ -814,7 +814,7 @@ function App() {
                 role="tab"
                 aria-selected={safeTab === 'marketing'}
                 aria-controls="marketing-panel"
-                data-testid="admin_nav_marketing_en"
+                data-testid="admin_nav_marketing"
               >
                 {t('menu.marketing')}
               </button>
@@ -827,7 +827,7 @@ function App() {
                 role="tab"
                 aria-selected={safeTab === 'compliance'}
                 aria-controls="compliance-panel"
-                data-testid="admin_nav_compliance_en"
+                data-testid="admin_nav_compliance"
               >
                 {t('menu.compliance')}
               </button>
@@ -840,7 +840,7 @@ function App() {
                 role="tab"
                 aria-selected={safeTab === 'analytics'}
                 aria-controls="analytics-panel"
-                data-testid="admin_nav_analytics_en"
+                data-testid="admin_nav_analytics"
               >
                 {t('menu.analytics')}
               </button>
@@ -1413,16 +1413,16 @@ function DashboardView({ dash, reload, onNavigate }: DashboardViewProps) {
           gap: 10,
         }}
       >
-        <div data-testid="admin_widget_customers_en">
+        <div data-testid="admin_widget_customers">
           <CustomersWidget data={data.customers || undefined} />
         </div>
-        <div data-testid="admin_widget_products_en">
+        <div data-testid="admin_widget_products">
           <ProductsWidget data={data.products || undefined} />
         </div>
-        <div data-testid="admin_widget_marketing_en">
+        <div data-testid="admin_widget_marketing">
           <MarketingWidget data={data.marketing || undefined} />
         </div>
-        <div data-testid="admin_widget_integrations_en">
+        <div data-testid="admin_widget_integrations">
           <IntegrationsWidget data={data.integrations || undefined} />
         </div>
       </div>
@@ -1463,13 +1463,13 @@ function CustomersView({
             onChange={(e) => setQ(e.target.value)}
             placeholder={t('customers.search')}
             autoComplete="off"
-            data-testid="customers_search_input_en"
+            data-testid="customers_search_input"
           />
           <button
             className="btn btnPrimary"
             onClick={() => void search()}
             type="button"
-            data-testid="customers_search_button_en"
+            data-testid="customers_search_button"
           >
             {t('common.search')}
           </button>
@@ -1477,7 +1477,7 @@ function CustomersView({
             className="btn"
             onClick={() => void refresh()}
             type="button"
-            data-testid="customers_clear_button_en"
+            data-testid="customers_clear_button"
           >
             {t('common.refresh')}
           </button>

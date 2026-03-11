@@ -7,11 +7,11 @@ interface SidebarProps {
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const tabs = [
-    { id: 'dashboard', label: 'Dashboard', testId: 'admin_nav_dashboard_en' },
-    { id: 'customers', label: 'Customers', testId: 'admin_nav_customers_en' },
-    { id: 'products', label: 'Products', testId: 'admin_nav_products_en' },
-    { id: 'integrations', label: 'Integrations', testId: 'admin_nav_integrations_en' },
-    { id: 'compliance', label: 'Compliance', testId: 'admin_nav_compliance_en' },
+    { id: 'dashboard', label: 'Dashboard', testId: 'admin_nav_dashboard' },
+    { id: 'customers', label: 'Customers', testId: 'admin_nav_customers' },
+    { id: 'products', label: 'Products', testId: 'admin_nav_products' },
+    { id: 'integrations', label: 'Integrations', testId: 'admin_nav_integrations' },
+    { id: 'compliance', label: 'Compliance', testId: 'admin_nav_compliance' },
   ];
 
   return (

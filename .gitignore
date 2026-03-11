@@ -59,3 +59,5 @@ localhost_*.report.html
 /.opencodeignore
 /.kilocodeignore
 /.kilocodemodes
+/.claudecodeignore
+/middleware/test-reports/

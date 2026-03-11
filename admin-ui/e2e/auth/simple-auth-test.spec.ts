@@ -80,12 +80,12 @@ test.describe('Authentication Header Fix Verification', () => {
     // Navigate to login page
     await page.goto('/admin/login');
 
-    // Fill in login form with test credentials
-    await page.fill('input[name="username"]', 'admin');
-    await page.fill('input[name="password"]', 'admin');
+    // Fill in login form with test credentials (using data-testid as per E2E_TEST_FIX_PLAN)
+    await page.getByTestId('common_input_username_en').fill('admin');
+    await page.getByTestId('common_input_password_en').fill('admin');
 
     // Click login button
-    await page.click('button[type="submit"]');
+    await page.getByTestId('common_btn_password_login_en').click();
 
     // Wait for navigation to dashboard
     await page.waitForURL('/admin/dashboard', { timeout: 10000 });

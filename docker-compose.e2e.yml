@@ -47,8 +47,6 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-    # No health check - Vite dev server may not respond correctly to curl
-    # e2e-runner will handle its own connectivity checks
 
   e2e-runner:
     image: mcr.microsoft.com/playwright:v1.58.2-jammy
@@ -62,9 +60,11 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-      # Frontend doesn't have health check - start immediately after backend
+    # Run all smoke tests as per E2E_TEST_FIX_PLAN
     command: >
-      bash -c "npm install && npx playwright install chromium --with-deps && E2E_BASE_URL=http://frontend:5173 E2E_API_BASE_URL=http://backend:8000 npx playwright test e2e/smoke/debug.spec.ts --project=chromium"
+      bash -c "npm install && npx playwright install chromium --with-deps && 
+      E2E_BASE_URL=http://frontend:5173 E2E_API_BASE_URL=http://backend:8000 
+      npx playwright test e2e/smoke/ --project=chromium"
 
 volumes:
   e2e_data:
