@@ -5,7 +5,7 @@ test('capture screenshots with production data', async ({ page }) => {
   await login(page, 'operator');
 
   // Wait for navigation to be ready using stable test id selector.
-  await expect(page.getByTestId('admin_nav_dashboard_en')).toBeVisible({ timeout: 15000 });
+  await expect(page.getByTestId('admin_nav_dashboard')).toBeVisible({ timeout: 15000 });
 
   // Helper to capture page
   async function capturePage(tabText: string, fileName: string) {
