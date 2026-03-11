@@ -193,5 +193,8 @@
   "Qwen.companion.configPath": "${workspaceFolder}/.qwen",
   "Qwen.companion.mcpConfigPath": "${workspaceFolder}/.roo/mcp.json",
   "Qwen.companion.autoImportRules": true,
-  "Qwen.companion.contextAware": true
+  "Qwen.companion.contextAware": true,
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  }
 }
