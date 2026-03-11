@@ -1,0 +1,70 @@
+services:
+  redis:
+    image: redis:8.0-alpine
+    container_name: erp_e2e_redis
+    ports: []
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  backend:
+    build:
+      context: ./middleware
+      dockerfile: Dockerfile
+      target: development
+    container_name: erp_e2e_backend
+    env_file:
+      - .env.e2e
+    volumes:
+      - ./middleware:/app
+      - e2e_data:/app/data
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./admin-ui
+      dockerfile: Dockerfile
+      target: development
+    container_name: erp_e2e_frontend
+    env_file:
+      - .env.e2e
+    volumes:
+      - ./admin-ui:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      backend:
+        condition: service_healthy
+    # No health check - Vite dev server may not respond correctly to curl
+    # e2e-runner will handle its own connectivity checks
+
+  e2e-runner:
+    image: mcr.microsoft.com/playwright:v1.58.2-jammy
+    container_name: erp_e2e_runner
+    working_dir: /app
+    env_file:
+      - .env.e2e
+    volumes:
+      - ./admin-ui:/app
+      - ./screenshots:/app/screenshots
+    depends_on:
+      backend:
+        condition: service_healthy
+      # Frontend doesn't have health check - start immediately after backend
+    command: >
+      bash -c "npm install && npx playwright install chromium --with-deps && E2E_BASE_URL=http://frontend:5173 E2E_API_BASE_URL=http://backend:8000 npx playwright test e2e/smoke/debug.spec.ts --project=chromium"
+
+volumes:
+  e2e_data:

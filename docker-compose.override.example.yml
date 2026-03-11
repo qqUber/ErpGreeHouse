@@ -1,8 +1,0 @@
-services:
-  backend:
-    env_file:
-      - ./.env
-    environment:
-      - AFIP_LOOKUP_PROVIDER_PATH=/app/afip_lookup_provider.py
-    volumes:
-      - ./private/afip_lookup_provider.py:/app/afip_lookup_provider.py:ro

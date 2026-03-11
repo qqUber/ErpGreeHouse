@@ -1,0 +1,42 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "Control Panel" [level=1] [ref=e6]
+    - navigation "Main navigation" [ref=e7]:
+      - tablist "Main navigation" [ref=e8]:
+        - tab "Dashboard" [selected] [ref=e9] [cursor=pointer]
+        - tab "Clients" [ref=e10] [cursor=pointer]
+        - tab "Sales" [ref=e11] [cursor=pointer]
+        - tab "Integrations" [ref=e12] [cursor=pointer]
+        - tab "Products" [ref=e13] [cursor=pointer]
+        - tab "Settings" [ref=e14] [cursor=pointer]
+        - tab "Marketing" [ref=e15] [cursor=pointer]
+        - tab "Compliance" [ref=e16] [cursor=pointer]
+    - button "🇬🇧 EN ▼" [ref=e18] [cursor=pointer]:
+      - generic [ref=e19]: 🇬🇧
+      - generic [ref=e20]: EN
+      - generic [ref=e21]: ▼
+  - main "Main content" [ref=e22]:
+    - generic [ref=e24]:
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - generic [ref=e27]: Login
+          - generic [ref=e28]: Administrator password change.
+        - generic [ref=e29]: "API Status: unavailable"
+      - generic [ref=e30]:
+        - button "By Password" [ref=e31] [cursor=pointer]
+        - button "By Key" [ref=e32] [cursor=pointer]
+        - button "Recovery" [ref=e33] [cursor=pointer]
+        - button "API Status" [ref=e34] [cursor=pointer]
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - textbox "Username" [ref=e38]: admin
+          - generic [ref=e40]:
+            - textbox "Password" [ref=e41]
+            - button "Show password" [ref=e42] [cursor=pointer]: Show
+          - button "Sign In" [disabled] [ref=e43]
+        - generic [ref=e44]: Default admin not created. Check ADMIN_BOOTSTRAP_DEFAULT.
+  - contentinfo [ref=e45]: v0.1.0
+```

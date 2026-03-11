@@ -1,135 +1,59 @@
-version: "3.9"
-
 services:
-  # --- ERPNext Stack ---
-  erpnext:
-    image: frappe/erpnext:version-15
-    restart: unless-stopped
-    volumes:
-      - sites:/home/frappe/frappe-bench/sites
-    environment:
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_PASSWORD=123
-      - REDIS_CACHE=redis-cache:6379
-      - REDIS_QUEUE=redis-queue:6379
-      - REDIS_SOCKETIO=redis-socketio:6379
-      - SITES=erp.localhost
-    networks:
-      - erp_net
-
-  erpnext-nginx:
-    image: frappe/erpnext-nginx:version-15
-    restart: unless-stopped
+  # Redis for caching
+  redis:
+    image: redis:8.0-alpine
+    container_name: erp_redis
     ports:
-      - "8080:8080"
-    environment:
-      - UPSTREAM_REAL_IP_ADDRESS=127.0.0.1
-      - FRAPPE_SITE_NAME_HEADER=erp.localhost
-    depends_on:
-      - erpnext
-    networks:
-      - erp_net
-
-  db:
-    image: mariadb:10.6
-    restart: unless-stopped
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --skip-character-set-client-handshake
-    environment:
-      - MYSQL_ROOT_PASSWORD=123
-      - MYSQL_DATABASE=erpnext
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
     volumes:
-      - db-data:/var/lib/mysql
-    networks:
-      - erp_net
+      - redis_data:/data
 
-  redis-cache:
-    image: redis:6.2-alpine
-    restart: unless-stopped
-    networks:
-      - erp_net
-
-  redis-queue:
-    image: redis:6.2-alpine
-    restart: unless-stopped
-    networks:
-      - erp_net
-  
-  redis-socketio:
-    image: redis:6.2-alpine
-    restart: unless-stopped
-    networks:
-      - erp_net
-
-  # --- ErpModern Stack (Flask + React) ---
-  erp-modern-backend:
-    build: ./backend
-    restart: unless-stopped
-    volumes:
-      - ./shared:/shared:ro
-    environment:
-      - ERPNEXT_URL=http://erpnext:8000
-      - ERPNEXT_HOST=erpnext
-      - FLASK_CORS_ORIGINS=http://localhost:8081
-    ports:
-      - "5000:5000"
-    depends_on:
-      - erpnext
-    networks:
-      - erp_net
-
-  erp-modern-frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-    restart: unless-stopped
-    ports:
-      - "8081:80"
-    depends_on:
-      - erp-modern-backend
-    networks:
-      - erp_net
-
-  # --- Middleware Stack (Telegram CRM) ---
-  middleware:
+  # Backend API
+  backend:
     build:
       context: ./middleware
       dockerfile: Dockerfile
-    restart: unless-stopped
-    env_file:
-      - ./middleware/.env.example
-    environment:
-      - REDIS_URL=redis://redis-queue:6379/1
-      - ERP_API_BASE_URL=http://erpnext:8000
-    depends_on:
-      - redis-queue
-      - erpnext
+      target: development
+    container_name: erp_backend
     ports:
       - "8000:8000"
-    networks:
-      - erp_net
-
-  worker:
-    build:
-      context: ./middleware
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    command: ["celery", "-A", "app.worker", "worker", "-l", "info"]
     env_file:
-      - ./middleware/.env.example
-    environment:
-      - REDIS_URL=redis://redis-queue:6379/1
-      - ERP_API_BASE_URL=http://erpnext:8000
+      - .env.dev
+    volumes:
+      - ./middleware:/app
     depends_on:
-      - redis-queue
-      - erpnext
-    networks:
-      - erp_net
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Frontend
+  frontend:
+    build:
+      context: ./admin-ui
+      dockerfile: Dockerfile
+      target: development
+    container_name: erp_frontend
+    ports:
+      - "5173:5173"
+    env_file:
+      - .env.dev
+    volumes:
+      - ./admin-ui:/app
+      - /app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
 
 volumes:
-  sites:
-  db-data:
-
-networks:
-  erp_net:
-    driver: bridge
+  redis_data:

@@ -1,0 +1,1 @@
+# POS integrations (ERPNext, etc.)

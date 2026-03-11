@@ -1,0 +1,59 @@
+name: rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: development | staging | production
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      sha:
+        description: target commit sha
+        required: true
+        type: string
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: update deploy pointer
+        run: |
+          ENV='${{ inputs.environment }}'
+          SHA='${{ inputs.sha }}'
+          git fetch origin deploy-manifests || true
+          if git show-ref --verify --quiet refs/remotes/origin/deploy-manifests; then
+            git checkout -B deploy-manifests origin/deploy-manifests
+          else
+            git checkout -B deploy-manifests
+          fi
+
+          mkdir -p current
+          cat > current/${ENV}.json << EOF
+          {
+            "environment": "${ENV}",
+            "sha": "${SHA}",
+            "rolled_back_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "trigger_run_id": "${GITHUB_RUN_ID}",
+            "trigger_run_url": "https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          }
+          EOF
+
+          git config user.email "actions@github.com"
+          git config user.name "github-actions"
+          git add current/${ENV}.json
+          git commit -m "rollback(${ENV}): ${SHA}" || exit 0
+          git push origin deploy-manifests
+
+          echo "## Rollback" >> $GITHUB_STEP_SUMMARY
+          echo "- environment: ${ENV}" >> $GITHUB_STEP_SUMMARY
+          echo "- target sha: ${SHA}" >> $GITHUB_STEP_SUMMARY

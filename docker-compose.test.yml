@@ -1,0 +1,38 @@
+# Test Override (Unit & Integration)
+services:
+  redis:
+    container_name: erp_test_redis
+    ports: [] 
+
+  backend-test:
+    build:
+      context: ./middleware
+      dockerfile: Dockerfile
+      target: test
+    container_name: erp_test_backend
+    env_file:
+      - .env.test
+    volumes:
+      - ./middleware:/app
+      - test_data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: >
+      bash -c "export PYTHONPATH=/app && 
+      pytest tests/unit tests/integration --cov=app --cov-report=html:test-reports/coverage-backend"
+
+  frontend-unit-test:
+    build:
+      context: ./admin-ui
+      dockerfile: Dockerfile
+      target: development
+    container_name: erp_test_frontend_unit
+    env_file:
+      - .env.test
+    volumes:
+      - ./admin-ui:/app
+    command: npm run test:unit
+
+volumes:
+  test_data:

@@ -11,7 +11,7 @@ def get_redis() -> redis.Redis:
 
 def hgetall(key: str) -> dict:
     r = get_redis()
-    return r.hgetall(key)
+    return r.hgetall(key)  # type: ignore[return-value]
 
 
 def hset(key: str, mapping: dict) -> None:
@@ -22,7 +22,7 @@ def hset(key: str, mapping: dict) -> None:
 def get_json(key: str) -> Optional[Any]:
     r = get_redis()
     val = r.get(key)
-    return json.loads(val) if val else None
+    return json.loads(val) if val else None  # type: ignore[arg-type]
 
 
 def set_json(key: str, value: Any, ex: Optional[int] = None) -> None:
