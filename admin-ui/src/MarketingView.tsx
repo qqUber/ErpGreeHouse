@@ -1,4 +1,3 @@
-<<<<<<< C:/Users/AASS/IdeaProjects/ErpGreeHouse/admin-ui/src/MarketingView.tsx
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -2056,4 +2055,3 @@ function TriggersManager({
     </div>
   );
 }
->>>>>>> C:/Users/AASS/.windsurf/worktrees/ErpGreeHouse/ErpGreeHouse-18d04cef/admin-ui/src/MarketingView.tsx
