@@ -246,6 +246,9 @@
   "marketing": {
     "title": "Marketing",
     "campaigns": "Campaigns",
+    "segments": "Segments & Audience",
+    "triggers": "Triggers",
+    "analytics": "Analytics",
     "promotions": "Promotions",
     "loyalty": "Loyalty Program",
     "createCampaign": "Create Campaign",
@@ -256,7 +259,9 @@
     "endDate": "End Date",
     "targetAudience": "Target Audience",
     "discount": "Discount",
-    "bonusPoints": "Bonus Points"
+    "bonusPoints": "Bonus Points",
+    "refresh": "Refresh",
+    "loading": "Loading..."
   },
   "integrations": {
     "title": "Integrations",

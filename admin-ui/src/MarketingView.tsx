@@ -1,5 +1,5 @@
-<<<<<<< C:/Users/AASS/IdeaProjects/ErpGreeHouse/admin-ui/src/MarketingView.tsx
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Api,
   baseUrl,
@@ -11,6 +11,7 @@ import {
 import { AnalyticsCharts } from './components/AnalyticsCharts';
 
 export function MarketingView() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<'campaigns' | 'segments' | 'triggers' | 'analytics'>('campaigns');
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
   const [segments, setSegments] = useState<MarketingSegment[]>([]);
@@ -61,9 +62,9 @@ export function MarketingView() {
   return (
     <div className="grid gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Маркетинг</h1>
+        <h1 className="text-2xl font-bold">{t('marketing.title')}</h1>
         <button onClick={loadData} className="text-sm text-blue-600 hover:underline">
-          Обновить
+          {t('marketing.refresh')}
         </button>
       </div>
 
@@ -72,29 +73,29 @@ export function MarketingView() {
           className={`pb-2 px-1 ${tab === 'campaigns' ? 'border-b-2 border-blue-600 font-medium text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
           onClick={() => setTab('campaigns')}
         >
-          Кампании
+          {t('marketing.campaigns')}
         </button>
         <button
           className={`pb-2 px-1 ${tab === 'segments' ? 'border-b-2 border-blue-600 font-medium text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
           onClick={() => setTab('segments')}
         >
-          Сегменты и Аудитория
+          {t('marketing.segments')}
         </button>
         <button
           className={`pb-2 px-1 ${tab === 'triggers' ? 'border-b-2 border-blue-600 font-medium text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
           onClick={() => setTab('triggers')}
         >
-          Триггеры
+          {t('marketing.triggers')}
         </button>
         <button
           className={`pb-2 px-1 ${tab === 'analytics' ? 'border-b-2 border-blue-600 font-medium text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
           onClick={() => setTab('analytics')}
         >
-          Аналитика
+          {t('marketing.analytics')}
         </button>
       </div>
 
-      {loading && <div className="text-gray-500">Загрузка...</div>}
+      {loading && <div className="text-gray-500">{t('marketing.loading')}</div>}
 
       {!loading && tab === 'campaigns' && (
         <CampaignsManager campaigns={campaigns} segments={segments} onUpdate={loadData} />
@@ -2054,4 +2055,3 @@ function TriggersManager({
     </div>
   );
 }
->>>>>>> C:/Users/AASS/.windsurf/worktrees/ErpGreeHouse/ErpGreeHouse-18d04cef/admin-ui/src/MarketingView.tsx
