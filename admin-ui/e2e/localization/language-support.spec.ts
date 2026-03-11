@@ -77,29 +77,29 @@ test.describe('Language Support', () => {
     await page.waitForURL('/admin/dashboard');
     
     // Test navigation in English using correct test IDs
-    await expect(page.getByTestId('admin_nav_dashboard_en')).toBeVisible();
-    await expect(page.getByTestId('admin_nav_customers_en')).toBeVisible();
-    await expect(page.getByTestId('admin_nav_products_en')).toBeVisible();
-    await expect(page.getByTestId('admin_nav_pos_en')).toBeVisible();
-    await expect(page.getByTestId('admin_nav_marketing_en')).toBeVisible();
-    await expect(page.getByTestId('admin_nav_integrations_en')).toBeVisible();
-    await expect(page.getByTestId('admin_nav_settings_en')).toBeVisible();
+    await expect(page.getByTestId('admin_nav_dashboard')).toBeVisible();
+    await expect(page.getByTestId('admin_nav_customers')).toBeVisible();
+    await expect(page.getByTestId('admin_nav_products')).toBeVisible();
+    await expect(page.getByTestId('admin_nav_pos')).toBeVisible();
+    await expect(page.getByTestId('admin_nav_marketing')).toBeVisible();
+    await expect(page.getByTestId('admin_nav_integrations')).toBeVisible();
+    await expect(page.getByTestId('admin_nav_settings')).toBeVisible();
     
     // Change to Russian
     await page.addInitScript(() => {
-      window.localStorage.setItem('language', 'ru');
+    window.localStorage.setItem('language', 'ru');
     });
     
     // Refresh page to apply language change
     await page.reload();
     
     // Verify navigation items are still visible (they have test IDs)
-    await expect(page.getByTestId('admin_nav_dashboard_en')).toBeVisible();
-    await expect(page.getByTestId('admin_nav_customers_en')).toBeVisible();
-    await expect(page.getByTestId('admin_nav_products_en')).toBeVisible();
-    await expect(page.getByTestId('admin_nav_pos_en')).toBeVisible();
-    await expect(page.getByTestId('admin_nav_marketing_en')).toBeVisible();
-    await expect(page.getByTestId('admin_nav_integrations_en')).toBeVisible();
-    await expect(page.getByTestId('admin_nav_settings_en')).toBeVisible();
+    await expect(page.getByTestId('admin_nav_dashboard')).toBeVisible();
+    await expect(page.getByTestId('admin_nav_customers')).toBeVisible();
+    await expect(page.getByTestId('admin_nav_products')).toBeVisible();
+    await expect(page.getByTestId('admin_nav_pos')).toBeVisible();
+    await expect(page.getByTestId('admin_nav_marketing')).toBeVisible();
+    await expect(page.getByTestId('admin_nav_integrations')).toBeVisible();
+    await expect(page.getByTestId('admin_nav_settings')).toBeVisible();
   });
 });

@@ -13,7 +13,7 @@ test('quick: login and check dashboard', async ({ page }) => {
   expect(currentUrl).toContain('/admin');
 
   // Check for dashboard content
-  const dashboardElement = page.getByTestId('admin_nav_dashboard_en');
+  const dashboardElement = page.getByTestId('admin_nav_dashboard');
   await dashboardElement.waitFor({ timeout: 5000 });
 
   expect(dashboardElement).toBeVisible();

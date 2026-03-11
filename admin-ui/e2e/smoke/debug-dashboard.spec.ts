@@ -30,7 +30,7 @@ test('debug: check dashboard after login', async ({ page }) => {
   }
 
   // Check for dashboard elements
-  const dashboardNav = page.getByTestId('admin_nav_dashboard_en');
+  const dashboardNav = page.getByTestId('admin_nav_dashboard');
   try {
     await dashboardNav.waitFor({ timeout: 5000 });
     console.log('Dashboard nav visible');
@@ -39,7 +39,7 @@ test('debug: check dashboard after login', async ({ page }) => {
   }
 
   // Check customers widget
-  const customersWidget = page.getByTestId('admin_widget_customers_en');
+  const customersWidget = page.getByTestId('admin_widget_customers');
   try {
     await customersWidget.waitFor({ timeout: 5000 });
     console.log('Customers widget visible');
