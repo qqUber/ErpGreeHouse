@@ -24,7 +24,7 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - .env.dev
+      - .env
     volumes:
       - ./middleware:/app
     depends_on:
@@ -47,7 +47,7 @@ services:
     ports:
       - "5173:5173"
     env_file:
-      - .env.dev
+      - .env
     environment:
       - E2E_API_BASE_URL=http://backend:8000
     volumes:
