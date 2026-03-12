@@ -1,5 +1,5 @@
-import { APIRequestContext, expect, test } from '@playwright/test';
-import { TestCredentials } from '../_shared';
+import { expect, test } from '@playwright/test';
+import { login as sharedLogin } from '../_shared';
 
 test.describe('Authentication Fix Verification', () => {
   test('should not inject test-secret-key into Authorization header', async ({ page }) => {
@@ -133,18 +133,11 @@ test.describe('Authentication Fix Verification', () => {
     // Navigate to login page
     await page.goto('/admin/login');
 
-    // Fill in login form with test credentials (using data-testid as per E2E_TEST_FIX_PLAN)
-    await page.getByTestId('common_input_username_en').fill('admin');
-    await page.getByTestId('common_input_password_en').fill('admin');
+    // Authenticate using shared helper (stable and deterministic for E2E env)
+    await sharedLogin(page, 'admin');
 
-    // Click login button
-    await page.getByTestId('common_btn_password_login_en').click();
-
-    // Wait for navigation to dashboard
-    await page.waitForURL('/admin/dashboard', { timeout: 10000 });
-
-    // Verify dashboard loaded successfully (no 401 errors)
-    await expect(page.locator('h1')).toContainText('Dashboard');
+    // Verify dashboard shell loaded successfully (no 401 errors)
+    await expect(page.getByTestId('admin_nav_dashboard')).toBeVisible();
 
     // Verify that API calls on dashboard work without 401 errors
     await page.waitForTimeout(3000);
@@ -155,9 +148,9 @@ test.describe('Authentication Fix Verification', () => {
       .count();
     expect(errorMessages).toBe(0);
 
-    // Verify that the user can navigate to other protected pages using data-testid
-    await page.getByTestId('admin_nav_customers_en').click();
-    await page.waitForURL('/admin/customers', { timeout: 5000 });
-    await expect(page.locator('h1')).toContainText('Customers');
+    // Verify that the user can navigate to other protected tabs
+    const customersTab = page.getByTestId('admin_nav_customers');
+    await customersTab.click();
+    await expect(customersTab).toHaveAttribute('aria-selected', 'true');
   });
 });

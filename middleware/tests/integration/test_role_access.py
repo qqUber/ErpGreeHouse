@@ -19,9 +19,8 @@ from typing import Any, Generator
 
 import jwt
 import pytest
-from fastapi.testclient import TestClient
-
 from app.db import get_db
+from fastapi.testclient import TestClient
 
 # =============================================================================
 # Fixtures - Loading JSON Data from fixtures directory
@@ -308,16 +307,52 @@ class TestRoleBasedEndpointAccess:
             ("/api/v1/customers", "GET", "owner", 200, None),
             ("/api/v1/customers", "GET", "marketer", 200, None),
             ("/api/v1/customers", "GET", "operator", 200, None),
-            ("/api/v1/customers", "GET", "observer", 403, None), # List customers is restricted
+            (
+                "/api/v1/customers",
+                "GET",
+                "observer",
+                403,
+                None,
+            ),  # List customers is restricted
             # Products endpoints
             ("/api/v1/products", "GET", "owner", 200, None),
             ("/api/v1/products", "GET", "marketer", 200, None),
             ("/api/v1/products", "GET", "operator", 200, None),
             ("/api/v1/products", "GET", "observer", 200, None),
             # POS endpoints
-            ("/api/v1/pos/sale", "POST", "owner", 200, {"customer_id": 1, "items": [{"code": "PROD1", "name": "P1", "price": 100, "qty": 1}], "requested_bonus": 0}),
-            ("/api/v1/pos/sale", "POST", "marketer", 403, {"customer_id": 1, "items": [{"code": "PROD1", "name": "P1", "price": 100, "qty": 1}], "requested_bonus": 0}),
-            ("/api/v1/pos/sale", "POST", "operator", 200, {"customer_id": 1, "items": [{"code": "PROD1", "name": "P1", "price": 100, "qty": 1}], "requested_bonus": 0}),
+            (
+                "/api/v1/pos/sale",
+                "POST",
+                "owner",
+                200,
+                {
+                    "customer_id": 1,
+                    "items": [{"code": "PROD1", "name": "P1", "price": 100, "qty": 1}],
+                    "requested_bonus": 0,
+                },
+            ),
+            (
+                "/api/v1/pos/sale",
+                "POST",
+                "marketer",
+                403,
+                {
+                    "customer_id": 1,
+                    "items": [{"code": "PROD1", "name": "P1", "price": 100, "qty": 1}],
+                    "requested_bonus": 0,
+                },
+            ),
+            (
+                "/api/v1/pos/sale",
+                "POST",
+                "operator",
+                200,
+                {
+                    "customer_id": 1,
+                    "items": [{"code": "PROD1", "name": "P1", "price": 100, "qty": 1}],
+                    "requested_bonus": 0,
+                },
+            ),
             # Marketing endpoints
             ("/api/v1/marketing/campaigns", "GET", "owner", 200, None),
             ("/api/v1/marketing/campaigns", "GET", "marketer", 200, None),
@@ -345,7 +380,7 @@ class TestRoleBasedEndpointAccess:
         with db.connect() as conn:
             conn.execute(
                 "INSERT OR IGNORE INTO customers (id, phone, full_name, telegram_id) VALUES (?, ?, ?, ?)",
-                (1, "+79991234567", "Test User", 123456789)
+                (1, "+79991234567", "Test User", 123456789),
             )
             conn.commit()
 
@@ -378,6 +413,7 @@ class TestRoleBasedEndpointAccessFromMatrix:
     Test role-based access using data from role_access_matrix.json fixture.
     This class dynamically generates tests from the fixture data.
     """
+
 
 # =============================================================================
 # 2. Edge Case Validation Tests
@@ -574,7 +610,12 @@ class TestEdgeCaseValidation:
             pytest.param(
                 {
                     "name": "Empty product name",
-                    "input": {"code": "TEST-001", "name": "", "price": 100, "kind": "goods"},
+                    "input": {
+                        "code": "TEST-001",
+                        "name": "",
+                        "price": 100,
+                        "kind": "goods",
+                    },
                     "expected_error": "String should have at least 1 character",
                 },
                 id="empty_product_name",
@@ -671,8 +712,10 @@ class TestEdgeCaseValidation:
                     "name": "Zero quantity",
                     "input": {
                         "customer_id": 1,
-                        "items": [{"code": "TEST-001", "name": "Prod", "qty": 0, "price": 100}],
-                        "requested_bonus": 0
+                        "items": [
+                            {"code": "TEST-001", "name": "Prod", "qty": 0, "price": 100}
+                        ],
+                        "requested_bonus": 0,
                     },
                     "expected_error": "Input should be greater than or equal to 1",
                 },
@@ -687,7 +730,9 @@ class TestEdgeCaseValidation:
         # Ensure customer exists
         db = get_db()
         with db.connect() as conn:
-            conn.execute("INSERT OR IGNORE INTO customers (id, phone, full_name, telegram_id) VALUES (1, '+79991112233', 'Test', 123)")
+            conn.execute(
+                "INSERT OR IGNORE INTO customers (id, phone, full_name, telegram_id) VALUES (1, '+79991112233', 'Test', 123)"
+            )
             conn.commit()
 
         headers = {"Authorization": f"Bearer {operator_token}"}
@@ -1181,9 +1226,13 @@ class TestAuthenticationIntegration:
 
         # Try to update permissions (owner only)
         response = client.post(
-            "/api/v1/roles/permissions", 
-            json={"role": "operator", "permission": "dashboard.read", "is_allowed": True}, 
-            headers=headers
+            "/api/v1/roles/permissions",
+            json={
+                "role": "operator",
+                "permission": "dashboard.read",
+                "is_allowed": True,
+            },
+            headers=headers,
         )
         assert response.status_code == 403
 

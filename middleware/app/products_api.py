@@ -1,13 +1,13 @@
-from typing import Any, Optional
 import csv
 import io
 import json
 import re
+from typing import Any, Optional
+
 import httpx
 import openpyxl
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, UploadFile
 from lxml import etree
-
-from fastapi import APIRouter, Header, HTTPException, UploadFile, File, Depends, Query
 from pydantic import BaseModel, Field
 
 from .admin_auth_api import require_jwt_auth
@@ -290,10 +290,10 @@ def validate_product(
     row: dict[str, str], seen_skus: set
 ) -> tuple[Optional[dict[str, Any]], Optional[str]]:
     """Validate a product row. Returns (validated_data, error_message)"""
-    name = row.get("name", "").strip() if row.get("name") else ""
-    sku = row.get("sku", "").strip() if row.get("sku") else ""
+    name = row.get("name", "").strip()
+    sku = row.get("sku", "").strip()
     price_raw: Any = row.get("price", "0")
-    category = row.get("category", "").strip() if row.get("category") else "Import"
+    category = row.get("category", "").strip() or "Import"
 
     # Check required fields
     if not name:

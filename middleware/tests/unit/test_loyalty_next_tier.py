@@ -1,5 +1,5 @@
 import pytest
-from app.loyalty import Tier, LoyaltyRules, get_next_tier
+from app.loyalty import LoyaltyRules, Tier, get_next_tier
 
 
 @pytest.fixture

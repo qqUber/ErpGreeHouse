@@ -2,17 +2,18 @@
 Unit tests for Telegram bot handlers - helper functions
 """
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 from app.handlers import (
-    _cleanup_user_data,
-    _store_consent,
-    _get_customer_consents,
-    _update_consent,
-    register_or_link_user,
     _cart_key,
+    _cleanup_user_data,
     _consent_key,
+    _get_customer_consents,
+    _store_consent,
+    _update_consent,
     _upsert_local_customer,
+    register_or_link_user,
 )
 
 

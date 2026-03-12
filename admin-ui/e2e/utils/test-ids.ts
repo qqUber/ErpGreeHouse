@@ -1,6 +1,6 @@
 /**
  * Test ID utilities for consistent E2E testing
- * 
+ *
  * CRITICAL: Check actual app test IDs before using!
  * App uses MIXED naming:
  * - Login: WITH _en suffix (common_input_username_en)
@@ -24,7 +24,7 @@ export const TestIds = {
     status: 'common_btn_api_status_en',
     logout: 'admin_btn_logout_en',
   },
-  
+
   // Navigation elements (WITHOUT _en suffix)
   nav: {
     dashboard: 'admin_nav_dashboard',
@@ -37,7 +37,7 @@ export const TestIds = {
     compliance: 'admin_nav_compliance',
     analytics: 'admin_nav_analytics',
   },
-  
+
   // Dashboard elements (WITHOUT _en suffix)
   dashboard: {
     root: 'admin-dashboard',
@@ -56,7 +56,7 @@ export const TestIds = {
       export: 'admin_btn_export_csv_en',
     },
   },
-  
+
   // Customer management (WITHOUT _en suffix)
   customer: {
     search: 'customers_search_input',

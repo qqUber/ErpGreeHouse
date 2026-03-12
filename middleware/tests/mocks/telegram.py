@@ -1,12 +1,18 @@
-from unittest.mock import MagicMock, AsyncMock
-from typing import Dict, Any, Optional
 import time
+from typing import Any, Dict, Optional
+from unittest.mock import AsyncMock, MagicMock
+
 
 class TelegramMock:
     """Helper to mock aiogram's Message, CallbackQuery, and Bot."""
-    
+
     @staticmethod
-    def create_message(text: str, user_id: int = 12345, username: str = "testuser", chat_id: Optional[int] = None) -> MagicMock:
+    def create_message(
+        text: str,
+        user_id: int = 12345,
+        username: str = "testuser",
+        chat_id: Optional[int] = None,
+    ) -> MagicMock:
         """Create a mock aiogram Message."""
         message = MagicMock()
         message.text = text
@@ -23,9 +29,11 @@ class TelegramMock:
         message.edit_text = AsyncMock()
         message.delete = AsyncMock()
         return message
-    
+
     @staticmethod
-    def create_callback_query(data: str, user_id: int = 12345, message: Optional[MagicMock] = None) -> MagicMock:
+    def create_callback_query(
+        data: str, user_id: int = 12345, message: Optional[MagicMock] = None
+    ) -> MagicMock:
         """Create a mock aiogram CallbackQuery."""
         cb = MagicMock()
         cb.data = data
@@ -34,7 +42,7 @@ class TelegramMock:
         cb.message = message or TelegramMock.create_message("", user_id=user_id)
         cb.answer = AsyncMock()
         return cb
-    
+
     @staticmethod
     def create_bot() -> MagicMock:
         """Create a mock aiogram Bot."""

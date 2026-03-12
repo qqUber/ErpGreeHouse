@@ -195,7 +195,7 @@ npm install
 cd middleware
 
 # example environment file
- .env  
+ .env
 # Edit .env with your configuration
 # Required settings:
 # - TELEGRAM_BOT_TOKEN
@@ -636,6 +636,6 @@ cat middleware/reports/test_report.html
 
 ---
 
-**Last Updated:** February 20, 2026  
-**Version:** 1.0.0  
+**Last Updated:** February 20, 2026
+**Version:** 1.0.0
 **Status:** Production Ready

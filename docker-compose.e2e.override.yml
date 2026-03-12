@@ -3,15 +3,15 @@
 services:
   redis:
     container_name: erp_e2e_redis
-    
+
   backend:
     container_name: erp_e2e_backend
-    
+
   frontend:
     container_name: erp_e2e_frontend
     ports:
       - "5174:5173"
-    
+
   e2e-runner:
     container_name: erp_e2e_runner
 

@@ -10,11 +10,12 @@ Usage:
     pytest tests/unit/test_foreign_key_constraints.py -v
 """
 
+import os
 import sqlite3
 import sys
-import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
 import pytest
 
 # Add parent directory to path
@@ -43,7 +44,7 @@ class TestForeignKeyConstraints:
                 phone TEXT UNIQUE,
                 full_name TEXT
             );
-            
+
             CREATE TABLE transactions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 customer_id INTEGER NOT NULL,
@@ -76,7 +77,7 @@ class TestForeignKeyConstraints:
                 phone TEXT UNIQUE,
                 full_name TEXT
             );
-            
+
             CREATE TABLE transactions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 customer_id INTEGER NOT NULL,

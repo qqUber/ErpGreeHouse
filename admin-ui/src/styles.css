@@ -384,7 +384,7 @@ p {
   border-radius: 10px;
   background: #f3f4f6;
   border: 1px solid var(--border);
-  color: var(--muted);
+  color: var(--neutral-700);
   font: inherit;
   display: inline-flex;
   align-items: center;
@@ -1953,7 +1953,7 @@ p {
   font-size: var(--font-size-xs);
   border: 1px solid var(--border);
   background: var(--brand-light);
-  color: var(--muted);
+  color: var(--neutral-700);
   font-weight: var(--font-weight-medium);
 }
 

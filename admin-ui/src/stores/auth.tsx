@@ -1,4 +1,4 @@
-import React, {
+import {
   createContext,
   ReactNode,
   useCallback,
@@ -95,8 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('[Auth] Already validating, waiting...');
       // Wait for current validation to complete
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      // Then check if we're authenticated
-      return false;
+      // Check actual auth state after waiting
+      return state.isAuthenticated;
     }
 
     console.log('[Auth] Attempting token refresh...');
@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('[Auth] Token refresh failed:', error?.message);
       return false;
     }
-  }, [validateToken]);
+  }, [validateToken, state.isAuthenticated]);
 
   const login = useCallback(async (username: string, password: string) => {
     console.log('[Auth] Logging in...');

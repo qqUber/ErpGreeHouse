@@ -5,8 +5,9 @@ import * as path from 'path';
 test('debug: load test credentials', async ({ request }) => {
   // Test loading test credentials from API
   console.log('Testing test credentials API...');
+  const apiBaseUrl = process.env.E2E_API_BASE_URL || 'http://backend:8000';
 
-  const credsResponse = await request.get('http://localhost:8000/api/v1/test/credentials', {
+  const credsResponse = await request.get(`${apiBaseUrl}/api/v1/test/credentials`, {
     headers: {
       'x-admin-secret': 'test-secret-key',
     },

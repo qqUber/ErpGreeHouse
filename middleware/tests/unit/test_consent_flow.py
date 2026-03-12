@@ -8,11 +8,12 @@ Tests cover:
 - Database schema migrations
 """
 
-import pytest
 import os
-import tempfile
 import sqlite3
+import tempfile
 from datetime import datetime
+
+import pytest
 
 
 # Set test database path before importing app modules
@@ -57,7 +58,7 @@ def test_store_consent_with_type(setup_test_db):
     # Create test customer
     conn.execute(
         """
-        INSERT INTO customers (phone, full_name, telegram_id, qr_token, 
+        INSERT INTO customers (phone, full_name, telegram_id, qr_token,
                             marketing_allowed, data_processing_allowed)
         VALUES (?, ?, ?, ?, ?, ?)
     """,
@@ -103,7 +104,7 @@ def test_get_customer_consents(setup_test_db):
     # Create test customer with marketing consent
     conn.execute(
         """
-        INSERT INTO customers (phone, full_name, telegram_id, qr_token, 
+        INSERT INTO customers (phone, full_name, telegram_id, qr_token,
                             marketing_allowed, data_processing_allowed)
         VALUES (?, ?, ?, ?, ?, ?)
     """,
@@ -122,7 +123,7 @@ def test_get_customer_consents(setup_test_db):
 def test_update_consent(setup_test_db):
     """Test updating customer consent status."""
     from app.db import get_db
-    from app.handlers import _update_consent, _get_customer_consents
+    from app.handlers import _get_customer_consents, _update_consent
 
     db = get_db()
     conn = db.connect()
@@ -130,7 +131,7 @@ def test_update_consent(setup_test_db):
     # Create test customer with marketing consent
     conn.execute(
         """
-        INSERT INTO customers (phone, full_name, telegram_id, qr_token, 
+        INSERT INTO customers (phone, full_name, telegram_id, qr_token,
                             marketing_allowed, data_processing_allowed)
         VALUES (?, ?, ?, ?, ?, ?)
     """,
@@ -165,12 +166,12 @@ def test_customers_table_has_required_columns(setup_test_db):
     cur = conn.execute("PRAGMA table_info(customers)")
     columns = {row["name"] for row in cur.fetchall()}
 
-    assert "marketing_allowed" in columns, (
-        "customers table must have marketing_allowed column"
-    )
-    assert "data_processing_allowed" in columns, (
-        "customers table must have data_processing_allowed column"
-    )
+    assert (
+        "marketing_allowed" in columns
+    ), "customers table must have marketing_allowed column"
+    assert (
+        "data_processing_allowed" in columns
+    ), "customers table must have data_processing_allowed column"
     conn.close()
 
 
@@ -178,9 +179,9 @@ def test_policy_version_constant():
     """Test that CURRENT_POLICY_VERSION constant is defined and in correct format."""
     from app.handlers import CURRENT_POLICY_VERSION
 
-    assert isinstance(CURRENT_POLICY_VERSION, str), (
-        "CURRENT_POLICY_VERSION must be a string"
-    )
+    assert isinstance(
+        CURRENT_POLICY_VERSION, str
+    ), "CURRENT_POLICY_VERSION must be a string"
 
     # Verify semver format (major.minor.patch)
     parts = CURRENT_POLICY_VERSION.split(".")
@@ -192,7 +193,7 @@ def test_policy_version_constant():
 def test_consent_audit_trail(setup_test_db):
     """Test that consent actions create audit trail entries."""
     from app.db import get_db
-    from app.handlers import _update_consent, _store_consent
+    from app.handlers import _store_consent, _update_consent
 
     db = get_db()
     conn = db.connect()

@@ -11,11 +11,12 @@ Tests the VK bot integration including:
 Run with: pytest middleware/tests/unit/test_vk_handler.py -v
 """
 
-import pytest
 import os
 import tempfile
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
 from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
 
 
 # Set test database path before importing app modules
@@ -57,7 +58,7 @@ class TestVKConfig:
 
     def test_set_vk_config_basic(self, setup_test_db):
         """Test setting basic VK configuration."""
-        from app.integrations.bots.vk_handler import set_vk_config, VKBot
+        from app.integrations.bots.vk_handler import VKBot, set_vk_config
 
         # Set config
         set_vk_config(
@@ -75,7 +76,7 @@ class TestVKConfig:
 
     def test_set_vk_config_default_version(self, setup_test_db):
         """Test setting VK config with default API version."""
-        from app.integrations.bots.vk_handler import set_vk_config, VKBot
+        from app.integrations.bots.vk_handler import VKBot, set_vk_config
 
         set_vk_config(access_token="test_token", group_id=123456)
 
@@ -325,8 +326,8 @@ class TestStoreConsent:
 
     def test_store_consent_data_processing_tg(self, setup_test_db):
         """Test storing data processing consent for Telegram."""
-        from app.integrations.bots.shared.consent import store_consent
         from app.db import get_db
+        from app.integrations.bots.shared.consent import store_consent
 
         db = get_db()
         conn = db.connect()
@@ -369,8 +370,8 @@ class TestStoreConsent:
 
     def test_store_consent_marketing_tg(self, setup_test_db):
         """Test storing marketing consent for Telegram."""
-        from app.integrations.bots.shared.consent import store_consent
         from app.db import get_db
+        from app.integrations.bots.shared.consent import store_consent
 
         db = get_db()
         conn = db.connect()
@@ -414,8 +415,8 @@ class TestStoreConsent:
 
     def test_store_consent_multiple_types(self, setup_test_db):
         """Test storing multiple consent types for same customer."""
-        from app.integrations.bots.shared.consent import store_consent
         from app.db import get_db
+        from app.integrations.bots.shared.consent import store_consent
 
         db = get_db()
         conn = db.connect()
@@ -454,8 +455,8 @@ class TestGetCustomerConsents:
 
     def test_get_customer_consents_tg_with_consent(self, setup_test_db):
         """Test getting consents for Telegram user with consent granted."""
-        from app.integrations.bots.shared.consent import get_customer_consents
         from app.db import get_db
+        from app.integrations.bots.shared.consent import get_customer_consents
 
         db = get_db()
         conn = db.connect()
@@ -480,8 +481,8 @@ class TestGetCustomerConsents:
 
     def test_get_customer_consents_tg_marketing_only(self, setup_test_db):
         """Test getting consents for user with only marketing consent."""
-        from app.integrations.bots.shared.consent import get_customer_consents
         from app.db import get_db
+        from app.integrations.bots.shared.consent import get_customer_consents
 
         db = get_db()
         conn = db.connect()
@@ -529,11 +530,11 @@ class TestUpdateConsent:
 
     def test_update_consent_marketing_only_tg(self, setup_test_db):
         """Test updating only marketing consent for Telegram user."""
-        from app.integrations.bots.shared.consent import (
-            update_consent,
-            get_customer_consents,
-        )
         from app.db import get_db
+        from app.integrations.bots.shared.consent import (
+            get_customer_consents,
+            update_consent,
+        )
 
         db = get_db()
         conn = db.connect()
@@ -560,11 +561,11 @@ class TestUpdateConsent:
 
     def test_update_consent_data_processing_only_tg(self, setup_test_db):
         """Test updating only data processing consent for Telegram user."""
-        from app.integrations.bots.shared.consent import (
-            update_consent,
-            get_customer_consents,
-        )
         from app.db import get_db
+        from app.integrations.bots.shared.consent import (
+            get_customer_consents,
+            update_consent,
+        )
 
         db = get_db()
         conn = db.connect()
@@ -591,11 +592,11 @@ class TestUpdateConsent:
 
     def test_update_consent_both_flags(self, setup_test_db):
         """Test updating both consent flags at once."""
-        from app.integrations.bots.shared.consent import (
-            update_consent,
-            get_customer_consents,
-        )
         from app.db import get_db
+        from app.integrations.bots.shared.consent import (
+            get_customer_consents,
+            update_consent,
+        )
 
         db = get_db()
         conn = db.connect()
@@ -633,8 +634,8 @@ class TestCleanupUserData:
 
     def test_cleanup_user_data_tg(self, clean_redis):
         """Test cleaning up user data for Telegram user with log_refusal=True."""
-        from app.integrations.bots.shared.consent import cleanup_user_data
         from app.db import get_db
+        from app.integrations.bots.shared.consent import cleanup_user_data
 
         # Create customer with consent
         with get_db().connect() as conn:
@@ -678,8 +679,8 @@ class TestCleanupUserData:
 
     def test_cleanup_user_data_tg_another(self, setup_test_db, clean_redis):
         """Test cleaning up another Telegram user with log_refusal=False."""
-        from app.integrations.bots.shared.consent import cleanup_user_data
         from app.db import get_db
+        from app.integrations.bots.shared.consent import cleanup_user_data
 
         # Create customer
         with get_db().connect() as conn:
@@ -754,8 +755,8 @@ class TestCleanupUserData:
 
     def test_cleanup_user_data_creates_refusal_record(self, setup_test_db, clean_redis):
         """Test cleanup creates a refusal consent record for compliance."""
-        from app.integrations.bots.shared.consent import cleanup_user_data
         from app.db import get_db
+        from app.integrations.bots.shared.consent import cleanup_user_data
 
         db = get_db()
         conn = db.connect()
@@ -800,8 +801,8 @@ class TestFindCustomerByPlatform:
 
     def test_find_customer_tg(self, setup_test_db):
         """Test finding customer by Telegram ID."""
-        from app.integrations.bots.shared.consent import find_customer_by_platform
         from app.db import get_db
+        from app.integrations.bots.shared.consent import find_customer_by_platform
 
         db = get_db()
         conn = db.connect()
@@ -825,8 +826,8 @@ class TestFindCustomerByPlatform:
 
     def test_find_customer_tg_vk(self, setup_test_db):
         """Test finding customer by Telegram ID (using vk source - tests shared module)."""
-        from app.integrations.bots.shared.consent import find_customer_by_platform
         from app.db import get_db
+        from app.integrations.bots.shared.consent import find_customer_by_platform
 
         db = get_db()
         conn = db.connect()
@@ -861,8 +862,8 @@ class TestGetCustomerId:
 
     def test_get_customer_id_tg(self, setup_test_db):
         """Test getting customer ID by Telegram ID."""
-        from app.integrations.bots.shared.consent import get_customer_id
         from app.db import get_db
+        from app.integrations.bots.shared.consent import get_customer_id
 
         db = get_db()
         conn = db.connect()
@@ -887,8 +888,8 @@ class TestGetCustomerId:
 
     def test_get_customer_id_tg_vk(self, setup_test_db):
         """Test getting customer ID with vk source (tests shared module)."""
-        from app.integrations.bots.shared.consent import get_customer_id
         from app.db import get_db
+        from app.integrations.bots.shared.consent import get_customer_id
 
         db = get_db()
         conn = db.connect()
@@ -1237,9 +1238,9 @@ class TestRegistrationFlowComplete:
 
     def test_complete_registration_new_user_vk(self, setup_test_db, clean_redis):
         """Test completing registration for new VK user."""
-        from app.integrations.bots.shared.registration import RegistrationFlow
-        from app.integrations.bots.shared.consent import store_consent
         from app.db import get_db
+        from app.integrations.bots.shared.consent import store_consent
+        from app.integrations.bots.shared.registration import RegistrationFlow
 
         with patch("app.integrations.bots.shared.registration.get_redis"):
             with patch("app.integrations.bots.shared.registration.get_db") as mock_db:
@@ -1268,8 +1269,8 @@ class TestRegistrationFlowComplete:
 
     def test_complete_registration_new_user_tg(self, setup_test_db, clean_redis):
         """Test completing registration for new Telegram user."""
-        from app.integrations.bots.shared.registration import RegistrationFlow
         from app.db import get_db
+        from app.integrations.bots.shared.registration import RegistrationFlow
 
         with patch("app.integrations.bots.shared.registration.get_redis"):
             with patch("app.integrations.bots.shared.registration.get_db") as mock_db:
@@ -1292,8 +1293,8 @@ class TestRegistrationFlowComplete:
 
     def test_complete_registration_existing_user_vk(self, setup_test_db, clean_redis):
         """Test completing registration for existing VK user."""
-        from app.integrations.bots.shared.registration import RegistrationFlow
         from app.db import get_db
+        from app.integrations.bots.shared.registration import RegistrationFlow
 
         existing_customer = {
             "id": 1,

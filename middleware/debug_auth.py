@@ -1,5 +1,5 @@
-import sqlite3
 import os
+import sqlite3
 from datetime import datetime
 
 db_path = "crm.db"
@@ -21,7 +21,9 @@ except Exception as e:
 
 print("\n--- Tokens ---")
 try:
-    cursor.execute("SELECT id, admin_user_id, expires_at FROM admin_tokens ORDER BY id DESC LIMIT 5")
+    cursor.execute(
+        "SELECT id, admin_user_id, expires_at FROM admin_tokens ORDER BY id DESC LIMIT 5"
+    )
     for row in cursor.fetchall():
         print(dict(row))
 except Exception as e:

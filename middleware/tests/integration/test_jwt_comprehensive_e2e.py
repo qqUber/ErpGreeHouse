@@ -1,12 +1,13 @@
-import pytest
 import time
-import jwt
 from datetime import datetime, timedelta, timezone
-from fastapi.testclient import TestClient
 from unittest.mock import MagicMock, patch
-from app.main import app
+
+import jwt
+import pytest
 from app.auth import create_access_token, create_refresh_token, validate_access_token
 from app.config import get_settings
+from app.main import app
+from fastapi.testclient import TestClient
 
 # Constants for testing
 PROTECTED_ENDPOINTS = [
@@ -121,9 +122,7 @@ class TestJWTComprehensiveE2E:
         # 3. Access with new token
         if new_access_token:
             client.cookies.set("access_token", new_access_token)
-            resp2 = client.get(
-                "/api/v1/auth/me"
-            )
+            resp2 = client.get("/api/v1/auth/me")
             assert resp2.status_code in [200, 401]
 
     def test_token_persistence_and_cleanup(self, client, mock_admin):

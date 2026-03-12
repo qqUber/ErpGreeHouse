@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """ERP Data Synchronization Service - Minimal implementation for testing"""
 
-import os
 import json
 import logging
+import os
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
-from .erpnext import ERPNextClient
+from typing import Any, Dict, List, Optional
+
 import redis
+
+from .erpnext import ERPNextClient
 
 logger = logging.getLogger(__name__)
 
@@ -213,9 +215,9 @@ class ERPSyncService:
                 {
                     "sync_type": "customer_sync",
                     "operation": "sync_customers",
-                    "modified_after": modified_after.isoformat()
-                    if modified_after
-                    else None,
+                    "modified_after": (
+                        modified_after.isoformat() if modified_after else None
+                    ),
                     "timestamp": start_time.isoformat(),
                 },
                 str(e),
@@ -294,9 +296,9 @@ class ERPSyncService:
                 {
                     "sync_type": "purchase_import",
                     "operation": "import_purchases",
-                    "posting_date_from": posting_date_from.isoformat()
-                    if posting_date_from
-                    else None,
+                    "posting_date_from": (
+                        posting_date_from.isoformat() if posting_date_from else None
+                    ),
                     "timestamp": start_time.isoformat(),
                 },
                 str(e),

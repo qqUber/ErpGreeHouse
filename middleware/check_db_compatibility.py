@@ -18,7 +18,6 @@ from typing import Dict, List, Tuple
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from app.db import get_db, get_db_path
 
-
 # Expected table definitions from db.py
 EXPECTED_TABLES = {
     "customers": {
@@ -289,7 +288,9 @@ class CompatibilityChecker:
         if fk_enabled:
             self.passed.append("Foreign Keys are ENABLED")
         else:
-            self.issues.append("Foreign Keys are DISABLED - data integrity may be compromised")
+            self.issues.append(
+                "Foreign Keys are DISABLED - data integrity may be compromised"
+            )
         return fk_enabled
 
     def get_existing_tables(self) -> List[str]:
@@ -340,12 +341,16 @@ class CompatibilityChecker:
             self.issues.append(f"Table '{table_name}' is MISSING")
             return False
 
-    def check_table_columns(self, table_name: str, expected_columns: List[Tuple]) -> bool:
+    def check_table_columns(
+        self, table_name: str, expected_columns: List[Tuple]
+    ) -> bool:
         """Check if table has expected columns."""
         if not self.check_table_exists(table_name):
             return False
 
-        actual_columns = {col["name"]: col for col in self.get_table_columns(table_name)}
+        actual_columns = {
+            col["name"]: col for col in self.get_table_columns(table_name)
+        }
         all_good = True
 
         for col_name, col_type, col_extra in expected_columns:
@@ -382,9 +387,7 @@ class CompatibilityChecker:
             if idx_name in actual_indexes:
                 self.passed.append(f"Index '{idx_name}' exists on '{table_name}'")
             else:
-                self.issues.append(
-                    f"Index '{idx_name}' is MISSING on '{table_name}'"
-                )
+                self.issues.append(f"Index '{idx_name}' is MISSING on '{table_name}'")
                 all_good = False
 
         return all_good
@@ -526,16 +529,16 @@ class CompatibilityChecker:
 
 def main():
     db_path = get_db_path()
-    
+
     if not Path(db_path).exists():
         print(f"Database file not found: {db_path}")
         print("Please run the application first to create the database.")
         sys.exit(1)
-    
+
     checker = CompatibilityChecker(db_path)
     try:
         results = checker.run_full_check()
-        
+
         # Exit with error code if there are critical issues
         if results["issues"]:
             print("\n" + "=" * 60)

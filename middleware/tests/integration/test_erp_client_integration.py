@@ -5,33 +5,35 @@ Tests ERP client integration with proper mocking.
 Uses fixtures from conftest.py for consistent test data.
 """
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 import sys
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from app.integrations.pos.erpnext_client import ERPClient
 
 # Add app to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+
 @pytest.mark.asyncio
 async def test_erp_client_get_customer_by_telegram_id_real_logic(erpnext_mock):
     """Test ERPClient.get_customer_by_telegram_id with real request logic (mocked HTTP)."""
     telegram_id = 123456789
-    
+
     # Setup mock HTTP response via respx
     erpnext_mock.mock_get_customer(str(telegram_id))
-    
+
     # Initialize client with mock mode OFF to test the actual request logic
     with patch("app.integrations.pos.erpnext_client.get_settings") as mock_settings:
         mock_settings.return_value.erp_mock_mode = False
         mock_settings.return_value.erp_api_base_url = "http://localhost:8000"
         mock_settings.return_value.erp_api_key = "key"
         mock_settings.return_value.erp_api_secret = "secret"
-        
+
         client = ERPClient()
         result = await client.get_customer_by_telegram_id(telegram_id)
-        
+
         assert result is not None
         assert result["telegram_id"] == str(telegram_id)
         assert result["first_name"] == "Test User"
@@ -43,23 +45,28 @@ async def test_erp_client_create_customer_real_logic(erpnext_mock, redis_client)
     telegram_id = 123456789
     name = "New Customer"
     phone = "+79991234567"
-    
+
     # Setup mock HTTP response via respx
-    erpnext_mock.mock_get_customer_by_phone(phone) # Search by phone first
-    erpnext_mock.mock_create_customer_resource(phone) # Create Customer resource
-    erpnext_mock.mock_create_customer(str(telegram_id), name) # Create Telegram Client link
-    
+    erpnext_mock.mock_get_customer_by_phone(phone)  # Search by phone first
+    erpnext_mock.mock_create_customer_resource(phone)  # Create Customer resource
+    erpnext_mock.mock_create_customer(
+        str(telegram_id), name
+    )  # Create Telegram Client link
+
     # Initialize client with mock mode OFF
-    with patch("app.integrations.pos.erpnext_client.get_settings") as mock_settings, \
-         patch("app.integrations.pos.erpnext_client.get_redis", return_value=redis_client):
+    with patch(
+        "app.integrations.pos.erpnext_client.get_settings"
+    ) as mock_settings, patch(
+        "app.integrations.pos.erpnext_client.get_redis", return_value=redis_client
+    ):
         mock_settings.return_value.erp_mock_mode = False
         mock_settings.return_value.erp_api_base_url = "http://localhost:8000"
         mock_settings.return_value.erp_api_key = "key"
         mock_settings.return_value.erp_api_secret = "secret"
-        
+
         client = ERPClient()
         result = await client.create_customer(telegram_id, name, phone, "Consent text")
-        
+
         assert result is not None
         assert result["telegram_id"] == str(telegram_id)
         assert result["first_name"] == name
@@ -69,16 +76,20 @@ async def test_erp_client_create_customer_real_logic(erpnext_mock, redis_client)
 async def test_erp_client_error_handling_real_logic(erpnext_mock):
     """Test ERPClient error handling when API returns 500."""
     telegram_id = 123456789
-    
+
     # Setup mock error response
-    erpnext_mock.mock_error("GET", f"/api/resource/Telegram Client?filters=[[\"telegram_id\",\"=\",\"{telegram_id}\"]]&fields=[\"name\", \"telegram_id\", \"first_name\", \"balance\", \"customer_link\"]", 500)
-    
+    erpnext_mock.mock_error(
+        "GET",
+        f'/api/resource/Telegram Client?filters=[["telegram_id","=","{telegram_id}"]]&fields=["name", "telegram_id", "first_name", "balance", "customer_link"]',
+        500,
+    )
+
     with patch("app.integrations.pos.erpnext_client.get_settings") as mock_settings:
         mock_settings.return_value.erp_mock_mode = False
         mock_settings.return_value.erp_api_base_url = "http://localhost:8000"
-        
+
         client = ERPClient()
-        with pytest.raises(Exception): # httpx.HTTPStatusError
+        with pytest.raises(Exception):  # httpx.HTTPStatusError
             await client.get_customer_by_telegram_id(telegram_id)
 
 
@@ -207,35 +218,36 @@ async def test_erp_client_error_handling(mock_erp_client):
 @pytest.mark.asyncio
 async def test_erp_client_retry_logic(monkeypatch):
     """Test ERP client retry logic with HTTP mocks."""
-    from app.integrations.pos.erpnext_client import ERPClient
     import httpx
     import respx
+    from app.integrations.pos.erpnext_client import ERPClient
 
     # Create a real client but point it to a mock base URL
     monkeypatch.setenv("ERP_MOCK_MODE", "false")
     monkeypatch.setenv("ERP_API_BASE_URL", "http://test-erpnext.instance")
-    
+
     from app.integrations.pos.erpnext_client import ERPClient
+
     client = ERPClient()
     # Ensure base_url and headers are set even if settings were already loaded
     client.base_url = "http://test-erpnext.instance"
     client.headers = {"Authorization": "token test:test"}
     client.mock = False
-    
+
     with respx.mock:
         # 1. Mock first 2 attempts as 500 errors, 3rd as 200 success
         route = respx.get("http://test-erpnext.instance/api/resource/Customer")
         route.side_effect = [
             httpx.Response(500),
             httpx.Response(500),
-            httpx.Response(200, json={"data": [{"name": "CUST-001"}]})
+            httpx.Response(200, json={"data": [{"name": "CUST-001"}]}),
         ]
-        
+
         # This call should trigger 2 retries and then succeed
         # We need to pass filters to match the actual call in get_customer_by_phone if that's what we test
         # Let's test _request directly for simplicity since it's the one with retry logic
         result = await client._request("GET", "/api/resource/Customer")
-        
+
         assert result is not None
         assert result["data"][0]["name"] == "CUST-001"
         assert route.call_count == 3

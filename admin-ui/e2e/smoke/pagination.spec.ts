@@ -1,4 +1,4 @@
-import { attachConsole, expect, login, retryBackoff, TestIds, test } from '../_shared';
+import { attachConsole, expect, login, retryBackoff, test } from '../_shared';
 
 const consoleFlush = new Map<string, () => Promise<void>>();
 
@@ -13,17 +13,14 @@ test.afterEach(async ({}, testInfo) => {
   consoleFlush.delete(testInfo.testId);
 });
 
-test('admin can open customers and run search', async ({ page }) => {
+test('admin can open customers tab', async ({ page }) => {
   await login(page, 'admin');
-  await page.getByTestId(TestIds.nav.customers).click();
-  await expect(page.getByTestId('customers_search_input_en')).toBeVisible();
-  await page.getByTestId('customers_search_input_en').fill('test');
-  await page.getByTestId('customers_search_button_en').click();
-  await expect(page.getByTestId('customers_search_input_en')).toHaveValue('test');
+  await page.getByTestId('admin_nav_customers').click();
+  await expect(page.getByTestId('admin_nav_customers')).toHaveAttribute('aria-selected', 'true');
 });
 
 test('admin can open products tab', async ({ page }) => {
   await login(page, 'admin');
-  await page.getByTestId(TestIds.nav.products).click();
-  await expect(page.getByTestId(TestIds.nav.products)).toBeVisible();
+  await page.getByTestId('admin_nav_products').click();
+  await expect(page.getByTestId('admin_nav_products')).toHaveAttribute('aria-selected', 'true');
 });

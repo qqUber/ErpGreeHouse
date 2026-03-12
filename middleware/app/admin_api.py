@@ -5,27 +5,26 @@ import os
 from datetime import datetime
 from typing import Any, Optional
 
-from fastapi import APIRouter, Header, HTTPException, BackgroundTasks, Depends, Query
-from fastapi.responses import FileResponse
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
+from .admin_auth_api import require_jwt_auth
 from .auth import (
     ALL_PERMISSIONS,
-    get_default_permissions,
     check_permission,
     check_roles,
+    get_default_permissions,
 )
-from .admin_auth_api import require_jwt_auth
 from .db import get_db
-from .integrations.pos.erpnext_client import ERPClient
 from .identify import generate_qr_token, normalize_name, normalize_phone
+from .integration_events import dispatch_event
+from .integrations.pos.erpnext_client import ERPClient
 from .loyalty import LoyaltyRules, calc_earned_points, clamp_redeem_points
 from .pdfgen import ReceiptLine, write_simple_receipt_pdf
 from .storage import get_redis
-from .worker import send_customer_message
-from .integration_events import dispatch_event
 from .trigger_engine import evaluate_and_queue_triggers
+from .worker import send_customer_message
 
 router = APIRouter(prefix="/api/v1")
 public_router = APIRouter(prefix="/api/v1/public")
@@ -91,11 +90,20 @@ def _cache_set_json(key: str, value: Any, ttl_seconds: int) -> None:
 
 
 def _cache_del_prefix(prefix: str) -> None:
+    """Delete all keys matching prefix using SCAN for production safety.
+
+    Uses SCAN instead of KEYS to avoid blocking Redis in production.
+    """
     try:
         r = get_redis()
-        keys = r.keys(prefix + "*") or []
-        if keys:
-            r.delete(*keys)  # type: ignore[misc]
+        cursor = 0
+        pattern = prefix + "*"
+        while True:
+            cursor, keys = r.scan(cursor, match=pattern, count=100)
+            if keys:
+                r.delete(*keys)  # type: ignore[misc]
+            if cursor == 0:
+                break
     except Exception:
         return
 
@@ -378,8 +386,8 @@ def analytics_sales_by_day(
     try:
         cur = conn.execute(
             """
-            SELECT 
-                date(created_at) as date, 
+            SELECT
+                date(created_at) as date,
                 COUNT(*) as transactions_count,
                 COALESCE(SUM(total_amount), 0) as total_amount,
                 COALESCE(SUM(bonus_earned), 0) as bonus_earned
@@ -419,7 +427,7 @@ def analytics_top_products(
         # Parse items_json to extract product info
         cur = conn.execute(
             """
-            SELECT 
+            SELECT
                 t.items_json
             FROM transactions t
             WHERE t.created_at >= date('now', ?)
@@ -527,7 +535,7 @@ def analytics_recalculate(
     try:
         # Get all customers with transactions
         cur = conn.execute("""
-            SELECT 
+            SELECT
                 c.id,
                 COALESCE(SUM(t.total_amount), 0) as ltv,
                 COUNT(t.id) as purchase_count,
@@ -556,7 +564,7 @@ def analytics_recalculate(
 
             conn.execute(
                 """
-                UPDATE customers SET 
+                UPDATE customers SET
                     ltv = ?,
                     average_check = ?,
                     purchase_frequency = ?,
@@ -815,7 +823,7 @@ def create_customer(
 
         cur = conn.execute(
             """
-            INSERT INTO customers(full_name, phone, qr_token, preferences_json, balance_points, birthday, marketing_allowed, data_processing_allowed) 
+            INSERT INTO customers(full_name, phone, qr_token, preferences_json, balance_points, birthday, marketing_allowed, data_processing_allowed)
             VALUES(?,?,?,?,0,?,?,?)
             """,
             (
@@ -1219,12 +1227,13 @@ def marketing_push(
         failed = 0
 
         # Import async message sending functions
-        from .worker import send_customer_message
-        import aiohttp
         import asyncio
+
+        import aiohttp
 
         # Get VK settings for sending messages
         from .config import get_settings
+        from .worker import send_customer_message
 
         settings = get_settings()
         vk_token = getattr(settings, "vk_group_token", None) or os.getenv(
@@ -1288,9 +1297,11 @@ def marketing_push(
             "sent_telegram": sent_tg,
             "sent_vk": sent_vk,
             "failed": failed,
-            "message": payload.message[:50] + "..."
-            if len(payload.message) > 50
-            else payload.message,
+            "message": (
+                payload.message[:50] + "..."
+                if len(payload.message) > 50
+                else payload.message
+            ),
         }
 
     finally:

@@ -387,7 +387,7 @@ def init_db() -> None:
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
             );
-            
+
             CREATE TABLE IF NOT EXISTS short_urls (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 short_code TEXT NOT NULL UNIQUE,

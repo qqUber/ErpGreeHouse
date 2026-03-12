@@ -3,17 +3,12 @@ import { expect, login, test } from '../_shared';
 test('simple: login and see dashboard', async ({ page }) => {
   await login(page, 'admin');
 
-  await page.waitForTimeout(3000);
+  await expect(page.getByTestId('admin_nav_dashboard')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByTestId('admin_nav_customers')).toBeVisible();
+  await expect(page.getByTestId('admin_nav_products')).toBeVisible();
 
-  // Check if we're on the dashboard
-  expect(page.url()).toContain('/admin');
-
-  // Check for dashboard content
-  const dashboard = page.getByTestId('admin-dashboard');
-  await dashboard.waitFor({ timeout: 5000 });
-  expect(dashboard).toBeVisible();
-
-  const title = page.getByTestId('admin-dashboard-title');
-  expect(title).toBeVisible();
-  await expect(title).toContainText('Dashboard');
+  await page.getByTestId('admin_nav_customers').click();
+  await expect(page.getByTestId('admin_nav_customers')).toHaveAttribute('aria-selected', 'true');
+  await page.getByTestId('admin_nav_dashboard').click();
+  await expect(page.getByTestId('admin_nav_dashboard')).toHaveAttribute('aria-selected', 'true');
 });

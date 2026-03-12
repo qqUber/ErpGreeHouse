@@ -11,9 +11,8 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 
-from .admin_api import check_permission
+from .admin_api import _cache_get_json, _cache_set_json, check_permission
 from .admin_auth_api import require_jwt_auth
-from .admin_api import _cache_get_json, _cache_set_json
 from .db import get_db
 
 router = APIRouter(prefix="/api/v1/dashboard", tags=["dashboard"])

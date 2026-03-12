@@ -1,14 +1,15 @@
+import logging
+import logging.config
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
-from fastapi import FastAPI, Request, Header, HTTPException
+
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import FileResponse, JSONResponse, RedirectResponse
 from starlette.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
-from starlette.responses import JSONResponse, RedirectResponse, FileResponse
-from contextlib import asynccontextmanager
-import logging
-import logging.config
 
 # Configure logging
 logging.config.dictConfig(
@@ -49,43 +50,44 @@ logger = logging.getLogger(__name__)
 # Environment variables are loaded from .env in project root by uvicorn
 # or set explicitly in shell before running
 
+import mimetypes
+
 from .config import get_settings
 from .db import init_db
 from .middlewares import rate_limit_middleware
-import mimetypes
 
 # Fix MIME types for Windows
 mimetypes.add_type("application/javascript", ".js")
 mimetypes.add_type("text/css", ".css")
-from .admin_api import router as admin_router, public_router as public_router
-from .admin_auth_api import public_router as auth_public_router, router as auth_router
+from .admin_api import public_router as public_router
+from .admin_api import router as admin_router
 from .admin_auth_api import _bootstrap_default_admin, _bootstrap_demo_users
-from .integrations_api import (
-    router as integrations_router,
-    public_router as integrations_public_router,
-)
-from .integration_settings_api import router as integration_settings_router
-from .products_api import router as products_router
-from .marketing_api import router as marketing_router
-from .tma_api import router as tma_router
-from .test_api import router as test_router
+from .admin_auth_api import public_router as auth_public_router
+from .admin_auth_api import router as auth_router
 from .analytics_api import router as analytics_router
 from .dashboard_api import router as dashboard_router
 from .debug_api import router as debug_router
-from .integrations.webhooks import router as erp_webhook_router
-from .erp_scheduler import start_erp_sync_scheduler
-from .request_context import reset_admin_session_token, set_admin_session_token
-from .runtime import is_debug
 from .dev_seed import ensure_seed_data, should_auto_seed
-from .worker import process_telegram_update
+from .erp_scheduler import start_erp_sync_scheduler
+from .integration_settings_api import router as integration_settings_router
 from .integrations.bots.telegram_handler import create_bot
 from .integrations.bots.vk_handler import (
     create_vk_bot,
-    validate_vk_token,
     process_vk_webhook_event,
     set_vk_config,
+    validate_vk_token,
 )
-from .worker import send_broadcast
+from .integrations.webhooks import router as erp_webhook_router
+from .integrations_api import public_router as integrations_public_router
+from .integrations_api import router as integrations_router
+from .marketing_api import router as marketing_router
+from .products_api import router as products_router
+from .request_context import reset_admin_session_token, set_admin_session_token
+from .runtime import is_debug
+from .test_api import router as test_router
+from .tma_api import router as tma_router
+from .worker import process_telegram_update, send_broadcast
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -152,6 +154,7 @@ def _is_public_path(path: str) -> bool:
 async def _auth_protection(request: Request, call_next):
     """Middleware to protect routes and handle authentication properly."""
     from fastapi import HTTPException
+
     from .auth import validate_access_token
     from .request_context import get_admin_session_token
 
@@ -214,13 +217,13 @@ async def _auth_protection(request: Request, call_next):
     except Exception as e:
         # Log the error and return 500 instead of letting it propagate
         import traceback
+
         logger.error(f"[AUTH] Middleware error: {type(e).__name__}: {e}")
         logger.error(f"[AUTH] Traceback: {traceback.format_exc()}")
         return JSONResponse(
             status_code=500,
             content={"detail": "Internal server error in auth middleware"},
         )
-
 
 
 @app.middleware("http")

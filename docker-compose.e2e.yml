@@ -60,6 +60,8 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+      frontend:
+        condition: service_started
     # Run all smoke tests as per E2E_TEST_FIX_PLAN
     command: >
       bash -c "npm install && npx playwright install chromium --with-deps && 

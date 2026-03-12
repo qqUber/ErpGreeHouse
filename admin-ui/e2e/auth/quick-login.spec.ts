@@ -19,7 +19,8 @@ test('quick: login flow', async ({ page }) => {
   const loginButton = page.getByTestId('common_btn_login_en');
   await loginButton.click();
 
-  await page.waitForNavigation({ timeout: 10000 });
+  await page.waitForURL(/\/admin\/?$/, { timeout: 10000 });
+  await expect(page.getByTestId('admin_nav_dashboard')).toBeVisible({ timeout: 10000 });
 
   expect(page.url()).toContain('/admin/');
   expect(page.url()).not.toContain('login');

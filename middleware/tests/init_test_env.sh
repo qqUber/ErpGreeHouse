@@ -38,7 +38,7 @@ check_redis() {
 wait_for_redis() {
     local max_attempts=${1:-30}
     local attempt=1
-    
+
     echo "Waiting for Redis (max ${max_attempts}s)..."
     while [ $attempt -le $max_attempts ]; do
         if check_redis; then
@@ -49,7 +49,7 @@ wait_for_redis() {
         sleep 1
         attempt=$((attempt + 1))
     done
-    
+
     echo "✗ ERROR: Redis did not become ready in ${max_attempts}s"
     return 1
 }
@@ -57,15 +57,15 @@ wait_for_redis() {
 # Setup SQLite test database
 setup_database() {
     local db_path=${1:-test_telegram_crm.db}
-    
+
     echo "Setting up test database: $db_path"
-    
+
     # Remove existing database for clean state
     if [ -f "$db_path" ]; then
         echo "  Removing existing database..."
         rm -f "$db_path"
     fi
-    
+
     # Create database and seed data using Python
     python -c "
 import sqlite3
@@ -90,11 +90,11 @@ CREATE TABLE IF NOT EXISTS admin_users (
 # This is the bcrypt hash of 'test123'
 password_hash = '\$2b\$12\$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYqPLUzC7J2'
 
-conn.execute('INSERT OR IGNORE INTO admin_users (username, password_hash, role) VALUES (?, ?, ?)', 
+conn.execute('INSERT OR IGNORE INTO admin_users (username, password_hash, role) VALUES (?, ?, ?)',
     ('admin', password_hash, 'admin'))
-conn.execute('INSERT OR IGNORE INTO admin_users (username, password_hash, role) VALUES (?, ?, ?)', 
+conn.execute('INSERT OR IGNORE INTO admin_users (username, password_hash, role) VALUES (?, ?, ?)',
     ('manager', password_hash, 'manager'))
-conn.execute('INSERT OR IGNORE INTO admin_users (username, password_hash, role) VALUES (?, ?, ?)', 
+conn.execute('INSERT OR IGNORE INTO admin_users (username, password_hash, role) VALUES (?, ?, ?)',
     ('operator', password_hash, 'operator'))
 
 conn.commit()
@@ -102,7 +102,7 @@ conn.close()
 
 print(f'Database {db_path} created and seeded successfully')
 "
-    
+
     if [ -f "$db_path" ]; then
         echo "✓ Database created: $db_path"
         return 0
@@ -116,9 +116,9 @@ print(f'Database {db_path} created and seeded successfully')
 verify_backend() {
     local max_attempts=${1:-30}
     local attempt=1
-    
+
     echo "Waiting for backend (max ${max_attempts}s)..."
-    
+
     while [ $attempt -le $max_attempts ]; do
         if curl -s http://localhost:8000/docs > /dev/null 2>&1; then
             echo "✓ Backend is ready after ${attempt}s"
@@ -128,7 +128,7 @@ verify_backend() {
         sleep 1
         attempt=$((attempt + 1))
     done
-    
+
     echo "✗ ERROR: Backend did not become ready in ${max_attempts}s"
     return 1
 }
@@ -136,21 +136,21 @@ verify_backend() {
 # Main execution
 main() {
     echo ""
-    
+
     # Check Redis
     if ! wait_for_redis 30; then
         echo "ERROR: Redis is not available"
         exit 1
     fi
-    
+
     echo ""
-    
+
     # Setup database
     if ! setup_database "test_telegram_crm.db"; then
         echo "ERROR: Failed to setup database"
         exit 1
     fi
-    
+
     echo ""
     echo "=========================================="
     echo "Test Environment Initialized Successfully"

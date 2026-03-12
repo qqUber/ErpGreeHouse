@@ -43,7 +43,9 @@ def cmd_start(
     conn = db.connect()
     try:
         # Check if user exists in database
-        id_column = f"{source}_id"  # noqa: B608 - source is hardcoded (tg/vk), not user input
+        id_column = (
+            f"{source}_id"  # noqa: B608 - source is hardcoded (tg/vk), not user input
+        )
         cur = conn.execute(
             f"SELECT id, full_name, marketing_allowed, data_processing_allowed FROM customers WHERE {id_column}=?",
             (user_id,),
@@ -194,8 +196,8 @@ def cmd_profile(
     try:
         id_column = f"{source}_id"
         cur = conn.execute(
-            f"""SELECT full_name, phone, balance_points, marketing_allowed, 
-                     data_processing_allowed, created_at 
+            f"""SELECT full_name, phone, balance_points, marketing_allowed,
+                     data_processing_allowed, created_at
               FROM customers WHERE {id_column}=?""",
             (user_id,),
         )

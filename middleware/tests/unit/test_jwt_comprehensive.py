@@ -3,29 +3,30 @@ Comprehensive JWT unit tests with 100% coverage
 Tests all JWT functionality including security edge cases
 """
 
-import pytest
-import jwt
-import time
 import os
+import time
 from datetime import datetime, timedelta, timezone
-from unittest.mock import Mock, patch, MagicMock
 from typing import Any, Dict
-from fastapi import HTTPException
+from unittest.mock import MagicMock, Mock, patch
+
+import jwt
+import pytest
 
 # Import JWT functions from auth module
 from app.auth import (
+    _get_role_permissions,
     create_access_token,
     create_refresh_token,
-    validate_access_token,
-    validate_refresh_token,
     decode_token,
     get_admin_from_jwt,
-    _get_role_permissions,
-    get_role_permissions,
     get_default_permissions,
+    get_role_permissions,
+    validate_access_token,
+    validate_refresh_token,
 )
 from app.config import get_settings
 from app.security import constant_time_equals
+from fastapi import HTTPException
 
 
 class TestJWTTokenCreation:

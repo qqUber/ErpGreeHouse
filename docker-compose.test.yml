@@ -2,7 +2,7 @@
 services:
   redis:
     container_name: erp_test_redis
-    ports: [] 
+    ports: []
 
   backend-test:
     build:
@@ -19,7 +19,7 @@ services:
       redis:
         condition: service_healthy
     command: >
-      bash -c "export PYTHONPATH=/app && 
+      bash -c "export PYTHONPATH=/app &&
       pytest tests/unit tests/integration --cov=app --cov-report=html:test-reports/coverage-backend"
 
   frontend-unit-test:
@@ -32,6 +32,7 @@ services:
       - .env.test
     volumes:
       - ./admin-ui:/app
+      - /app/node_modules
     command: npm run test:unit
 
 volumes:

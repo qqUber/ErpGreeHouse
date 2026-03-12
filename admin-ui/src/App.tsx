@@ -735,7 +735,7 @@ function App() {
                 onClick={() => setTab('dashboard')}
                 role="tab"
                 aria-selected={safeTab === 'dashboard'}
-                aria-controls="dashboard-panel"
+                aria-controls={showProtectedPanels ? 'dashboard-panel' : undefined}
                 data-testid="admin_nav_dashboard"
               >
                 {t('menu.dashboard')}
@@ -748,7 +748,7 @@ function App() {
                 onClick={() => setTab('customers')}
                 role="tab"
                 aria-selected={safeTab === 'customers'}
-                aria-controls="customers-panel"
+                aria-controls={showProtectedPanels ? 'customers-panel' : undefined}
                 data-testid="admin_nav_customers"
               >
                 {t('menu.clients')}
@@ -761,7 +761,7 @@ function App() {
                 onClick={() => setTab('pos')}
                 role="tab"
                 aria-selected={safeTab === 'pos'}
-                aria-controls="pos-panel"
+                aria-controls={showProtectedPanels ? 'pos-panel' : undefined}
                 data-testid="admin_nav_pos"
               >
                 {t('sales.title')}
@@ -774,7 +774,7 @@ function App() {
                 onClick={() => setTab('integrations')}
                 role="tab"
                 aria-selected={safeTab === 'integrations'}
-                aria-controls="integrations-panel"
+                aria-controls={showProtectedPanels ? 'integrations-panel' : undefined}
                 data-testid="admin_nav_integrations"
               >
                 {t('menu.integrations')}
@@ -787,7 +787,7 @@ function App() {
                 onClick={() => setTab('products')}
                 role="tab"
                 aria-selected={safeTab === 'products'}
-                aria-controls="products-panel"
+                aria-controls={showProtectedPanels ? 'products-panel' : undefined}
                 data-testid="admin_nav_products"
               >
                 {t('menu.products')}
@@ -800,7 +800,7 @@ function App() {
                 onClick={() => setTab('settings')}
                 role="tab"
                 aria-selected={safeTab === 'settings'}
-                aria-controls="settings-panel"
+                aria-controls={showProtectedPanels ? 'settings-panel' : undefined}
                 data-testid="admin_nav_settings"
               >
                 {t('menu.settings')}
@@ -813,7 +813,7 @@ function App() {
                 onClick={() => setTab('marketing')}
                 role="tab"
                 aria-selected={safeTab === 'marketing'}
-                aria-controls="marketing-panel"
+                aria-controls={showProtectedPanels ? 'marketing-panel' : undefined}
                 data-testid="admin_nav_marketing"
               >
                 {t('menu.marketing')}
@@ -826,7 +826,7 @@ function App() {
                 onClick={() => setTab('compliance')}
                 role="tab"
                 aria-selected={safeTab === 'compliance'}
-                aria-controls="compliance-panel"
+                aria-controls={showProtectedPanels ? 'compliance-panel' : undefined}
                 data-testid="admin_nav_compliance"
               >
                 {t('menu.compliance')}
@@ -839,7 +839,7 @@ function App() {
                 onClick={() => setTab('analytics')}
                 role="tab"
                 aria-selected={safeTab === 'analytics'}
-                aria-controls="analytics-panel"
+                aria-controls={showProtectedPanels ? 'analytics-panel' : undefined}
                 data-testid="admin_nav_analytics"
               >
                 {t('menu.analytics')}

@@ -3,15 +3,15 @@ import io
 import json
 import os
 from datetime import datetime, timedelta
-from typing import Any, Optional, List
 from io import BytesIO
+from typing import Any, List, Optional
 
-from fastapi import APIRouter, Query, Depends, HTTPException
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
-from .auth import check_permission
 from .admin_auth_api import require_jwt_auth
+from .auth import check_permission
 from .db import get_db
 from .storage import get_redis
 
@@ -40,11 +40,20 @@ def _cache_set_json(key: str, value: Any, ttl_seconds: int) -> None:
 
 
 def _cache_del_prefix(prefix: str) -> None:
+    """Delete all keys matching prefix using SCAN for production safety.
+
+    Uses SCAN instead of KEYS to avoid blocking Redis in production.
+    """
     try:
         r = get_redis()
-        keys = r.keys(prefix + "*") or []
-        if keys:
-            r.delete(*keys)
+        cursor = 0
+        pattern = prefix + "*"
+        while True:
+            cursor, keys = r.scan(cursor, match=pattern, count=100)
+            if keys:
+                r.delete(*keys)
+            if cursor == 0:
+                break
     except Exception:
         return
 
@@ -138,8 +147,8 @@ def get_dashboard_overview(
         # Active customers (with transactions in time range)
         active_customers = conn.execute(
             """
-            SELECT COUNT(DISTINCT customer_id) 
-            FROM transactions 
+            SELECT COUNT(DISTINCT customer_id)
+            FROM transactions
             WHERE created_at BETWEEN ? AND ?
             """,
             (start_str, end_str),
@@ -151,8 +160,8 @@ def get_dashboard_overview(
             prev_end = start_date
             prev_active = conn.execute(
                 """
-                SELECT COUNT(DISTINCT customer_id) 
-                FROM transactions 
+                SELECT COUNT(DISTINCT customer_id)
+                FROM transactions
                 WHERE created_at BETWEEN ? AND ?
                 """,
                 (
@@ -221,7 +230,7 @@ def get_sales_chart(
         # Build query based on interval
         if interval == "day":
             query = """
-                SELECT 
+                SELECT
                     SUBSTR(created_at, 1, 10) as date,
                     COUNT(*) as transactions,
                     COALESCE(SUM(total_amount), 0) as revenue,
@@ -234,7 +243,7 @@ def get_sales_chart(
             """
         elif interval == "week":
             query = """
-                SELECT 
+                SELECT
                     strftime('%Y-%W', created_at) as week,
                     COUNT(*) as transactions,
                     COALESCE(SUM(total_amount), 0) as revenue,
@@ -247,7 +256,7 @@ def get_sales_chart(
             """
         elif interval == "month":
             query = """
-                SELECT 
+                SELECT
                     SUBSTR(created_at, 1, 7) as month,
                     COUNT(*) as transactions,
                     COALESCE(SUM(total_amount), 0) as revenue,
@@ -260,7 +269,7 @@ def get_sales_chart(
             """
         else:
             query = """
-                SELECT 
+                SELECT
                     SUBSTR(created_at, 1, 10) as date,
                     COUNT(*) as transactions,
                     COALESCE(SUM(total_amount), 0) as revenue,
@@ -335,12 +344,12 @@ def get_customer_chart(
         # Build query based on interval
         if interval == "day":
             query = """
-                SELECT 
+                SELECT
                     SUBSTR(c.created_at, 1, 10) as date,
                     COUNT(*) as new_customers,
                     COUNT(DISTINCT c.id) as active_customers
                 FROM customers c
-                LEFT JOIN transactions t ON c.id = t.customer_id 
+                LEFT JOIN transactions t ON c.id = t.customer_id
                     AND t.created_at BETWEEN ? AND ?
                 WHERE c.created_at BETWEEN ? AND ?
                 GROUP BY SUBSTR(c.created_at, 1, 10)
@@ -348,12 +357,12 @@ def get_customer_chart(
             """
         elif interval == "week":
             query = """
-                SELECT 
+                SELECT
                     strftime('%Y-%W', c.created_at) as week,
                     COUNT(*) as new_customers,
                     COUNT(DISTINCT c.id) as active_customers
                 FROM customers c
-                LEFT JOIN transactions t ON c.id = t.customer_id 
+                LEFT JOIN transactions t ON c.id = t.customer_id
                     AND t.created_at BETWEEN ? AND ?
                 WHERE c.created_at BETWEEN ? AND ?
                 GROUP BY strftime('%Y-%W', c.created_at)
@@ -361,12 +370,12 @@ def get_customer_chart(
             """
         elif interval == "month":
             query = """
-                SELECT 
+                SELECT
                     SUBSTR(c.created_at, 1, 7) as month,
                     COUNT(*) as new_customers,
                     COUNT(DISTINCT c.id) as active_customers
                 FROM customers c
-                LEFT JOIN transactions t ON c.id = t.customer_id 
+                LEFT JOIN transactions t ON c.id = t.customer_id
                     AND t.created_at BETWEEN ? AND ?
                 WHERE c.created_at BETWEEN ? AND ?
                 GROUP BY SUBSTR(c.created_at, 1, 7)
@@ -374,7 +383,7 @@ def get_customer_chart(
             """
         else:
             query = """
-                SELECT 
+                SELECT
                     SUBSTR(c.created_at, 1, 10) as date,
                     COUNT(*) as new_customers
                 FROM customers c
@@ -454,7 +463,7 @@ def get_loyalty_chart(
         # Build query based on interval
         if interval == "day":
             query = """
-                SELECT 
+                SELECT
                     SUBSTR(created_at, 1, 10) as date,
                     COALESCE(SUM(bonus_earned), 0) as points_earned,
                     COALESCE(SUM(bonus_used), 0) as points_redeemed,
@@ -466,7 +475,7 @@ def get_loyalty_chart(
             """
         elif interval == "week":
             query = """
-                SELECT 
+                SELECT
                     strftime('%Y-%W', created_at) as week,
                     COALESCE(SUM(bonus_earned), 0) as points_earned,
                     COALESCE(SUM(bonus_used), 0) as points_redeemed,
@@ -478,7 +487,7 @@ def get_loyalty_chart(
             """
         elif interval == "month":
             query = """
-                SELECT 
+                SELECT
                     SUBSTR(created_at, 1, 7) as month,
                     COALESCE(SUM(bonus_earned), 0) as points_earned,
                     COALESCE(SUM(bonus_used), 0) as points_redeemed,
@@ -490,7 +499,7 @@ def get_loyalty_chart(
             """
         else:
             query = """
-                SELECT 
+                SELECT
                     SUBSTR(created_at, 1, 10) as date,
                     COALESCE(SUM(bonus_earned), 0) as points_earned,
                     COALESCE(SUM(bonus_used), 0) as points_redeemed,
@@ -582,8 +591,8 @@ def get_loyalty_report_overview(
         total_customers = conn.execute("SELECT COUNT(*) FROM customers").fetchone()[0]
         customers_redeeming = conn.execute(
             """
-            SELECT COUNT(DISTINCT customer_id) 
-            FROM transactions 
+            SELECT COUNT(DISTINCT customer_id)
+            FROM transactions
             WHERE bonus_used > 0 AND created_at BETWEEN ? AND ?
             """,
             (start_str, end_str),
@@ -596,8 +605,8 @@ def get_loyalty_report_overview(
         # Average points per transaction
         avg_points_per_transaction = conn.execute(
             """
-            SELECT COALESCE(AVG(bonus_earned), 0) 
-            FROM transactions 
+            SELECT COALESCE(AVG(bonus_earned), 0)
+            FROM transactions
             WHERE created_at BETWEEN ? AND ?
             """,
             (start_str, end_str),
@@ -609,7 +618,7 @@ def get_loyalty_report_overview(
             SELECT COALESCE(AVG(total_used), 0)
             FROM (
                 SELECT customer_id, SUM(bonus_used) as total_used
-                FROM transactions 
+                FROM transactions
                 WHERE bonus_used > 0 AND created_at BETWEEN ? AND ?
                 GROUP BY customer_id
             )
@@ -623,7 +632,7 @@ def get_loyalty_report_overview(
             SELECT COALESCE(AVG(visit_count), 0)
             FROM (
                 SELECT customer_id, COUNT(*) as visit_count
-                FROM transactions 
+                FROM transactions
                 WHERE bonus_used > 0 AND created_at BETWEEN ? AND ?
                 GROUP BY customer_id
             )
@@ -634,9 +643,9 @@ def get_loyalty_report_overview(
         # Point expiration reminders sent (if available)
         reminder_count = conn.execute(
             """
-            SELECT COUNT(*) 
-            FROM marketing_events 
-            WHERE event_type = 'point_expiration_reminder' 
+            SELECT COUNT(*)
+            FROM marketing_events
+            WHERE event_type = 'point_expiration_reminder'
             AND created_at BETWEEN ? AND ?
             """,
             (start_str, end_str),
@@ -699,7 +708,7 @@ def get_loyalty_detailed_report(
 
         # Detailed loyalty data per customer
         query = """
-            SELECT 
+            SELECT
                 c.id as customer_id,
                 c.full_name,
                 c.phone,
@@ -772,7 +781,7 @@ def export_loyalty_report_csv(
         end_str = end_date.strftime("%Y-%m-%d %H:%M:%S")
 
         query = """
-            SELECT 
+            SELECT
                 c.full_name,
                 c.phone,
                 COUNT(*) as transaction_count,
@@ -856,7 +865,7 @@ def export_sales_report_csv(
         end_str = end_date.strftime("%Y-%m-%d %H:%M:%S")
 
         query = """
-            SELECT 
+            SELECT
                 t.created_at,
                 c.full_name,
                 c.phone,
@@ -936,7 +945,7 @@ def export_customers_report_csv(
         end_str = end_date.strftime("%Y-%m-%d %H:%M:%S")
 
         query = """
-            SELECT 
+            SELECT
                 c.full_name,
                 c.phone,
                 c.created_at,
@@ -1081,81 +1090,105 @@ def get_customer_segmentation():
             "new": {
                 "count": len(segments["new"]),
                 "avg_monetary": round(
-                    sum(c["monetary"] for c in segments["new"]) / len(segments["new"])
-                    if segments["new"]
-                    else 0,
+                    (
+                        sum(c["monetary"] for c in segments["new"])
+                        / len(segments["new"])
+                        if segments["new"]
+                        else 0
+                    ),
                     2,
                 ),
                 "avg_frequency": round(
-                    sum(c["frequency"] for c in segments["new"]) / len(segments["new"])
-                    if segments["new"]
-                    else 0,
+                    (
+                        sum(c["frequency"] for c in segments["new"])
+                        / len(segments["new"])
+                        if segments["new"]
+                        else 0
+                    ),
                     2,
                 ),
             },
             "active": {
                 "count": len(segments["active"]),
                 "avg_monetary": round(
-                    sum(c["monetary"] for c in segments["active"])
-                    / len(segments["active"])
-                    if segments["active"]
-                    else 0,
+                    (
+                        sum(c["monetary"] for c in segments["active"])
+                        / len(segments["active"])
+                        if segments["active"]
+                        else 0
+                    ),
                     2,
                 ),
                 "avg_frequency": round(
-                    sum(c["frequency"] for c in segments["active"])
-                    / len(segments["active"])
-                    if segments["active"]
-                    else 0,
+                    (
+                        sum(c["frequency"] for c in segments["active"])
+                        / len(segments["active"])
+                        if segments["active"]
+                        else 0
+                    ),
                     2,
                 ),
             },
             "at_risk": {
                 "count": len(segments["at_risk"]),
                 "avg_monetary": round(
-                    sum(c["monetary"] for c in segments["at_risk"])
-                    / len(segments["at_risk"])
-                    if segments["at_risk"]
-                    else 0,
+                    (
+                        sum(c["monetary"] for c in segments["at_risk"])
+                        / len(segments["at_risk"])
+                        if segments["at_risk"]
+                        else 0
+                    ),
                     2,
                 ),
                 "avg_frequency": round(
-                    sum(c["frequency"] for c in segments["at_risk"])
-                    / len(segments["at_risk"])
-                    if segments["at_risk"]
-                    else 0,
+                    (
+                        sum(c["frequency"] for c in segments["at_risk"])
+                        / len(segments["at_risk"])
+                        if segments["at_risk"]
+                        else 0
+                    ),
                     2,
                 ),
             },
             "churned": {
                 "count": len(segments["churned"]),
                 "avg_monetary": round(
-                    sum(c["monetary"] for c in segments["churned"])
-                    / len(segments["churned"])
-                    if segments["churned"]
-                    else 0,
+                    (
+                        sum(c["monetary"] for c in segments["churned"])
+                        / len(segments["churned"])
+                        if segments["churned"]
+                        else 0
+                    ),
                     2,
                 ),
                 "avg_frequency": round(
-                    sum(c["frequency"] for c in segments["churned"])
-                    / len(segments["churned"])
-                    if segments["churned"]
-                    else 0,
+                    (
+                        sum(c["frequency"] for c in segments["churned"])
+                        / len(segments["churned"])
+                        if segments["churned"]
+                        else 0
+                    ),
                     2,
                 ),
             },
             "vip": {
                 "count": len(segments["vip"]),
                 "avg_monetary": round(
-                    sum(c["monetary"] for c in segments["vip"]) / len(segments["vip"])
-                    if segments["vip"]
-                    else 0,
+                    (
+                        sum(c["monetary"] for c in segments["vip"])
+                        / len(segments["vip"])
+                        if segments["vip"]
+                        else 0
+                    ),
                     2,
                 ),
                 "avg_frequency": round(
-                    sum(c["frequency"] for c in segments["vip"]) / len(segments["vip"])
-                    if segments["vip"]
-                    else 0,
+                    (
+                        sum(c["frequency"] for c in segments["vip"])
+                        / len(segments["vip"])
+                        if segments["vip"]
+                        else 0
+                    ),
                     2,
                 ),
             },
@@ -1207,7 +1240,7 @@ def get_external_sales_report(
         end_str = end_date.strftime("%Y-%m-%d %H:%M:%S")
 
         query = """
-            SELECT 
+            SELECT
                 SUBSTR(created_at, 1, 10) as date,
                 COUNT(*) as transactions,
                 COALESCE(SUM(total_amount), 0) as revenue,
@@ -1269,7 +1302,7 @@ def get_external_customers_report(
         end_str = end_date.strftime("%Y-%m-%d %H:%M:%S")
 
         query = """
-            SELECT 
+            SELECT
                 SUBSTR(created_at, 1, 10) as date,
                 COUNT(*) as new_customers
             FROM customers
@@ -1325,7 +1358,7 @@ def get_external_loyalty_report(
         end_str = end_date.strftime("%Y-%m-%d %H:%M:%S")
 
         query = """
-            SELECT 
+            SELECT
                 SUBSTR(created_at, 1, 10) as date,
                 COALESCE(SUM(bonus_earned), 0) as points_earned,
                 COALESCE(SUM(bonus_used), 0) as points_redeemed

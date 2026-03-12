@@ -28,17 +28,17 @@
 
 +==============================================================================+
 
- [1mANNOUNCEMENTS[0m 
+ [1mANNOUNCEMENTS[0m
 
-[33m  * Warning: redis is unpinned. Safety by default does not report on potential[0m 
-[33m    vulnerabilities in unpinned packages. It is recommended to pin your[0m 
-[33m    dependencies unless this is a library meant for distribution. To learn more[0m 
-[33m    about reporting these, specifier range handling, and options for scanning[0m 
-[33m    unpinned packages visit https://docs.pyup.io/docs/safety-range-specs[0m 
+[33m  * Warning: redis is unpinned. Safety by default does not report on potential[0m
+[33m    vulnerabilities in unpinned packages. It is recommended to pin your[0m
+[33m    dependencies unless this is a library meant for distribution. To learn more[0m
+[33m    about reporting these, specifier range handling, and options for scanning[0m
+[33m    unpinned packages visit https://docs.pyup.io/docs/safety-range-specs[0m
 
 +==============================================================================+
 
- [1mREPORT[0m 
+ [1mREPORT[0m
 
   Safety [1mv3.7.0[0m is scanning for [1mVulnerabilities[0m[1m...[0m
 [1m  Scanning dependencies[0m in your [1mfiles:[0m
@@ -52,7 +52,7 @@
 [1m  0[0m[1m vulnerabilities ignored[0m
 +==============================================================================+
 
- [32m[1mNo known security vulnerabilities reported.[0m 
+ [32m[1mNo known security vulnerabilities reported.[0m
 
 +==============================================================================+[0m
 
@@ -67,5 +67,3 @@
 
 
 [33m[1m+===========================================================================================================================================================================================+[0m
-
-

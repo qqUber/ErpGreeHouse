@@ -721,7 +721,7 @@ async def cmd_help(message: Message) -> None:
 async def cmd_delete(message: Message) -> None:
     """Handle /delete command - delete user profile."""
     # Check if user is registered
-    consents = get_customer_consents("tg", message.from_user.id)
+    consents = _get_customer_consents("tg", message.from_user.id)
 
     if not consents.get("data_processing_allowed"):
         await message.answer("Вы ещё не зарегистрированы. Используйте /start")
@@ -756,7 +756,7 @@ async def handle_delete_confirmation(callback: CallbackQuery) -> None:
             await client.delete_telegram_client(callback.from_user.id)
 
             # Cleanup user data - don't log refusal since it's a deliberate deletion
-            cleanup_user_data("tg", callback.from_user.id, log_refusal=False)
+            _cleanup_user_data("tg", callback.from_user.id, log_refusal=False)
 
             await callback.message.edit_text(
                 "Ваш профиль и все данные удалены в соответствии с 152-ФЗ."

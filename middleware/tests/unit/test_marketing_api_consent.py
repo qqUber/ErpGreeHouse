@@ -6,8 +6,9 @@ Tests cover:
 - Marketing consent filtering logic
 """
 
-import pytest
 from datetime import datetime
+
+import pytest
 
 
 class TestGetCustomersWithConsent:
@@ -22,16 +23,22 @@ class TestGetCustomersWithConsent:
         conn = db.connect()
 
         # Create customers - some with consent, some without
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO customers (phone, full_name, telegram_id, qr_token, marketing_allowed)
             VALUES (?, ?, ?, ?, ?)
-        """, ("+79991234567", "User With Consent", 111111, "qr1", 1))
-        
-        conn.execute("""
+        """,
+            ("+79991234567", "User With Consent", 111111, "qr1", 1),
+        )
+
+        conn.execute(
+            """
             INSERT INTO customers (phone, full_name, telegram_id, qr_token, marketing_allowed)
             VALUES (?, ?, ?, ?, ?)
-        """, ("+79991234568", "User Without Consent", 111112, "qr2", 0))
-        
+        """,
+            ("+79991234568", "User Without Consent", 111112, "qr2", 0),
+        )
+
         conn.commit()
         conn.close()
 
@@ -50,11 +57,14 @@ class TestGetCustomersWithConsent:
         conn = db.connect()
 
         # Create customer with VK only
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO customers (phone, full_name, vk_id, qr_token, marketing_allowed)
             VALUES (?, ?, ?, ?, ?)
-        """, ("+79991234567", "VK User", 222222, "qr_vk", 1))
-        
+        """,
+            ("+79991234567", "VK User", 222222, "qr_vk", 1),
+        )
+
         conn.commit()
         conn.close()
 
@@ -72,11 +82,14 @@ class TestGetCustomersWithConsent:
         conn = db.connect()
 
         # Create customer with no telegram_id or vk_id but has consent
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO customers (phone, full_name, qr_token, marketing_allowed)
             VALUES (?, ?, ?, ?)
-        """, ("+79991234567", "No Channel User", "qr_no_channel", 1))
-        
+        """,
+            ("+79991234567", "No Channel User", "qr_no_channel", 1),
+        )
+
         conn.commit()
         conn.close()
 
@@ -94,11 +107,14 @@ class TestGetCustomersWithConsent:
 
         # Create multiple customers with consent
         for i in range(5):
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO customers (phone, full_name, telegram_id, qr_token, marketing_allowed)
                 VALUES (?, ?, ?, ?, ?)
-            """, (f"+799912345{i:02d}", f"User {i}", 111100 + i, f"qr{i}", 1))
-        
+            """,
+                (f"+799912345{i:02d}", f"User {i}", 111100 + i, f"qr{i}", 1),
+            )
+
         conn.commit()
         conn.close()
 
@@ -116,11 +132,14 @@ class TestGetCustomersWithConsent:
 
         # Create multiple customers with consent
         for i in range(5):
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO customers (phone, full_name, telegram_id, qr_token, marketing_allowed)
                 VALUES (?, ?, ?, ?, ?)
-            """, (f"+799912345{i:02d}", f"User {i}", 111100 + i, f"qr{i}", 1))
-        
+            """,
+                (f"+799912345{i:02d}", f"User {i}", 111100 + i, f"qr{i}", 1),
+            )
+
         conn.commit()
         conn.close()
 
@@ -145,11 +164,14 @@ class TestGetCustomersWithConsent:
         db = get_db()
         conn = db.connect()
 
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO customers (phone, full_name, telegram_id, qr_token, marketing_allowed)
             VALUES (?, ?, ?, ?, ?)
-        """, ("+79991234567", "Test User", 111111, "qr1", 1))
-        
+        """,
+            ("+79991234567", "Test User", 111111, "qr1", 1),
+        )
+
         conn.commit()
         conn.close()
 

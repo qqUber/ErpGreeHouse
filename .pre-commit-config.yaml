@@ -26,7 +26,7 @@ repos:
     rev: 23.3.0
     hooks:
       - id: black
-        language_version: python3.11
+        language_version: python3
         files: \.py$
         exclude: ^(tests/|reports/|.venv/|venv/|vendor/|node_modules/)
 
@@ -55,7 +55,7 @@ repos:
     rev: v1.8.0
     hooks:
       - id: mypy
-        additional_dependencies: [types-all]
+        additional_dependencies: [types-requests]
         args: ['--config-file=middleware/mypy.ini', '--ignore-missing-imports']
         files: ^middleware/app/
         exclude: ^(tests/|\.venv/|venv/|vendor/|node_modules/)

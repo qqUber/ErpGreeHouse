@@ -1,10 +1,10 @@
 import pytest
 from app.loyalty import (
-    Tier,
     LoyaltyRules,
-    get_tier,
+    Tier,
     calc_earned_points,
     clamp_redeem_points,
+    get_tier,
 )
 
 

@@ -296,7 +296,7 @@ let isRefreshing = false;
 let refreshRetryCount = 0;
 const MAX_REFRESH_RETRIES = 3;
 const REFRESH_RETRY_DELAY_MS = 500;
-let pendingRequests: Array<() => void> = [];
+let pendingRequests: Array<(success: boolean) => void> = [];
 
 // Event listener for aborting requests on navigation
 const AbortControllers = new Map<string, AbortController>();
@@ -305,8 +305,8 @@ const AbortControllers = new Map<string, AbortController>();
  * Process queued requests after token refresh
  */
 function processQueue(success: boolean) {
-  pendingRequests.forEach((resolve) => {
-    resolve();
+  pendingRequests.forEach((callback) => {
+    callback(success);
   });
   pendingRequests = [];
 }
@@ -319,8 +319,8 @@ export function clearPendingRequests() {
     controller.abort();
   });
   AbortControllers.clear();
-  pendingRequests.forEach((resolve) => {
-    resolve();
+  pendingRequests.forEach((callback) => {
+    callback(false);
   });
   pendingRequests = [];
 }
@@ -418,7 +418,11 @@ export async function fetchWithAuth(
       if (isRefreshing) {
         console.log('[fetchWithAuth] Token refresh in progress, queuing request...');
         return new Promise((resolve, reject) => {
-          pendingRequests.push(async () => {
+          pendingRequests.push(async (refreshSuccess: boolean) => {
+            if (!refreshSuccess) {
+              reject(new Error('Token refresh failed'));
+              return;
+            }
             try {
               // Retry the request with new token
               const retryResponse = await fetch(`${baseUrl()}${url}`, fetchOptions);
@@ -506,12 +510,18 @@ export async function fetchWithAuth(
   };
 
   try {
-    return await makeRequest();
-  } finally {
-    // Clean up abort controller reference
+    const response = await makeRequest();
+    // Clean up abort controller on success
     if (controller) {
       AbortControllers.delete(id);
     }
+    return response;
+  } catch (error) {
+    // Clean up abort controller on error
+    if (controller) {
+      AbortControllers.delete(id);
+    }
+    throw error;
   }
 }
 

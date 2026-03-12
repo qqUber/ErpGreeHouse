@@ -22,14 +22,14 @@
       "currency_code": "RSD"
     }
   ],
-  "default_locale": "ru",
+  "default_locale": "en",
   "fallback_locale": "en",
   "test_scenarios": [
     {
       "scenario": "Default locale",
       "input": {},
-      "expected_code": "ru",
-      "expected_name": "Русский"
+      "expected_code": "en",
+      "expected_name": "English"
     },
     {
       "scenario": "Query parameter override",

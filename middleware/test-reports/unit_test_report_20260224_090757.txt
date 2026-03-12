@@ -139,11 +139,11 @@ self = <test_jwt_comprehensive.TestJWTTokenCreation object at 0x0000021413EC20D0
             "username": "test_user",
             "role": "admin"
         }
-    
+
 >       token = create_access_token(admin)
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:41: 
+tests\unit\test_jwt_comprehensive.py:41:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -158,7 +158,7 @@ role = 'admin'
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -180,11 +180,11 @@ self = <test_jwt_comprehensive.TestJWTTokenCreation object at 0x0000021413EEE3F0
     def test_create_access_token_missing_fields(self):
         """Test access token creation with missing optional fields"""
         admin = {"user_id": 1}  # Minimal admin dict
-    
+
 >       token = create_access_token(admin)
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:75: 
+tests\unit\test_jwt_comprehensive.py:75:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -199,7 +199,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -221,11 +221,11 @@ self = <test_jwt_comprehensive.TestJWTTokenCreation object at 0x0000021413F16330
     def test_token_expiration_times(self):
         """Test that tokens have correct expiration times"""
         admin = {"user_id": 1}
-    
+
 >       access_token = create_access_token(admin)
                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:108: 
+tests\unit\test_jwt_comprehensive.py:108:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -240,7 +240,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -266,11 +266,11 @@ self = <test_jwt_comprehensive.TestJWTTokenValidation object at 0x0000021413EC23
             "username": "test_user",
             "role": "admin"
         }
-    
+
 >       token = create_access_token(admin)
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:141: 
+tests\unit\test_jwt_comprehensive.py:141:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -285,7 +285,7 @@ role = 'admin'
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -310,7 +310,7 @@ self = <test_jwt_comprehensive.TestJWTTokenValidation object at 0x0000021413EEE7
 >       token = create_access_token(admin)
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:178: 
+tests\unit\test_jwt_comprehensive.py:178:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -325,7 +325,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -350,7 +350,7 @@ self = <test_jwt_comprehensive.TestJWTTokenValidation object at 0x0000021413EE5B
 >       access_token = create_access_token(admin)
                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:200: 
+tests\unit\test_jwt_comprehensive.py:200:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -365,7 +365,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -390,7 +390,7 @@ self = <test_jwt_comprehensive.TestJWTDecode object at 0x0000021413EC2710>
 >       token = create_access_token(admin)
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:227: 
+tests\unit\test_jwt_comprehensive.py:227:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -405,7 +405,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -430,7 +430,7 @@ self = <test_jwt_comprehensive.TestJWTDecode object at 0x0000021413EEE8B0>
 >       token = create_access_token(admin)
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:257: 
+tests\unit\test_jwt_comprehensive.py:257:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -445,7 +445,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -472,11 +472,11 @@ self = <test_jwt_comprehensive.TestGetAdminFromJWT object at 0x0000021413EEEB10>
             "role": None,
             "permissions": None
         }
-    
+
 >       admin = get_admin_from_jwt(payload)
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:319: 
+tests\unit\test_jwt_comprehensive.py:319:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 payload = {'permissions': None, 'role': None, 'sub': None, 'username': None}
@@ -505,7 +505,7 @@ keywargs = {}
                                     args,
                                     keywargs) as (newargs, newkeywargs):
 
-..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py:1429: 
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py:1429:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 ..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\contextlib.py:141: in __enter__
     return next(self.gen)
@@ -526,20 +526,20 @@ self = <unittest.mock._patch object at 0x0000021413ECB3F0>
     def get_original(self):
         target = self.getter()
         name = self.attribute
-    
+
         original = DEFAULT
         local = False
-    
+
         try:
             original = target.__dict__[name]
         except (AttributeError, KeyError):
             original = getattr(target, name, DEFAULT)
         else:
             local = True
-    
+
         if name in _builtins and isinstance(target, ModuleType):
             self.create = True
-    
+
         if not self.create and original is DEFAULT:
 >           raise AttributeError(
                 "%s does not have the attribute %r" % (target, name)
@@ -558,7 +558,7 @@ keywargs = {}
                                     args,
                                     keywargs) as (newargs, newkeywargs):
 
-..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py:1429: 
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\unittest\mock.py:1429:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 ..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\contextlib.py:141: in __enter__
     return next(self.gen)
@@ -579,20 +579,20 @@ self = <unittest.mock._patch object at 0x0000021413ECACF0>
     def get_original(self):
         target = self.getter()
         name = self.attribute
-    
+
         original = DEFAULT
         local = False
-    
+
         try:
             original = target.__dict__[name]
         except (AttributeError, KeyError):
             original = getattr(target, name, DEFAULT)
         else:
             local = True
-    
+
         if name in _builtins and isinstance(target, ModuleType):
             self.create = True
-    
+
         if not self.create and original is DEFAULT:
 >           raise AttributeError(
                 "%s does not have the attribute %r" % (target, name)
@@ -622,7 +622,7 @@ self = <test_jwt_comprehensive.TestSecurityEdgeCases object at 0x0000021413EC2D5
 >       valid_token = create_access_token(admin)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:370: 
+tests\unit\test_jwt_comprehensive.py:370:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -637,7 +637,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -662,7 +662,7 @@ self = <test_jwt_comprehensive.TestSecurityEdgeCases object at 0x0000021413EC2E9
 >       original_token = create_access_token(admin)
                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:389: 
+tests\unit\test_jwt_comprehensive.py:389:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -677,7 +677,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -704,12 +704,12 @@ self = <test_jwt_comprehensive.TestJWTIntegration object at 0x0000021413EC2FD0>
             "username": "integration_test",
             "role": "admin"
         }
-    
+
         # Create token
 >       token = create_access_token(original_admin)
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:464: 
+tests\unit\test_jwt_comprehensive.py:464:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -724,7 +724,7 @@ role = 'admin'
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -746,11 +746,11 @@ self = <test_jwt_comprehensive.TestJWTIntegration object at 0x0000021413EEF100>
     def test_token_type_separation(self):
         """Test that access and refresh tokens are properly separated"""
         admin = {"user_id": 1}
-    
+
 >       access_token = create_access_token(admin)
                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:500: 
+tests\unit\test_jwt_comprehensive.py:500:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -765,7 +765,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -789,19 +789,19 @@ mock_datetime = <MagicMock name='datetime' id='2285283378240'>
     def test_token_expiration_edge_cases(self, mock_datetime):
         """Test token expiration edge cases"""
         settings = get_settings()
-    
+
         # Set up mock time
         base_time = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         mock_datetime.now.return_value = base_time
         mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)
-    
+
         admin = {"user_id": 1}
-    
+
         # Create token
 >       token = create_access_token(admin)
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:522: 
+tests\unit\test_jwt_comprehensive.py:522:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -816,7 +816,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -839,26 +839,26 @@ jwt = b'invalid.token.here'
     def _load(self, jwt: str | bytes) -> tuple[bytes, bytes, dict[str, Any], bytes]:
         if isinstance(jwt, str):
             jwt = jwt.encode("utf-8")
-    
+
         if not isinstance(jwt, bytes):
             raise DecodeError(f"Invalid token type. Token must be a {bytes}")
-    
+
         try:
             signing_input, crypto_segment = jwt.rsplit(b".", 1)
             header_segment, payload_segment = signing_input.split(b".", 1)
         except ValueError as err:
             raise DecodeError("Not enough segments") from err
-    
+
         try:
             header_data = base64url_decode(header_segment)
         except (TypeError, binascii.Error) as err:
             raise DecodeError("Invalid header padding") from err
-    
+
         try:
 >           header = json.loads(header_data)
                      ^^^^^^^^^^^^^^^^^^^^^^^
 
-..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jws.py:268: 
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jws.py:268:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 s = b"\x8a{\xda\x96'", cls = None, object_hook = None, parse_float = None
@@ -868,34 +868,34 @@ parse_int = None, parse_constant = None, object_pairs_hook = None, kw = {}
             parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
         """Deserialize ``s`` (a ``str``, ``bytes`` or ``bytearray`` instance
         containing a JSON document) to a Python object.
-    
+
         ``object_hook`` is an optional function that will be called with the
         result of any object literal decode (a ``dict``). The return value of
         ``object_hook`` will be used instead of the ``dict``. This feature
         can be used to implement custom decoders (e.g. JSON-RPC class hinting).
-    
+
         ``object_pairs_hook`` is an optional function that will be called with
         the result of any object literal decoded with an ordered list of pairs.
         The return value of ``object_pairs_hook`` will be used instead of the
         ``dict``.  This feature can be used to implement custom decoders.  If
         ``object_hook`` is also defined, the ``object_pairs_hook`` takes
         priority.
-    
+
         ``parse_float``, if specified, will be called with the string
         of every JSON float to be decoded. By default this is equivalent to
         float(num_str). This can be used to use another datatype or parser
         for JSON floats (e.g. decimal.Decimal).
-    
+
         ``parse_int``, if specified, will be called with the string
         of every JSON int to be decoded. By default this is equivalent to
         int(num_str). This can be used to use another datatype or parser
         for JSON integers (e.g. float).
-    
+
         ``parse_constant``, if specified, will be called with one of the
         following strings: -Infinity, Infinity, NaN.
         This can be used to raise an exception if invalid JSON numbers
         are encountered.
-    
+
         To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
         kwarg; otherwise ``JSONDecoder`` is used.
         """
@@ -925,7 +925,7 @@ token = 'invalid.token.here'
 >           payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-app\auth.py:58: 
+app\auth.py:58:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 ..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jwt.py:210: in decode
     decoded = self.decode_complete(
@@ -942,21 +942,21 @@ jwt = b'invalid.token.here'
     def _load(self, jwt: str | bytes) -> tuple[bytes, bytes, dict[str, Any], bytes]:
         if isinstance(jwt, str):
             jwt = jwt.encode("utf-8")
-    
+
         if not isinstance(jwt, bytes):
             raise DecodeError(f"Invalid token type. Token must be a {bytes}")
-    
+
         try:
             signing_input, crypto_segment = jwt.rsplit(b".", 1)
             header_segment, payload_segment = signing_input.split(b".", 1)
         except ValueError as err:
             raise DecodeError("Not enough segments") from err
-    
+
         try:
             header_data = base64url_decode(header_segment)
         except (TypeError, binascii.Error) as err:
             raise DecodeError("Invalid header padding") from err
-    
+
         try:
             header = json.loads(header_data)
         except ValueError as e:
@@ -976,7 +976,7 @@ mock_logger = <MagicMock name='logger' id='2285283380592'>
         try:
 >           decode_token("invalid.token.here")
 
-tests\unit\test_jwt_comprehensive.py:566: 
+tests\unit\test_jwt_comprehensive.py:566:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 token = 'invalid.token.here'
@@ -1031,7 +1031,7 @@ role = 'admin', expected_permissions = ['read', 'write', 'delete']
 >       permissions = _get_role_permissions(role)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:597: 
+tests\unit\test_jwt_comprehensive.py:597:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:251: in _get_role_permissions
     return get_role_permissions(role)
@@ -1043,7 +1043,7 @@ role = 'admin'
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1072,7 +1072,7 @@ role = 'user', expected_permissions = ['read']
 >       permissions = _get_role_permissions(role)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:597: 
+tests\unit\test_jwt_comprehensive.py:597:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:251: in _get_role_permissions
     return get_role_permissions(role)
@@ -1084,7 +1084,7 @@ role = 'user'
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1113,7 +1113,7 @@ role = 'guest', expected_permissions = ['read']
 >       permissions = _get_role_permissions(role)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:597: 
+tests\unit\test_jwt_comprehensive.py:597:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:251: in _get_role_permissions
     return get_role_permissions(role)
@@ -1125,7 +1125,7 @@ role = 'guest'
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1154,7 +1154,7 @@ role = 'unknown', expected_permissions = ['read']
 >       permissions = _get_role_permissions(role)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:597: 
+tests\unit\test_jwt_comprehensive.py:597:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:251: in _get_role_permissions
     return get_role_permissions(role)
@@ -1166,7 +1166,7 @@ role = 'unknown'
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1195,7 +1195,7 @@ role = '', expected_permissions = ['read']
 >       permissions = _get_role_permissions(role)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:597: 
+tests\unit\test_jwt_comprehensive.py:597:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:251: in _get_role_permissions
     return get_role_permissions(role)
@@ -1207,7 +1207,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1236,7 +1236,7 @@ role = None, expected_permissions = ['read']
 >       permissions = _get_role_permissions(role)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:597: 
+tests\unit\test_jwt_comprehensive.py:597:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:251: in _get_role_permissions
     return get_role_permissions(role)
@@ -1248,7 +1248,7 @@ role = None
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1271,12 +1271,12 @@ validation_func = <function validate_access_token at 0x0000021413F36770>
     def test_token_type_validation_parametrized(token_type, validation_func):
         """Test token validation for different token types"""
         admin = {"user_id": 1}
-    
+
         if token_type == "access":
 >           token = create_access_token(admin)
                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_comprehensive.py:610: 
+tests\unit\test_jwt_comprehensive.py:610:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -1291,7 +1291,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1313,12 +1313,12 @@ self = <test_jwt_security.TestJWTTimingAttacks object at 0x0000021413EC3750>
     def test_token_validation_timing_consistency(self):
         """Test that token validation timing is consistent regardless of token validity"""
         # This is a basic timing test - in production you'd use more sophisticated tools
-    
+
         admin = {"user_id": 1}
 >       valid_token = create_access_token(admin)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_security.py:35: 
+tests\unit\test_jwt_security.py:35:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -1333,7 +1333,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1357,12 +1357,12 @@ self = <test_jwt_security.TestJWTTimingAttacks object at 0x0000021413EEF5C0>
         # Create tokens with different secrets
         settings = get_settings()
         admin = {"user_id": 1}
-    
+
         # Token with correct secret
 >       valid_token = create_access_token(admin)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_security.py:99: 
+tests\unit\test_jwt_security.py:99:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -1377,7 +1377,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1400,12 +1400,12 @@ self = <test_jwt_security.TestJWTAlgorithmAttacks object at 0x0000021413EC3B10>
         """Test prevention of algorithm confusion attacks"""
         settings = get_settings()
         admin = {"user_id": 1}
-    
+
         # Create token with expected algorithm
 >       valid_token = create_access_token(admin)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_security.py:164: 
+tests\unit\test_jwt_security.py:164:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -1420,7 +1420,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1442,13 +1442,13 @@ self = <test_jwt_security.TestJWTAlgorithmAttacks object at 0x0000021413EEF6F0>
     def test_key_confusion_attack_prevention(self):
         """Test prevention of key confusion attacks"""
         settings = get_settings()
-    
+
         # Create token with correct key
         admin = {"user_id": 1}
 >       valid_token = create_access_token(admin)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_security.py:203: 
+tests\unit\test_jwt_security.py:203:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -1463,7 +1463,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1488,7 +1488,7 @@ self = <test_jwt_security.TestJWTPayloadInjection object at 0x0000021413EC3C50>
 >       original_token = create_access_token(admin)
                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_security.py:228: 
+tests\unit\test_jwt_security.py:228:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -1503,7 +1503,7 @@ role = 'user'
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1529,7 +1529,7 @@ self = <test_jwt_security.TestJWTPayloadInjection object at 0x0000021413EC3D90>
 >       user_token = create_access_token(admin)
                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_security.py:248: 
+tests\unit\test_jwt_security.py:248:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -1544,7 +1544,7 @@ role = 'user'
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1569,7 +1569,7 @@ self = <test_jwt_security.TestJWTPayloadInjection object at 0x0000021413EEF820>
 >       original_token = create_access_token(admin)
                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_security.py:280: 
+tests\unit\test_jwt_security.py:280:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -1584,7 +1584,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1607,12 +1607,12 @@ self = <test_jwt_security.TestJWTReplayAttacks object at 0x0000021413EC3ED0>
         """Test that tokens can be reused within their valid timeframe"""
         # Note: JWT tokens are stateless, so replay protection requires additional mechanisms
         # This test verifies the current behavior (tokens can be reused)
-    
+
         admin = {"user_id": 1}
 >       token = create_access_token(admin)
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_security.py:315: 
+tests\unit\test_jwt_security.py:315:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -1627,7 +1627,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1651,10 +1651,10 @@ self = <test_jwt_security.TestJWTReplayAttacks object at 0x0000021413FB0050>
         # Create token with very short expiration
         settings = get_settings()
         admin = {"user_id": 1}
-    
+
         # Create token that expires immediately
         expire = datetime.now(timezone.utc) + timedelta(milliseconds=100)
-    
+
         payload = {
             "sub": "1",
             "username": "test",
@@ -1663,9 +1663,9 @@ self = <test_jwt_security.TestJWTReplayAttacks object at 0x0000021413FB0050>
             "exp": expire,
             "iat": datetime.now(timezone.utc)
         }
-    
+
         short_lived_token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
-    
+
         # Should be valid immediately
         result = validate_access_token(short_lived_token)
 >       assert result is not None
@@ -1689,12 +1689,12 @@ self = <test_jwt_security.TestJWTReplayAttacks object at 0x0000021413EEF950>
     def test_concurrent_token_validation(self):
         """Test concurrent token validation (thread safety)"""
         import threading
-    
+
         admin = {"user_id": 1}
 >       token = create_access_token(admin)
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_security.py:359: 
+tests\unit\test_jwt_security.py:359:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -1709,7 +1709,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1731,7 +1731,7 @@ self = <test_jwt_security.TestJWTCryptographicStrength object at 0x0000021413EEF
     def test_token_uniqueness(self):
         """Test that tokens are unique even for same payload"""
         admin = {"user_id": 1, "username": "test", "role": "user"}
-    
+
         # Create multiple tokens with same payload
         tokens = []
         for _ in range(5):
@@ -1740,7 +1740,7 @@ self = <test_jwt_security.TestJWTCryptographicStrength object at 0x0000021413EEF
 >           token = create_access_token(admin)
                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_security.py:438: 
+tests\unit\test_jwt_security.py:438:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -1755,7 +1755,7 @@ role = 'user'
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -1778,26 +1778,26 @@ jwt = b'invalid.token.format'
     def _load(self, jwt: str | bytes) -> tuple[bytes, bytes, dict[str, Any], bytes]:
         if isinstance(jwt, str):
             jwt = jwt.encode("utf-8")
-    
+
         if not isinstance(jwt, bytes):
             raise DecodeError(f"Invalid token type. Token must be a {bytes}")
-    
+
         try:
             signing_input, crypto_segment = jwt.rsplit(b".", 1)
             header_segment, payload_segment = signing_input.split(b".", 1)
         except ValueError as err:
             raise DecodeError("Not enough segments") from err
-    
+
         try:
             header_data = base64url_decode(header_segment)
         except (TypeError, binascii.Error) as err:
             raise DecodeError("Invalid header padding") from err
-    
+
         try:
 >           header = json.loads(header_data)
                      ^^^^^^^^^^^^^^^^^^^^^^^
 
-..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jws.py:268: 
+..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jws.py:268:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 s = b"\x8a{\xda\x96'", cls = None, object_hook = None, parse_float = None
@@ -1807,34 +1807,34 @@ parse_int = None, parse_constant = None, object_pairs_hook = None, kw = {}
             parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
         """Deserialize ``s`` (a ``str``, ``bytes`` or ``bytearray`` instance
         containing a JSON document) to a Python object.
-    
+
         ``object_hook`` is an optional function that will be called with the
         result of any object literal decode (a ``dict``). The return value of
         ``object_hook`` will be used instead of the ``dict``. This feature
         can be used to implement custom decoders (e.g. JSON-RPC class hinting).
-    
+
         ``object_pairs_hook`` is an optional function that will be called with
         the result of any object literal decoded with an ordered list of pairs.
         The return value of ``object_pairs_hook`` will be used instead of the
         ``dict``.  This feature can be used to implement custom decoders.  If
         ``object_hook`` is also defined, the ``object_pairs_hook`` takes
         priority.
-    
+
         ``parse_float``, if specified, will be called with the string
         of every JSON float to be decoded. By default this is equivalent to
         float(num_str). This can be used to use another datatype or parser
         for JSON floats (e.g. decimal.Decimal).
-    
+
         ``parse_int``, if specified, will be called with the string
         of every JSON int to be decoded. By default this is equivalent to
         int(num_str). This can be used to use another datatype or parser
         for JSON integers (e.g. float).
-    
+
         ``parse_constant``, if specified, will be called with one of the
         following strings: -Infinity, Infinity, NaN.
         This can be used to raise an exception if invalid JSON numbers
         are encountered.
-    
+
         To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
         kwarg; otherwise ``JSONDecoder`` is used.
         """
@@ -1864,7 +1864,7 @@ token = 'invalid.token.format'
 >           payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-app\auth.py:58: 
+app\auth.py:58:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 ..\..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jwt.py:210: in decode
     decoded = self.decode_complete(
@@ -1881,21 +1881,21 @@ jwt = b'invalid.token.format'
     def _load(self, jwt: str | bytes) -> tuple[bytes, bytes, dict[str, Any], bytes]:
         if isinstance(jwt, str):
             jwt = jwt.encode("utf-8")
-    
+
         if not isinstance(jwt, bytes):
             raise DecodeError(f"Invalid token type. Token must be a {bytes}")
-    
+
         try:
             signing_input, crypto_segment = jwt.rsplit(b".", 1)
             header_segment, payload_segment = signing_input.split(b".", 1)
         except ValueError as err:
             raise DecodeError("Not enough segments") from err
-    
+
         try:
             header_data = base64url_decode(header_segment)
         except (TypeError, binascii.Error) as err:
             raise DecodeError("Invalid header padding") from err
-    
+
         try:
             header = json.loads(header_data)
         except ValueError as e:
@@ -1916,7 +1916,7 @@ self = <test_jwt_security.TestJWTErrorInformationLeakage object at 0x0000021413F
             ("tampered.signature.token", "signature verification failed"),
             ("expired.token", "token expired"),
         ]
-    
+
         for token_desc, expected_error in test_cases:
             # Create appropriate invalid token
             if "malformed" in token_desc:
@@ -1937,11 +1937,11 @@ self = <test_jwt_security.TestJWTErrorInformationLeakage object at 0x0000021413F
                 invalid_token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
             else:
                 invalid_token = token_desc
-    
+
             try:
 >               decode_token(invalid_token)
 
-tests\unit\test_jwt_security.py:479: 
+tests\unit\test_jwt_security.py:479:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 token = 'invalid.token.format'
@@ -1975,7 +1975,7 @@ self = <test_jwt_security.TestJWTErrorInformationLeakage object at 0x0000021413F
             ("tampered.signature.token", "signature verification failed"),
             ("expired.token", "token expired"),
         ]
-    
+
         for token_desc, expected_error in test_cases:
             # Create appropriate invalid token
             if "malformed" in token_desc:
@@ -1996,7 +1996,7 @@ self = <test_jwt_security.TestJWTErrorInformationLeakage object at 0x0000021413F
                 invalid_token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
             else:
                 invalid_token = token_desc
-    
+
             try:
                 decode_token(invalid_token)
                 assert False, f"Expected exception for {token_desc}"
@@ -2021,7 +2021,7 @@ self = <test_jwt_security.TestJWTErrorInformationLeakage object at 0x0000021413F
 >       valid_token = create_access_token(admin)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests\unit\test_jwt_security.py:491: 
+tests\unit\test_jwt_security.py:491:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 app\auth.py:25: in create_access_token
     permissions = _get_role_permissions(role)
@@ -2036,7 +2036,7 @@ role = ''
     def get_role_permissions(role: str) -> list[str]:
         if role == "owner":
             return ["*"]
-    
+
         db = get_db()
         conn = db.connect()
         try:
@@ -2058,17 +2058,17 @@ _______________________ test_real_search_functionality ________________________
         print("\n" + "=" * 60)
         print("Testing Actual Search Functionality")
         print("=" * 60)
-    
+
         # Check what the actual code does
         from app.db import get_db_path
         db_path = get_db_path()
-    
+
         if not Path(db_path).exists():
             pytest.skip(f"Database not found at {db_path}")
-    
+
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
-    
+
         # Check if there are any customers with Cyrillic/Serbian names
 >       cursor = conn.execute("SELECT full_name FROM customers LIMIT 100")
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2088,23 +2088,23 @@ tests/unit/test_analytics.py::test_sales_stats_no_auth
 tests/unit/test_analytics.py::test_sales_stats_no_auth
 tests/unit/test_analytics.py::test_sales_stats_no_auth
 tests/unit/test_analytics.py::test_sales_stats_with_secret
-  c:\Users\AASS\IdeaProjects\ErpGreeHouse\middleware\app\main.py:264: DeprecationWarning: 
+  c:\Users\AASS\IdeaProjects\ErpGreeHouse\middleware\app\main.py:264: DeprecationWarning:
           on_event is deprecated, use lifespan event handlers instead.
-  
+
           Read more about it in the
           [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
-          
+
     @app.on_event("startup")
 
 tests/unit/test_analytics.py::test_sales_stats_no_auth
 tests/unit/test_analytics.py::test_sales_stats_no_auth
 tests/unit/test_analytics.py::test_sales_stats_with_secret
-  c:\Users\AASS\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\applications.py:4573: DeprecationWarning: 
+  c:\Users\AASS\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\applications.py:4573: DeprecationWarning:
           on_event is deprecated, use lifespan event handlers instead.
-  
+
           Read more about it in the
           [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
-          
+
     return self.router.on_event(event_type)
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html

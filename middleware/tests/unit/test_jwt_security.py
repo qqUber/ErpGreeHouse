@@ -3,26 +3,26 @@ JWT security tests - comprehensive security validation
 Tests for various JWT security vulnerabilities and attack vectors
 """
 
-import pytest
-import jwt
-import time
-import hmac
-import hashlib
 import base64
+import hashlib
+import hmac
 import json
+import time
 from datetime import datetime, timedelta, timezone
-from unittest.mock import Mock, patch, MagicMock
-from fastapi import HTTPException
+from unittest.mock import MagicMock, Mock, patch
 
+import jwt
+import pytest
 from app.auth import (
     create_access_token,
     create_refresh_token,
+    decode_token,
     validate_access_token,
     validate_refresh_token,
-    decode_token,
 )
 from app.config import get_settings
 from app.security import constant_time_equals
+from fastapi import HTTPException
 
 
 class TestJWTTimingAttacks:

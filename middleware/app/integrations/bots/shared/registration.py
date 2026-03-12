@@ -242,9 +242,9 @@ class RegistrationFlow:
 
                 conn.execute(
                     """
-                    INSERT INTO customers 
-                    (phone, full_name, {0}_id, qr_token, preferred_channel, 
-                     marketing_allowed, data_processing_allowed, balance_points, 
+                    INSERT INTO customers
+                    (phone, full_name, {0}_id, qr_token, preferred_channel,
+                     marketing_allowed, data_processing_allowed, balance_points,
                      created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, 0, datetime('now'), datetime('now'))
                     """.format(self.source),

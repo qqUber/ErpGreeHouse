@@ -13,31 +13,27 @@ Modules:
 - base: Abstract base class for bot adapters
 """
 
-from .keys import consent_key, registration_key, cart_key
+from .base import BaseBotAdapter
+from .commands import cmd_revoke_consent, cmd_start, cmd_subscribe
 from .consent import (
-    store_consent,
-    get_customer_consents,
-    cleanup_user_data,
-    update_consent,
-    find_customer_by_platform,
-    get_customer_id,
     CURRENT_POLICY_VERSION,
-)
-from .registration import RegistrationFlow, get_consent_text, get_marketing_consent_text
-from .commands import (
-    cmd_start,
-    cmd_subscribe,
-    cmd_revoke_consent,
+    cleanup_user_data,
+    find_customer_by_platform,
+    get_customer_consents,
+    get_customer_id,
+    store_consent,
+    update_consent,
 )
 from .keyboards import (
     CONSENT_BUTTONS,
     MARKETING_BUTTONS,
+    format_telegram_keyboard,
+    format_vk_keyboard,
     get_consent_buttons,
     get_marketing_buttons,
-    format_vk_keyboard,
-    format_telegram_keyboard,
 )
-from .base import BaseBotAdapter
+from .keys import cart_key, consent_key, registration_key
+from .registration import RegistrationFlow, get_consent_text, get_marketing_consent_text
 
 __all__ = [
     # Keys

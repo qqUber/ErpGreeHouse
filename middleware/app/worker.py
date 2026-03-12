@@ -1,13 +1,19 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 import asyncio
 import json
 from typing import Any
-from celery import Celery
-from aiogram.types import Update
+
 import httpx
+from aiogram.types import Update
+from celery import Celery
+
 from .config import get_settings
+from .db import get_db
 from .integrations.bots.telegram_handler import create_bot, create_dispatcher
 from .storage import get_redis
-from .db import get_db
 
 settings = get_settings()
 
@@ -66,8 +72,8 @@ def send_vk_message(
     user_id: int, text: str, campaign_id: int = None, customer_id: int = None
 ) -> dict:
     async def runner() -> dict:
-        from app.integrations.bots.vk_handler import get_vk_bot, create_vk_bot
         from app.config import get_settings
+        from app.integrations.bots.vk_handler import create_vk_bot, get_vk_bot
 
         settings = get_settings()
         bot = await get_vk_bot()
@@ -115,8 +121,8 @@ def send_vk_photo_message(
     customer_id: int = None,
 ) -> dict:
     async def runner() -> dict:
-        from app.integrations.bots.vk_handler import get_vk_bot, create_vk_bot
         from app.config import get_settings
+        from app.integrations.bots.vk_handler import create_vk_bot, get_vk_bot
 
         settings = get_settings()
         bot = await get_vk_bot()
@@ -471,9 +477,9 @@ async def safe_send_document(
 
 async def send_media_group(bot, chat_id: int, media_items: list) -> bool:
     try:
-        from aiogram.utils.media_group import MediaGroupBuilder
         from aiogram.methods.send_media_group import SendMediaGroup
         from aiogram.types.input_file import FSInputFile
+        from aiogram.utils.media_group import MediaGroupBuilder
 
         media_group = MediaGroupBuilder()
         for item in media_items:
@@ -590,7 +596,7 @@ def execute_marketing_trigger(
 @celery_app.task
 def process_periodic_marketing() -> dict:
     """Scans for birthdays and inactive customers to fire triggers."""
-    from . import trigger_engine
+    from app import trigger_engine
 
     db = get_db()
     conn = db.connect()
@@ -598,8 +604,8 @@ def process_periodic_marketing() -> dict:
         # Birthday triggers
         # SQLite: strftime('%m-%d', 'now')
         rows = conn.execute("""
-            SELECT id FROM customers 
-            WHERE birthday IS NOT NULL 
+            SELECT id FROM customers
+            WHERE birthday IS NOT NULL
             AND strftime('%m-%d', birthday) = strftime('%m-%d', 'now')
         """).fetchall()
         for r in rows:
@@ -609,7 +615,7 @@ def process_periodic_marketing() -> dict:
 
         # Inactive customer triggers
         rows = conn.execute("""
-            SELECT c.id, 
+            SELECT c.id,
                    CAST((julianday('now') - julianday(MAX(t.created_at))) AS INTEGER) as days_inactive
             FROM customers c
             LEFT JOIN transactions t ON c.id = t.customer_id
@@ -625,7 +631,7 @@ def process_periodic_marketing() -> dict:
 
         # Welcome message triggers for new customers
         rows = conn.execute("""
-            SELECT id FROM customers 
+            SELECT id FROM customers
             WHERE created_at >= datetime('now', '-24 hours')
         """).fetchall()
         for r in rows:
@@ -662,8 +668,8 @@ def process_telegram_update(payload: dict) -> dict:
     """Process Telegram webhook updates."""
 
     async def runner() -> dict:
-        from app.integrations.bots.telegram_handler import create_bot, create_dispatcher
         from aiogram.types import Update
+        from app.integrations.bots.telegram_handler import create_bot, create_dispatcher
 
         bot = create_bot()
         dp = create_dispatcher()

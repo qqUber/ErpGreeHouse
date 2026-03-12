@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Initialize test database for E2E tests."""
 
-import sqlite3
 import os
+import sqlite3
 import sys
 
 

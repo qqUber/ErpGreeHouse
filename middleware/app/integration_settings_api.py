@@ -7,14 +7,14 @@ import json
 import secrets
 from typing import Any, Optional
 
-from fastapi import APIRouter, Header, HTTPException, Depends
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from .admin_auth_api import require_jwt_auth
 from .auth import check_roles, require_roles
-from .integrations.bots.telegram_handler import create_bot, create_bot_with_token
 from .config import get_settings
 from .db import get_db
+from .integrations.bots.telegram_handler import create_bot, create_bot_with_token
 from .integrations.bots.vk_handler import validate_vk_token
 
 router = APIRouter(prefix="/api/v1/admin/integrations")
@@ -249,13 +249,14 @@ async def save_vk_settings(
 ) -> dict[str, Any]:
     """Save VK bot settings"""
     require_roles(x_admin_secret, roles=("owner", "marketer"))
-    
+
     # Set VK config for webhook processing
     from .integrations.bots.vk_handler import set_vk_config
+
     set_vk_config(
         access_token=payload.access_token,
         group_id=payload.group_id,
-        api_version=payload.api_version or "5.131"
+        api_version=payload.api_version or "5.131",
     )
 
     db = get_db()
@@ -267,7 +268,7 @@ async def save_vk_settings(
 
         if row:
             conn.execute(
-                """UPDATE vk_settings SET 
+                """UPDATE vk_settings SET
                     access_token=?, group_id=?, api_version=?, enabled=?, updated_at=datetime('now')
                 WHERE id=?""",
                 (

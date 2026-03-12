@@ -5,16 +5,19 @@ These tests verify the Telegram API integration using mocked API calls.
 Uses responses for HTTP mocking of requests calls.
 """
 
-import pytest
-import responses
 import json
 from unittest.mock import patch
+
+import pytest
+import responses
+
 
 @pytest.fixture
 def telegram_api_mock():
     """Fixture to mock Telegram Bot API."""
     with responses.RequestsMock() as rsps:
         yield rsps
+
 
 def test_bot_token_is_valid_mocked(telegram_api_mock):
     """Verify the bot token is valid by calling getMe (mocked with responses)."""
@@ -26,15 +29,24 @@ def test_bot_token_is_valid_mocked(telegram_api_mock):
             "ok": True,
             "result": {"is_bot": True, "username": "test_bot"},
         },
-        status=200
+        status=200,
     )
-    
-    with patch("tests.integration.test_telegram_integration._get_bot_token", return_value="12345:ABCDE"), \
-         patch("tests.integration.test_telegram_integration._require_credentials", return_value=("12345:ABCDE", "-100123456789")):
-        
-        from tests.integration.test_telegram_integration import TestTelegramBotConfiguration
+
+    with patch(
+        "tests.integration.test_telegram_integration._get_bot_token",
+        return_value="12345:ABCDE",
+    ), patch(
+        "tests.integration.test_telegram_integration._require_credentials",
+        return_value=("12345:ABCDE", "-100123456789"),
+    ):
+
+        from tests.integration.test_telegram_integration import (
+            TestTelegramBotConfiguration,
+        )
+
         test_instance = TestTelegramBotConfiguration()
         test_instance.test_bot_token_is_valid()
+
 
 def test_bot_can_access_channel_mocked(telegram_api_mock):
     """Verify bot has access to the configured channel (mocked with responses)."""
@@ -47,18 +59,27 @@ def test_bot_can_access_channel_mocked(telegram_api_mock):
             "result": {
                 "id": int(channel_id),
                 "title": "Test Channel",
-                "type": "supergroup"
+                "type": "supergroup",
             },
         },
-        status=200
+        status=200,
     )
-    
-    with patch("tests.integration.test_telegram_integration._get_bot_token", return_value="12345:ABCDE"), \
-         patch("tests.integration.test_telegram_integration._require_credentials", return_value=("12345:ABCDE", channel_id)):
-        
-        from tests.integration.test_telegram_integration import TestTelegramBotConfiguration
+
+    with patch(
+        "tests.integration.test_telegram_integration._get_bot_token",
+        return_value="12345:ABCDE",
+    ), patch(
+        "tests.integration.test_telegram_integration._require_credentials",
+        return_value=("12345:ABCDE", channel_id),
+    ):
+
+        from tests.integration.test_telegram_integration import (
+            TestTelegramBotConfiguration,
+        )
+
         test_instance = TestTelegramBotConfiguration()
         test_instance.test_bot_can_access_channel()
+
 
 def test_send_text_message_mocked(telegram_api_mock):
     """Test sending a text message (mocked with responses)."""
@@ -71,16 +92,22 @@ def test_send_text_message_mocked(telegram_api_mock):
             "result": {
                 "message_id": 1,
                 "text": "Integration test: Simple text message",
-                "chat": {"id": int(channel_id), "type": "supergroup"}
-            }
+                "chat": {"id": int(channel_id), "type": "supergroup"},
+            },
         },
-        status=200
+        status=200,
     )
-    
-    with patch("tests.integration.test_telegram_integration._get_bot_token", return_value="12345:ABCDE"), \
-         patch("tests.integration.test_telegram_integration._require_credentials", return_value=("12345:ABCDE", channel_id)):
-        
+
+    with patch(
+        "tests.integration.test_telegram_integration._get_bot_token",
+        return_value="12345:ABCDE",
+    ), patch(
+        "tests.integration.test_telegram_integration._require_credentials",
+        return_value=("12345:ABCDE", channel_id),
+    ):
+
         from tests.integration.test_telegram_integration import TestTelegramBotMessaging
+
         test_instance = TestTelegramBotMessaging()
         # The test class might need a real cleanup_messages fixture if it's using it
         # but here we pass an empty list directly

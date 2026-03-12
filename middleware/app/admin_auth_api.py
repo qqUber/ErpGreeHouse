@@ -1,7 +1,7 @@
-import os
-import secrets
 import hashlib
 import logging
+import os
+import secrets
 import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -12,18 +12,18 @@ logger = logging.getLogger(__name__)
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
-from .db import get_db
-from .request_context import get_admin_session_token
-from .security import constant_time_equals, hash_password, new_salt
 from .auth import (
     create_access_token,
     create_refresh_token,
-    validate_access_token,
-    validate_refresh_token,
     get_admin_from_jwt,
     get_role_permissions,
+    validate_access_token,
+    validate_refresh_token,
 )
 from .config import get_settings
+from .db import get_db
+from .request_context import get_admin_session_token
+from .security import constant_time_equals, hash_password, new_salt
 from .storage import get_redis
 
 public_router = APIRouter(prefix="/api/v1/public/auth")
@@ -156,18 +156,18 @@ def _get_jwt_cookie_settings() -> dict[str, Any]:
     # Empty string = use current domain (default for Docker/E2E)
     # "localhost" = only send to localhost (breaks in Docker with different hostnames)
     cookie_domain = os.getenv("ADMIN_COOKIE_DOMAIN", "")
-    
+
     cookie_settings = {
         "httponly": True,
         "samesite": "lax",
         "secure": cookie_secure,
         "path": "/",
     }
-    
+
     # Only set domain if explicitly configured (not empty)
     if cookie_domain:
         cookie_settings["domain"] = cookie_domain
-    
+
     logger.info(
         f"JWT cookie settings: httponly={cookie_settings['httponly']}, samesite={cookie_settings['samesite']}, secure={cookie_settings['secure']}, path={cookie_settings['path']}, domain={cookie_settings.get('domain', '(none)')}"
     )

@@ -1,13 +1,15 @@
-import time
-from typing import Callable, Any, Awaitable, Dict, Set, Optional
-from aiogram import BaseMiddleware
-from aiogram.types import Message, CallbackQuery, TelegramObject
-from fastapi import Request, HTTPException
-from starlette.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
-from .storage import get_redis
-from .config import get_settings
 import logging
+import time
+from typing import Any, Awaitable, Callable, Dict, Optional, Set
+
+from aiogram import BaseMiddleware
+from aiogram.types import CallbackQuery, Message, TelegramObject
+from fastapi import HTTPException, Request
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse
+
+from .config import get_settings
+from .storage import get_redis
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +73,7 @@ def _check_sliding_window_rate_limit(
         logger.warning(f"[RATE_LIMIT] Redis unavailable, bypassing rate limit: {e}")
         # Bypass rate limiting if Redis is unavailable - allow request through
         return True, max_requests, 0
-    
+
     try:
         key = f"crm:rate_limit:sliding:{client_ip}"
         now = time.time()
@@ -114,7 +116,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     Applied to auth endpoints and other sensitive routes.
     Inherits from BaseHTTPMiddleware to work with app.add_middleware().
     """
-    
+
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
@@ -136,17 +138,23 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Add rate limit headers
         response.headers["X-RateLimit-Limit"] = str(settings.rate_limit_requests)
         response.headers["X-RateLimit-Remaining"] = str(remaining)
-        response.headers["X-RateLimit-Reset"] = str(int(time.time() + settings.rate_limit_window_seconds))
+        response.headers["X-RateLimit-Reset"] = str(
+            int(time.time() + settings.rate_limit_window_seconds)
+        )
 
         if not is_allowed:
-            logger.warning(f"[RATE_LIMIT] Rate limit exceeded for IP: {client_ip}, path: {path}")
+            logger.warning(
+                f"[RATE_LIMIT] Rate limit exceeded for IP: {client_ip}, path: {path}"
+            )
             return JSONResponse(
                 status_code=429,
                 content={"detail": "Слишком много попыток. Попробуйте позже."},
                 headers={
                     "X-RateLimit-Limit": str(settings.rate_limit_requests),
                     "X-RateLimit-Remaining": "0",
-                    "X-RateLimit-Reset": str(int(time.time() + settings.rate_limit_window_seconds)),
+                    "X-RateLimit-Reset": str(
+                        int(time.time() + settings.rate_limit_window_seconds)
+                    ),
                 },
             )
 

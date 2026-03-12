@@ -15,7 +15,7 @@ test.describe('Login Flow Test', () => {
     // Use data-testid selectors (as per E2E_TEST_FIX_PLAN)
     const usernameInput = page.getByTestId('common_input_username_en');
     const passwordInput = page.getByTestId('common_input_password_en');
-    const loginButton = page.getByTestId('common_btn_password_login_en');
+    const loginButton = page.getByTestId('common_btn_login_en');
 
     // Verify elements are visible
     await expect(usernameInput).toBeVisible();
@@ -29,14 +29,15 @@ test.describe('Login Flow Test', () => {
     // Click login button
     await loginButton.click();
 
-    // Wait for navigation
-    await page.waitForLoadState('domcontentloaded');
+    // Wait for SPA auth transition
+    await page.waitForURL(/\/admin\/?$/, { timeout: 10000 });
+    await expect(page.getByTestId('admin_nav_dashboard')).toBeVisible({ timeout: 10000 });
 
     // Check if we're logged in by looking at the URL
     const finalUrl = page.url();
     console.log('Final URL after login:', finalUrl);
 
-    // Check if we're on the dashboard
+    // Check if we're in authenticated shell
     expect(finalUrl).toContain('/admin');
     expect(finalUrl).not.toContain('/login');
   });

@@ -4,9 +4,10 @@ NOTE: aiogram and celery are stubbed out globally in conftest.py.
 """
 
 import os
-import pytest
 import tempfile
 from pathlib import Path
+
+import pytest
 from fastapi.testclient import TestClient
 
 os.environ.setdefault("ERP_MOCK_MODE", "true")
@@ -21,10 +22,12 @@ def client(tmp_path: Path):
     os.environ["CORS_ORIGINS"] = "http://localhost:5173"
 
     from app.db import init_db
+
     init_db()
 
-    from app import main as main_module
     import importlib
+
+    from app import main as main_module
 
     importlib.reload(main_module)
     return TestClient(main_module.app)
@@ -38,7 +41,9 @@ def test_sales_stats_no_auth(client):
 
 def test_sales_stats_with_secret(client, clean_database):
     """Endpoint should return 200 with clean database."""
-    response = client.get("/api/v1/stats/sales", headers={"x-admin-secret": "test_admin_secret"})
+    response = client.get(
+        "/api/v1/stats/sales", headers={"x-admin-secret": "test_admin_secret"}
+    )
     assert response.status_code == 200
     data = response.json()
     assert "stats" in data

@@ -1,7 +1,9 @@
-import requests
 import sys
 
+import requests
+
 BASE_URL = "http://localhost:8000"
+
 
 def check(url):
     try:
@@ -11,6 +13,7 @@ def check(url):
             print(f"Response: {r.text}")
     except Exception as e:
         print(f"{url}: Error {e}")
+
 
 print("Checking endpoints...")
 check(f"{BASE_URL}/api/v1/public/status")

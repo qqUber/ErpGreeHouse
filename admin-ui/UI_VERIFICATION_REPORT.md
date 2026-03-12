@@ -22,7 +22,7 @@
 ### ✅ PASS: Docker Infrastructure
 
 - Frontend builds successfully with Docker
-- Backend builds successfully with Docker  
+- Backend builds successfully with Docker
 - docker-compose.verify.yml works correctly
 - Services healthy: Redis ✅, Backend ✅
 - Frontend served by backend at /admin/
@@ -99,7 +99,7 @@ Due to missing pagination:
 
 Screenshots saved to: `admin-ui/e2e/screenshots/verify-*.png`
 - verify-dashboard.png
-- verify-customers.png  
+- verify-customers.png
 - verify-products.png
 - verify-sales.png
 - verify-analytics.png

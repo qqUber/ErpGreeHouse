@@ -1,8 +1,9 @@
 import importlib
 from pathlib import Path
+
 import pytest
-from fastapi.testclient import TestClient
 from app.auth import create_access_token
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture
@@ -102,11 +103,14 @@ PROD1;Updated Name;150;goods
     assert r.status_code == 200
     data = r.json()
     assert data["total"] == 1
-    
+
     # Verify update in DB
     from app.db import get_db
+
     db = get_db()
     with db.connect() as conn:
-        row = conn.execute("SELECT name, price FROM products WHERE code='PROD1'").fetchone()
+        row = conn.execute(
+            "SELECT name, price FROM products WHERE code='PROD1'"
+        ).fetchone()
         assert row["name"] == "Updated Name"
         assert row["price"] == 150

@@ -1,14 +1,45 @@
-import redis
+import logging
 import time
+from typing import Optional
+
+import redis
 from app.config import get_settings
 
 settings = get_settings()
-r = redis.from_url(settings.redis_url)
+
+logger = logging.getLogger(__name__)
+
+# Module-level Redis connection for connection pooling
+_redis_client: Optional[redis.Redis] = None
+
+
+def _get_redis() -> Optional[redis.Redis]:
+    """Get Redis connection with lazy initialization and error handling.
+
+    Returns None if Redis is unavailable, allowing callers to handle gracefully.
+    """
+    global _redis_client
+    if _redis_client is None:
+        try:
+            settings = get_settings()
+            _redis_client = redis.from_url(settings.redis_url, decode_responses=True)
+            # Test connection
+            _redis_client.ping()
+        except Exception as e:
+            logger.warning(
+                f"[RateLimiter] Redis unavailable, rate limiting disabled: {e}"
+            )
+            _redis_client = None
+    return _redis_client
 
 
 def check_rate_limit(
     chat_id: int | str, channel: str, max_tokens: int, refill_rate: float
 ) -> bool:
+    r = _get_redis()
+    if r is None:
+        return True  # Allow sending if Redis is unavailable
+
     key = f"rate_limit:{channel}:{chat_id}"
     current_time = time.time()
 

@@ -5,51 +5,51 @@
 # Версии зафиксированы для стабильности
 # ============================================
 
-# Web Framework
-fastapi==0.129.0
-uvicorn[standard]==0.41.0
+aiofiles==24.1.0
 
 # Telegram Bot
 aiogram==3.25.0
 
 # Async HTTP Client
 aiohttp==3.13.3
-httpx==0.28.1
+bcrypt==4.2.0
 
 # Task Queue
 celery==5.6.2
-redis==7.2.0
+email-validator==2.2.0
+# Web Framework
+fastapi==0.129.0
 
-# Environment
-python-dotenv==1.2.1
+# Production WSGI Server
+gunicorn==23.0.0
+httpx==0.28.1
+passlib[bcrypt]==1.7.4
 
 # Database (PostgreSQL for Production)
 psycopg2-binary==2.9.10
 
-# Security
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-bcrypt==4.2.0
-
 # Validation
 pydantic==2.10.6
 pydantic-settings==2.7.1
-email-validator==2.2.0
 
-# Logging & Monitoring
-structlog==25.1.0
+# Environment
+python-dotenv==1.2.1
+
+# Security
+python-jose[cryptography]==3.3.0
 python-json-logger==3.2.1
-sentry-sdk[fastapi]==2.20.0
-
-# PDF Generation (для квитанций)
-reportlab==4.3.1
 
 # Utilities
 python-multipart==0.0.20
-aiofiles==24.1.0
+redis==7.2.0
 
-# Production WSGI Server
-gunicorn==23.0.0
+# PDF Generation (для квитанций)
+reportlab==4.3.1
+sentry-sdk[fastapi]==2.20.0
+
+# Logging & Monitoring
+structlog==25.1.0
+uvicorn[standard]==0.41.0
 
 # ============================================
 # Security Scanning Tools (для CI/CD)

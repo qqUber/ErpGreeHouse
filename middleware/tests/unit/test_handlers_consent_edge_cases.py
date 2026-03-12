@@ -8,8 +8,9 @@ Tests cover edge cases for consent functions:
 - Consent audit trail
 """
 
-import pytest
 from datetime import datetime
+
+import pytest
 
 
 class TestStoreConsentEdgeCases:
@@ -24,35 +25,38 @@ class TestStoreConsentEdgeCases:
         conn = db.connect()
 
         # Create test customer
-        conn.execute("""
-            INSERT INTO customers (phone, full_name, telegram_id, qr_token, 
+        conn.execute(
+            """
+            INSERT INTO customers (phone, full_name, telegram_id, qr_token,
                                 marketing_allowed, data_processing_allowed)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, ("+79991234567", "Test User", 123456, "test_qr", 1, 1))
+        """,
+            ("+79991234567", "Test User", 123456, "test_qr", 1, 1),
+        )
         conn.commit()
-        
+
         cur = conn.execute("SELECT id FROM customers WHERE telegram_id = 123456")
         customer_id = cur.fetchone()["id"]
 
         # Store data processing consent
         _store_consent(
-            customer_id, 
+            customer_id,
             "Consent to process personal data v2.0",
             "2.0.0",
-            "data_processing"
+            "data_processing",
         )
 
         # Verify consent was stored
         cur = conn.execute(
             "SELECT * FROM consents WHERE customer_id = ? AND consent_type = ?",
-            (customer_id, "data_processing")
+            (customer_id, "data_processing"),
         )
         consent = cur.fetchone()
-        
+
         assert consent is not None
         assert consent["consent_type"] == "data_processing"
         assert consent["consent_version"] == "2.0.0"
-        
+
         conn.close()
 
     def test_store_consent_marketing_type(self, clean_database):
@@ -64,34 +68,34 @@ class TestStoreConsentEdgeCases:
         conn = db.connect()
 
         # Create test customer
-        conn.execute("""
-            INSERT INTO customers (phone, full_name, telegram_id, qr_token, 
+        conn.execute(
+            """
+            INSERT INTO customers (phone, full_name, telegram_id, qr_token,
                                 marketing_allowed, data_processing_allowed)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, ("+79991234567", "Test User", 123456, "test_qr", 1, 1))
+        """,
+            ("+79991234567", "Test User", 123456, "test_qr", 1, 1),
+        )
         conn.commit()
-        
+
         cur = conn.execute("SELECT id FROM customers WHERE telegram_id = 123456")
         customer_id = cur.fetchone()["id"]
 
         # Store marketing consent
         _store_consent(
-            customer_id, 
-            "Consent to receive marketing messages",
-            "1.0.0",
-            "marketing"
+            customer_id, "Consent to receive marketing messages", "1.0.0", "marketing"
         )
 
         # Verify consent was stored
         cur = conn.execute(
             "SELECT * FROM consents WHERE customer_id = ? AND consent_type = ?",
-            (customer_id, "marketing")
+            (customer_id, "marketing"),
         )
         consent = cur.fetchone()
-        
+
         assert consent is not None
         assert consent["consent_type"] == "marketing"
-        
+
         conn.close()
 
     def test_store_consent_default_type(self, clean_database):
@@ -103,33 +107,31 @@ class TestStoreConsentEdgeCases:
         conn = db.connect()
 
         # Create test customer
-        conn.execute("""
-            INSERT INTO customers (phone, full_name, telegram_id, qr_token, 
+        conn.execute(
+            """
+            INSERT INTO customers (phone, full_name, telegram_id, qr_token,
                                 marketing_allowed, data_processing_allowed)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, ("+79991234567", "Test User", 123456, "test_qr", 1, 1))
+        """,
+            ("+79991234567", "Test User", 123456, "test_qr", 1, 1),
+        )
         conn.commit()
-        
+
         cur = conn.execute("SELECT id FROM customers WHERE telegram_id = 123456")
         customer_id = cur.fetchone()["id"]
 
         # Store consent without specifying type (should default to data_processing)
-        _store_consent(
-            customer_id, 
-            "Default consent",
-            "1.0.0"
-        )
+        _store_consent(customer_id, "Default consent", "1.0.0")
 
         # Verify consent was stored with default type
         cur = conn.execute(
-            "SELECT * FROM consents WHERE customer_id = ?",
-            (customer_id,)
+            "SELECT * FROM consents WHERE customer_id = ?", (customer_id,)
         )
         consent = cur.fetchone()
-        
+
         assert consent is not None
         assert consent["consent_type"] == "data_processing"
-        
+
         conn.close()
 
 
@@ -154,18 +156,21 @@ class TestGetCustomerConsentsEdgeCases:
         conn = db.connect()
 
         # Create customer with only data processing consent
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO customers (phone, full_name, telegram_id, qr_token,
                                 marketing_allowed, data_processing_allowed)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, ("+79991234567", "Test User", 777777, "test_qr", 0, 1))
+        """,
+            ("+79991234567", "Test User", 777777, "test_qr", 0, 1),
+        )
         conn.commit()
 
         consents = _get_customer_consents(777777)
-        
+
         assert consents["marketing_allowed"] is False
         assert consents["data_processing_allowed"] is True
-        
+
         conn.close()
 
 
@@ -175,17 +180,20 @@ class TestUpdateConsentEdgeCases:
     def test_update_only_marketing_consent(self, clean_database):
         """Test updating only marketing consent."""
         from app.db import get_db
-        from app.handlers import _update_consent, _get_customer_consents
+        from app.handlers import _get_customer_consents, _update_consent
 
         db = get_db()
         conn = db.connect()
 
         # Create test customer with both consents
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO customers (phone, full_name, telegram_id, qr_token,
                                 marketing_allowed, data_processing_allowed)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, ("+79991234567", "Test User", 777777, "test_qr", 1, 1))
+        """,
+            ("+79991234567", "Test User", 777777, "test_qr", 1, 1),
+        )
         conn.commit()
 
         # Update only marketing consent
@@ -195,23 +203,26 @@ class TestUpdateConsentEdgeCases:
         consents = _get_customer_consents(777777)
         assert consents["marketing_allowed"] is False
         assert consents["data_processing_allowed"] is True
-        
+
         conn.close()
 
     def test_update_only_data_processing_consent(self, clean_database):
         """Test updating only data processing consent."""
         from app.db import get_db
-        from app.handlers import _update_consent, _get_customer_consents
+        from app.handlers import _get_customer_consents, _update_consent
 
         db = get_db()
         conn = db.connect()
 
         # Create test customer with both consents
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO customers (phone, full_name, telegram_id, qr_token,
                                 marketing_allowed, data_processing_allowed)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, ("+79991234567", "Test User", 777777, "test_qr", 1, 1))
+        """,
+            ("+79991234567", "Test User", 777777, "test_qr", 1, 1),
+        )
         conn.commit()
 
         # Update only data processing consent
@@ -221,7 +232,7 @@ class TestUpdateConsentEdgeCases:
         consents = _get_customer_consents(777777)
         assert consents["marketing_allowed"] is True
         assert consents["data_processing_allowed"] is False
-        
+
         conn.close()
 
     def test_update_consent_nonexistent_customer(self, clean_database):
@@ -234,17 +245,20 @@ class TestUpdateConsentEdgeCases:
     def test_update_both_consents(self, clean_database):
         """Test updating both consents at once."""
         from app.db import get_db
-        from app.handlers import _update_consent, _get_customer_consents
+        from app.handlers import _get_customer_consents, _update_consent
 
         db = get_db()
         conn = db.connect()
 
         # Create test customer with both consents
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO customers (phone, full_name, telegram_id, qr_token,
                                 marketing_allowed, data_processing_allowed)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, ("+79991234567", "Test User", 777777, "test_qr", 1, 1))
+        """,
+            ("+79991234567", "Test User", 777777, "test_qr", 1, 1),
+        )
         conn.commit()
 
         # Update both consents
@@ -254,7 +268,7 @@ class TestUpdateConsentEdgeCases:
         consents = _get_customer_consents(777777)
         assert consents["marketing_allowed"] is False
         assert consents["data_processing_allowed"] is False
-        
+
         conn.close()
 
 
@@ -264,7 +278,7 @@ class TestConsentConstants:
     def test_policy_version_constant_exists(self):
         """Test that CURRENT_POLICY_VERSION is defined."""
         from app.handlers import CURRENT_POLICY_VERSION
-        
+
         assert CURRENT_POLICY_VERSION is not None
         assert isinstance(CURRENT_POLICY_VERSION, str)
         assert len(CURRENT_POLICY_VERSION) > 0

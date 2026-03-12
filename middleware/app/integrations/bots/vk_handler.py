@@ -32,19 +32,19 @@ from ...storage import get_redis
 
 # Import shared modules
 from .shared import (
-    consent_key,
-    registration_key,
-    store_consent,
-    get_customer_consents,
-    cleanup_user_data,
-    update_consent,
+    CURRENT_POLICY_VERSION,
     RegistrationFlow,
+    cleanup_user_data,
+    consent_key,
     format_vk_keyboard,
     get_consent_buttons,
-    get_marketing_buttons,
     get_consent_text,
+    get_customer_consents,
+    get_marketing_buttons,
     get_marketing_consent_text,
-    CURRENT_POLICY_VERSION,
+    registration_key,
+    store_consent,
+    update_consent,
 )
 
 logger = logging.getLogger(__name__)
@@ -721,7 +721,7 @@ _vk_webhook_bot: Optional["VKBot"] = None
 
 def set_vk_config(access_token: str, group_id: int, api_version: str = "5.131"):
     """Set VK config for webhook processing (async-safe)."""
-    global _vk_config, _vk_webhook_bot
+    global _vk_webhook_bot
     _vk_config = {
         "access_token": access_token,
         "group_id": group_id,
@@ -733,7 +733,7 @@ def set_vk_config(access_token: str, group_id: int, api_version: str = "5.131"):
 
 async def _get_webhook_bot() -> Optional["VKBot"]:
     """Get or create a reusable bot instance for webhook processing."""
-    global _vk_webhook_bot, _vk_config
+    global _vk_webhook_bot
 
     if _vk_webhook_bot is not None:
         return _vk_webhook_bot
@@ -757,7 +757,6 @@ async def process_vk_webhook_event(event: dict) -> None:
     Args:
         event: The VK event payload from Callback API
     """
-    global _vk_config
 
     # Check if config is set
     async with _vk_config_lock:

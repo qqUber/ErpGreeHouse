@@ -9,6 +9,7 @@ export default defineConfig({
   reporter: 'html',
   use: {
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:5173',
+    locale: 'en-US',
     trace: 'on-first-retry',
     video: 'retain-on-failure',
   },

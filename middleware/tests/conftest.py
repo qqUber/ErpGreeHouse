@@ -10,21 +10,22 @@ This module provides:
 - Common utilities for all tests
 """
 
-import os
-import sys
-import sqlite3
-import pytest
 import asyncio
+import os
+import sqlite3
+import sys
 from pathlib import Path
+from typing import Any, Dict, Generator
 from unittest.mock import AsyncMock, MagicMock, patch
-from typing import Generator, Dict, Any
+
+import pytest
+
+# Import required app modules
+from app.db import get_db, init_db
 
 # Import new mocks
 from tests.mocks.erpnext import ERPNextMock
 from tests.mocks.telegram import TelegramMock
-
-# Import required app modules
-from app.db import init_db, get_db
 
 # ---------------------------------------------------------------------------
 # 1. Stub out aiogram & celery BEFORE any app module is imported.
@@ -67,11 +68,14 @@ sys.modules["aiogram.enums"].ParseMode.Markdown = "Markdown"
 sys.modules["aiogram"].Bot = MagicMock()
 sys.modules["aiogram"].Dispatcher = MagicMock()
 
+
 # Configure Router to not break decorators
 def mock_decorator(*args, **kwargs):
     def decorator(func):
         return func
+
     return decorator
+
 
 mock_router = MagicMock()
 mock_router.message = MagicMock(side_effect=mock_decorator)
@@ -87,6 +91,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # - Docker: env vars passed via docker-compose env_file (preferred)
 # - Local: fallback to loading from .env.test file
 from dotenv import load_dotenv
+
 if not os.getenv("TELEGRAM_BOT_TOKEN") or not os.getenv("TELEGRAM_CHANNEL_ID"):
     env_test_path = Path(__file__).parent.parent.parent / ".env.test"
     if env_test_path.exists():
@@ -121,6 +126,7 @@ if not os.getenv("TELEGRAM_CHANNEL_ID"):
 # Global patch for Redis to avoid connection errors during collection/tests
 try:
     import fakeredis
+
     _fake_redis = fakeredis.FakeRedis(decode_responses=True)
     patch("app.storage.get_redis", return_value=_fake_redis).start()
     patch("app.loyalty._get_redis", return_value=_fake_redis).start()
@@ -150,23 +156,24 @@ def clean_database(test_db_path: str) -> Generator[str, None, None]:
     - Initializes fresh database with all tables
     - Seeds role_permissions with Admin Role and Permissions
     """
-    import sqlite3
     import os
+    import sqlite3
     import time
     from pathlib import Path
+
     from app.db import init_db
 
     # Step 1: Restore the test database path before each test
     # This ensures tests that change CRM_DB_PATH don't affect other tests
     db_path = str((Path(__file__).parent.parent / "test_telegram_crm.db").resolve())
     os.environ["CRM_DB_PATH"] = db_path
-    
+
     # Step 2: Ensure all connections are closed before attempting to delete
     # Step 2-3: Robust database file cleanup - handle Windows file locking issue
     if os.path.exists(db_path):
         max_retries = 8
         retry_delay = 0.5
-        
+
         # First, try to release all connections and unlock file
         for i in range(max_retries):
             try:
@@ -178,44 +185,59 @@ def clean_database(test_db_path: str) -> Generator[str, None, None]:
                     # If all retries failed, try to delete on next run by renaming
                     try:
                         import time
+
                         temp_path = f"{db_path}.{int(time.time())}.tmp"
                         os.rename(db_path, temp_path)
                         print(f"Warning: Renamed locked database file to {temp_path}")
                         break
                     except Exception as rename_error:
                         # If even rename fails, skip cleanup but continue
-                        print(f"Warning: Failed to delete or rename database file {db_path}: {e}")
-                
+                        print(
+                            f"Warning: Failed to delete or rename database file {db_path}: {e}"
+                        )
+
                 # Wait and retry with increasing delay
                 time.sleep(retry_delay)
                 retry_delay += 0.5
-    
+
     # Step 4: Initialize fresh test database (this creates all tables)
     init_db()
-    
+
     # Enable WAL mode for better concurrency
     db = get_db()
     with db.connect() as conn:
         conn.execute("PRAGMA journal_mode=WAL")
         # Step 6: Seed default role_permissions data (Admin Role and Permissions)
         _seed_role_permissions(conn)
-    
+
     yield test_db_path
-    
+
     # Cleanup: Delete all data from tables instead of dropping them
     # This is faster and avoids locking issues with DROP TABLE
     with db.connect() as conn:
         tables = [
-            "marketing_trigger_events", "marketing_events", "marketing_campaigns",
-            "marketing_triggers", "marketing_segments", "integration_deliveries",
-            "vk_settings", "admin_tokens", "admin_users", "role_permissions",
-            "products", "integrations", "sync_log", "transactions", "consents", "customers"
+            "marketing_trigger_events",
+            "marketing_events",
+            "marketing_campaigns",
+            "marketing_triggers",
+            "marketing_segments",
+            "integration_deliveries",
+            "vk_settings",
+            "admin_tokens",
+            "admin_users",
+            "role_permissions",
+            "products",
+            "integrations",
+            "sync_log",
+            "transactions",
+            "consents",
+            "customers",
         ]
         for table in tables:
             try:
                 conn.execute(f"DELETE FROM {table}")
             except sqlite3.OperationalError:
-                pass # Table might not exist yet
+                pass  # Table might not exist yet
         conn.commit()
 
 
@@ -519,7 +541,7 @@ def mock_inline_keyboard() -> MagicMock:
     """
     Create a mock inline keyboard builder.
     """
-    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
     keyboard = MagicMock()
     keyboard.add = MagicMock()
@@ -670,8 +692,9 @@ def test_jwt_token() -> str:
     """
     Generate a test JWT token.
     """
-    import jwt
     import time
+
+    import jwt
 
     payload = {
         "user_id": "test_user",

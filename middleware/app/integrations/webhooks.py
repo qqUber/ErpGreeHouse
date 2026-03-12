@@ -3,10 +3,12 @@
 
 import logging
 from datetime import datetime
-from typing import Dict, Any
-from fastapi import APIRouter, Request, HTTPException
-from ..integrations.erp_sync import ERPSyncService
+from typing import Any, Dict
+
+from fastapi import APIRouter, HTTPException, Request
+
 from ..db import get_db
+from ..integrations.erp_sync import ERPSyncService
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +39,7 @@ async def erpnext_webhook(request: Request):
         )
 
         # Get database session
-        db: Session = next(get_db())
+        db = next(get_db())
 
         # Initialize sync service
         sync_service = ERPSyncService()

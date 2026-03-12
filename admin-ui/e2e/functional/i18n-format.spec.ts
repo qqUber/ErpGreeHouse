@@ -17,12 +17,35 @@ const fixturesPath = path.join(process.cwd(), 'tests', 'fixtures');
 
 // Helper: Login to the application
 async function login(page: Page, username: string, password: string) {
-  await page.goto('/');
-  await page.getByPlaceholder('Логин').fill(username);
-  await page.getByPlaceholder('Пароль').fill(password);
-  await page.getByRole('button', { name: 'Войти' }).click();
-  await expect(page.getByText('Сводка')).toBeVisible({ timeout: 10000 });
-  await page.waitForTimeout(1000);
+  const baseUrl = process.env.E2E_BASE_URL || 'http://localhost:5173';
+  const loginResponse = await page.context().request.post(baseUrl + '/api/v1/public/auth/login', {
+    data: { username, password },
+  });
+
+  if (!loginResponse.ok()) {
+    const errorText = await loginResponse.text();
+    throw new Error(`Login failed: ${loginResponse.status()} - ${errorText}`);
+  }
+
+  const cookies = loginResponse.headers()['set-cookie'];
+  if (cookies) {
+    const cookieStrings = Array.isArray(cookies) ? cookies : [cookies];
+    for (const cookieStr of cookieStrings) {
+      const [nameValuePart] = cookieStr.split(';');
+      const [name, value] = nameValuePart.trim().split('=');
+      await page.context().addCookies([{ name, value, url: baseUrl }]);
+    }
+  }
+
+  await page.addInitScript(() => {
+    window.sessionStorage.setItem('auth_validation_state', 'valid');
+    window.localStorage.setItem('language', 'en');
+  });
+
+  await page.goto('/admin/dashboard');
+  await page.waitForURL('**/admin/dashboard', { timeout: 15000 });
+  await expect(page.locator('.language-switcher-button')).toBeVisible({ timeout: 10000 });
+  await page.waitForTimeout(500);
 }
 
 // Helper: Load i18n fixtures
@@ -77,7 +100,7 @@ test.describe('i18n Localization Fixture Tests', () => {
     // Verify locales fixture
     expect(locales).toBeDefined();
     expect(locales.supported_locales).toHaveLength(3);
-    expect(locales.default_locale).toBe('ru');
+    expect(locales.default_locale).toBe('en');
 
     // Verify each locale has required properties
     const ruLocale = locales.supported_locales.find((l: any) => l.code === 'ru');
@@ -145,9 +168,9 @@ test.describe('Language Switching Tests', () => {
   test('should switch between RU/EN/SRB locales in the UI', async ({ page }) => {
     await login(page, 'admin', 'admin');
 
-    // Verify default language is Russian
+    // Verify default language is English
     const langButton = page.locator('.language-switcher-button');
-    await expect(langButton).toContainText('RU');
+    await expect(langButton).toContainText('EN');
 
     // Switch to English
     await switchLanguage(page, 'en');
@@ -168,7 +191,7 @@ test.describe('Language Switching Tests', () => {
     // Switch back to Russian
     await switchLanguage(page, 'ru');
     await expect(langButton).toContainText('RU');
-    await expect(page.getByText('Сводка')).toBeVisible();
+    await expect(page.getByText('Главная', { exact: true })).toBeVisible();
   });
 
   test('should persist language selection after page reload', async ({ page }) => {
@@ -243,8 +266,8 @@ test.describe('UI Logic - Sale to Client Navigation', () => {
 
     await login(page, 'admin', 'admin');
 
-    // Navigate to dashboard and verify recent sales are displayed
-    await expect(page.getByText('Сводка')).toBeVisible();
+    // Navigate to dashboard and verify it is displayed
+    await expect(page.getByTestId('admin_nav_dashboard')).toBeVisible();
 
     // Look for recent sales in the dashboard
     const recentSalesSection = page.locator('text=/Последние продажи|Recent Sales/i');
@@ -294,7 +317,7 @@ test.describe('UI Logic - Sale to Client Navigation', () => {
     await login(page, 'admin', 'admin');
 
     // Navigate to clients
-    await page.getByText('Клиенты').click();
+    await page.getByTestId('admin_nav_customers').click();
     await page.waitForTimeout(1000);
 
     // Look for client in the list and click
@@ -433,15 +456,15 @@ test.describe('Mobile Responsiveness Tests', () => {
     await page.setViewportSize({ width: 375, height: 667 });
 
     // Navigate to login page
-    await page.goto('/');
+    await page.goto('/admin/login');
 
     // Verify login form is visible and properly styled
-    await expect(page.getByPlaceholder('Логин')).toBeVisible();
-    await expect(page.getByPlaceholder('Пароль')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Войти' })).toBeVisible();
+    await expect(page.getByTestId('common_input_username_en')).toBeVisible();
+    await expect(page.getByTestId('common_input_password_en')).toBeVisible();
+    await expect(page.getByTestId('common_btn_password_login_en')).toBeVisible();
 
     // Verify inputs are accessible on mobile
-    const loginInput = page.getByPlaceholder('Логин');
+    const loginInput = page.getByTestId('common_input_username_en');
     await loginInput.fill('admin');
     await expect(loginInput).toHaveValue('admin');
   });
@@ -452,13 +475,13 @@ test.describe('Mobile Responsiveness Tests', () => {
     await login(page, 'admin', 'admin');
 
     // Navigate to products (if visible for admin)
-    const productsLink = page.getByText('Товары');
+    const productsLink = page.getByTestId('admin_nav_products');
     if (await productsLink.isVisible()) {
       await productsLink.click();
       await page.waitForTimeout(1000);
 
       // Verify products are visible
-      await expect(page.getByText('Товары / услуги'))
+      await expect(page.getByTestId('products_view_en'))
         .toBeVisible({ timeout: 5000 })
         .catch(() => {
           // Fallback: check for table or products content
@@ -479,7 +502,7 @@ test.describe('Mobile Responsiveness Tests', () => {
       .first();
 
     // If no hamburger menu, verify the dashboard is visible
-    const dashboardTitle = page.getByText('Сводка');
+    const dashboardTitle = page.getByTestId('admin_nav_dashboard');
     if (await dashboardTitle.isVisible()) {
       // Verify dashboard content is visible
       await expect(dashboardTitle).toBeVisible();
@@ -508,7 +531,7 @@ test.describe('Mobile Responsiveness Tests', () => {
     await login(page, 'admin', 'admin');
 
     // Navigate to clients table
-    await page.getByText('Клиенты').click();
+    await page.getByTestId('admin_nav_customers').click();
     await page.waitForTimeout(1500);
 
     // Verify table is visible
@@ -564,8 +587,8 @@ test.describe('Mobile Responsiveness Tests', () => {
     await login(page, 'admin', 'admin');
 
     // Verify all main navigation items are visible
-    await expect(page.getByText('Сводка')).toBeVisible();
-    await expect(page.getByText('Клиенты')).toBeVisible();
+    await expect(page.getByTestId('admin_nav_dashboard')).toBeVisible();
+    await expect(page.getByTestId('admin_nav_customers')).toBeVisible();
 
     // Verify content is properly displayed
     const mainContent = page.locator('main, [class*="content"]').first();
@@ -620,11 +643,11 @@ test.describe('Edge Cases and Error Handling', () => {
     await page.goto('/?lang=invalid');
     await page.waitForTimeout(1000);
 
-    // Should fallback to default (Russian)
+    // Should fallback to default (English)
     await login(page, 'admin', 'admin');
 
-    // Verify Russian is the default
-    await expect(page.locator('.language-switcher-button')).toContainText('RU');
+    // Verify English is the default
+    await expect(page.locator('.language-switcher-button')).toContainText('EN');
   });
 
   test('should verify fixture test scenarios are valid', () => {
@@ -638,7 +661,7 @@ test.describe('Edge Cases and Error Handling', () => {
     const defaultScenario = locales.test_scenarios.find(
       (s: any) => s.scenario === 'Default locale'
     );
-    expect(defaultScenario.expected_code).toBe('ru');
+    expect(defaultScenario.expected_code).toBe('en');
 
     const queryScenario = locales.test_scenarios.find(
       (s: any) => s.scenario === 'Query parameter override'

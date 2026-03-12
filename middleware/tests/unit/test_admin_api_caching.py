@@ -7,10 +7,11 @@ Tests cover:
 - Helper functions (_parse_items_json, _get_product_names)
 """
 
-import pytest
 import json
-from unittest.mock import MagicMock, patch
 from datetime import datetime
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestCacheFunctions:
@@ -23,7 +24,7 @@ class TestCacheFunctions:
         mock_redis = MagicMock()
         mock_redis.get.return_value = '{"key": "value"}'
 
-        with patch('app.admin_api.get_redis', return_value=mock_redis):
+        with patch("app.admin_api.get_redis", return_value=mock_redis):
             result = _cache_get_json("test_key")
 
         assert result == {"key": "value"}
@@ -36,7 +37,7 @@ class TestCacheFunctions:
         mock_redis = MagicMock()
         mock_redis.get.return_value = None
 
-        with patch('app.admin_api.get_redis', return_value=mock_redis):
+        with patch("app.admin_api.get_redis", return_value=mock_redis):
             result = _cache_get_json("missing_key")
 
         assert result is None
@@ -48,7 +49,7 @@ class TestCacheFunctions:
         mock_redis = MagicMock()
         mock_redis.get.side_effect = Exception("Redis connection failed")
 
-        with patch('app.admin_api.get_redis', return_value=mock_redis):
+        with patch("app.admin_api.get_redis", return_value=mock_redis):
             result = _cache_get_json("test_key")
 
         assert result is None
@@ -59,13 +60,13 @@ class TestCacheFunctions:
 
         mock_redis = MagicMock()
 
-        with patch('app.admin_api.get_redis', return_value=mock_redis):
+        with patch("app.admin_api.get_redis", return_value=mock_redis):
             _cache_set_json("test_key", {"data": "value"}, ttl_seconds=60)
 
         mock_redis.set.assert_called_once()
         call_args = mock_redis.set.call_args
         assert call_args[0][0] == "test_key"
-        assert call_args[1]['ex'] == 60
+        assert call_args[1]["ex"] == 60
 
     def test_cache_set_json_handles_exception(self):
         """Test _cache_set_json handles Redis exceptions silently."""
@@ -75,7 +76,7 @@ class TestCacheFunctions:
         mock_redis.set.side_effect = Exception("Redis error")
 
         # Should not raise
-        with patch('app.admin_api.get_redis', return_value=mock_redis):
+        with patch("app.admin_api.get_redis", return_value=mock_redis):
             _cache_set_json("test_key", {"data": "value"}, ttl_seconds=60)
 
     def test_cache_del_prefix_deletes_matching_keys(self):
@@ -83,12 +84,12 @@ class TestCacheFunctions:
         from app.admin_api import _cache_del_prefix
 
         mock_redis = MagicMock()
-        mock_redis.keys.return_value = ["key1", "key2", "key3"]
+        mock_redis.scan.return_value = (0, ["key1", "key2", "key3"])
 
-        with patch('app.admin_api.get_redis', return_value=mock_redis):
+        with patch("app.admin_api.get_redis", return_value=mock_redis):
             _cache_del_prefix("test_prefix")
 
-        mock_redis.keys.assert_called_once_with("test_prefix*")
+        mock_redis.scan.assert_called_once_with(0, match="test_prefix*", count=100)
         mock_redis.delete.assert_called_once_with("key1", "key2", "key3")
 
     def test_cache_del_prefix_handles_no_keys(self):
@@ -96,9 +97,9 @@ class TestCacheFunctions:
         from app.admin_api import _cache_del_prefix
 
         mock_redis = MagicMock()
-        mock_redis.keys.return_value = []
+        mock_redis.scan.return_value = (0, [])
 
-        with patch('app.admin_api.get_redis', return_value=mock_redis):
+        with patch("app.admin_api.get_redis", return_value=mock_redis):
             _cache_del_prefix("test_prefix")
 
         mock_redis.delete.assert_not_called()
@@ -108,10 +109,10 @@ class TestCacheFunctions:
         from app.admin_api import _cache_del_prefix
 
         mock_redis = MagicMock()
-        mock_redis.keys.side_effect = Exception("Redis error")
+        mock_redis.scan.side_effect = Exception("Redis error")
 
         # Should not raise
-        with patch('app.admin_api.get_redis', return_value=mock_redis):
+        with patch("app.admin_api.get_redis", return_value=mock_redis):
             _cache_del_prefix("test_prefix")
 
 
@@ -173,9 +174,9 @@ class TestHelperFunctions:
         """Test _get_product_names limits items to max_items."""
         from app.admin_api import _get_product_names
 
-        items_json = json.dumps([
-            {"name": "Item1"}, {"name": "Item2"}, {"name": "Item3"}
-        ])
+        items_json = json.dumps(
+            [{"name": "Item1"}, {"name": "Item2"}, {"name": "Item3"}]
+        )
         result = _get_product_names(items_json, max_items=2)
 
         assert result == "Item1, Item2 +1"
@@ -203,19 +204,23 @@ class TestCacheConstants:
     def test_dashboard_cache_ttl_defined(self):
         """Test DASHBOARD_CACHE_TTL constant is defined."""
         from app.admin_api import DASHBOARD_CACHE_TTL
+
         assert DASHBOARD_CACHE_TTL == 60
 
     def test_analytics_cache_ttl_defined(self):
         """Test ANALYTICS_CACHE_TTL constant is defined."""
         from app.admin_api import ANALYTICS_CACHE_TTL
+
         assert ANALYTICS_CACHE_TTL == 300
 
     def test_sales_stats_cache_ttl_defined(self):
         """Test SALES_STATS_CACHE_TTL constant is defined."""
         from app.admin_api import SALES_STATS_CACHE_TTL
+
         assert SALES_STATS_CACHE_TTL == 180
 
     def test_customers_list_cache_ttl_defined(self):
         """Test CUSTOMERS_LIST_CACHE_TTL constant is defined."""
         from app.admin_api import CUSTOMERS_LIST_CACHE_TTL
+
         assert CUSTOMERS_LIST_CACHE_TTL == 5

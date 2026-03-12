@@ -12,6 +12,7 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.setenv("CRM_DB_PATH", str(db_path))
     monkeypatch.setenv("ADMIN_SECRET", "test-admin")
     monkeypatch.setenv("CORS_ORIGINS", "http://localhost:5173")
+    monkeypatch.setenv("AUTO_SEED_DATA", "false")
 
     from app import main as main_module
 

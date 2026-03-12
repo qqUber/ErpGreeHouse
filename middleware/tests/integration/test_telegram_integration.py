@@ -13,9 +13,10 @@ Use pytest.skip() if credentials are not configured.
 """
 
 import os
+from typing import Any, Dict, Optional
+
 import pytest
 import requests
-from typing import Dict, Any, Optional
 
 
 # Test configuration - requires environment variables to be set or uses mocks
@@ -61,8 +62,9 @@ def mock_telegram_api_if_needed():
         yield
         return
 
-    import responses
     import re
+
+    import responses
 
     with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
         # Mock getMe
@@ -70,60 +72,70 @@ def mock_telegram_api_if_needed():
             responses.GET,
             re.compile(r"https://api.telegram.org/bot.*/getMe"),
             json={"ok": True, "result": {"is_bot": True, "username": "test_bot"}},
-            status=200
+            status=200,
         )
         # Mock getChat
         rsps.add(
             responses.GET,
             re.compile(r"https://api.telegram.org/bot.*/getChat"),
             json={
-                "ok": True, 
+                "ok": True,
                 "result": {
-                    "id": int(_get_channel_id()), 
+                    "id": int(_get_channel_id()),
                     "title": "Test Channel",
-                    "permissions": {"can_send_messages": True}
-                }
+                    "permissions": {"can_send_messages": True},
+                },
             },
-            status=200
+            status=200,
         )
+
         # Mock sendMessage
         def send_message_callback(request):
             import json
             from urllib.parse import parse_qs
-            
+
             # Body can be bytes or str depending on the environment
             body = request.body
             if isinstance(body, bytes):
-                body = body.decode('utf-8')
-            
+                body = body.decode("utf-8")
+
             payload = {}
             if body:
                 try:
                     payload = json.loads(body)
                 except json.JSONDecodeError:
                     payload = {k: v[0] for k, v in parse_qs(body).items()}
-            
-            return (200, {}, json.dumps({
-                "ok": True, 
-                "result": {
-                    "message_id": 123, 
-                    "text": payload.get("text", "Mocked message"), 
-                    "chat": {"id": int(payload.get("chat_id", 1) or 1), "type": "supergroup"}
-                }
-            }))
+
+            return (
+                200,
+                {},
+                json.dumps(
+                    {
+                        "ok": True,
+                        "result": {
+                            "message_id": 123,
+                            "text": payload.get("text", "Mocked message"),
+                            "chat": {
+                                "id": int(payload.get("chat_id", 1) or 1),
+                                "type": "supergroup",
+                            },
+                        },
+                    }
+                ),
+            )
 
         rsps.add_callback(
             responses.POST,
             re.compile(r"https://api.telegram.org/bot.*/sendMessage"),
             callback=send_message_callback,
-            content_type='application/json',
+            content_type="application/json",
         )
         # Mock setMyCommands
         rsps.add(
             responses.POST,
             re.compile(r"https://api.telegram.org/bot.*/setMyCommands"),
             json={"ok": True, "result": True},
-            status=200
+            status=200,
         )
         yield
 
@@ -146,8 +158,7 @@ class TestTelegramBotConfiguration:
         """Verify bot has access to the configured channel."""
         token, channel_id = _require_credentials()
         response = requests.get(
-            f"{_get_telegram_api_base()}/getChat",
-            params={"chat_id": channel_id}
+            f"{_get_telegram_api_base()}/getChat", params={"chat_id": channel_id}
         )
         data = response.json()
 
@@ -175,8 +186,8 @@ class TestTelegramBotMessaging:
             f"{_get_telegram_api_base()}/sendMessage",
             data={
                 "chat_id": channel_id,
-                "text": "Integration test: Simple text message"
-            }
+                "text": "Integration test: Simple text message",
+            },
         )
         data = response.json()
 
@@ -194,8 +205,8 @@ class TestTelegramBotMessaging:
             data={
                 "chat_id": channel_id,
                 "text": "<b>Bold text</b> and <i>italic text</i>",
-                "parse_mode": "HTML"
-            }
+                "parse_mode": "HTML",
+            },
         )
         data = response.json()
 
@@ -210,7 +221,7 @@ class TestTelegramBotMessaging:
             data={
                 "chat_id": channel_id,
                 "text": "Test /start command message",
-            }
+            },
         )
         data = response.json()
 
@@ -228,11 +239,11 @@ class TestTelegramBotCommands:
             {"command": "start", "description": "Start the bot"},
             {"command": "balance", "description": "Check your loyalty balance"},
             {"command": "menu", "description": "View menu"},
-            {"command": "help", "description": "Get help"}
+            {"command": "help", "description": "Get help"},
         ]
         response = requests.post(
             f"{_get_telegram_api_base()}/setMyCommands",
-            data={"commands": str(commands).replace("'", '"')}
+            data={"commands": str(commands).replace("'", '"')},
         )
         # Note: This may fail if bot doesn't have permission
         # That's OK - commands can be set via BotFather
@@ -244,9 +255,9 @@ class TestTelegramWebhookIntegration:
 
     def test_webhook_endpoint_exists(self):
         """Verify the webhook endpoint is configured in the middleware."""
-        from fastapi.testclient import TestClient
         from app.main import app
-        
+        from fastapi.testclient import TestClient
+
         client = TestClient(app)
         response = client.get("/health")
         assert response.status_code == 200
@@ -254,17 +265,17 @@ class TestTelegramWebhookIntegration:
 
     def test_webhook_set_endpoint(self):
         """Verify the set_webhook endpoint exists."""
-        from fastapi.testclient import TestClient
-        from app.main import app
         import os
-        
+
+        from app.main import app
+        from fastapi.testclient import TestClient
+
         webhook_secret = os.getenv("WEBHOOK_SECRET", "test_secret")
-        
+
         client = TestClient(app)
         # We don't need a real bot token for this check if we mock get_settings
         response = client.post(
-            "/telegram/set_webhook",
-            headers={"x-webhook-secret": webhook_secret}
+            "/telegram/set_webhook", headers={"x-webhook-secret": webhook_secret}
         )
         # It might return 400 if token is missing, but it should exist
         assert response.status_code in [200, 400, 401]
@@ -285,14 +296,10 @@ Your current balance: <b>150 points</b>
 Points earned: +25
 Valid until: 30 days
         """
-        
+
         response = requests.post(
             f"{_get_telegram_api_base()}/sendMessage",
-            data={
-                "chat_id": channel_id,
-                "text": message,
-                "parse_mode": "HTML"
-            }
+            data={"chat_id": channel_id, "text": message, "parse_mode": "HTML"},
         )
         data = response.json()
 
@@ -310,27 +317,32 @@ class TestTelegramOmnichannelStatus:
         # Check bot info
         response = requests.get(f"{_get_telegram_api_base()}/getMe")
         bot_info = response.json()
-        
+
         # Check channel access
         response = requests.get(
-            f"{_get_telegram_api_base()}/getChat",
-            params={"chat_id": channel_id}
+            f"{_get_telegram_api_base()}/getChat", params={"chat_id": channel_id}
         )
         channel_info = response.json()
-        
+
         status = {
             "channel": "Telegram",
             "bot_username": bot_info["result"]["username"],
             "channel_name": channel_info["result"]["title"],
             "channel_id": channel_id,
-            "can_send_messages": channel_info["result"]["permissions"]["can_send_messages"],
-            "status": "ACTIVE" if channel_info["result"]["permissions"]["can_send_messages"] else "INACTIVE"
+            "can_send_messages": channel_info["result"]["permissions"][
+                "can_send_messages"
+            ],
+            "status": (
+                "ACTIVE"
+                if channel_info["result"]["permissions"]["can_send_messages"]
+                else "INACTIVE"
+            ),
         }
-        
+
         print(f"\n=== Telegram Channel Status ===")
         for key, value in status.items():
             print(f"  {key}: {value}")
-        
+
         assert status["status"] == "ACTIVE"
         assert status["can_send_messages"] is True
 

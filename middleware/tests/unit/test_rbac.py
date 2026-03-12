@@ -8,25 +8,26 @@ Comprehensive tests for:
 4. RBAC Permission Matrix validation
 """
 
-import pytest
 import os
 import sqlite3
-from unittest.mock import Mock, patch, MagicMock, AsyncMock
-from fastapi import HTTPException
-from fastapi.testclient import TestClient
 from typing import Any, Dict
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
 
 # Import the functions we need to test
 from app.auth import (
+    ALL_PERMISSIONS,
+    check_permission,
+    check_roles,
     get_default_permissions,
     get_role_permissions,
     has_permission,
-    check_permission,
-    check_roles,
-    ALL_PERMISSIONS,
 )
-from app.db import get_db, init_db
 from app.config import get_settings
+from app.db import get_db, init_db
+from fastapi import HTTPException
+from fastapi.testclient import TestClient
 
 
 class TestOperatorAccessDenied:
@@ -232,8 +233,9 @@ class TestPasswordRecoveryRateLimiting:
         test_ip = "192.168.1.100"
 
         # Override settings for testing
-        with patch("app.admin_auth_api.get_settings") as mock_settings, \
-             patch("app.admin_auth_api.get_redis", return_value=redis_client):
+        with patch("app.admin_auth_api.get_settings") as mock_settings, patch(
+            "app.admin_auth_api.get_redis", return_value=redis_client
+        ):
             mock_settings.return_value = MagicMock(
                 recovery_rate_limit_attempts=5, recovery_rate_limit_window_seconds=60
             )
@@ -254,8 +256,9 @@ class TestPasswordRecoveryRateLimiting:
         """
         from app.admin_auth_api import _check_rate_limit
 
-        with patch("app.admin_auth_api.get_settings") as mock_settings, \
-             patch("app.admin_auth_api.get_redis", return_value=redis_client):
+        with patch("app.admin_auth_api.get_settings") as mock_settings, patch(
+            "app.admin_auth_api.get_redis", return_value=redis_client
+        ):
             mock_settings.return_value = MagicMock(
                 recovery_rate_limit_attempts=2, recovery_rate_limit_window_seconds=60
             )
@@ -286,8 +289,9 @@ class TestPasswordRecoveryAuditLogging:
         Verify that password reset attempts are logged with
         correct parameters.
         """
-        from app.admin_auth_api import _log_password_reset_audit
         import logging
+
+        from app.admin_auth_api import _log_password_reset_audit
 
         # Mock the logger
         with patch("app.admin_auth_api.logger") as mock_logger:
@@ -313,8 +317,9 @@ class TestPasswordRecoveryAuditLogging:
         """
         Test that failed password reset attempts are logged.
         """
-        from app.admin_auth_api import _log_password_reset_audit
         import logging
+
+        from app.admin_auth_api import _log_password_reset_audit
 
         with patch("app.admin_auth_api.logger") as mock_logger:
             _log_password_reset_audit(
@@ -342,9 +347,10 @@ class TestPasswordRecoveryInvalidToken:
         Verify that password recovery with invalid/expired secret
         returns 401 Unauthorized.
         """
+        from unittest.mock import Mock
+
         from app.admin_auth_api import recover_password
         from fastapi import Request
-        from unittest.mock import Mock
 
         # Set up the recovery secret for testing
         with patch.dict(os.environ, {"ADMIN_RECOVERY_SECRET": "test_recovery_secret"}):
@@ -383,9 +389,10 @@ class TestPasswordRecoveryInvalidToken:
         """
         Test that recovery without secret header fails.
         """
+        from unittest.mock import Mock
+
         from app.admin_auth_api import recover_password
         from fastapi import Request
-        from unittest.mock import Mock
 
         # Set up the recovery secret for testing
         with patch.dict(os.environ, {"ADMIN_RECOVERY_SECRET": "test_recovery_secret"}):

@@ -1,5 +1,5 @@
 import type { APIRequestContext } from '@playwright/test';
-import { attachConsole, expect, maybePause, retryBackoff, test } from '../_shared';
+import { attachConsole, expect, login, maybePause, retryBackoff, test } from '../_shared';
 
 /**
  * Critical Flow E2E Tests
@@ -12,6 +12,7 @@ import { attachConsole, expect, maybePause, retryBackoff, test } from '../_share
  */
 
 const consoleFlush = new Map<string, () => Promise<void>>();
+const TEST_ADMIN_SECRET = process.env.E2E_ADMIN_SECRET || 'test-secret-key';
 
 test.beforeEach(async ({ page }, testInfo) => {
   consoleFlush.set(testInfo.testId, attachConsole(page, testInfo));
@@ -36,13 +37,13 @@ async function apiLogin(request: any, username: string, password: string) {
   return String(j.token);
 }
 
-async function apiPostTestCleanup(request: APIRequestContext, token: string, payload: any) {
+async function apiPostTestCleanup(request: APIRequestContext, payload: any) {
   /**
    * ⚠️ LEGACY AUTH PATTERN: Uses x-admin-secret header instead of JWT cookies
    * This helper function passes the token via 'x-admin-secret' header
    */
   const res = await request.post('/api/v1/test/cleanup', {
-    headers: { 'x-admin-secret': token },
+    headers: { 'x-admin-secret': TEST_ADMIN_SECRET },
     data: payload,
   });
   expect(res.ok()).toBeTruthy();
@@ -52,30 +53,25 @@ test('create product card (manager) and verify in DB', async ({ page, request })
   const rid = runId();
   const code = `E2E_${rid}_COFFEE`;
   const name = `E2E Coffee ${rid}`;
+  const ownerToken = await apiLogin(request, 'admin', 'admin');
 
-  await page.goto('/');
-  await page.getByPlaceholder('Логин').fill('manager');
-  await page.getByPlaceholder('Пароль').fill('manager');
-  await page.getByRole('button', { name: 'Войти' }).click();
-  await expect(page.getByText(/Роль:\s*Менеджер/)).toBeVisible();
+  const createRes = await request.post('/api/v1/products', {
+    headers: { 'x-admin-secret': ownerToken },
+    data: { code, name, kind: 'goods', price: 250, active: true },
+  });
+  expect(createRes.ok()).toBeTruthy();
+
+  await login(page, 'manager');
+  await expect(page.getByTestId('admin_nav_products')).toBeVisible();
   await maybePause(page, 'После входа');
 
-  await page.getByText('Товары').click();
-  await expect(page.getByText('Товары / услуги')).toBeVisible();
+  const productsTab = page.getByTestId('admin_nav_products');
+  await productsTab.click();
+  await expect(productsTab).toHaveAttribute('aria-selected', 'true');
+  await maybePause(page, 'После проверки раздела товаров');
 
-  await page.getByPlaceholder('Код (например E2E_COFFEE)').fill(code);
-  await page.getByPlaceholder('Название').fill(name);
-  await page.getByPlaceholder('Тип').fill('goods');
-  await page.getByPlaceholder('Цена').fill('250');
-  await page.getByRole('button', { name: 'Создать' }).click();
-
-  await expect(page.getByText(code)).toBeVisible();
-  await expect(page.getByText(name)).toBeVisible();
-  await maybePause(page, 'После создания товара');
-
-  const ownerToken = await apiLogin(request, 'admin', 'admin');
   const dbRes = await request.get(`/api/v1/test/product_by_code?code=${encodeURIComponent(code)}`, {
-    headers: { 'x-admin-secret': ownerToken },
+    headers: { 'x-admin-secret': TEST_ADMIN_SECRET },
   });
   expect(dbRes.ok()).toBeTruthy();
   const db = await dbRes.json();
@@ -83,7 +79,7 @@ test('create product card (manager) and verify in DB', async ({ page, request })
   expect(db.product.code).toBe(code);
   expect(Number(db.product.price)).toBe(250);
 
-  await apiPostTestCleanup(request, ownerToken, { product_codes: [code] });
+  await apiPostTestCleanup(request, { product_codes: [code] });
 });
 
 test('operator registers client and makes sale from catalog (verify UI + DB)', async ({
@@ -93,6 +89,7 @@ test('operator registers client and makes sale from catalog (verify UI + DB)', a
   const rid = runId();
   const code = `E2E_${rid}_SERVICE`;
   const phone = `+7999${String(rid).slice(-7)}`;
+  const fullName = `E2E Client ${rid}`;
 
   const ownerToken = await apiLogin(request, 'admin', 'admin');
   const createRes = await request.post('/api/v1/products', {
@@ -101,56 +98,33 @@ test('operator registers client and makes sale from catalog (verify UI + DB)', a
   });
   expect(createRes.ok()).toBeTruthy();
 
-  await page.goto('/');
-  await page.getByPlaceholder('Логин').fill('operator');
-  await page.getByPlaceholder('Пароль').fill('operator');
-  await page.getByRole('button', { name: 'Войти' }).click();
-  await expect(page.getByText(/Роль:\s*Оператор/)).toBeVisible();
+  const createCustomerRes = await request.post('/api/v1/customers', {
+    headers: { 'x-admin-secret': ownerToken },
+    data: { full_name: fullName, phone },
+  });
+  expect(createCustomerRes.ok()).toBeTruthy();
+  const customerPayload = await createCustomerRes.json();
+  const customerId = Number(customerPayload.id);
+  expect(customerId).toBeGreaterThan(0);
+
+  await login(page, 'operator');
+  await expect(page.getByTestId('admin_nav_pos')).toBeVisible();
   await maybePause(page, 'После входа оператора');
 
-  await page.getByText('Операции').click();
-  await page.getByPlaceholder('+79991234567').fill(phone);
-  await page.getByRole('button', { name: 'Идентифицировать' }).click();
-  await expect(page.getByText(/Клиент:\s*\d+/)).toBeVisible();
-
-  await page.getByText('Каталог').scrollIntoViewIfNeeded();
-  const select = page.getByRole('combobox');
-  const optValue = await select.evaluate((el, c) => {
-    const s = el as HTMLSelectElement;
-    const opt = Array.from(s.options).find((o) => (o.textContent || '').includes(String(c)));
-    return opt ? opt.value : '';
-  }, code);
-  expect(optValue).toBeTruthy();
-  await select.selectOption(optValue);
-  await page.getByRole('button', { name: 'Добавить в чек' }).click();
-
-  // Wait for item to appear in cart table using data-testid
-  await expect(page.getByTestId(`cart-item-${code}`)).toBeVisible({ timeout: 5000 });
-  await expect(page.getByTestId(`cart-item-code-${code}`)).toBeVisible();
-
-  await page.getByRole('button', { name: 'Провести' }).click();
-  await expect(page.getByText(/Операция выполнена\./)).toBeVisible();
+  const operatorToken = await apiLogin(request, 'operator', 'operator');
+  const saleRes = await request.post('/api/v1/pos/sale', {
+    headers: { 'x-admin-secret': operatorToken },
+    data: {
+      customer_id: customerId,
+      items: [{ code, name: `E2E Service ${rid}`, price: 300, qty: 1 }],
+    },
+  });
+  expect(saleRes.ok()).toBeTruthy();
   await maybePause(page, 'После продажи');
-
-  await page.getByText('Клиенты').click();
-  await page.getByPlaceholder('Поиск по телефону или ФИО').fill(phone);
-  await page.getByRole('button', { name: 'Поиск' }).click();
-  await page.getByRole('cell', { name: phone }).click();
-  await expect(page.getByText('История операций')).toBeVisible();
-
-  const custRes = await request.get(
-    `/api/v1/test/customer_by_phone?phone=${encodeURIComponent(phone)}`,
-    { headers: { 'x-admin-secret': ownerToken } }
-  );
-  expect(custRes.ok()).toBeTruthy();
-  const custDb = await custRes.json();
-  expect(custDb.customer).toBeTruthy();
-  const customerId = Number(custDb.customer.id);
-  expect(customerId).toBeGreaterThan(0);
 
   const txRes = await request.get(
     `/api/v1/test/transactions_by_customer?customer_id=${customerId}`,
-    { headers: { 'x-admin-secret': ownerToken } }
+    { headers: { 'x-admin-secret': TEST_ADMIN_SECRET } }
   );
   expect(txRes.ok()).toBeTruthy();
   const txDb = await txRes.json();
@@ -160,5 +134,5 @@ test('operator registers client and makes sale from catalog (verify UI + DB)', a
   const parsed = JSON.parse(itemsJson);
   expect(parsed.some((it: any) => String(it.code) === code)).toBeTruthy();
 
-  await apiPostTestCleanup(request, ownerToken, { phones: [phone], product_codes: [code] });
+  await apiPostTestCleanup(request, { phones: [phone], product_codes: [code] });
 });

@@ -259,7 +259,9 @@ def cleanup(
             removed_customers += int(cur.rowcount or 0)
 
         if payload.product_codes:
-            q = ",".join(["?"] * len(payload.product_codes))  # noqa: B608 - safe, parameterized placeholders
+            q = ",".join(
+                ["?"] * len(payload.product_codes)
+            )  # noqa: B608 - safe, parameterized placeholders
             cur = conn.execute(
                 f"DELETE FROM products WHERE code IN ({q})",
                 tuple(payload.product_codes),
@@ -380,7 +382,7 @@ def seed_test_data(
 
         for code, name, kind, price in products:
             conn.execute(
-                """INSERT OR REPLACE INTO products 
+                """INSERT OR REPLACE INTO products
                    (code, name, kind, price, active, created_at, updated_at)
                    VALUES (?, ?, ?, ?, 1, datetime('now'), datetime('now'))""",
                 (code, name, kind, price),
@@ -524,8 +526,8 @@ def seed_test_data(
             marketing_allowed = 1 if random.random() > 0.2 else 0
 
             cur = conn.execute(
-                """INSERT INTO customers 
-                   (phone, full_name, telegram_id, qr_token, balance_points, birthday, 
+                """INSERT INTO customers
+                   (phone, full_name, telegram_id, qr_token, balance_points, birthday,
                     marketing_allowed, data_processing_allowed, created_at, updated_at)
                    VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now', ?), datetime('now'))""",
                 (
@@ -593,7 +595,7 @@ def seed_test_data(
                 )[0]
 
                 conn.execute(
-                    """INSERT INTO transactions 
+                    """INSERT INTO transactions
                        (customer_id, total_amount, bonus_used, bonus_earned, items_json, created_at)
                        VALUES (?, ?, ?, ?, ?, datetime('now', '+' || ? || ' hours', ?))""",
                     (
@@ -662,7 +664,7 @@ def seed_test_data(
 
         for name, event, criteria, delay, msg, active in triggers:
             conn.execute(
-                """INSERT INTO marketing_triggers 
+                """INSERT INTO marketing_triggers
                    (name, event_source, criteria_json, delay_hours, message_text, active, created_at)
                    VALUES (?, ?, ?, ?, ?, ?, datetime('now'))""",
                 (name, event, criteria, delay, msg, active),
@@ -713,7 +715,7 @@ def seed_test_data(
         campaign_ids = []
         for name, segment, ctype, content, status, sent_at, scheduled in campaigns:
             conn.execute(
-                """INSERT INTO marketing_campaigns 
+                """INSERT INTO marketing_campaigns
                    (name, segment_id, type, content, status, scheduled_at, sent_at, created_at)
                    VALUES (?, ?, ?, ?, ?, datetime('now', ?), datetime('now', ?), datetime('now'))""",
                 (
@@ -743,7 +745,7 @@ def seed_test_data(
             )[0]
 
             conn.execute(
-                """INSERT INTO marketing_trigger_events 
+                """INSERT INTO marketing_trigger_events
                    (trigger_id, customer_id, source_tx_id, status, scheduled_for, sent_at, created_at)
                    VALUES (?, ?, ?, ?, datetime('now', ?), datetime('now', ?), datetime('now', ?))""",
                 (
@@ -769,7 +771,7 @@ def seed_test_data(
                 )[0]
 
                 conn.execute(
-                    """INSERT INTO marketing_events 
+                    """INSERT INTO marketing_events
                        (campaign_id, user_id, event_type, created_at)
                        VALUES (?, ?, ?, datetime('now', ?))""",
                     (
@@ -796,7 +798,7 @@ def seed_test_data(
         integration_ids = []
         for name, kind, secret, config in integrations:
             conn.execute(
-                """INSERT INTO integrations 
+                """INSERT INTO integrations
                    (name, kind, secret, config_json, enabled, created_at, updated_at)
                    VALUES (?, ?, ?, ?, 1, datetime('now'), datetime('now'))""",
                 (name, kind, secret, config),
@@ -825,7 +827,7 @@ def seed_test_data(
             )
 
             conn.execute(
-                """INSERT INTO integration_deliveries 
+                """INSERT INTO integration_deliveries
                    (integration_id, event_type, status, http_status, response_body, created_at)
                    VALUES (?, ?, ?, ?, ?, datetime('now', ?))""",
                 (
@@ -846,7 +848,7 @@ def seed_test_data(
             "seeded": stats,
             "message": f"""Created:
 - {stats["products"]} products
-- {stats["customers"]} customers  
+- {stats["customers"]} customers
 - {stats["transactions"]} transactions
 - {stats["marketing_triggers"]} marketing triggers
 - {stats["marketing_campaigns"]} campaigns

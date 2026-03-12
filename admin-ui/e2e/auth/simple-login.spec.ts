@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test('simple: login through UI', async ({ page }) => {
   await page.goto('/admin/');
@@ -12,14 +12,13 @@ test('simple: login through UI', async ({ page }) => {
   // Click login
   await page.getByTestId('common_btn_login_en').click();
 
-  // Wait for navigation
-  await page.waitForNavigation({ timeout: 10000 });
+  // Wait for SPA transition to authenticated shell
+  await page.waitForURL(/\/admin\/?$/, { timeout: 10000 });
+  await expect(page.getByTestId('admin_nav_dashboard')).toBeVisible({ timeout: 10000 });
 
-  // Check if we're on dashboard
-  expect(page.url()).toContain('dashboard');
+  // Check authenticated shell URL
+  expect(page.url()).toContain('/admin/');
 
-  // Check dashboard content
-  const title = page.getByTestId('admin-dashboard-title');
-  await title.waitFor({ timeout: 5000 });
-  expect(title).toBeVisible();
+  // Check dashboard tab is available
+  await expect(page.getByTestId('admin_nav_dashboard')).toBeVisible();
 });

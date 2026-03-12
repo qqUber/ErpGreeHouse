@@ -39,7 +39,7 @@ MARKETING_BUTTONS: List[Dict[str, Any]] = [
 def get_consent_buttons() -> List[Dict[str, Any]]:
     """
     Get consent keyboard buttons.
-    
+
     Returns:
         List of button definitions with 'text' and 'callback_data' keys
     """
@@ -49,7 +49,7 @@ def get_consent_buttons() -> List[Dict[str, Any]]:
 def get_marketing_buttons() -> List[Dict[str, Any]]:
     """
     Get marketing consent keyboard buttons.
-    
+
     Returns:
         List of button definitions with 'text' and 'callback_data' keys
     """
@@ -59,40 +59,51 @@ def get_marketing_buttons() -> List[Dict[str, Any]]:
 def format_vk_keyboard(buttons: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
     Format buttons for VK API keyboard format.
-    
+
     Args:
         buttons: List of button definitions
-        
+
     Returns:
         VK API compatible keyboard dict
     """
     vk_buttons = []
     for btn in buttons:
-        vk_buttons.append([
-            {
-                "action": {
-                    "type": "text",
-                    "label": btn["text"],
-                    "payload": '{"command": "' + btn["callback_data"] + '"}',
-                },
-                "color": "positive" if "agree" in btn["callback_data"] or "yes" in btn["callback_data"] else "negative"
-            }
-        ])
-    
-    return {
-        "one_time": True,
-        "buttons": vk_buttons
-    }
+        vk_buttons.append(
+            [
+                {
+                    "action": {
+                        "type": "text",
+                        "label": btn["text"],
+                        "payload": '{"command": "' + btn["callback_data"] + '"}',
+                    },
+                    "color": (
+                        "positive"
+                        if "agree" in btn["callback_data"]
+                        or "yes" in btn["callback_data"]
+                        else "negative"
+                    ),
+                }
+            ]
+        )
+
+    return {"one_time": True, "buttons": vk_buttons}
 
 
-def format_telegram_keyboard(buttons: List[Dict[str, Any]]) -> List[List[Dict[str, str]]]:
+def format_telegram_keyboard(
+    buttons: List[Dict[str, Any]],
+) -> List[List[Dict[str, str]]]:
     """
     Format buttons for Telegram InlineKeyboardMarkup.
-    
+
     Args:
         buttons: List of button definitions
-        
+
     Returns:
         Telegram InlineKeyboardMarkup compatible nested list
     """
-    return [[{"text": btn["text"], "callback_data": btn["callback_data"]} for btn in buttons]]
+    return [
+        [
+            {"text": btn["text"], "callback_data": btn["callback_data"]}
+            for btn in buttons
+        ]
+    ]

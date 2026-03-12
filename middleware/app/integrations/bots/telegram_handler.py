@@ -1,8 +1,8 @@
 import asyncio
 import sys
+from asyncio import TaskGroup
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator, Coroutine, Optional
-from asyncio import TaskGroup
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -14,19 +14,20 @@ RedisStorage: type | None = None
 
 try:
     from aiogram.fsm.storage.memory import MemoryStorage as _MemoryStorage
+
     MemoryStorage = _MemoryStorage
 except (ImportError, OSError):
     pass
 
 try:
     from aiogram.fsm.storage.redis import RedisStorage as _RedisStorage
+
     RedisStorage = _RedisStorage
 except (ImportError, OSError):
     pass
+from ...config import get_settings
 from ...handlers import router
 from ...middlewares import ThrottleMiddleware
-
-from ...config import get_settings
 from ...storage import get_redis as get_redis_client
 
 

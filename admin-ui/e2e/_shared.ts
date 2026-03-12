@@ -1,18 +1,18 @@
-import { test as base, Page, TestInfo, expect } from '@playwright/test';
+import { test as base, expect, Page, TestInfo } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 
 // Import i18n utilities
 import {
-  setTestLanguage,
-  Menu,
+  Auth,
+  Clients,
   Common,
   Dashboard,
-  Sales,
-  Clients,
-  Products,
   Marketing,
-  Auth,
+  Menu,
+  Products,
+  Sales,
+  setTestLanguage,
   t,
 } from './i18n-test';
 
@@ -283,8 +283,28 @@ type RoleName = 'owner' | 'marketer' | 'operator';
 
 export const RolePermissions = {
   owner: {
-    tabs: ['dashboard', 'customers', 'pos', 'products', 'marketing', 'integrations', 'settings', 'compliance', 'analytics'],
-    apiAccess: ['dashboard', 'customers', 'products', 'pos', 'integrations', 'marketing', 'settings', 'compliance', 'analytics'],
+    tabs: [
+      'dashboard',
+      'customers',
+      'pos',
+      'products',
+      'marketing',
+      'integrations',
+      'settings',
+      'compliance',
+      'analytics',
+    ],
+    apiAccess: [
+      'dashboard',
+      'customers',
+      'products',
+      'pos',
+      'integrations',
+      'marketing',
+      'settings',
+      'compliance',
+      'analytics',
+    ],
   },
   marketer: {
     tabs: ['dashboard', 'customers', 'products', 'marketing', 'integrations'],
@@ -338,8 +358,20 @@ export async function expectNoUnauthorizedTabs(page: Page, role: TestRole): Prom
   const roleKey = role === 'admin' ? 'owner' : role === 'manager' ? 'marketer' : 'operator';
   const permissions = RolePermissions[roleKey];
 
-  const allTabs: NavItemKey[] = ['dashboard', 'customers', 'pos', 'products', 'marketing', 'integrations', 'settings', 'compliance', 'analytics'];
-  const unauthorizedTabs = allTabs.filter((tab) => !(permissions.tabs as readonly string[]).includes(tab));
+  const allTabs: NavItemKey[] = [
+    'dashboard',
+    'customers',
+    'pos',
+    'products',
+    'marketing',
+    'integrations',
+    'settings',
+    'compliance',
+    'analytics',
+  ];
+  const unauthorizedTabs = allTabs.filter(
+    (tab) => !(permissions.tabs as readonly string[]).includes(tab)
+  );
 
   for (const tab of unauthorizedTabs) {
     const testId = TestIds.nav[tab];
@@ -413,11 +445,11 @@ export async function login(page: Page, role: TestRole = 'admin') {
     for (const cookieStr of cookieStrings) {
       const [nameValuePart] = cookieStr.split(';');
       const [name, value] = nameValuePart.trim().split('=');
-      
+
       const cookie: any = {
         name: name,
         value: value,
-        url: baseUrl
+        url: baseUrl,
       };
 
       try {
@@ -457,7 +489,10 @@ export async function maybePause(page: Page, label: string) {
   const pause = process.env.E2E_PAUSE === '1' || process.env.E2E_PAUSE === 'true';
   if (!pause) return;
   await page.pause();
-  await page.getByText(label).count().catch(() => {});
+  await page
+    .getByText(label)
+    .count()
+    .catch(() => {});
 }
 
 export function attachConsole(page: Page, testInfo: TestInfo) {

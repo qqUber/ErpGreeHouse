@@ -3,7 +3,7 @@ import secrets
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Header, HTTPException, Depends
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from .admin_auth_api import require_jwt_auth
@@ -14,8 +14,8 @@ from .integration_events import dispatch_event
 from .loyalty import LoyaltyRules, calc_earned_points, clamp_redeem_points
 from .pos_templates import list_integration_templates
 from .storage import get_redis
-from .worker import send_customer_message
 from .trigger_engine import evaluate_and_queue_triggers
+from .worker import send_customer_message
 
 router = APIRouter(prefix="/api/v1/integrations")
 public_router = APIRouter(prefix="/api/v1/public/integrations")

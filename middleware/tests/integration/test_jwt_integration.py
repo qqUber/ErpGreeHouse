@@ -3,18 +3,19 @@ JWT integration tests for complete authentication flow
 Tests the full JWT authentication cycle including login, token refresh, and protected endpoint access
 """
 
-import pytest
 import time
-import jwt
 from datetime import datetime, timedelta, timezone
-from unittest.mock import Mock, patch, MagicMock
-from fastapi import HTTPException
-from fastapi.testclient import TestClient
+from unittest.mock import MagicMock, Mock, patch
+
+import jwt
+import pytest
+from app.auth import create_access_token, create_refresh_token, validate_access_token
+from app.config import get_settings
 
 # Import the FastAPI app
 from app.main import app
-from app.auth import create_access_token, create_refresh_token, validate_access_token
-from app.config import get_settings
+from fastapi import HTTPException
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture

@@ -1,7 +1,9 @@
-from dataclasses import dataclass, field
 import logging
+from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
+
 import redis
+
 from .config import get_settings
 
 # Redis key prefixes for sorted sets
@@ -86,9 +88,21 @@ def get_tier(spent_amount: int, rules: LoyaltyRules) -> Tier:
 def calc_earned_points(
     total_amount: int, spent_amount: int, rules: LoyaltyRules
 ) -> int:
-    """Calculates earned points using the dynamic tier accrual percent."""
+    """Calculates earned points using the dynamic tier accrual percent.
+
+    Includes bounds checking to prevent overflow with very large amounts.
+    """
     if total_amount < rules.min_amount_for_accrual:
         return 0
+
+    # Prevent overflow: max reasonable transaction is 100 million
+    MAX_AMOUNT = 100_000_000
+    if total_amount > MAX_AMOUNT:
+        logger.warning(
+            f"[Loyalty] Transaction amount {total_amount} exceeds maximum {MAX_AMOUNT}"
+        )
+        total_amount = MAX_AMOUNT
+
     tier = get_tier(spent_amount, rules)
     return (total_amount * tier.accrual_percent) // 100
 
@@ -158,11 +172,14 @@ def increment_user_spent_score(user_id: int, amount: int) -> int:
 
     Returns:
         The new total score after increment
+
+    Raises:
+        RuntimeError: If Redis is unavailable
     """
     r = _get_redis()
     if r is None:
-        logger.warning("[Loyalty] Redis unavailable, cannot increment user score")
-        return 0
+        logger.error("[Loyalty] Redis unavailable, cannot increment user score")
+        raise RuntimeError("Loyalty system unavailable: Redis connection failed")
     new_score = r.zincrby(LEADERBOARD_KEY, amount, str(user_id))
     return int(new_score)  # type: ignore[arg-type]
 

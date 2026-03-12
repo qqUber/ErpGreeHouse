@@ -14,11 +14,11 @@ Source = Literal["tg", "vk"]
 def consent_key(source: Source, user_id: int) -> str:
     """
     Generate Redis key for consent state.
-    
+
     Args:
         source: Platform source - "tg" for Telegram, "vk" for VK
         user_id: The platform user ID
-        
+
     Returns:
         Redis key string in format "crm:consent:{source}:{user_id}"
     """
@@ -28,11 +28,11 @@ def consent_key(source: Source, user_id: int) -> str:
 def registration_key(source: Source, user_id: int) -> str:
     """
     Generate Redis key for in-progress registration data.
-    
+
     Args:
         source: Platform source - "tg" for Telegram, "vk" for VK
         user_id: The platform user ID
-        
+
     Returns:
         Redis key string in format "crm:reg:{source}:{user_id}"
     """
@@ -42,11 +42,11 @@ def registration_key(source: Source, user_id: int) -> str:
 def cart_key(source: Source, user_id: int) -> str:
     """
     Generate Redis key for shopping cart data.
-    
+
     Args:
         source: Platform source - "tg" for Telegram, "vk" for VK
         user_id: The platform user ID
-        
+
     Returns:
         Redis key string in format "crm:cart:{source}:{user_id}"
     """

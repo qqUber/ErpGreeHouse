@@ -1,10 +1,12 @@
-from typing import Dict, List, Optional, Any
-from fastapi import APIRouter, Header, HTTPException, Body, Depends
-from pydantic import BaseModel
 import json
-from .db import get_db
-from .auth import check_permission
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, Body, Depends, Header, HTTPException
+from pydantic import BaseModel
+
 from .admin_auth_api import require_jwt_auth
+from .auth import check_permission
+from .db import get_db
 from .worker import celery_app
 
 router = APIRouter(prefix="/api/v1/marketing")
@@ -29,8 +31,8 @@ def get_customers_with_consent(
     try:
         cur = conn.execute(
             """
-            SELECT id, telegram_id, vk_id, phone, full_name, marketing_allowed 
-            FROM customers 
+            SELECT id, telegram_id, vk_id, phone, full_name, marketing_allowed
+            FROM customers
             WHERE marketing_allowed = 1 AND (telegram_id IS NOT NULL OR vk_id IS NOT NULL)
             LIMIT ? OFFSET ?
             """,
@@ -123,8 +125,8 @@ def preview_segment(
 
         # Build query to find matching customers with marketing consent
         query = """
-            SELECT id, telegram_id, vk_id, phone, full_name, marketing_allowed, points_balance 
-            FROM customers 
+            SELECT id, telegram_id, vk_id, phone, full_name, marketing_allowed, points_balance
+            FROM customers
             WHERE marketing_allowed = 1 AND (telegram_id IS NOT NULL OR vk_id IS NOT NULL)
         """
         params = []
@@ -143,8 +145,8 @@ def preview_segment(
         if "min_purchase_amount" in criteria:
             conditions.append("""
                 EXISTS (
-                    SELECT 1 FROM transactions 
-                    WHERE customer_id = customers.id 
+                    SELECT 1 FROM transactions
+                    WHERE customer_id = customers.id
                     AND total_amount >= ?
                 )
             """)
@@ -160,11 +162,13 @@ def preview_segment(
             conditions.append(
                 """
                 EXISTS (
-                    SELECT 1 FROM customer_preferences 
-                    WHERE customer_id = customers.id 
+                    SELECT 1 FROM customer_preferences
+                    WHERE customer_id = customers.id
                     AND preference IN ({})
                 )
-            """.format(",".join(["?"] * len(criteria["preferences"])))  # noqa: B608 - safe, uses parameterized placeholders
+            """.format(
+                    ",".join(["?"] * len(criteria["preferences"]))
+                )  # noqa: B608 - safe, uses parameterized placeholders
             )
             params.extend(criteria["preferences"])
 
@@ -523,12 +527,12 @@ def get_campaign_analytics(
         # Get campaign performance metrics
         cur = conn.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(CASE WHEN event_type = 'sent' THEN 1 END) as sent,
                 COUNT(CASE WHEN event_type = 'delivered' THEN 1 END) as delivered,
                 COUNT(CASE WHEN event_type = 'opened' THEN 1 END) as opened,
                 COUNT(CASE WHEN event_type = 'clicked' THEN 1 END) as clicked
-            FROM marketing_events 
+            FROM marketing_events
             WHERE campaign_id = ?
         """,
             (id,),
@@ -538,14 +542,14 @@ def get_campaign_analytics(
         # Get channel breakdown
         cur = conn.execute(
             """
-            SELECT 
+            SELECT
                 json_extract(event_data, '$.channel') as channel,
                 COUNT(CASE WHEN event_type = 'sent' THEN 1 END) as sent,
                 COUNT(CASE WHEN event_type = 'delivered' THEN 1 END) as delivered,
                 COUNT(CASE WHEN event_type = 'opened' THEN 1 END) as opened,
                 COUNT(CASE WHEN event_type = 'clicked' THEN 1 END) as clicked
-            FROM marketing_events 
-            WHERE campaign_id = ? 
+            FROM marketing_events
+            WHERE campaign_id = ?
             GROUP BY json_extract(event_data, '$.channel')
         """,
             (id,),
@@ -571,11 +575,11 @@ def get_events_breakdown(
     conn = db.connect()
     try:
         cur = conn.execute("""
-            SELECT 
+            SELECT
                 event_type,
                 COUNT(*) as count,
                 json_extract(event_data, '$.channel') as channel
-            FROM marketing_events 
+            FROM marketing_events
             GROUP BY event_type, json_extract(event_data, '$.channel')
             ORDER BY event_type
         """)

@@ -1,7 +1,7 @@
 # ERP GreenHouse Database Audit Report
 
-**Generated:** 2026-02-22  
-**Auditor:** Lead QA/Release Engineer  
+**Generated:** 2026-02-22
+**Auditor:** Lead QA/Release Engineer
 **Database:** SQLite3 (crm.db)
 
 ---
@@ -226,7 +226,7 @@ Created [`middleware/tests/unit/test_search_cyrillic_serbian.py`](middleware/tes
 2. **For better Unicode support**: Use case-insensitive collation
 3. **For advanced search**: Consider full-text search with:
    ```sql
-   SELECT * FROM customers 
+   SELECT * FROM customers
    WHERE to_tsvector('russian', full_name) @@ plainto_tsquery('russian', 'иван')
    ```
 

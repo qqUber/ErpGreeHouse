@@ -44,9 +44,9 @@ run_limited() {
     local test_type=$1
     local memory_limit="${2:-512m}"
     local cpu_limit="${3:-1.0}"
-    
+
     echo "Running $test_type tests (Memory: $memory_limit, CPU: $cpu_limit)..."
-    
+
     # Use different approaches based on OS
     if [[ "$OS" == "linux" ]] && [[ "${CI:-}" != "true" ]] && command -v systemd-run &> /dev/null && systemd-run --user --scope --quiet true &> /dev/null; then
         # Linux with systemd
@@ -154,7 +154,7 @@ cat > "$REPORT_DIR/summary.md" << EOF
 
 ## Test Summary
 - **Unit Tests**: $(find "$REPORT_DIR" -name "*unit*report*" -exec grep -c "PASSED" {} \; 2>/dev/null || echo "0") passed
-- **Integration Tests**: $(find "$REPORT_DIR" -name "*integration*report*" -exec grep -c "PASSED" {} \; 2>/dev/null || echo "0") passed  
+- **Integration Tests**: $(find "$REPORT_DIR" -name "*integration*report*" -exec grep -c "PASSED" {} \; 2>/dev/null || echo "0") passed
 - **E2E Tests**: $(find "$REPORT_DIR" -name "*e2e*report*" -exec grep -c "PASSED" {} \; 2>/dev/null || echo "0") passed
 - **Load Tests**: Completed
 - **Security Issues**: $(find "$REPORT_DIR" -name "*bandit*" -exec grep -c "issue" {} \; 2>/dev/null || echo "0") found

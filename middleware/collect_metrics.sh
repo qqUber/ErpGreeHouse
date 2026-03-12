@@ -26,13 +26,13 @@ if [[ "$OS" == "linux" ]]; then
     else
         top -bn1 | head -20 > "$REPORT_DIR/cpu_usage.log"
     fi
-    
+
     free -h > "$REPORT_DIR/memory_usage.log"
     df -h > "$REPORT_DIR/disk_usage.log"
-    
+
     # Load average
     uptime > "$REPORT_DIR/load_average.log"
-    
+
 elif [[ "$OS" == "windows" ]]; then
     # Windows system metrics (if available)
     if command -v wmic &> /dev/null; then
@@ -49,7 +49,7 @@ echo "🔄 Collecting Redis metrics..."
 if command -v redis-cli &> /dev/null; then
     redis-cli info > "$REPORT_DIR/redis_info.log" 2>/dev/null
     redis-cli --bigkeys > "$REPORT_DIR/redis_bigkeys.log" 2>/dev/null
-    
+
     # Monitor Redis for 10 seconds
     timeout 10 redis-cli monitor > "$REPORT_DIR/redis_monitor.log" 2>/dev/null || true
 else
@@ -170,28 +170,28 @@ cat > "$REPORT_DIR/dashboard.html" << EOF
         <h1>🚀 Telegram CRM MVP - System Dashboard</h1>
         <p>Generated: $(date)</p>
     </div>
-    
+
     <div class="metric">
         <h3>📊 System Overview</h3>
         <p><strong>OS:</strong> $OS</p>
         <p><strong>Hostname:</strong> $(hostname 2>/dev/null || echo "unknown")</p>
     </div>
-    
+
     <div class="metric">
         <h3>📱 Application Status</h3>
         <p>$(cat "$REPORT_DIR/app_health.log" 2>/dev/null || echo "❌ Application not running")</p>
     </div>
-    
+
     <div class="metric">
         <h3>🔄 Redis Status</h3>
         <p>$(if redis-cli ping 2>/dev/null; then echo "✅ Redis is running"; else echo "❌ Redis not available"; fi)</p>
     </div>
-    
+
     <div class="metric">
         <h3>📝 Recent Activity</h3>
         <p>Check the detailed logs in: $REPORT_DIR/</p>
     </div>
-    
+
     <div class="metric">
         <h3>🔗 Quick Links</h3>
         <ul>

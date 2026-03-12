@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import Dict, List
 
 MENU: List[Dict] = [
     {"code": "cap", "name": "Капучино", "price": 200},

@@ -1,10 +1,9 @@
-import pytest
 import time
-import jwt
 from datetime import datetime, timedelta, timezone
-from fastapi.testclient import TestClient
 from unittest.mock import MagicMock, patch
-from app.main import app
+
+import jwt
+import pytest
 from app.auth import (
     create_access_token,
     create_refresh_token,
@@ -12,6 +11,8 @@ from app.auth import (
     validate_refresh_token,
 )
 from app.config import get_settings
+from app.main import app
+from fastapi.testclient import TestClient
 
 # Role definitions for testing
 ROLES = {
@@ -136,9 +137,7 @@ class TestJWTRoleBasedE2E:
 
         # Call refresh endpoint
         client.cookies.set("refresh_token", refresh_token)
-        response = client.post(
-            "/api/v1/public/auth/refresh"
-        )
+        response = client.post("/api/v1/public/auth/refresh")
 
         assert response.status_code == 200
         assert "access_token" in response.cookies
@@ -187,9 +186,7 @@ class TestJWTRoleBasedE2E:
 
         # Logout
         client.cookies.set("access_token", access_token)
-        response = client.post(
-            "/api/v1/auth/logout"
-        )
+        response = client.post("/api/v1/auth/logout")
 
         assert response.status_code == 200
         # Check if cookies are set to be deleted (Set-Cookie with empty value or expires in past)

@@ -1,6 +1,7 @@
 import json
 import logging
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 from .db import get_db
 from .worker import celery_app
 

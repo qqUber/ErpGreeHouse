@@ -9,11 +9,12 @@ Usage:
     pytest tests/unit/test_search_cyrillic_serbian.py -v
 """
 
+import os
 import sqlite3
 import sys
-import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
 import pytest
 
 

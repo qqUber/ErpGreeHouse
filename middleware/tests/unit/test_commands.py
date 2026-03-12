@@ -2,13 +2,14 @@
 Tests for shared commands module.
 """
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 from app.integrations.bots.shared.commands import (
+    cmd_profile,
+    cmd_revoke_consent,
     cmd_start,
     cmd_subscribe,
-    cmd_revoke_consent,
-    cmd_profile,
     get_customer_info,
     is_registered,
 )

@@ -90,7 +90,7 @@ pre {
 
 <br>
 <div id="results">
-    
+
 <div id="issue-0">
 <div class="issue-block issue-sev-low">
     <b>try_except_pass: </b> Try, Except, Pass detected.<br>
@@ -107,7 +107,7 @@ pre {
 153	            conn.close()
 154	    except Exception:
 155	        pass  # Silent fail for cache warming
-156	
+156
 </pre>
 </div>
 
@@ -174,9 +174,9 @@ pre {
 
 <div class="code">
 <pre>
-756	
+756
 757	    return {&quot;refreshed&quot;: True, &quot;token_type&quot;: &quot;bearer&quot;}
-758	
+758
 </pre>
 </div>
 
@@ -197,23 +197,23 @@ pre {
 
 <div class="code">
 <pre>
-325	
+325
 326	def verify_webhook_secret(
 327	    secret_header: str | None, expected: str, admin_secret: str = &quot;&quot;
 328	) -&gt; None:
 329	    &quot;&quot;&quot;Verify the webhook secret header against expected secret or ADMIN_SECRET.
-330	
+330
 331	    Allows authentication via either:
 332	    1. WEBHOOK_SECRET (dedicated webhook secret)
 333	    2. ADMIN_SECRET (environment admin secret)
-334	
+334
 335	    In development mode (when both secrets are empty), webhooks are allowed without auth.
-336	
+336
 337	    Args:
 338	        secret_header: The secret provided in the request header
 339	        expected: The expected WEBHOOK_SECRET value
 340	        admin_secret: Optional ADMIN_SECRET value to also accept
-341	
+341
 342	    Raises:
 343	        HTTPException: 401 if secret is invalid, None if allowed
 344	    &quot;&quot;&quot;
@@ -223,25 +223,25 @@ pre {
 348	            &quot;[WEBHOOK] No webhook secret configured - allowing webhook request (dev mode)&quot;
 349	        )
 350	        return
-351	
+351
 352	    if not secret_header:
 353	        raise HTTPException(
 354	            status_code=HTTP_401_UNAUTHORIZED, detail=&quot;Missing webhook secret&quot;
 355	        )
-356	
+356
 357	    # Use constant-time comparison to prevent timing attacks
 358	    from secrets import compare_digest
-359	
+359
 360	    # Accept either webhook_secret or ADMIN_SECRET
 361	    expected_match = compare_digest(secret_header, expected) if expected else False
 362	    admin_match = compare_digest(secret_header, admin_secret) if admin_secret else False
-363	
+363
 364	    if not (expected_match or admin_match):
 365	        logger.warning(&quot;[WEBHOOK] Invalid webhook secret attempt&quot;)
 366	        raise HTTPException(
 367	            status_code=HTTP_401_UNAUTHORIZED, detail=&quot;Invalid webhook secret&quot;
 368	        )
-369	
+369
 </pre>
 </div>
 

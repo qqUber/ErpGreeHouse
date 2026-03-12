@@ -1,23 +1,24 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from app.loyalty import (
-    update_user_spent_score,
-    increment_user_spent_score,
-    get_user_rank,
-    get_user_percentile,
-    get_top_spenders,
-    get_tier_from_percentile,
-    get_users_in_tier,
+    LoyaltyRules,
     batch_update_scores,
-    get_user_score,
-    remove_user_from_leaderboard,
+    bulk_increment_scores,
+    calculate_user_tier,
     get_leaderboard_count,
     get_rank_range,
-    calculate_user_tier,
+    get_tier_from_percentile,
     get_tier_leaderboard,
+    get_top_spenders,
+    get_user_percentile,
+    get_user_rank,
+    get_user_score,
     get_user_tier_rank,
-    bulk_increment_scores,
-    LoyaltyRules,
+    get_users_in_tier,
+    increment_user_spent_score,
+    remove_user_from_leaderboard,
+    update_user_spent_score,
 )
 
 
@@ -55,8 +56,8 @@ class TestRedisLoyaltyOperations:
     def test_increment_user_spent_score_redis_unavailable(self, mock_get_redis):
         """Test handling Redis unavailability for increment."""
         mock_get_redis.return_value = None
-        result = increment_user_spent_score(123, 1000)
-        assert result == 0
+        with pytest.raises(RuntimeError, match="Loyalty system unavailable"):
+            increment_user_spent_score(123, 1000)
 
     @patch("app.loyalty._get_redis")
     def test_get_user_rank(self, mock_get_redis):

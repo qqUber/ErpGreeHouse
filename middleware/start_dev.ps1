@@ -63,7 +63,7 @@ Write-Host @"
 # Step 1: Clear Redis/Memurai cache
 if (-not $SkipRedisFlush) {
     Write-Step "Clearing Redis/Memurai cache..."
-    
+
     try {
         # Try to flush Redis using Python script if available
         if (Test-Path "$ScriptDir\flush_redis.py") {
@@ -97,7 +97,7 @@ Write-Step "Checking for existing processes on port $PORT..."
 $connection = Get-NetTCPConnection -LocalPort $PORT -ErrorAction SilentlyContinue
 if ($connection) {
     $processIds = $connection | Select-Object -ExpandProperty OwningProcess -Unique
-    
+
     foreach ($processId in $processIds) {
         $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
         if ($process) {
@@ -106,19 +106,19 @@ if ($connection) {
             Start-Sleep -Milliseconds 500
         }
     }
-    
+
     # Verify port is now free
     $connection = Get-NetTCPConnection -LocalPort $PORT -ErrorAction SilentlyContinue
     if ($connection) {
         Write-Warning "Port $PORT still in use, attempting tree kill..."
-        
+
         # If normal kill failed, try recursive tree kill
         foreach ($processId in $processIds) {
             $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
             if ($process) {
                 $processName = $process.ProcessName
                 Write-Warning "Tree killing all $processName processes..."
-                
+
                 # Try taskkill /F /IM for python/node processes
                 if ($processName -eq "python" -or $processName -eq "python3" -or $processName -eq "node") {
                     taskkill /F /IM "$processName.exe" /T 2>$null
@@ -128,7 +128,7 @@ if ($connection) {
                 Start-Sleep -Milliseconds 1000
             }
         }
-        
+
         # Final verification
         $connection = Get-NetTCPConnection -LocalPort $PORT -ErrorAction SilentlyContinue
         if ($connection) {
@@ -179,16 +179,16 @@ try {
         Write-Error-Msg "Uvicorn not found. Please install it: pip install uvicorn"
         exit 1
     }
-    
+
     Write-Success "Server starting at http://127.0.0.1:$PORT"
     Write-Success "API docs available at http://127.0.0.1:$PORT/docs"
     Write-Success "Admin UI available at http://127.0.0.1:$PORT/admin/"
-    
+
     if (-not $NoBrowser) {
         Start-Sleep -Seconds 2
         Start-Process "http://127.0.0.1:$PORT"
     }
-    
+
     # Execute uvicorn
     & uvicorn $APP_MODULE --host 127.0.0.1 --port $PORT --reload
 }
