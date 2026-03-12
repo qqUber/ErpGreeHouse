@@ -4,16 +4,16 @@ import * as path from 'path';
 
 // Import i18n utilities
 import {
-  Auth,
-  Clients,
-  Common,
-  Dashboard,
-  Marketing,
-  Menu,
-  Products,
-  Sales,
-  setTestLanguage,
-  t,
+    Auth,
+    Clients,
+    Common,
+    Dashboard,
+    Marketing,
+    Menu,
+    Products,
+    Sales,
+    setTestLanguage,
+    t,
 } from './i18n-test';
 
 export { Auth, Clients, Common, Dashboard, Marketing, Menu, Products, Sales, t };
@@ -416,7 +416,16 @@ export function hasPermission(role: TestRole, feature: string): boolean {
  * Uses credentials from TEST_CREDENTIALS (fetched from DB)
  */
 export async function login(page: Page, role: TestRole = 'admin') {
-  const creds = TEST_CREDENTIALS[role];
+  const resolvedRole =
+    TEST_CREDENTIALS[role] != null
+      ? role
+      : role === 'admin'
+        ? ('owner' as TestRole)
+        : role === 'manager'
+          ? ('marketer' as TestRole)
+          : role;
+
+  const creds = TEST_CREDENTIALS[resolvedRole];
 
   if (!creds) {
     throw new Error(
@@ -424,7 +433,7 @@ export async function login(page: Page, role: TestRole = 'admin') {
     );
   }
 
-  console.log(`[Test] Logging in as ${role} (${creds.username})`);
+  console.log(`[Test] Logging in as ${resolvedRole} (${creds.username})`);
 
   const baseUrl = process.env.E2E_BASE_URL || 'http://localhost:5173';
   const loginResponse = await page.context().request.post(baseUrl + '/api/v1/public/auth/login', {

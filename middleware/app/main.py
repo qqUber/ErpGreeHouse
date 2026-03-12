@@ -426,7 +426,11 @@ async def set_webhook(
     verify_webhook_secret(x_webhook_secret, settings.webhook_secret, admin_secret)
     bot = create_bot()
     url = f"{settings.base_web_url}/telegram/webhook"
-    await bot.set_webhook(url)
+    try:
+        await bot.set_webhook(url)
+    except Exception as e:
+        logger.exception("[WEBHOOK] Failed to set Telegram webhook")
+        raise HTTPException(status_code=400, detail=f"Failed to set webhook: {e}")
     return {"webhook_set": True, "url": url}
 
 
