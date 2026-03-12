@@ -352,7 +352,10 @@
     "settings": "Настройки",
     "analytics": "Аналитика",
     "customers": "Клиенты",
-    "products": "Товары"
+    "products": "Товары",
+    "transactions": "Транзакции",
+    "pointsEarned": "Начислено баллов",
+    "pointsRedeemed": "Использовано баллов"
   },
   "dashboardManager": {
     "totalCustomers": "Всего клиентов",

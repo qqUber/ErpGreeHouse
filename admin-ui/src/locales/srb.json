@@ -352,7 +352,10 @@
     "settings": "Подешавања",
     "analytics": "Аналитика",
     "customers": "Клијенти",
-    "products": "Производи"
+    "products": "Производи",
+    "transactions": "Трансакције",
+    "pointsEarned": "Бодова зарађено",
+    "pointsRedeemed": "Бодова искоришћено"
   },
   "dashboardManager": {
     "totalCustomers": "Укупни клијенти",

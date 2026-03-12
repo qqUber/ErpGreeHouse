@@ -357,7 +357,10 @@
     "settings": "Settings",
     "analytics": "Analytics",
     "customers": "Customers",
-    "products": "Products"
+    "products": "Products",
+    "transactions": "Transactions",
+    "pointsEarned": "Points Earned",
+    "pointsRedeemed": "Points Redeemed"
   },
   "dashboardManager": {
     "totalCustomers": "Total Customers",

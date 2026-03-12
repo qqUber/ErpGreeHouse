@@ -48,6 +48,8 @@ services:
       - "5173:5173"
     env_file:
       - .env.dev
+    environment:
+      - E2E_API_BASE_URL=http://backend:8000
     volumes:
       - ./admin-ui:/app
       - /app/node_modules

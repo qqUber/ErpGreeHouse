@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { StatCard } from '../ui/StatCard';
 import { Widget } from '../Widget';
 
 type ProductsData = {
@@ -10,21 +11,23 @@ type ProductsData = {
 export function ProductsWidget({ data }: { data?: ProductsData }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
-  const total = Number(data?.top_products_today?.length ?? 0);
-  const newWeek = Number(
-    (data?.trending_products || []).filter((p) => Number(p?.growth_percent || 0) > 0).length
-  );
+  
+  // NaN guards: ensure all numeric values are valid
+  const total = Number.isFinite(data?.top_products_today?.length) ? Number(data?.top_products_today?.length) : 0;
+  const trendingCount = (data?.trending_products || []).filter((p) => {
+    const growth = Number(p?.growth_percent || 0);
+    return Number.isFinite(growth) && growth > 0;
+  }).length;
+  const newWeek = Number.isFinite(trendingCount) ? trendingCount : 0;
   const topSelling = data?.top_products_today?.[0]?.name || t('widgets.products.espresso');
   const lowStock = Math.max(0, total - newWeek);
 
   const compactContent = (
-    <div className="text-center">
-      <div className="text-3xl font-bold text-green-600">{total}</div>
-      <div className="text-sm text-gray-500">{t('widgets.products.activeProducts')}</div>
-      <div className="text-sm text-gray-500 mt-1">
-        {t('widgets.common.plusThisWeek', { count: newWeek })}
-      </div>
-    </div>
+    <StatCard
+      variant="success"
+      value={total}
+      label={t('widgets.products.activeProducts')}
+    />
   );
 
   const expandedContent = (

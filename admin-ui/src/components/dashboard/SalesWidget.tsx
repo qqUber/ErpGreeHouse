@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { StatCard } from '../ui/StatCard';
 import { Widget } from '../Widget';
 
 type SalesData = {
@@ -15,34 +16,40 @@ type SalesData = {
 export function SalesWidget({ data }: { data?: SalesData }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
-  const totalRevenue = Number(data?.total_revenue ?? 0);
-  const transactions = Number(data?.total_transactions ?? 0);
-  const avgCheck = Number(data?.average_check ?? 0);
+  
+  // NaN guards: ensure all numeric values are valid
+  const totalRevenue = Number.isFinite(data?.total_revenue) ? Number(data?.total_revenue) : 0;
+  const transactions = Number.isFinite(data?.total_transactions) ? Number(data?.total_transactions) : 0;
+  const avgCheck = Number.isFinite(data?.average_check) ? Number(data?.average_check) : 0;
   const thisWeek = totalRevenue;
   const peakHour = data?.peak_hour;
-  const peakHourTx = Number(data?.peak_hour_transactions ?? 0);
+  const peakHourTx = Number.isFinite(data?.peak_hour_transactions) ? Number(data?.peak_hour_transactions) : 0;
   const topProducts = data?.top_products || [];
   const topProductName = topProducts[0]?.name || '—';
   const recentHourly = (data?.hourly_breakdown || []).slice(-6);
   const firstHalfRevenue = recentHourly
     .slice(0, Math.floor(recentHourly.length / 2))
-    .reduce((acc, h) => acc + Number(h?.revenue || 0), 0);
+    .reduce((acc, h) => {
+      const rev = Number.isFinite(h?.revenue) ? Number(h.revenue) : 0;
+      return acc + rev;
+    }, 0);
   const secondHalfRevenue = recentHourly
     .slice(Math.floor(recentHourly.length / 2))
-    .reduce((acc, h) => acc + Number(h?.revenue || 0), 0);
+    .reduce((acc, h) => {
+      const rev = Number.isFinite(h?.revenue) ? Number(h.revenue) : 0;
+      return acc + rev;
+    }, 0);
   const growth =
-    firstHalfRevenue > 0
+    Number.isFinite(firstHalfRevenue) && firstHalfRevenue > 0
       ? Math.round(((secondHalfRevenue - firstHalfRevenue) / firstHalfRevenue) * 100)
       : 0;
 
   const compactContent = (
-    <div className="text-center">
-      <div className="text-3xl font-bold text-purple-600">₽{totalRevenue.toLocaleString()}</div>
-      <div className="text-sm text-gray-500">{t('widgets.sales.totalSales')}</div>
-      <div className="text-sm text-gray-500 mt-1">
-        {t('widgets.sales.growthThisWeek', { count: growth })}
-      </div>
-    </div>
+    <StatCard
+      variant="info"
+      value={`₽${totalRevenue.toLocaleString()}`}
+      label={t('widgets.sales.totalSales')}
+    />
   );
 
   const expandedContent = (
@@ -89,15 +96,11 @@ export function SalesWidget({ data }: { data?: SalesData }) {
             </div>
           </div>
         ) : null}
-        <div>
-          <div className="text-sm text-gray-500">{t('widgets.sales.growth')}</div>
-          <div
-            className={`text-xl font-bold ${growth >= 0 ? 'text-green-600' : 'text-orange-600'}`}
-          >
-            {growth >= 0 ? '+' : ''}
-            {growth}%
-          </div>
-        </div>
+        <StatCard
+          variant={growth >= 0 ? 'success' : 'warning'}
+          value={`${growth >= 0 ? '+' : ''}${growth}%`}
+          label={t('widgets.sales.growth')}
+        />
       </div>
     </div>
   );
@@ -124,10 +127,11 @@ export function SalesWidget({ data }: { data?: SalesData }) {
           <span className="text-sm text-gray-500">{t('widgets.sales.dailyAverage')}</span>
           <span className="text-lg font-semibold">₽{avgCheck.toLocaleString()}</span>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">{t('widgets.sales.growth')}</span>
-          <span className="text-lg font-semibold text-green-600">+{growth}%</span>
-        </div>
+        <StatCard
+          variant={growth >= 0 ? 'success' : 'warning'}
+          value={`${growth >= 0 ? '+' : ''}${growth}%`}
+          label={t('widgets.sales.growth')}
+        />
       </div>
     </Widget>
   );

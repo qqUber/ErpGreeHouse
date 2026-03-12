@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { StatCard } from '../ui/StatCard';
 import { Widget } from '../Widget';
 
 type MarketingData = {
@@ -11,21 +12,24 @@ type MarketingData = {
 export function MarketingWidget({ data }: { data?: MarketingData }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
-  const activeCampaigns = Number(data?.active_campaigns ?? 0);
-  const newWeek = Number(data?.upcoming_campaigns?.length ?? 0);
+  
+  // NaN guards: ensure all numeric values are valid
+  const activeCampaigns = Number.isFinite(data?.active_campaigns) ? Number(data?.active_campaigns) : 0;
+  const newWeek = Number.isFinite(data?.upcoming_campaigns?.length) ? Number(data?.upcoming_campaigns?.length) : 0;
   const messagesSent = Object.values(data?.trigger_stats_24h || {}).reduce(
-    (acc, n) => acc + Number(n || 0),
+    (acc, n) => {
+      const num = Number(n || 0);
+      return acc + (Number.isFinite(num) ? num : 0);
+    },
     0
   );
 
   const compactContent = (
-    <div className="text-center">
-      <div className="text-3xl font-bold text-pink-600">{activeCampaigns}</div>
-      <div className="text-sm text-gray-500">{t('widgets.marketing.activeCampaigns')}</div>
-      <div className="text-sm text-gray-500 mt-1">
-        {t('widgets.marketing.plusNew', { count: newWeek })}
-      </div>
-    </div>
+    <StatCard
+      variant="primary"
+      value={activeCampaigns}
+      label={t('widgets.marketing.activeCampaigns')}
+    />
   );
 
   const expandedContent = (
@@ -70,10 +74,11 @@ export function MarketingWidget({ data }: { data?: MarketingData }) {
           <span className="text-sm text-gray-500">{t('widgets.marketing.messagesSent')}</span>
           <span className="text-lg font-semibold">{messagesSent}</span>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">{t('widgets.marketing.openRate')}</span>
-          <span className="text-lg font-semibold text-green-600">87%</span>
-        </div>
+        <StatCard
+          variant="success"
+          value="87%"
+          label={t('widgets.marketing.openRate')}
+        />
       </div>
     </Widget>
   );

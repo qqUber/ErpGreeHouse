@@ -2,17 +2,17 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsView } from './AnalyticsView';
 import {
-  AdminMe,
-  Api,
-  CustomerDetails,
-  CustomerListItem,
-  Dashboard,
-  getAdminSecret,
-  Integration,
-  IntegrationDelivery,
-  IntegrationTemplate,
-  RolePermissions,
-  setAdminSecret,
+    AdminMe,
+    Api,
+    CustomerDetails,
+    CustomerListItem,
+    Dashboard,
+    getAdminSecret,
+    Integration,
+    IntegrationDelivery,
+    IntegrationTemplate,
+    RolePermissions,
+    setAdminSecret,
 } from './api';
 import { ComplianceView } from './ComplianceView';
 import { CustomersWidget } from './components/dashboard/CustomersWidget';
@@ -24,6 +24,7 @@ import { ProductsWidget } from './components/dashboard/ProductsWidget';
 import { IntegrationSettings } from './components/IntegrationSettings';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ProductImport } from './components/ProductImport';
+import { ErrorMessage, LoadingSpinner, SuccessMessage } from './components/ui';
 import { useDashboard } from './hooks/useDashboard';
 import { useViewportMode } from './hooks/useViewportMode';
 import { MarketingView } from './MarketingView';
@@ -860,9 +861,15 @@ function App() {
         data-viewport-mode={viewport.mode}
         data-viewport-density={viewport.density}
       >
-        {notice ? (
+        {notice && notice.visible ? (
           <div className="grid">
-            <StatusBar notice={notice} />
+            {notice.level === 'ok' ? (
+              <SuccessMessage message={notice.message} />
+            ) : notice.level === 'warn' ? (
+              <WarningMessage message={notice.message} />
+            ) : (
+              <ErrorMessage message={notice.message} />
+            )}
           </div>
         ) : null}
 
@@ -1286,7 +1293,7 @@ function App() {
             <div className="overlayPanel">
               <div className="row">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div className="spinner" />
+                  <LoadingSpinner size="sm" />
                   <div style={{ fontWeight: 800 }}>{t('authFlow.authorization')}</div>
                 </div>
                 <button className="btn" onClick={() => stopAuthFlow()} type="button">
@@ -2186,33 +2193,5 @@ function PermissionsTable() {
   );
 }
 
-function StatusBar({ notice }: { notice: Notice }) {
-  const { t } = useTranslation();
-  useEffect(() => {
-    console.log('[App] StatusBar MOUNTED');
-    return () => console.log('[App] StatusBar UNMOUNTED');
-  }, []);
-  console.log(
-    `[App] StatusBar render: visible=${notice.visible} level=${notice.level} msg=${notice.message}`
-  );
-  const cls =
-    notice.level === 'ok'
-      ? 'statusBar statusBarOk'
-      : notice.level === 'warn'
-        ? 'statusBar statusBarWarn'
-        : 'statusBar statusBarErr';
-  const icon = notice.level === 'ok' ? '✓' : notice.level === 'warn' ? '!' : '×';
-  return (
-    <div
-      className={`${cls} ${notice.visible ? 'statusBarVisible' : ''}`}
-      role="status"
-      aria-live="polite"
-      data-testid="status-bar"
-    >
-      <div className="statusBarIcon">{icon}</div>
-      <div className="statusBarText">{notice.message}</div>
-    </div>
-  );
-}
 
 export default App;

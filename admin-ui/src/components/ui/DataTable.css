@@ -1,0 +1,105 @@
+.data-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.data-table-header {
+  background-color: var(--neutral-50);
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-align: left;
+  font-weight: 600;
+  color: var(--neutral-700);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.data-table-header.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.data-table-header.sortable:hover {
+  background-color: var(--neutral-100);
+}
+
+.data-table-header-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.data-table-sort-icon {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.data-table-row {
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.15s ease;
+}
+
+.data-table-row:last-child {
+  border-bottom: none;
+}
+
+.data-table-row:hover {
+  background-color: var(--neutral-50);
+}
+
+.data-table-row.clickable {
+  cursor: pointer;
+}
+
+.data-table-row.clickable:hover {
+  background-color: var(--primary-light);
+}
+
+.data-table-cell {
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--neutral-900);
+  line-height: 1.5;
+}
+
+.data-table-loading,
+.data-table-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-6xl) var(--spacing-md);
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background-color: var(--neutral-50);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .data-table-header,
+  .data-table-cell {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-xs);
+  }
+}
+
+@media (max-width: 640px) {
+  .data-table-wrapper {
+    border-radius: 0.25rem;
+  }
+
+  .data-table-header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.125rem;
+  }
+}

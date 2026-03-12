@@ -16,7 +16,7 @@ import {
   t,
 } from './i18n-test';
 
-export { t, Menu, Common, Dashboard, Sales, Clients, Products, Marketing, Auth };
+export { Auth, Clients, Common, Dashboard, Marketing, Menu, Products, Sales, t };
 
 export const test = base;
 export { expect } from '@playwright/test';
@@ -575,4 +575,35 @@ export function getInputTestId(page: Page, prefix: string, inputName: string) {
  */
 export function getViewTestId(page: Page, viewName: string) {
   return page.getByTestId(`${viewName}_view_en`);
+}
+
+/**
+ * Wait for loading spinner to disappear
+ * Gracefully handles cases where spinner never appears (fast responses)
+ * 
+ * Usage:
+ *   await login(page, 'admin', 'admin');
+ *   await waitForSpinner(page);
+ * 
+ * @param page - Playwright page instance
+ * @param timeout - Maximum wait time in milliseconds (default: 15000)
+ */
+export async function waitForSpinner(page: Page, timeout: number = 15000): Promise<void> {
+  // Wait for spinner to appear first (with short timeout)
+  await page.waitForSelector('[data-testid="loading-spinner"]', { 
+    state: 'attached',
+    timeout: 2000 
+  }).catch(() => {
+    // Spinner never appeared - this is OK for fast API responses
+    console.log('[E2E] No spinner detected (fast response)');
+  });
+  
+  // Then wait for it to disappear
+  await page.waitForSelector('[data-testid="loading-spinner"]', { 
+    state: 'hidden', 
+    timeout 
+  }).catch(() => {
+    // Spinner was never visible or already gone - this is OK
+    console.log('[E2E] Spinner already hidden or never shown');
+  });
 }

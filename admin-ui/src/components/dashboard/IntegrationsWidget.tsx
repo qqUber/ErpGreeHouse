@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { StatCard } from '../ui/StatCard';
 import { Widget } from '../Widget';
 
 type IntegrationsData = {
@@ -11,25 +12,26 @@ type IntegrationsData = {
 export function IntegrationsWidget({ data }: { data?: IntegrationsData }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // NaN guards: ensure all numeric values are valid
   const integrations = data?.integrations || [];
-  const total = integrations.length;
+  const total = Number.isFinite(integrations.length) ? integrations.length : 0;
   const active = integrations.filter((i) => {
     const status = String(i?.status || '').toLowerCase();
     return status === 'enabled' || status === 'active' || status === 'ok';
   }).length;
-  const allConnected = Number(data?.pending_count ?? 0) === 0;
+  const pendingCount = Number.isFinite(data?.pending_count) ? Number(data?.pending_count) : 0;
+  const allConnected = pendingCount === 0;
   const lastSync = data?.recent_deliveries?.[0]?.created_at
     ? new Date(data.recent_deliveries[0].created_at).toLocaleTimeString()
     : t('widgets.integrations.twoMinutesAgo');
 
   const compactContent = (
-    <div className="text-center">
-      <div className="text-3xl font-bold text-orange-600">{total}</div>
-      <div className="text-sm text-gray-500">{t('widgets.integrations.activeIntegrations')}</div>
-      <div className="text-sm text-gray-500 mt-1">
-        {allConnected ? t('widgets.integrations.allConnected') : t('common.loading')}
-      </div>
-    </div>
+    <StatCard
+      variant="warning"
+      value={total}
+      label={t('widgets.integrations.activeIntegrations')}
+    />
   );
 
   const expandedContent = (
@@ -37,23 +39,23 @@ export function IntegrationsWidget({ data }: { data?: IntegrationsData }) {
       <h3 className="text-lg font-semibold mb-4">{t('widgets.integrations.details')}</h3>
       <div className="space-y-4">
         <div className="flex items-center">
-          <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
+          <div className="integration-status-indicator"></div>
           <span>{integrations[0]?.name || 'Telegram Bot'}</span>
         </div>
         <div className="flex items-center">
-          <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
+          <div className="integration-status-indicator"></div>
           <span>{integrations[1]?.name || 'VKontakte'}</span>
         </div>
         <div className="flex items-center">
-          <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
+          <div className="integration-status-indicator"></div>
           <span>{integrations[2]?.name || 'ERPNext'}</span>
         </div>
         <div className="flex items-center">
-          <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
+          <div className="integration-status-indicator"></div>
           <span>{integrations[3]?.name || 'Google Sheets'}</span>
         </div>
         <div className="flex items-center">
-          <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
+          <div className="integration-status-indicator"></div>
           <span>{integrations[4]?.name || 'Slack'}</span>
         </div>
       </div>

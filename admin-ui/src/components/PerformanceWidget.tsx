@@ -1,6 +1,6 @@
 import ReactECharts from 'echarts-for-react';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { StatCard } from './ui/StatCard';
 
 interface PerformanceData {
   date: string;
@@ -19,8 +19,17 @@ interface PerformanceWidgetProps {
 export function PerformanceWidget({ data }: PerformanceWidgetProps) {
   const { t } = useTranslation();
 
+  // NaN guards: ensure all numeric values are valid
+  const safeData = (data || []).map((d) => ({
+    ...d,
+    transactions: Number.isFinite(d.transactions) ? d.transactions : 0,
+    revenue: Number.isFinite(d.revenue) ? d.revenue : 0,
+    points_earned: Number.isFinite(d.points_earned) ? d.points_earned : 0,
+    points_redeemed: Number.isFinite(d.points_redeemed) ? d.points_redeemed : 0,
+  }));
+
   const getPerformanceChartOption = () => {
-    if (!data || data.length === 0) {
+    if (!safeData || safeData.length === 0) {
       return {
         title: {
           text: 'Нет данных для отображения',
@@ -36,11 +45,11 @@ export function PerformanceWidget({ data }: PerformanceWidgetProps) {
       };
     }
 
-    const dates = data.map((d) => d.date);
-    const transactions = data.map((d) => d.transactions);
-    const revenue = data.map((d) => d.revenue);
-    const pointsEarned = data.map((d) => d.points_earned);
-    const pointsRedeemed = data.map((d) => d.points_redeemed);
+    const dates = safeData.map((d) => d.date);
+    const transactions = safeData.map((d) => d.transactions);
+    const revenue = safeData.map((d) => d.revenue);
+    const pointsEarned = safeData.map((d) => d.points_earned);
+    const pointsRedeemed = safeData.map((d) => d.points_redeemed);
 
     return {
       tooltip: {
@@ -146,36 +155,53 @@ export function PerformanceWidget({ data }: PerformanceWidgetProps) {
       </div>
 
       <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="text-center p-3 bg-blue-50 rounded-lg">
-          <div className="text-2xl font-bold text-blue-600">
-            {data.length > 0 ? data[data.length - 1]?.transactions : 0}
-          </div>
-          <div className="text-sm text-muted">{t('dashboardAdmin.transactions')}</div>
-        </div>
+        {(() => {
+          const lastData = safeData.length > 0 ? safeData[safeData.length - 1] : null;
+          
+          return (
+            <>
+              <StatCard
+                variant="primary"
+                value={
+                  lastData && Number.isFinite(lastData.transactions)
+                    ? lastData.transactions
+                    : 0
+                }
+                label={t('dashboardAdmin.transactions')}
+              />
 
-        <div className="text-center p-3 bg-green-50 rounded-lg">
-          <div className="text-2xl font-bold text-green-600">
-            {data.length > 0
-              ? new Intl.NumberFormat('ru-RU').format(data[data.length - 1]?.revenue || 0)
-              : '0'}{' '}
-            ₽
-          </div>
-          <div className="text-sm text-muted">{t('dashboardAdmin.revenue')}</div>
-        </div>
+              <StatCard
+                variant="success"
+                value={
+                  lastData && Number.isFinite(lastData.revenue)
+                    ? `${new Intl.NumberFormat('ru-RU').format(lastData.revenue)} ₽`
+                    : '0 ₽'
+                }
+                label={t('dashboardAdmin.revenue')}
+              />
 
-        <div className="text-center p-3 bg-purple-50 rounded-lg">
-          <div className="text-2xl font-bold text-purple-600">
-            {data.length > 0 ? data[data.length - 1]?.points_earned : 0}
-          </div>
-          <div className="text-sm text-muted">{t('dashboardAdmin.pointsEarned')}</div>
-        </div>
+              <StatCard
+                variant="info"
+                value={
+                  lastData && Number.isFinite(lastData.points_earned)
+                    ? lastData.points_earned
+                    : 0
+                }
+                label={t('dashboardAdmin.pointsEarned')}
+              />
 
-        <div className="text-center p-3 bg-yellow-50 rounded-lg">
-          <div className="text-2xl font-bold text-yellow-600">
-            {data.length > 0 ? data[data.length - 1]?.points_redeemed : 0}
-          </div>
-          <div className="text-sm text-muted">{t('dashboardAdmin.pointsRedeemed')}</div>
-        </div>
+              <StatCard
+                variant="warning"
+                value={
+                  lastData && Number.isFinite(lastData.points_redeemed)
+                    ? lastData.points_redeemed
+                    : 0
+                }
+                label={t('dashboardAdmin.pointsRedeemed')}
+              />
+            </>
+          );
+        })()}
       </div>
     </div>
   );

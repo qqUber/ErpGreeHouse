@@ -61,3 +61,10 @@ localhost_*.report.html
 /.kilocodemodes
 /.claudecodeignore
 /middleware/test-reports/
+
+# Test Artifacts and Caches
+screenshots/
+tests/artifacts/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
