@@ -24,7 +24,7 @@ import { ProductsWidget } from './components/dashboard/ProductsWidget';
 import { IntegrationSettings } from './components/IntegrationSettings';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ProductImport } from './components/ProductImport';
-import { ErrorMessage, LoadingSpinner, SuccessMessage } from './components/ui';
+import { ErrorMessage, LoadingSpinner, SuccessMessage, WarningMessage } from './components/ui';
 import { useDashboard } from './hooks/useDashboard';
 import { useViewportMode } from './hooks/useViewportMode';
 import { MarketingView } from './MarketingView';

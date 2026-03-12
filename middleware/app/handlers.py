@@ -204,7 +204,9 @@ def _upsert_local_customer(
         qr_token = generate_qr_token()
         if row:
             existing_qr = row["qr_token"] or qr_token
-            logger.info(f"Updating customer {row['id']} with marketing_allowed={marketing_allowed}")
+            logger.info(
+                f"Updating customer {row['id']} with marketing_allowed={marketing_allowed}"
+            )
             conn.execute(
                 """
                 UPDATE customers SET 
@@ -225,8 +227,10 @@ def _upsert_local_customer(
             )
             conn.commit()
             return int(row["id"])
-        
-        logger.info(f"Inserting new customer with marketing_allowed={marketing_allowed}")
+
+        logger.info(
+            f"Inserting new customer with marketing_allowed={marketing_allowed}"
+        )
         cur2 = conn.execute(
             """
             INSERT INTO customers(phone, full_name, telegram_id, qr_token, marketing_allowed, data_processing_allowed) 
@@ -273,10 +277,12 @@ async def cmd_start(message: Message) -> None:
             try:
                 client = ERPClient()
                 # Use ERPClient mock mode or real logic
-                # For MVP, we use the customer name from ERP if we had it, 
-                # but here we only have telegram_id. 
+                # For MVP, we use the customer name from ERP if we had it,
+                # but here we only have telegram_id.
                 # We'll need to find the customer in ERP first.
-                erp_cust = await client.get_customer_by_telegram_id(message.from_user.id)
+                erp_cust = await client.get_customer_by_telegram_id(
+                    message.from_user.id
+                )
                 if erp_cust:
                     bal = await client.get_balance(erp_cust["name"])
                     balance_text = f"\n💰 Ваш баланс: {bal} баллов"
@@ -355,7 +361,7 @@ async def cmd_register(message: Message) -> None:
 @router.callback_query(F.data.startswith("consent:"))
 async def cb_consent(cb: CallbackQuery) -> None:
     decision = cb.data.split(":", 1)[1]
-    
+
     # Handle refusal
     if decision in ("no", "refuse"):
         await cb.message.edit_text("Регистрация отменена.")
@@ -364,12 +370,15 @@ async def cb_consent(cb: CallbackQuery) -> None:
         # Also clean up any partial registration data
         _cleanup_user_data(cb.from_user.id)
         return
-        
+
     # Handle agreement
     if decision in ("yes", "agree"):
         r = get_redis()
         # Mark that consent was given and we're starting the flow
-        r.hset(_consent_key(cb.from_user.id), mapping={"consent_given": "1", "step": "name"})
+        r.hset(
+            _consent_key(cb.from_user.id),
+            mapping={"consent_given": "1", "step": "name"},
+        )
         await cb.message.edit_text("Согласие принято! ✅\n\nКак тебя зовут? (Имя)")
         await cb.answer()
         return
@@ -386,37 +395,47 @@ async def handle_registration_message(message: Message) -> None:
     r = get_redis()
     key = _consent_key(message.from_user.id)
     data = r.hgetall(key)
-    
+
     if not data or data.get("consent_given") != "1":
         # Not in registration flow, ignore or handle other messages
         return
-        
+
     step = data.get("step")
-    
+
     if step == "name":
         # Store name and ask for phone
         name = normalize_name(message.text.strip())
         r.hset(key, mapping={"name": name, "step": "phone"})
-        await message.answer("Отлично! Теперь введите ваш номер телефона в формате +79991234567")
-        
+        await message.answer(
+            "Отлично! Теперь введите ваш номер телефона в формате +79991234567"
+        )
+
     elif step == "phone":
         # Store phone and ask for marketing consent
         phone = normalize_phone(message.text.strip())
         if not phone:
-            await message.answer("Неверный формат телефона. Попробуйте ещё раз: +79991234567")
+            await message.answer(
+                "Неверный формат телефона. Попробуйте ещё раз: +79991234567"
+            )
             return
-            
+
         r.hset(key, mapping={"phone": phone, "step": "marketing"})
-        
+
         kb = InlineKeyboardMarkup(
             inline_keyboard=[
                 [
-                    InlineKeyboardButton(text="Да, хочу", callback_data="marketing:yes"),
-                    InlineKeyboardButton(text="Нет, спасибо", callback_data="marketing:no"),
+                    InlineKeyboardButton(
+                        text="Да, хочу", callback_data="marketing:yes"
+                    ),
+                    InlineKeyboardButton(
+                        text="Нет, спасибо", callback_data="marketing:no"
+                    ),
                 ]
             ]
         )
-        await message.answer("Хотите получать информацию об акциях и бонусах?", reply_markup=kb)
+        await message.answer(
+            "Хотите получать информацию об акциях и бонусах?", reply_markup=kb
+        )
 
 
 @router.callback_query(F.data.startswith("marketing:"))
@@ -424,21 +443,23 @@ async def cb_marketing_consent(cb: CallbackQuery) -> None:
     """Handle marketing consent selection and complete registration."""
     decision = cb.data.split(":", 1)[1]
     marketing_allowed = 1 if decision == "yes" else 0
-    
+
     r = get_redis()
     key = _consent_key(cb.from_user.id)
     data = r.hgetall(key)
-    
+
     if not data or data.get("consent_given") != "1":
-        await cb.message.edit_text("Сессия регистрации истекла. Начните заново с /start")
+        await cb.message.edit_text(
+            "Сессия регистрации истекла. Начните заново с /start"
+        )
         await cb.answer()
         return
-        
+
     try:
         client = ERPClient()
         consent_version = "1.1 (MVP)"
         consent_text = "Я ознакомлен с Политикой конфиденциальности и даю согласие на обработку персональных данных и получение рекламных рассылок в соответствии с 152-ФЗ."
-        
+
         # 1. Create in ERP
         await client.create_customer(
             telegram_id=cb.from_user.id,
@@ -446,7 +467,7 @@ async def cb_marketing_consent(cb: CallbackQuery) -> None:
             phone=data.get("phone", ""),
             consent_text=consent_text,
         )
-        
+
         # 2. Upsert locally
         customer_id = _upsert_local_customer(
             cb.from_user.id,
@@ -455,28 +476,28 @@ async def cb_marketing_consent(cb: CallbackQuery) -> None:
             marketing_allowed=marketing_allowed,
             data_processing_allowed=1,
         )
-        
+
         # 3. Store consent records
         _store_consent(customer_id, consent_text, consent_version, "data_processing")
         if marketing_allowed:
             _store_consent(customer_id, consent_text, consent_version, "marketing")
-        
+
         # 4. Cleanup Redis
         delete(key)
-        
+
         # 5. Success message
         msg = "Регистрация завершена! 🎉\n\nВам начислено 100 приветственных баллов."
         if marketing_allowed:
             msg += "\n\nТеперь вы будете получать новости и акции."
         else:
             msg += "\n\nВы не будете получать рекламные рассылки."
-            
+
         await cb.message.edit_text(msg)
-        
+
     except Exception as e:
         logger.error(f"Registration error: {e}")
         await cb.message.edit_text(f"Ошибка при завершении регистрации: {e}")
-        
+
     await cb.answer()
 
 

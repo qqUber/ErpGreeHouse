@@ -32,7 +32,16 @@ def _get_channel_id() -> str:
 
 def _is_mocked() -> bool:
     """Check if we should run in mocked mode."""
-    return not os.getenv("TELEGRAM_BOT_TOKEN") or not os.getenv("TELEGRAM_CHANNEL_ID")
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    channel = os.getenv("TELEGRAM_CHANNEL_ID", "")
+    if not token or not channel:
+        return True
+    token_lower = token.lower()
+    return (
+        token_lower.startswith("test_")
+        or "dummy" in token_lower
+        or "mock" in token_lower
+    )
 
 
 def _require_credentials():
