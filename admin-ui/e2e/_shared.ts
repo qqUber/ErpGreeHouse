@@ -416,6 +416,10 @@ export function hasPermission(role: TestRole, feature: string): boolean {
  * Uses credentials from TEST_CREDENTIALS (fetched from DB)
  */
 export async function login(page: Page, role: TestRole = 'admin') {
+  if (Object.keys(TEST_CREDENTIALS).length === 0) {
+    setDefaultCredentials();
+  }
+
   const resolvedRole =
     TEST_CREDENTIALS[role] != null
       ? role
