@@ -62,6 +62,3 @@ Short, actionable guidance to help AI coding agents (and contributors) be produc
 - Read `docs/architecture/system_architecture.md` and `ARCHITECTURE.md` for rationale.
 - Start the local stack with `docker-compose up -d` to reproduce integration scenarios.
 - Use `ERP_MOCK_MODE=true` to avoid hitting real ERP during exploratory changes.
-
----
-If you'd like, I can iterate on tone/length or include more precise command flags and file examples (e.g. exact router and test file paths) — tell me which area you'd like expanded.
