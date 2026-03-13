@@ -1,0 +1,12 @@
+node_modules
+dist
+.turbo
+.env.local
+.env.*.local
+coverage
+allure-results
+allure-report
+*.log
+.DS_Store
+.vscode
+.idea

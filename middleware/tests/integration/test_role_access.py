@@ -1254,6 +1254,97 @@ class TestAuthenticationIntegration:
         response = client.get("/api/v1/roles/permissions", headers=headers)
         assert response.status_code == 403
 
+    def test_dev_create_sale_reuses_receipt_ingestion(
+        self, client: TestClient, operator_token: str
+    ) -> None:
+        """Test DEV sale simulator endpoint with operator permission."""
+        db = get_db()
+        with db.connect() as conn:
+            conn.execute(
+                "INSERT INTO integrations (name, kind, enabled, secret, config_json) VALUES (?, ?, ?, ?, ?)",
+                ("Test POS Webhook", "pos_webhook", 1, "dev-pos-secret", "{}"),
+            )
+            conn.execute(
+                "INSERT INTO customers (phone, full_name, qr_token, balance_points) VALUES (?, ?, ?, ?)",
+                ("+79990001122", "Simulator Customer", "QR-DEV-001", 0),
+            )
+            conn.commit()
+
+        headers = {"Authorization": f"Bearer {operator_token}"}
+        response = client.post(
+            "/api/v1/integrations/dev/create-sale",
+            json={"customer_qr": "QR-DEV-001"},
+            headers=headers,
+        )
+
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data["accepted"] is True
+        assert data["integration_id"] > 0
+        assert data["customer_id"] > 0
+        assert data["receipt_id"].startswith("POS-KAF-")
+        assert data["debug_mode"] is True
+
+        with db.connect() as conn:
+            tx = conn.execute(
+                "SELECT total_amount, pos_receipt_id FROM transactions WHERE id=?",
+                (data["transaction_id"],),
+            ).fetchone()
+
+        assert tx is not None
+        assert int(tx["total_amount"]) == 630
+        assert str(tx["pos_receipt_id"]) == data["receipt_id"]
+
+    def test_dev_create_sale_rejects_unknown_customer_qr(
+        self, client: TestClient, operator_token: str
+    ) -> None:
+        db = get_db()
+        with db.connect() as conn:
+            conn.execute(
+                "INSERT INTO integrations (name, kind, enabled, secret, config_json) VALUES (?, ?, ?, ?, ?)",
+                ("Test POS Webhook", "pos_webhook", 1, "dev-pos-secret", "{}"),
+            )
+            conn.commit()
+
+        headers = {"Authorization": f"Bearer {operator_token}"}
+        response = client.post(
+            "/api/v1/integrations/dev/create-sale",
+            json={"customer_qr": "QR-UNKNOWN"},
+            headers=headers,
+        )
+
+        assert response.status_code == 404, response.text
+        assert response.json()["detail"] == "Customer QR not found"
+
+    def test_dev_create_sale_rejects_multiple_enabled_pos_integrations(
+        self, client: TestClient, operator_token: str
+    ) -> None:
+        db = get_db()
+        with db.connect() as conn:
+            conn.execute(
+                "INSERT INTO integrations (name, kind, enabled, secret, config_json) VALUES (?, ?, ?, ?, ?)",
+                ("Test POS Webhook A", "pos_webhook", 1, "dev-pos-secret-a", "{}"),
+            )
+            conn.execute(
+                "INSERT INTO integrations (name, kind, enabled, secret, config_json) VALUES (?, ?, ?, ?, ?)",
+                ("Test POS Webhook B", "pos_webhook", 1, "dev-pos-secret-b", "{}"),
+            )
+            conn.execute(
+                "INSERT INTO customers (phone, full_name, qr_token, balance_points) VALUES (?, ?, ?, ?)",
+                ("+79990001123", "Simulator Customer", "QR-DEV-002", 0),
+            )
+            conn.commit()
+
+        headers = {"Authorization": f"Bearer {operator_token}"}
+        response = client.post(
+            "/api/v1/integrations/dev/create-sale",
+            json={"customer_qr": "QR-DEV-002"},
+            headers=headers,
+        )
+
+        assert response.status_code == 409, response.text
+        assert "Multiple enabled pos_webhook integrations found" in response.json()["detail"]
+
 
 # =============================================================================
 # Summary Test - Quick Smoke Test

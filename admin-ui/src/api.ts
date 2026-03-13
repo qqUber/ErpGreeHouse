@@ -195,6 +195,16 @@ export type IntegrationTemplate = {
   config: Record<string, any>;
 };
 
+export type DevCreateSaleResult = {
+  accepted: boolean;
+  duplicate?: boolean;
+  transaction_id: number;
+  customer_id: number;
+  integration_id: number;
+  receipt_id: string;
+  debug_mode: boolean;
+};
+
 export type Product = {
   id: number;
   code: string;
@@ -724,7 +734,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const Api = {
   publicStatus: (signal?: AbortSignal) =>
-    api<{ api: string; admin_auth_configured: boolean; erp_sync_enabled: boolean }>(
+    api<{ api: string; admin_auth_configured: boolean; debug_mode: boolean; erp_sync_enabled: boolean }>(
       '/api/v1/public/status',
       { method: 'GET', headers: {}, signal }
     ),
@@ -1058,6 +1068,11 @@ export const Api = {
         body: JSON.stringify({ webhook_url, secret }),
       }
     ),
+  createDevSale: (customer_qr: string) =>
+    api<DevCreateSaleResult>('/api/v1/integrations/dev/create-sale', {
+      method: 'POST',
+      body: JSON.stringify({ customer_qr }),
+    }),
 
   // Compliance endpoints
   listConsents: (customerId?: number) =>

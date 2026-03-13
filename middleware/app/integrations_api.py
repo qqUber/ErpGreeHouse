@@ -7,12 +7,13 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from .admin_auth_api import require_jwt_auth
-from .auth import check_roles, require_integration_secret
+from .auth import check_roles, has_permission, require_integration_secret
 from .db import get_db
 from .identify import generate_qr_token, normalize_phone
 from .integration_events import dispatch_event
 from .loyalty import LoyaltyRules, calc_earned_points, clamp_redeem_points
 from .pos_templates import list_integration_templates
+from .runtime import is_debug
 from .storage import get_redis
 from .trigger_engine import evaluate_and_queue_triggers
 from .worker import send_customer_message
@@ -252,6 +253,10 @@ class ReceiptIn(BaseModel):
     items: list[ReceiptItem]
 
 
+class DevCreateSaleIn(BaseModel):
+    customer_qr: str = Field(min_length=1, max_length=120)
+
+
 @public_router.post("/{integration_id}/pos/receipt")
 def ingest_pos_receipt(
     integration_id: int,
@@ -371,6 +376,117 @@ def ingest_pos_receipt(
         return {"accepted": True, "transaction_id": tx_id, "customer_id": cust_id}
     finally:
         conn.close()
+
+
+@router.post("/dev/create-sale")
+def create_dev_sale(
+    payload: DevCreateSaleIn,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    if not is_debug():
+        raise HTTPException(status_code=404, detail="Not found")
+
+    role = str(auth_result.get("role") or "")
+    if not (
+        has_permission(role, "pos.sale") or has_permission(role, "integration.update")
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden: missing permission 'pos.sale' or 'integration.update'",
+        )
+
+    customer_qr = payload.customer_qr.strip()
+    if not customer_qr:
+        raise HTTPException(status_code=400, detail="customer_qr is required")
+
+    db = get_db()
+    conn = db.connect()
+    try:
+        integrations = conn.execute(
+            "SELECT id, secret FROM integrations WHERE kind='pos_webhook' AND enabled=1 ORDER BY id DESC"
+        ).fetchall()
+        if not integrations:
+            raise HTTPException(
+                status_code=404, detail="Enabled pos_webhook integration not found"
+            )
+        if len(integrations) > 1:
+            raise HTTPException(
+                status_code=409,
+                detail="Multiple enabled pos_webhook integrations found; select a single active integration for DEV sale",
+            )
+        integration = integrations[0]
+        customer = conn.execute(
+            "SELECT id FROM customers WHERE qr_token=?",
+            (customer_qr,),
+        ).fetchone()
+        if not customer:
+            raise HTTPException(status_code=404, detail="Customer QR not found")
+        integration_id = int(integration["id"])
+        integration_secret = str(integration["secret"])
+        customer_id = int(customer["id"])
+    finally:
+        conn.close()
+
+    now = datetime.now()
+    transaction_id = (
+        f"POS-KAF-{now.strftime('%Y%m%d-%H%M%S-%f')}-{secrets.token_hex(3).upper()}"
+    )
+    pos_payload = {
+        "transactionId": transaction_id,
+        "posDeviceId": "KAFANA-BG-01",
+        "businessDate": now.strftime("%Y-%m-%d"),
+        "timestamp": now.isoformat(timespec="seconds"),
+        "operatorId": "barista_anon",
+        "customerQr": customer_qr,
+        "items": [
+            {
+                "name": "Espresso",
+                "quantity": 1,
+                "price": 280,
+                "vatRate": 20,
+                "total": 280,
+            },
+            {
+                "name": "Kafa sa mlekom",
+                "quantity": 1,
+                "price": 350,
+                "vatRate": 20,
+                "total": 350,
+            },
+        ],
+        "totalAmount": 630,
+        "paymentMethod": "CARD",
+        "fiscalInfo": {
+            "pib": "123456789",
+            "fiscalNumber": f"FSC-{now.strftime('%Y%m%d-%H%M%S')}",
+            "invoiceNumber": "R-001/2026",
+            "qrCodeUrl": "https://efiskal.poreskauprava.gov.rs/qr?tx=abc123",
+        },
+        "loyaltyTrigger": True,
+        "notes": "Anonimna prodaja preko QR",
+    }
+
+    receipt_payload = ReceiptIn(
+        receipt_id=pos_payload["transactionId"],
+        occurred_at=pos_payload["timestamp"],
+        total_amount=int(pos_payload["totalAmount"]),
+        bonus_used=0,
+        bonus_earned=0,
+        customer=ReceiptCustomer(qr_token=customer_qr),
+        items=[
+            ReceiptItem(code="ESPRESSO", name="Espresso", price=280, qty=1),
+            ReceiptItem(code="KAFA_MLEKO", name="Kafa sa mlekom", price=350, qty=1),
+        ],
+    )
+
+    result = ingest_pos_receipt(integration_id, receipt_payload, integration_secret)
+    return {
+        **result,
+        "customer_id": int(result.get("customer_id") or customer_id),
+        "integration_id": integration_id,
+        "receipt_id": receipt_payload.receipt_id,
+        "debug_mode": True,
+    }
 
 
 def _find_or_create_customer(conn, cust: ReceiptCustomer) -> int:

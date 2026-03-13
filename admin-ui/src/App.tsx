@@ -2,17 +2,17 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsView } from './AnalyticsView';
 import {
-    AdminMe,
-    Api,
-    CustomerDetails,
-    CustomerListItem,
-    Dashboard,
-    getAdminSecret,
-    Integration,
-    IntegrationDelivery,
-    IntegrationTemplate,
-    RolePermissions,
-    setAdminSecret,
+  AdminMe,
+  Api,
+  CustomerDetails,
+  CustomerListItem,
+  Dashboard,
+  getAdminSecret,
+  Integration,
+  IntegrationDelivery,
+  IntegrationTemplate,
+  RolePermissions,
+  setAdminSecret,
 } from './api';
 import { ComplianceView } from './ComplianceView';
 import { CustomersWidget } from './components/dashboard/CustomersWidget';
@@ -44,6 +44,7 @@ type Tab =
 type PublicStatus = {
   api: string;
   admin_auth_configured: boolean;
+  debug_mode: boolean;
   erp_sync_enabled: boolean;
 };
 
@@ -168,6 +169,26 @@ function App() {
   const selectedIntegration = useMemo(
     () => integrations.find((i) => i.id === selectedIntegrationId) || null,
     [integrations, selectedIntegrationId]
+  );
+  const effectivePermissions = useMemo(
+    () => new Set(effectiveMe?.permissions || []),
+    [effectiveMe?.permissions]
+  );
+  const canReadIntegrations = useMemo(
+    () =>
+      effectiveMe?.role === 'owner' ||
+      effectivePermissions.has('*') ||
+      effectivePermissions.has('integration.read'),
+    [effectiveMe?.role, effectivePermissions]
+  );
+  const canUseDevSale = useMemo(
+    () =>
+      Boolean(publicStatus?.debug_mode) &&
+      (effectiveMe?.role === 'owner' ||
+        effectivePermissions.has('*') ||
+        effectivePermissions.has('pos.sale') ||
+        effectivePermissions.has('integration.update')),
+    [effectiveMe?.role, effectivePermissions, publicStatus?.debug_mode]
   );
 
   // Navigation function for deep linking
@@ -401,19 +422,25 @@ function App() {
 
   useEffect(() => {
     if (!authReady) return;
-    if (tab === 'integrations') {
+    if (tab === 'integrations' && canReadIntegrations) {
       Promise.all([loadIntegrations(), loadIntegrationTemplates()]).catch((e) =>
         setError(String(e))
       );
     }
-  }, [tab, authReady]);
+  }, [tab, authReady, canReadIntegrations]);
 
   useEffect(() => {
     if (!authReady) return;
-    if (selectedIntegrationId != null) {
+    if (canReadIntegrations && selectedIntegrationId != null) {
       loadDeliveries(selectedIntegrationId).catch((e) => setError(String(e)));
     }
-  }, [selectedIntegrationId, authReady]);
+  }, [selectedIntegrationId, authReady, canReadIntegrations]);
+
+  useEffect(() => {
+    if (tab === 'integrations' && !canReadIntegrations && integrationSubTab === 'settings') {
+      setIntegrationSubTab('webhooks');
+    }
+  }, [tab, canReadIntegrations, integrationSubTab]);
 
   function startAuthFlowSteps(labels: string[]) {
     stopAuthFlow();
@@ -697,7 +724,8 @@ function App() {
     if (perms.has('dashboard.read')) tabs.push('dashboard');
     if (perms.has('customer.list') || perms.has('customer.read')) tabs.push('customers');
     if (perms.has('pos.sale')) tabs.push('pos');
-    if (perms.has('integration.read')) tabs.push('integrations');
+    if (perms.has('integration.read') || (publicStatus?.debug_mode && (perms.has('pos.sale') || perms.has('integration.update'))))
+      tabs.push('integrations');
     if (perms.has('product.read')) tabs.push('products');
     // Settings is always available for password change, but content inside depends on permissions
     tabs.push('settings');
@@ -706,7 +734,7 @@ function App() {
     if (perms.has('dashboard.read')) tabs.push('analytics');
 
     return tabs;
-  }, [effectiveAuthReady, user, me?.role, me?.permissions]);
+  }, [effectiveAuthReady, user, me?.role, me?.permissions, publicStatus?.debug_mode]);
 
   const safeTab: Tab = useMemo(() => {
     if (!effectiveAuthReady) return tab;
@@ -1108,13 +1136,15 @@ function App() {
             <div className="grid">
               <div className="card cardWide">
                 <div className="tabs" style={{ marginBottom: 15 }}>
-                  <div
-                    className={`tab ${integrationSubTab === 'settings' ? 'tabActive' : ''}`}
-                    onClick={() => setIntegrationSubTab('settings')}
-                    data-testid="admin_tab_integration_settings_en"
-                  >
-                    {t('integrations.botSettings')}
-                  </div>
+                  {canReadIntegrations ? (
+                    <div
+                      className={`tab ${integrationSubTab === 'settings' ? 'tabActive' : ''}`}
+                      onClick={() => setIntegrationSubTab('settings')}
+                      data-testid="admin_tab_integration_settings_en"
+                    >
+                      {t('integrations.botSettings')}
+                    </div>
+                  ) : null}
                   <div
                     className={`tab ${integrationSubTab === 'webhooks' ? 'tabActive' : ''}`}
                     onClick={() => setIntegrationSubTab('webhooks')}
@@ -1124,7 +1154,7 @@ function App() {
                   </div>
                 </div>
 
-                {integrationSubTab === 'settings' ? (
+                {integrationSubTab === 'settings' && canReadIntegrations ? (
                   <IntegrationSettings />
                 ) : (
                   <IntegrationsView
@@ -1133,6 +1163,8 @@ function App() {
                     busy={integrationsBusy}
                     selected={selectedIntegration}
                     deliveries={integrationDeliveries}
+                    canManage={canReadIntegrations}
+                    canUseDevSale={canUseDevSale}
                     select={(id) => setSelectedIntegrationId(id)}
                     reload={() => loadIntegrations()}
                     create={async (p) => {
@@ -1155,6 +1187,12 @@ function App() {
                     }}
                     refreshDeliveries={async (id) => {
                       await loadDeliveries(id);
+                    }}
+                    createDevSale={async (customerQr) => {
+                      const result = await Api.createDevSale(customerQr);
+                      await Promise.all([loadDashboard(), loadCustomers()]);
+                      setSelectedId(result.customer_id);
+                      return result;
                     }}
                   />
                 )}
@@ -1693,6 +1731,8 @@ type IntegrationsViewProps = {
   busy: boolean;
   selected: Integration | null;
   deliveries: IntegrationDelivery[];
+  canManage: boolean;
+  canUseDevSale: boolean;
   select: (id: number) => void;
   reload: () => Promise<void>;
   create: (payload: IntegrationPayload) => Promise<void>;
@@ -1700,6 +1740,15 @@ type IntegrationsViewProps = {
   rotate: (id: number) => Promise<void>;
   remove: (id: number) => Promise<void>;
   refreshDeliveries: (id: number) => Promise<void>;
+  createDevSale: (customerQr: string) => Promise<{
+    accepted: boolean;
+    duplicate?: boolean;
+    transaction_id: number;
+    customer_id: number;
+    integration_id: number;
+    receipt_id: string;
+    debug_mode: boolean;
+  }>;
 };
 
 function IntegrationsView({
@@ -1708,6 +1757,8 @@ function IntegrationsView({
   busy,
   selected,
   deliveries,
+  canManage,
+  canUseDevSale,
   select,
   reload,
   create,
@@ -1715,6 +1766,7 @@ function IntegrationsView({
   rotate,
   remove,
   refreshDeliveries,
+  createDevSale,
 }: IntegrationsViewProps) {
   const { t } = useTranslation();
   const [name, setName] = useState('');
@@ -1722,6 +1774,10 @@ function IntegrationsView({
   const [enabled, setEnabled] = useState(true);
   const [configText, setConfigText] = useState('{}');
   const [err, setErr] = useState<string | null>(null);
+  const [saleQr, setSaleQr] = useState('');
+  const [saleBusy, setSaleBusy] = useState(false);
+  const [saleErr, setSaleErr] = useState<string | null>(null);
+  const [saleResult, setSaleResult] = useState<string | null>(null);
 
   function readConfig(): Record<string, unknown> {
     try {
@@ -1758,6 +1814,23 @@ function IntegrationsView({
     }
   }
 
+  async function handleCreateSale() {
+    try {
+      setSaleBusy(true);
+      setSaleErr(null);
+      setSaleResult(null);
+      const result = await createDevSale(saleQr.trim());
+      setSaleResult(
+        `Sale created: tx #${result.transaction_id}, customer #${result.customer_id}${result.duplicate ? ' (duplicate)' : ''}`
+      );
+      setSaleQr('');
+    } catch (e: any) {
+      setSaleErr(String(e?.message || e));
+    } finally {
+      setSaleBusy(false);
+    }
+  }
+
   return (
     <div
       style={{
@@ -1769,141 +1842,178 @@ function IntegrationsView({
       <div className="card cardFull">
         <div className="row">
           <div style={{ fontWeight: 700 }}>{t('integrations.connections')}</div>
-          <button className="btn" onClick={() => void reload()} type="button">
-            {t('common.refresh')}
-          </button>
+          {canManage ? (
+            <button className="btn" onClick={() => void reload()} type="button">
+              {t('common.refresh')}
+            </button>
+          ) : null}
         </div>
         <div style={{ display: 'grid', gap: 8, marginTop: 10 }}>
-          {items.map((i) => (
-            <button
-              key={i.id}
-              type="button"
-              className="btn"
-              onClick={() => {
-                select(i.id);
-                setName(i.name);
-                setKind(i.kind);
-                setEnabled(i.enabled);
-                setConfigText(JSON.stringify(i.config || {}, null, 2));
-              }}
-              style={{
-                justifyContent: 'space-between',
-                background: selected?.id === i.id ? 'var(--primary-light)' : undefined,
-                borderColor: selected?.id === i.id ? 'var(--primary)' : undefined,
-              }}
-            >
-              <span>
-                {i.name} ({i.kind})
-              </span>
-              <span className={`pill ${i.enabled ? 'pillGood' : 'pillWarn'}`}>
-                {i.enabled ? 'on' : 'off'}
-              </span>
-            </button>
-          ))}
-          {items.length === 0 && !busy ? (
+          {canManage
+            ? items.map((i) => (
+                <button
+                  key={i.id}
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    select(i.id);
+                    setName(i.name);
+                    setKind(i.kind);
+                    setEnabled(i.enabled);
+                    setConfigText(JSON.stringify(i.config || {}, null, 2));
+                  }}
+                  style={{
+                    justifyContent: 'space-between',
+                    background: selected?.id === i.id ? 'var(--primary-light)' : undefined,
+                    borderColor: selected?.id === i.id ? 'var(--primary)' : undefined,
+                  }}
+                >
+                  <span>
+                    {i.name} ({i.kind})
+                  </span>
+                  <span className={`pill ${i.enabled ? 'pillGood' : 'pillWarn'}`}>
+                    {i.enabled ? 'on' : 'off'}
+                  </span>
+                </button>
+              ))
+            : null}
+          {canManage && items.length === 0 && !busy ? (
             <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
               {t('integrations.noConnections')}
+            </div>
+          ) : null}
+          {!canManage && canUseDevSale ? (
+            <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
+              DEV cashier simulator is available without full integration management access.
             </div>
           ) : null}
         </div>
       </div>
 
-      <div className="card cardFull">
-        <div style={{ fontWeight: 700, marginBottom: 8 }}>
-          {selected ? t('common.edit') : t('common.create')}
-        </div>
-        <div style={{ display: 'grid', gap: 8 }}>
-          <input
-            className="input"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={t('common.name')}
-          />
-          <input
-            className="input"
-            value={kind}
-            onChange={(e) => setKind(e.target.value)}
-            placeholder={t('common.type')}
-          />
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {canManage ? (
+        <div className="card cardFull">
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>
+            {selected ? t('common.edit') : t('common.create')}
+          </div>
+          <div style={{ display: 'grid', gap: 8 }}>
             <input
-              type="checkbox"
-              checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
+              className="input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t('common.name')}
             />
-            {t('common.enabled')}
-          </label>
-          <textarea
-            className="input"
-            value={configText}
-            onChange={(e) => setConfigText(e.target.value)}
-            rows={8}
-            style={{ fontFamily: 'monospace' }}
-          />
-          <div className="row">
-            {selected ? (
-              <>
+            <input
+              className="input"
+              value={kind}
+              onChange={(e) => setKind(e.target.value)}
+              placeholder={t('common.type')}
+            />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="checkbox"
+                checked={enabled}
+                onChange={(e) => setEnabled(e.target.checked)}
+              />
+              {t('common.enabled')}
+            </label>
+            <textarea
+              className="input"
+              value={configText}
+              onChange={(e) => setConfigText(e.target.value)}
+              rows={8}
+              style={{ fontFamily: 'monospace' }}
+            />
+            <div className="row">
+              {selected ? (
+                <>
+                  <button
+                    className="btn btnPrimary"
+                    onClick={() => void handleUpdate()}
+                    type="button"
+                  >
+                    {t('common.save')}
+                  </button>
+                  <button className="btn" onClick={() => void rotate(selected.id)} type="button">
+                    {t('integrations.rotateSecret')}
+                  </button>
+                  <button className="btn" onClick={() => void remove(selected.id)} type="button">
+                    {t('common.delete')}
+                  </button>
+                  <button
+                    className="btn"
+                    onClick={() => void refreshDeliveries(selected.id)}
+                    type="button"
+                  >
+                    {t('integrations.deliveryLog')}
+                  </button>
+                </>
+              ) : (
+                <button className="btn btnPrimary" onClick={() => void handleCreate()} type="button">
+                  {t('common.create')}
+                </button>
+              )}
+            </div>
+            {err ? <div style={{ color: '#8b0000' }}>{err}</div> : null}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {templates.map((tpl) => (
                 <button
-                  className="btn btnPrimary"
-                  onClick={() => void handleUpdate()}
-                  type="button"
-                >
-                  {t('common.save')}
-                </button>
-                <button className="btn" onClick={() => void rotate(selected.id)} type="button">
-                  {t('integrations.rotateSecret')}
-                </button>
-                <button className="btn" onClick={() => void remove(selected.id)} type="button">
-                  {t('common.delete')}
-                </button>
-                <button
+                  key={tpl.id}
                   className="btn"
-                  onClick={() => void refreshDeliveries(selected.id)}
+                  onClick={() => {
+                    setName(tpl.name);
+                    setKind(tpl.kind);
+                    setConfigText(JSON.stringify(tpl.config || {}, null, 2));
+                  }}
                   type="button"
                 >
-                  {t('integrations.deliveryLog')}
+                  {tpl.name}
                 </button>
-              </>
-            ) : (
-              <button className="btn btnPrimary" onClick={() => void handleCreate()} type="button">
-                {t('common.create')}
-              </button>
-            )}
-          </div>
-          {err ? <div style={{ color: '#8b0000' }}>{err}</div> : null}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {templates.map((tpl) => (
-              <button
-                key={tpl.id}
-                className="btn"
-                onClick={() => {
-                  setName(tpl.name);
-                  setKind(tpl.kind);
-                  setConfigText(JSON.stringify(tpl.config || {}, null, 2));
-                }}
-                type="button"
-              >
-                {tpl.name}
-              </button>
-            ))}
-          </div>
-          {selected && deliveries.length > 0 ? (
-            <div style={{ display: 'grid', gap: 6, marginTop: 8 }}>
-              {deliveries.slice(0, 10).map((d) => (
-                <div key={d.id} className="card cardCompact">
-                  <div style={{ fontWeight: 700 }}>
-                    #{d.id} {d.event_type}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)' }}>
-                    {d.status} {d.http_status ? `(${d.http_status})` : ''} ·{' '}
-                    {new Date(d.created_at).toLocaleString()}
-                  </div>
-                </div>
               ))}
             </div>
-          ) : null}
+            {selected && deliveries.length > 0 ? (
+              <div style={{ display: 'grid', gap: 6, marginTop: 8 }}>
+                {deliveries.slice(0, 10).map((d) => (
+                  <div key={d.id} className="card cardCompact">
+                    <div style={{ fontWeight: 700 }}>
+                      #{d.id} {d.event_type}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)' }}>
+                      {d.status} {d.http_status ? `(${d.http_status})` : ''} ·{' '}
+                      {new Date(d.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </div>
-      </div>
+      ) : null}
+
+      {canUseDevSale ? (
+        <div className="card cardFull" data-testid="admin_dev_create_sale_panel">
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>DEV Create Sale</div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            <input
+              className="input"
+              value={saleQr}
+              onChange={(e) => setSaleQr(e.target.value)}
+              placeholder="Customer QR"
+              data-testid="admin_input_dev_customer_qr"
+            />
+            <button
+              className="btn btnPrimary"
+              onClick={() => void handleCreateSale()}
+              disabled={saleBusy || !saleQr.trim()}
+              type="button"
+              data-testid="admin_btn_dev_create_sale"
+            >
+              {saleBusy ? 'Creating...' : 'Create Sale'}
+            </button>
+            {saleResult ? <SuccessMessage message={saleResult} /> : null}
+            {saleErr ? <ErrorMessage message={saleErr} /> : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

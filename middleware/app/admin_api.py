@@ -22,6 +22,7 @@ from .integration_events import dispatch_event
 from .integrations.pos.erpnext_client import ERPClient
 from .loyalty import LoyaltyRules, calc_earned_points, clamp_redeem_points
 from .pdfgen import ReceiptLine, write_simple_receipt_pdf
+from .runtime import is_debug
 from .storage import get_redis
 from .trigger_engine import evaluate_and_queue_triggers
 from .worker import send_customer_message
@@ -57,6 +58,7 @@ def public_status() -> dict[str, Any]:
     return {
         "api": "ok",
         "admin_auth_configured": admin_configured,
+        "debug_mode": is_debug(),
         "erp_sync_enabled": os.getenv("ERP_SYNC_ENABLED", "false").lower()
         in ("1", "true", "yes"),
     }
