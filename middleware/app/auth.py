@@ -293,6 +293,8 @@ def _get_role_permissions(role: str) -> list[str]:
 
 def require_permission(x_admin_secret: str | None, permission: str) -> dict:
     admin = require_admin(x_admin_secret)
+    if not admin.get("is_authenticated"):
+        raise HTTPException(status_code=401, detail=admin.get("detail", "Unauthorized"))
     role = str(admin.get("role") or "")
     if not has_permission(role, permission):
         raise HTTPException(
@@ -303,6 +305,8 @@ def require_permission(x_admin_secret: str | None, permission: str) -> dict:
 
 def require_roles(x_admin_secret: str | None, *, roles: Iterable[str]) -> dict:
     admin = require_admin(x_admin_secret)
+    if not admin.get("is_authenticated"):
+        raise HTTPException(status_code=401, detail=admin.get("detail", "Unauthorized"))
     role = str(admin.get("role") or "")
     if role not in set(roles):
         raise HTTPException(status_code=403, detail="Forbidden")

@@ -753,7 +753,7 @@ export const Api = {
       signal,
     }),
   refreshToken: (signal?: AbortSignal) =>
-    api<{ access_token: string; refresh_token: string }>('/api/v1/public/auth/refresh', {
+    api<{ refreshed: boolean; token_type?: string }>('/api/v1/public/auth/refresh', {
       method: 'POST',
       signal,
     }),

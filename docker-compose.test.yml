@@ -134,7 +134,7 @@ services:
     command: npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
 
   e2e-runner:
-    image: mcr.microsoft.com/playwright:v1.58.2-jammy
+    image: mcr.microsoft.com/playwright:v1.58.2-noble
     container_name: erp_test_e2e_runner
     working_dir: /app
     environment:
