@@ -967,6 +967,10 @@ export const Api = {
   dashboardIntegrations: () =>
     api<import('./hooks/useDashboard').IntegrationData>('/api/v1/dashboard/integrations'),
 
+  // Marketing analytics for widget
+  marketingAnalytics: () =>
+    api<import('./components/dashboard/AnalyticsWidget').MarketingAnalyticsData>('/api/v1/analytics/dashboard/marketing'),
+
   // Loyalty reports
   loyaltyReportOverview: (timeRange: string = '30d') =>
     api<LoyaltyReportOverview>(

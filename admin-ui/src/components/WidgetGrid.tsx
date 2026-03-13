@@ -21,10 +21,10 @@ export function WidgetGrid({ role, widgets, onLayoutChange, data }: WidgetGridPr
   const initialLayout = getLayout(role);
   const defaultLayout = widgets.map((widget, index) => ({
     i: widget.id,
-    x: (index * 4) % 12,
-    y: Math.floor((index * 4) / 12) * 6,
-    w: widget.id === 'analytics' ? 8 : 4,
-    h: widget.id === 'analytics' ? 8 : 6,
+    x: (index * 3) % 12,  // Changed from 4 to 3 for tighter packing
+    y: Math.floor((index * 3) / 12) * 4,  // Changed from 6 to 4 rows
+    w: widget.id === 'analytics' ? 6 : 3,  // Analytics: 8→6, Others: 4→3
+    h: widget.id === 'analytics' ? 5 : 4,  // Analytics: 8→5, Others: 6→4
     minW: widget.id === 'analytics' ? 4 : 2,
     minH: widget.id === 'analytics' ? 4 : 3,
     maxW: widget.id === 'analytics' ? 12 : 8,

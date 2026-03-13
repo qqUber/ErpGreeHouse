@@ -2838,17 +2838,44 @@ p {
   font-weight: var(--font-weight-semibold);
 }
 
-.widget-toggle {
-  border: 0;
-  background: transparent;
+.widget-toggle-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--panel);
   color: var(--muted);
-  font-size: 0.875rem;
   cursor: pointer;
-  padding: 0.125rem 0.25rem;
+  transition: all 0.2s ease;
+  min-width: 44px;
+  min-height: 44px;
 }
 
-.widget-toggle:hover {
-  color: var(--text);
+.widget-toggle-icon:hover {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.widget-toggle-icon .coffee-icon {
+  font-size: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.widget-toggle-icon .arrow-icon {
+  transition: transform 0.2s ease;
+}
+
+.widget-toggle-icon .arrow-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.widget-toggle-icon .coffee-icon.expanded {
+  transform: scale(1.1);
 }
 
 .widget-compact,

@@ -88,9 +88,9 @@ ErpGreeHouse/
 
 | Software | Version | Purpose |
 |----------|---------|---------|
-| **Python** | 3.11+ | Backend runtime |
-| **Node.js** | 18+ | Frontend runtime |
-| **Redis** | 7+ | Caching & queues |
+| **Python** | 3.14+ | Backend runtime |
+| **Node.js** | 24+ | Frontend runtime |
+| **Redis** | 8+ | Caching & queues |
 | **Git** | 2.0+ | Version control |
 
 ### Installation Guides
@@ -104,7 +104,7 @@ ErpGreeHouse/
 # Node.js (via installer)
 # Download from: https://nodejs.org/
 
-# Redis (via Memurai or Windows port)
+# Redis (via Memurai or Docker)
 # Download from: https://github.com/microsoftarchive/redis/releases
 # OR use Docker: docker run -d -p 6379:6379 redis:8-alpine
 ```
@@ -117,7 +117,7 @@ sudo apt-get update
 sudo apt-get install python3 python3-pip python3-venv
 
 # Node.js
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
 # Redis
@@ -129,8 +129,8 @@ sudo systemctl start redis
 
 ```bash
 # Using Homebrew
-brew install python@3.11
-brew install node@18
+brew install python@3.14
+brew install node@24
 brew install redis
 brew services start redis
 ```
@@ -636,6 +636,6 @@ cat middleware/reports/test_report.html
 
 ---
 
-**Last Updated:** February 20, 2026
+**Last Updated:** March 13, 2026
 **Version:** 1.0.0
 **Status:** Production Ready

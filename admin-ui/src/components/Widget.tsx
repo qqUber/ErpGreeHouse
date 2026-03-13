@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import EZDrawer from 'react-modern-drawer';
-import { WidgetProps } from '../types/widgets';
 import 'react-modern-drawer/dist/index.css';
+import { WidgetProps } from '../types/widgets';
 
 interface Props extends WidgetProps {
   title: string;
@@ -34,12 +34,14 @@ export function Widget({
   }, []);
 
   const isExpanded = controlledIsExpanded ?? internalIsExpanded;
-
   const handleToggle = () => {
+    console.log('🕐 handleToggle вызван', Date.now());
     const newState = !isExpanded;
     setInternalIsExpanded(newState);
     if (newState) {
+      console.time('🟢 onExpand выполнение');
       onExpand?.();
+      console.timeEnd('🟢 onExpand выполнение');
     } else {
       onCollapse?.();
     }
@@ -54,11 +56,15 @@ export function Widget({
         <h3 className="widget-title">{title}</h3>
         {expandedContent && (
           <button
-            className="widget-toggle"
+            className="widget-toggle-icon"
             onClick={handleToggle}
             data-testid="widget-toggle-button"
+            aria-label={isExpanded ? t('widgets.hideDetails') : t('widgets.showDetails')}
           >
-            {isExpanded ? t('widgets.hideDetails') : t('widgets.showDetails')}
+            <span className={`coffee-icon ${isExpanded ? 'expanded' : ''}`}>☕</span>
+            <svg className={`arrow-icon ${isExpanded ? 'rotated' : ''}`} width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M6 2L10 6L6 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </button>
         )}
       </div>

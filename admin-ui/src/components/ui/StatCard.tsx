@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import './StatCard.css';
 
 export interface StatCardProps {
   value: string | number;

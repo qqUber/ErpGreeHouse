@@ -1,7 +1,6 @@
 from typing import Any
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import text
 
 from .admin_api import check_permission
 from .admin_auth_api import require_jwt_auth
@@ -25,7 +24,9 @@ def _count(conn: Any, table: str) -> int:
         raise ValueError("Invalid table name")
 
     # Use parameterized query to prevent SQL injection
-    row = conn.execute(text("SELECT COUNT(*) AS cnt FROM :table"), {"table": table}).fetchone()
+    # For SQLite, we need to construct the query differently
+    query = f"SELECT COUNT(*) AS cnt FROM {table}"  # nosec B608 - table name is validated against allowlist
+    row = conn.execute(query).fetchone()
     return int(row["cnt"] if row else 0)
 
 
