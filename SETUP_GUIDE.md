@@ -16,7 +16,7 @@ docker-compose up --build
 docker-compose -f docker-compose.yml -f docker-compose.test.yml run --rm backend-test
 
 # 3. Run E2E Tests (Full Stack + Playwright)
-docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --exit-code-from e2e-runner
+docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from e2e-runner e2e-runner
 ```
 
 ### Manual Setup (Daily Development)
@@ -106,7 +106,7 @@ ErpGreeHouse/
 
 # Redis (via Memurai or Windows port)
 # Download from: https://github.com/microsoftarchive/redis/releases
-# OR use Docker: docker run -d -p 6379:6379 redis:7-alpine
+# OR use Docker: docker run -d -p 6379:6379 redis:8-alpine
 ```
 
 #### Linux (Ubuntu/Debian)
@@ -284,20 +284,20 @@ cd middleware
 .venv\Scripts\activate
 
 # Run all tests
-python test_runner.py
+docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from backend-test-unit backend-test-unit
 ```
 
 ### Test Options
 
 ```bash
 # Run unit tests only
-python test_runner.py --unit
+docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from backend-test-unit backend-test-unit
 
 # Run integration tests only
-python test_runner.py --integration
+docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from backend-test-integration backend-test-integration
 
 # Run with coverage report
-python test_runner.py --coverage
+docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from backend-test-unit backend-test-unit
 
 # Run specific test file
 pytest tests/unit/test_bot_handlers.py -v
@@ -450,7 +450,7 @@ redis-cli ping
 # Expected: PONG
 
 # Start Redis (Docker)
-docker run -d -p 6379:6379 redis:7-alpine
+docker run -d -p 6379:6379 redis:8-alpine
 
 # Start Redis (Windows service)
 net start Redis
@@ -508,7 +508,7 @@ npm install
 git pull origin main
 
 # 2. Start Redis
-docker run -d -p 6379:6379 redis:7-alpine
+docker run -d -p 6379:6379 redis:8-alpine
 
 # 3. Terminal 1 - Backend
 cd middleware
@@ -521,14 +521,14 @@ npm run dev
 
 # 5. Run tests before commit
 cd middleware
-python test_runner.py --unit
+docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from backend-test-unit backend-test-unit
 
 # 6. Commit changes
 git add .
 git commit -m "feat: implemented feature"
 
 # 7. Run full test suite before push
-python test_runner.py
+docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from backend-test-unit backend-test-unit
 
 # 8. Push changes
 git push origin feature-branch
@@ -551,7 +551,7 @@ cd ../middleware
 # Edit .env with your settings
 
 # 4. Start Redis
-docker run -d -p 6379:6379 redis:7-alpine
+docker run -d -p 6379:6379 redis:8-alpine
 
 # 5. Start services (see "Running the Application" above)
 ```

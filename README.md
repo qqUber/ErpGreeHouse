@@ -20,7 +20,7 @@ The project uses a centralized Docker configuration with overrides for different
 | **Development** | `docker-compose.yml` | Local dev with hot-reloading and debug mode |
 | **Production** | `docker-compose.yml` + `docker-compose.prod.yml` | Optimized builds, Nginx for frontend, persistent volumes |
 | **Testing** | `docker-compose.yml` + `docker-compose.test.yml` | Automated Unit and Integration tests with coverage |
-| **E2E** | `docker-compose.yml` + `docker-compose.e2e.yml` | Full-stack smoke tests using Playwright |
+| **E2E** | `docker-compose.yml` + `docker-compose.test.yml` | Full-stack smoke tests using Playwright |
 
 ---
 
@@ -43,7 +43,7 @@ docker-compose -f docker-compose.yml -f docker-compose.test.yml run --rm backend
 ### 3. Run E2E Tests
 Launches the full stack and runs Playwright smoke tests against the UI.
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up --exit-code-from e2e-runner
+docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from e2e-runner e2e-runner
 ```
 
 ### 4. Production Build
@@ -114,7 +114,7 @@ This section covers JWT authentication setup, environment variables, and trouble
 
 ### Environment Variables
 
-Configure the following environment variables in your `.env` file (see [`middleware/.env.example`](middleware/.env.example)):
+Configure the following environment variables in your root `.env` file (see [`.env.example`](.env.example)):
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -289,7 +289,7 @@ powershell -ExecutionPolicy Bypass -File run_tests.ps1  # Windows
    - http://localhost:8000/
 
 3. **Login options**
-   - **Login/password (dev bootstrap)**: values are taken from `middleware/.env` (see `middleware/.env.example`)
+   - **Login/password (dev bootstrap)**: values are taken from root `.env` (see `.env.example`)
      - `ADMIN_DEFAULT_USERNAME` (default: `admin`)
      - `ADMIN_DEFAULT_PASSWORD` (default in example: `ChangeMe123!`)
    - **Key-based**: send `x-admin-secret` equal to `ADMIN_SECRET`
@@ -572,7 +572,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
    - http://localhost:8000/
 
 3. **Login options**
-   - **Login/password (dev bootstrap)**: values are taken from `middleware/.env` (see `middleware/.env.example`)
+   - **Login/password (dev bootstrap)**: values are taken from root `.env` (see `.env.example`)
      - `ADMIN_DEFAULT_USERNAME` (default: `admin`)
      - `ADMIN_DEFAULT_PASSWORD` (default in example: `ChangeMe123!`)
    - **Key-based**: send `x-admin-secret` equal to `ADMIN_SECRET`
@@ -842,9 +842,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Development Environment
 
-1. Create a `.env.dev` file from the template:
+1. Create a root `.env` file from `.env.example`:
    ```bash
-   cp .env.template .env.dev
+   cp .env.example .env
    ```
 
 2. Start the development environment:
@@ -858,19 +858,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### E2E Test Environment
 
-1. Create a `.env.e2e` file from the template:
-   ```bash
-   cp .env.template .env.e2e
-   ```
+1. Use the same root `.env` file used for development.
 
-2. Start the E2E test environment:
+2. Run the E2E test environment:
    ```bash
-   docker-compose -f docker-compose.e2e.yml up -d
-   ```
-
-3. Run the E2E tests:
-   ```bash
-   docker-compose -f docker-compose.e2e.yml exec e2e-runner npm run test:e2e:smoke
+   docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from e2e-runner e2e-runner
    ```
 
 ### Environment Variables

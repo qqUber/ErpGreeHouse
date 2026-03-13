@@ -18,24 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Prepare CI env file
-        run: |
-          cat > .env << 'EOF'
-          ENVIRONMENT=testing
-          DEBUG_MODE=false
-          TEST_MODE=true
-          E2E_TEST_MODE=true
-          REDIS_URL=redis://redis:6379/1
-          DATABASE_URL=sqlite:///test_telegram_crm.db
-          CRM_DB_PATH=test_telegram_crm.db
-          JWT_SECRET_KEY=test-jwt-secret-key-ci
-          E2E_ADMIN_SECRET=test-secret-key
-          TELEGRAM_BOT_TOKEN=test_token_123456789:AABBccDDeeFFggHHiiJJkkLLmmNNooP
-          TELEGRAM_CHANNEL_ID=-100123456789
-          EOF
+      - name: Ensure compose base .env exists
+        run: touch .env
       - name: Run unit tests in Docker
         run: |
-          E2E_ARGS="" docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from backend-test-unit backend-test-unit
+          docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from backend-test-unit backend-test-unit
 
       - name: Stop unit test stack
         if: always()
@@ -64,24 +51,11 @@ jobs:
     needs: unit-tests
     steps:
       - uses: actions/checkout@v6
-      - name: Prepare CI env file
-        run: |
-          cat > .env << 'EOF'
-          ENVIRONMENT=testing
-          DEBUG_MODE=false
-          TEST_MODE=true
-          E2E_TEST_MODE=true
-          REDIS_URL=redis://redis:6379/1
-          DATABASE_URL=sqlite:///test_telegram_crm.db
-          CRM_DB_PATH=test_telegram_crm.db
-          JWT_SECRET_KEY=test-jwt-secret-key-ci
-          E2E_ADMIN_SECRET=test-secret-key
-          TELEGRAM_BOT_TOKEN=test_token_123456789:AABBccDDeeFFggHHiiJJkkLLmmNNooP
-          TELEGRAM_CHANNEL_ID=-100123456789
-          EOF
+      - name: Ensure compose base .env exists
+        run: touch .env
       - name: Run E2E tests in Docker
         run: |
-          E2E_ARGS="" docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from e2e-runner e2e-runner
+          docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from e2e-runner e2e-runner
 
       - name: Upload E2E test results
         uses: actions/upload-artifact@v6
@@ -103,24 +77,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Prepare CI env file
-        run: |
-          cat > .env << 'EOF'
-          ENVIRONMENT=testing
-          DEBUG_MODE=false
-          TEST_MODE=true
-          E2E_TEST_MODE=true
-          REDIS_URL=redis://redis:6379/1
-          DATABASE_URL=sqlite:///test_telegram_crm.db
-          CRM_DB_PATH=test_telegram_crm.db
-          JWT_SECRET_KEY=test-jwt-secret-key-ci
-          E2E_ADMIN_SECRET=test-secret-key
-          TELEGRAM_BOT_TOKEN=test_token_123456789:AABBccDDeeFFggHHiiJJkkLLmmNNooP
-          TELEGRAM_CHANNEL_ID=-100123456789
-          EOF
+      - name: Ensure compose base .env exists
+        run: touch .env
       - name: Run integration tests in Docker
         run: |
-          E2E_ARGS="" docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from backend-test-integration backend-test-integration
+          docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from backend-test-integration backend-test-integration
 
       - name: Stop integration test stack
         if: always()
