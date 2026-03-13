@@ -110,9 +110,9 @@ else:
 os.environ["TEST_MODE"] = "true"
 os.environ["ERP_MOCK_MODE"] = "true"
 os.environ["REDIS_URL"] = os.getenv("REDIS_URL", "redis://localhost:6379/1")
-os.environ["DATABASE_URL"] = "sqlite:///test_telegram_crm.db"
-os.environ["CRM_DB_PATH"] = "test_telegram_crm.db"
-os.environ["JWT_SECRET_KEY"] = "test_jwt_secret_key_for_testing_only_12345"
+os.environ["DATABASE_URL"] = "sqlite:///app/data/test_telegram_crm.db"
+os.environ["CRM_DB_PATH"] = "/app/data/test_telegram_crm.db"
+os.environ["JWT_SECRET_KEY"] = "test-jwt-secret-key-ci-2026-secure-random-entropy-32b"
 
 # Only set fake Telegram token if no real token is provided in environment
 # This allows integration tests to use real Telegram API when credentials are available
@@ -165,7 +165,7 @@ def clean_database(test_db_path: str) -> Generator[str, None, None]:
 
     # Step 1: Restore the test database path before each test
     # This ensures tests that change CRM_DB_PATH don't affect other tests
-    db_path = str((Path(__file__).parent.parent / "test_telegram_crm.db").resolve())
+    db_path = "/app/data/test_telegram_crm.db"
     os.environ["CRM_DB_PATH"] = db_path
 
     # Step 2: Ensure all connections are closed before attempting to delete

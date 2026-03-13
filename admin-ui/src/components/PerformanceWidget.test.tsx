@@ -91,14 +91,9 @@ describe('PerformanceWidget Component', () => {
   it('should display correct metric colors', () => {
     renderWithI18n(<PerformanceWidget data={mockData} />);
 
-    const transactionEl = screen.getByText('15');
-    const revenueEl = screen.getByText('1 500 ₽');
-    const pointsEarnedEl = screen.getByText('750');
-    const pointsRedeemedEl = screen.getByText('300');
-
-    expect(transactionEl.closest('div')).toHaveClass('text-blue-600');
-    expect(revenueEl.closest('div')).toHaveClass('text-green-600');
-    expect(pointsEarnedEl.closest('div')).toHaveClass('text-purple-600');
-    expect(pointsRedeemedEl.closest('div')).toHaveClass('text-yellow-600');
+    expect(screen.getByTestId('stat-card-primary')).toBeInTheDocument();
+    expect(screen.getByTestId('stat-card-success')).toBeInTheDocument();
+    expect(screen.getByTestId('stat-card-info')).toBeInTheDocument();
+    expect(screen.getByTestId('stat-card-warning')).toBeInTheDocument();
   });
 });

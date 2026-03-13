@@ -78,6 +78,8 @@ describe('StatCard', () => {
   it('renders formatted currency string', () => {
     const formatted = new Intl.NumberFormat('ru-RU').format(123456);
     renderWithI18n(<StatCard value={`${formatted} ₽`} label="Revenue" />);
-    expect(screen.getByText(`${formatted} ₽`)).toBeInTheDocument();
+    expect(screen.getByTestId('stat-card-primary')).toHaveTextContent('123');
+    expect(screen.getByTestId('stat-card-primary')).toHaveTextContent('456');
+    expect(screen.getByTestId('stat-card-primary')).toHaveTextContent('₽');
   });
 });

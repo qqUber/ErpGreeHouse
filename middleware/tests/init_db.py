@@ -7,7 +7,7 @@ import sys
 
 
 def main():
-    db_path = "test_telegram_crm.db"
+    db_path = "/app/data/test_telegram_crm.db"
 
     # Ensure clean state
     if os.path.exists(db_path):

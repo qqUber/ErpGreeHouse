@@ -9,6 +9,7 @@ interface Props extends WidgetProps {
   children: React.ReactNode;
   expandedContent?: React.ReactNode;
   compactContent?: React.ReactNode;
+  drawerTitle?: string;
 }
 
 export function Widget({
@@ -19,6 +20,7 @@ export function Widget({
   onExpand,
   onCollapse,
   isExpanded: controlledIsExpanded,
+  drawerTitle,
 }: Props) {
   const { t } = useTranslation();
   const [internalIsExpanded, setInternalIsExpanded] = useState(false);
@@ -35,13 +37,10 @@ export function Widget({
 
   const isExpanded = controlledIsExpanded ?? internalIsExpanded;
   const handleToggle = () => {
-    console.log('🕐 handleToggle вызван', Date.now());
     const newState = !isExpanded;
     setInternalIsExpanded(newState);
     if (newState) {
-      console.time('🟢 onExpand выполнение');
       onExpand?.();
-      console.timeEnd('🟢 onExpand выполнение');
     } else {
       onCollapse?.();
     }
@@ -58,11 +57,12 @@ export function Widget({
           <button
             className="widget-toggle-icon"
             onClick={handleToggle}
+            type="button"
             data-testid="widget-toggle-button"
             aria-label={isExpanded ? t('widgets.hideDetails') : t('widgets.showDetails')}
           >
-            <span className={`coffee-icon ${isExpanded ? 'expanded' : ''}`}>☕</span>
-            <svg className={`arrow-icon ${isExpanded ? 'rotated' : ''}`} width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <span className="widget-toggle-label">{isExpanded ? 'Close' : 'Details'}</span>
+            <svg className={`arrow-icon ${isExpanded ? 'rotated' : ''}`} width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
               <path d="M6 2L10 6L6 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
@@ -89,9 +89,19 @@ export function Widget({
           data-testid="widget-drawer"
         >
           <div className="drawer-content">
-            <h2 className="drawer-title">
-              {title} {t('widgets.detailsSuffix')}
-            </h2>
+            <div className="drawer-header">
+              <h2 className="drawer-title">
+                {drawerTitle ?? `${title} ${t('widgets.detailsSuffix')}`}
+              </h2>
+              <button
+                className="drawer-close"
+                onClick={handleToggle}
+                type="button"
+                aria-label={t('common.close')}
+              >
+                {t('common.back')}
+              </button>
+            </div>
             {expandedContent}
           </div>
         </EZDrawer>

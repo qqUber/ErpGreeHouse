@@ -18,7 +18,7 @@ services:
       REDIS_URL: redis://redis:6379/1
       DATABASE_URL: sqlite:///test_telegram_crm.db
       CRM_DB_PATH: test_telegram_crm.db
-      JWT_SECRET_KEY: test-jwt-secret-key-ci
+      JWT_SECRET_KEY: test-jwt-secret-key-ci-2026-secure-random-entropy-32b
       E2E_TEST_MODE: "true"
       E2E_ADMIN_SECRET: test-secret-key
       TELEGRAM_BOT_TOKEN: test_token_123456789:AABBccDDeeFFggHHiiJJkkLLmmNNooP
@@ -52,7 +52,7 @@ services:
       REDIS_URL: redis://redis:6379/1
       DATABASE_URL: sqlite:///test_telegram_crm.db
       CRM_DB_PATH: test_telegram_crm.db
-      JWT_SECRET_KEY: test-jwt-secret-key-ci
+      JWT_SECRET_KEY: test-jwt-secret-key-ci-2026-secure-random-entropy-32b
       E2E_TEST_MODE: "true"
       E2E_ADMIN_SECRET: test-secret-key
       TELEGRAM_BOT_TOKEN: test_token_123456789:AABBccDDeeFFggHHiiJJkkLLmmNNooP
@@ -83,7 +83,7 @@ services:
       REDIS_URL: redis://redis:6379/1
       DATABASE_URL: sqlite:///app/data/test_telegram_crm.db
       CRM_DB_PATH: /app/data/test_telegram_crm.db
-      JWT_SECRET_KEY: test-jwt-secret-key-ci
+      JWT_SECRET_KEY: test-jwt-secret-key-ci-2026-secure-random-entropy-32b
       ADMIN_SECRET: test-secret-key
       E2E_TEST_MODE: "true"
       E2E_ADMIN_SECRET: test-secret-key

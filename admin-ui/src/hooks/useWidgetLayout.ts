@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { DashboardLayout, WidgetPosition } from '../types/widgets';
+import { WidgetPosition } from '../types/widgets';
 
 export function useWidgetLayout() {
   const [layouts, setLayouts] = useState<Record<string, WidgetPosition[]>>({});
+  const layoutStorageKey = 'dashboardLayouts_v2';
 
   useEffect(() => {
-    // Load saved layouts from localStorage
-    const savedLayouts = localStorage.getItem('dashboardLayouts');
+    const savedLayouts = localStorage.getItem(layoutStorageKey);
     if (savedLayouts) {
       setLayouts(JSON.parse(savedLayouts));
     }
@@ -15,7 +15,7 @@ export function useWidgetLayout() {
   const saveLayout = (role: string, layout: WidgetPosition[]) => {
     const newLayouts = { ...layouts, [role]: layout };
     setLayouts(newLayouts);
-    localStorage.setItem('dashboardLayouts', JSON.stringify(newLayouts));
+    localStorage.setItem(layoutStorageKey, JSON.stringify(newLayouts));
   };
 
   const getLayout = (role: string): WidgetPosition[] => {
