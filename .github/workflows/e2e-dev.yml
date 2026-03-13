@@ -28,7 +28,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: prepare ci env file
         run: |
           cat > .env << 'EOF'
@@ -51,7 +51,7 @@ jobs:
           docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm -e E2E_ARGS="${E2E_ARGS}" e2e-runner
       - name: upload e2e artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: e2e-${{ matrix.project }}-${{ matrix.shard }}of${{ matrix.shards }}
           path: |
@@ -95,12 +95,12 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
       - name: download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
       - name: merge allure results
@@ -115,7 +115,7 @@ jobs:
           npm ci
           npx allure generate ../merged/allure-results --clean -o ../merged/allure-report
       - name: upload allure report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: allure-report
           path: merged/allure-report
@@ -127,9 +127,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
       - name: prepare gh-pages content

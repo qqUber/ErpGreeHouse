@@ -27,9 +27,9 @@ jobs:
       PYTHONPATH: ${{ github.workspace }}/middleware
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -41,7 +41,7 @@ jobs:
           npm run build
           tar -czf dist-dev-${GITHUB_SHA}.tar.gz -C dist .
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: pip
@@ -98,7 +98,7 @@ jobs:
           echo "- artifacts: admin-ui dist, middleware image, middleware reports" >> $GITHUB_STEP_SUMMARY
 
       - name: upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dev-${{ github.sha }}
           path: |
@@ -146,7 +146,7 @@ jobs:
 
       - name: upload debug artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dev-debug-${{ github.sha }}
           path: |
