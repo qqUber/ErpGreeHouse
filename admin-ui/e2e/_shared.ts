@@ -204,9 +204,9 @@ export async function initTestCredentials(page: Page) {
     if (response.ok()) {
       const data = await response.json();
       TEST_CREDENTIALS = data.credentials || {
-        admin: { username: 'admin', password: 'TestPass123!', role: 'owner' },
-        operator: { username: 'operator', password: 'TestPass123!', role: 'operator' },
-        manager: { username: 'manager', password: 'TestPass123!', role: 'marketer' },
+        admin: { username: 'admin', password: 'admin', role: 'owner' },
+        operator: { username: 'operator', password: 'operator', role: 'operator' },
+        manager: { username: 'manager', password: 'manager', role: 'marketer' },
       };
       console.log('[Test] Loaded credentials from Test API');
     } else {
@@ -221,9 +221,9 @@ export async function initTestCredentials(page: Page) {
 
 function setDefaultCredentials() {
   TEST_CREDENTIALS = {
-    admin: { username: 'admin', password: 'TestPass123!', role: 'owner' },
-    operator: { username: 'operator', password: 'TestPass123!', role: 'operator' },
-    manager: { username: 'manager', password: 'TestPass123!', role: 'marketer' },
+    admin: { username: 'admin', password: 'admin', role: 'owner' },
+    operator: { username: 'operator', password: 'operator', role: 'operator' },
+    manager: { username: 'manager', password: 'manager', role: 'marketer' },
   };
 }
 
