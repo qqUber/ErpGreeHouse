@@ -319,7 +319,13 @@
   "analytics": {
     "title": "Аналитика",
     "collecting": "Аналитика се прикупља...",
-    "revenueTrend": "Тренд прихода (14 дана)"
+    "revenueTrend": "Тренд прихода (14 дана)",
+    "consentRate": "Процент сагласности",
+    "activeCampaigns": "Активне кампании",
+    "highValue": "Висока вредност",
+    "active": "Активни",
+    "new": "Нови",
+    "avgLTV": "Просечан LTV"
   },
   "dashboardAdmin": {
     "systemOverview": "Преглед система",

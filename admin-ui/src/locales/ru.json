@@ -319,7 +319,13 @@
   "analytics": {
     "title": "Аналитика",
     "collecting": "Аналитика собирается...",
-    "revenueTrend": "Тренд выручки (14 дней)"
+    "revenueTrend": "Тренд выручки (14 дней)",
+    "consentRate": "Процент согласия",
+    "activeCampaigns": "Активные кампании",
+    "highValue": "Высокая стоимость",
+    "active": "Активные",
+    "new": "Новые",
+    "avgLTV": "Средний LTV"
   },
   "dashboardAdmin": {
     "systemOverview": "Обзор системы",

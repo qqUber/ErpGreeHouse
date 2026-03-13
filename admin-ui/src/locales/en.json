@@ -324,7 +324,13 @@
   "analytics": {
     "title": "Analytics",
     "collecting": "Collecting analytics...",
-    "revenueTrend": "Revenue Trend (14 days)"
+    "revenueTrend": "Revenue Trend (14 days)",
+    "consentRate": "Consent rate",
+    "activeCampaigns": "Active campaigns",
+    "highValue": "High value",
+    "active": "Active",
+    "new": "New",
+    "avgLTV": "Avg LTV"
   },
   "dashboardAdmin": {
     "systemOverview": "System Overview",
