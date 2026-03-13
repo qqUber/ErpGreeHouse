@@ -34,14 +34,29 @@ def _is_mocked() -> bool:
     """Check if we should run in mocked mode."""
     token = os.getenv("TELEGRAM_BOT_TOKEN", "")
     channel = os.getenv("TELEGRAM_CHANNEL_ID", "")
+    
+    # If no credentials provided, use mocks
     if not token or not channel:
         return True
+    
+    # Check for test/fake tokens
     token_lower = token.lower()
-    return (
+    if (
         token_lower.startswith("test_")
         or "dummy" in token_lower
         or "mock" in token_lower
-    )
+    ):
+        return True
+    
+    # Check if we're in the dedicated Telegram integration workflow
+    # Real tokens should only be used in the specific CI/CD workflow
+    workflow_name = os.getenv("GITHUB_WORKFLOW", "")
+    if workflow_name != "Telegram Integration Tests":
+        # We're not in the dedicated workflow, so use mocks for safety
+        return True
+    
+    # We're in the dedicated workflow with real tokens
+    return False
 
 
 def _require_credentials():
