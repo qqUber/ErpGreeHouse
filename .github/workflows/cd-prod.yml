@@ -26,6 +26,13 @@ jobs:
       ENVIRONMENT: production
       PYTHONPATH: ${{ github.workspace }}/middleware
       NODE_OPTIONS: --max-old-space-size=4096
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      VK_ACCESS_TOKEN: ${{ secrets.VK_ACCESS_TOKEN }}
+      VK_GROUP_ID: ${{ secrets.VK_GROUP_ID }}
+      ERP_API_KEY: ${{ secrets.ERP_API_KEY }}
+      ERP_API_SECRET: ${{ secrets.ERP_API_SECRET }}
+      JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+      WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
     steps:
       - uses: actions/checkout@v6
 
