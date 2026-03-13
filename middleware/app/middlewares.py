@@ -133,14 +133,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             window_seconds=settings.rate_limit_window_seconds,
         )
 
-        response = await call_next(request)
-
-        # Add rate limit headers
-        response.headers["X-RateLimit-Limit"] = str(settings.rate_limit_requests)
-        response.headers["X-RateLimit-Remaining"] = str(remaining)
-        response.headers["X-RateLimit-Reset"] = str(
-            int(time.time() + settings.rate_limit_window_seconds)
-        )
+        reset_at = int(time.time() + settings.rate_limit_window_seconds)
 
         if not is_allowed:
             logger.warning(
@@ -152,11 +145,16 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 headers={
                     "X-RateLimit-Limit": str(settings.rate_limit_requests),
                     "X-RateLimit-Remaining": "0",
-                    "X-RateLimit-Reset": str(
-                        int(time.time() + settings.rate_limit_window_seconds)
-                    ),
+                    "X-RateLimit-Reset": str(reset_at),
                 },
             )
+
+        response = await call_next(request)
+
+        # Add rate limit headers
+        response.headers["X-RateLimit-Limit"] = str(settings.rate_limit_requests)
+        response.headers["X-RateLimit-Remaining"] = str(remaining)
+        response.headers["X-RateLimit-Reset"] = str(reset_at)
 
         return response
 
@@ -168,7 +166,7 @@ rate_limit_middleware = RateLimitMiddleware
 class ThrottleMiddleware(BaseMiddleware):
     def __init__(self, rate: float = 1.0) -> None:
         self.rate = rate
-        self.r = get_redis()
+        self.r = None
 
     async def __call__(
         self,
@@ -182,9 +180,12 @@ class ThrottleMiddleware(BaseMiddleware):
         if isinstance(event, CallbackQuery):
             uid = event.from_user.id if event.from_user else None
         if uid:
+            if self.r is None:
+                self.r = get_redis()
             key = f"crm:throttle:{uid}"
             now = time.time()
-            last = float(await self.r.get(key) or "0")
+            last_raw = self.r.get(key)
+            last = float(last_raw or "0")
             if now - last < self.rate:
                 return
             self.r.setex(key, int(self.rate), str(now))

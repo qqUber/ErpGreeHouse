@@ -10,7 +10,20 @@ router = APIRouter(prefix="/api/v1/debug", tags=["debug"])
 
 
 def _count(conn: Any, table: str) -> int:
-    row = conn.execute(f"SELECT COUNT(*) AS cnt FROM {table}").fetchone()  # noqa: S608
+    allowed_tables = {
+        "customers",
+        "products",
+        "transactions",
+        "marketing_campaigns",
+        "marketing_triggers",
+        "marketing_trigger_events",
+        "integrations",
+        "integration_deliveries",
+    }
+    if table not in allowed_tables:
+        raise ValueError("Invalid table name")
+
+    row = conn.execute(f"SELECT COUNT(*) AS cnt FROM {table}").fetchone()
     return int(row["cnt"] if row else 0)
 
 
