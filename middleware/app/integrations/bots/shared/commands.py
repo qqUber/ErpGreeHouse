@@ -17,8 +17,22 @@ from .consent import (
     update_consent,
 )
 
-# Valid platform sources
+# Valid platform sources with column mappings
 Source = Literal["tg", "vk"]
+
+# Whitelist for column name mapping to prevent SQL injection
+COLUMN_MAPPINGS: dict[Source, str] = {
+    "tg": "telegram_id",
+    "vk": "vk_id",
+}
+
+
+def _get_id_column(source: Source) -> str:
+    """Get database column name for platform source with validation."""
+    if source not in COLUMN_MAPPINGS:
+        raise ValueError(f"Invalid source: {source}. Must be one of: {list(COLUMN_MAPPINGS.keys())}")
+    return COLUMN_MAPPINGS[source]
+
 
 # Message callback type - platform-specific function to send messages
 MessageCallback = Callable[[str], Any]
@@ -42,10 +56,8 @@ def cmd_start(
     db = get_db()
     conn = db.connect()
     try:
-        # Check if user exists in database
-        id_column = (
-            f"{source}_id"  # noqa: B608 - source is hardcoded (tg/vk), not user input
-        )
+        # Check if user exists in database using validated column name
+        id_column = _get_id_column(source)
         cur = conn.execute(
             f"SELECT id, full_name, marketing_allowed, data_processing_allowed FROM customers WHERE {id_column}=?",
             (user_id,),
@@ -95,7 +107,7 @@ def cmd_subscribe(
     db = get_db()
     conn = db.connect()
     try:
-        id_column = f"{source}_id"
+        id_column = _get_id_column(source)
         cur = conn.execute(
             f"SELECT id, full_name FROM customers WHERE {id_column}=?", (user_id,)
         )
@@ -144,7 +156,7 @@ def cmd_revoke_consent(
     db = get_db()
     conn = db.connect()
     try:
-        id_column = f"{source}_id"
+        id_column = _get_id_column(source)
         cur = conn.execute(
             f"SELECT id, full_name FROM customers WHERE {id_column}=?", (user_id,)
         )
@@ -194,7 +206,7 @@ def cmd_profile(
     db = get_db()
     conn = db.connect()
     try:
-        id_column = f"{source}_id"
+        id_column = _get_id_column(source)
         cur = conn.execute(
             f"""SELECT full_name, phone, balance_points, marketing_allowed,
                      data_processing_allowed, created_at
@@ -249,7 +261,7 @@ def get_customer_info(source: Source, user_id: int) -> Optional[Dict[str, Any]]:
     db = get_db()
     conn = db.connect()
     try:
-        id_column = f"{source}_id"
+        id_column = _get_id_column(source)
         cur = conn.execute(f"SELECT * FROM customers WHERE {id_column}=?", (user_id,))
         row = cur.fetchone()
         return dict(row) if row else None

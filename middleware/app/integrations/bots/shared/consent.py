@@ -17,6 +17,19 @@ CURRENT_POLICY_VERSION = "1.0.0"
 # Valid platform sources
 Source = Literal["tg", "vk"]
 
+# Whitelist for column name mapping to prevent SQL injection
+ID_COLUMN_MAPPINGS: dict[Source, str] = {
+    "tg": "telegram_id",
+    "vk": "vk_id",
+}
+
+
+def _get_id_column(source: Source) -> str:
+    """Get database column name for platform source with validation."""
+    if source not in ID_COLUMN_MAPPINGS:
+        raise ValueError(f"Invalid source: {source}. Must be one of: {list(ID_COLUMN_MAPPINGS.keys())}")
+    return ID_COLUMN_MAPPINGS[source]
+
 
 def get_consent_history(customer_id: int, conn=None) -> list[Dict[str, Any]]:
     """
@@ -59,9 +72,8 @@ def revoke_all_consents(source: Source, user_id: int, conn=None) -> None:
         user_id: The platform user ID
         conn: Optional database connection to reuse (prevents locking)
     """
-    # Map source to column name
-    id_column_mapping = {"tg": "telegram_id", "vk": "vk_id"}
-    id_column = id_column_mapping.get(source, f"{source}_id")
+    # Get validated column name
+    id_column = _get_id_column(source)
 
     # Use existing connection or create new one
     if conn is None:
@@ -72,7 +84,7 @@ def revoke_all_consents(source: Source, user_id: int, conn=None) -> None:
         close_conn = False
 
     try:
-        # Get customer ID  # noqa: B608 - id_column is hardcoded
+        # Get customer ID using validated column name
         cur = conn.execute(
             f"SELECT id FROM customers WHERE {id_column} = ?", (user_id,)
         )
@@ -159,9 +171,8 @@ def get_customer_consents(source: Source, user_id: int, conn=None) -> Dict[str, 
         Dict with marketing_allowed and data_processing_allowed boolean values.
         Returns all False if user not found.
     """
-    # Map source to column name (source "tg" maps to "telegram_id", "vk" maps to "vk_id")
-    id_column_mapping = {"tg": "telegram_id", "vk": "vk_id"}
-    id_column = id_column_mapping.get(source, f"{source}_id")
+    # Get validated column name
+    id_column = _get_id_column(source)
 
     if conn:
         # Use existing connection
@@ -204,9 +215,8 @@ def cleanup_user_data(
         conn: Optional database connection to reuse (prevents locking)
         log_refusal: Whether to log a refusal consent record (default: True)
     """
-    # Map source to column name
-    id_column_mapping = {"tg": "telegram_id", "vk": "vk_id"}
-    id_column = id_column_mapping.get(source, f"{source}_id")
+    # Get validated column name
+    id_column = _get_id_column(source)
 
     # Use existing connection or create new one
     if conn is None:
@@ -273,9 +283,8 @@ def update_consent(
         data_processing_allowed: 1 to allow data processing, 0 to deny
         conn: Optional database connection to reuse (prevents locking)
     """
-    # Map source to column name (source "tg" maps to "telegram_id", "vk" maps to "vk_id")
-    id_column_mapping = {"tg": "telegram_id", "vk": "vk_id"}
-    id_column = id_column_mapping.get(source, f"{source}_id")
+    # Get validated column name
+    id_column = _get_id_column(source)
 
     # Use existing connection or create new one
     if conn is None:
@@ -362,9 +371,8 @@ def find_customer_by_platform(source: Source, user_id: int) -> Optional[Dict[str
     Returns:
         Customer dict if found, None otherwise.
     """
-    # Map source to column name (source "tg" maps to "telegram_id", "vk" maps to "vk_id")
-    id_column_mapping = {"tg": "telegram_id", "vk": "vk_id"}
-    id_column = id_column_mapping.get(source, f"{source}_id")
+    # Get validated column name
+    id_column = _get_id_column(source)
 
     db = get_db()
     conn = db.connect()

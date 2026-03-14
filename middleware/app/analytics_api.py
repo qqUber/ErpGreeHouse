@@ -1294,8 +1294,10 @@ def get_external_sales_report(
     time_range: str = Query(default="30d", description="Time range: 7d, 30d, 90d, 1y"),
 ):
     """External API endpoint for sales reports (requires API key)"""
-    # Verify API key (simple check - should be stored in config)
-    valid_api_key = os.getenv("ANALYTICS_API_KEY", "default_api_key")
+    # Verify API key - must be explicitly configured
+    valid_api_key = os.getenv("ANALYTICS_API_KEY")
+    if not valid_api_key:
+        raise HTTPException(status_code=500, detail="ANALYTICS_API_KEY not configured")
     if api_key != valid_api_key:
         raise HTTPException(status_code=401, detail="Invalid API key")
 
@@ -1356,8 +1358,10 @@ def get_external_customers_report(
     time_range: str = Query(default="30d", description="Time range: 7d, 30d, 90d, 1y"),
 ):
     """External API endpoint for customers reports (requires API key)"""
-    # Verify API key (simple check - should be stored in config)
-    valid_api_key = os.getenv("ANALYTICS_API_KEY", "default_api_key")
+    # Verify API key - must be explicitly configured
+    valid_api_key = os.getenv("ANALYTICS_API_KEY")
+    if not valid_api_key:
+        raise HTTPException(status_code=500, detail="ANALYTICS_API_KEY not configured")
     if api_key != valid_api_key:
         raise HTTPException(status_code=401, detail="Invalid API key")
 
@@ -1412,8 +1416,10 @@ def get_external_loyalty_report(
     time_range: str = Query(default="30d", description="Time range: 7d, 30d, 90d, 1y"),
 ):
     """External API endpoint for loyalty reports (requires API key)"""
-    # Verify API key (simple check - should be stored in config)
-    valid_api_key = os.getenv("ANALYTICS_API_KEY", "default_api_key")
+    # Verify API key - must be explicitly configured
+    valid_api_key = os.getenv("ANALYTICS_API_KEY")
+    if not valid_api_key:
+        raise HTTPException(status_code=500, detail="ANALYTICS_API_KEY not configured")
     if api_key != valid_api_key:
         raise HTTPException(status_code=401, detail="Invalid API key")
 
