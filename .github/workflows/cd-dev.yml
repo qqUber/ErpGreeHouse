@@ -78,7 +78,7 @@ jobs:
           pytest -q \
             --cov=app.admin_auth_api \
             --cov=app.security \
-            --cov=app.rate_limit \
+            --cov=app.rate_limiter \
             --cov=app.request_context \
             --cov=app.runtime \
             --cov-report=term \

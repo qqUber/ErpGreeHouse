@@ -2,8 +2,10 @@
 """Initialize test database for E2E tests."""
 
 import os
-import sqlite3
 import sys
+
+from app.admin_auth_api import _bootstrap_default_admin, _bootstrap_demo_users
+from app.db import init_db
 
 
 def main():
@@ -13,40 +15,13 @@ def main():
     if os.path.exists(db_path):
         os.remove(db_path)
 
-    conn = sqlite3.connect(db_path)
+    os.environ["CRM_DB_PATH"] = db_path
 
-    # Create admin_users table
-    conn.execute("""
-CREATE TABLE IF NOT EXISTS admin_users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    role TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
-""")
+    init_db()
+    _bootstrap_default_admin()
+    _bootstrap_demo_users()
 
-    # Seed test users (password: test123 for all)
-    # This is the bcrypt hash of 'test123'
-    password_hash = "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYqPLUzC7J2"
-
-    conn.execute(
-        "INSERT OR IGNORE INTO admin_users (username, password_hash, role) VALUES (?, ?, ?)",
-        ("admin", password_hash, "admin"),
-    )
-    conn.execute(
-        "INSERT OR IGNORE INTO admin_users (username, password_hash, role) VALUES (?, ?, ?)",
-        ("manager", password_hash, "manager"),
-    )
-    conn.execute(
-        "INSERT OR IGNORE INTO admin_users (username, password_hash, role) VALUES (?, ?, ?)",
-        ("operator", password_hash, "operator"),
-    )
-
-    conn.commit()
-    conn.close()
-
-    print(f"Database {db_path} created and seeded successfully")
+    print(f"Database {db_path} initialized successfully")
     return 0
 
 

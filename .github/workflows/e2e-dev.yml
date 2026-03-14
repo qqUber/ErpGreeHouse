@@ -155,14 +155,17 @@ jobs:
       - name: publish to gh-pages
         run: |
           set -euo pipefail
+          PUBLISH_DIR="$(mktemp -d)"
+          cp -R gh-pages/. "${PUBLISH_DIR}/"
           git fetch origin gh-pages || true
           if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
             git checkout -B gh-pages origin/gh-pages
           else
             git checkout -B gh-pages
           fi
-          rm -rf *
-          cp -R gh-pages/* .
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -R "${PUBLISH_DIR}/". .
+          rm -rf "${PUBLISH_DIR}"
           git add .
           git config user.email "actions@github.com"
           git config user.name "github-actions"

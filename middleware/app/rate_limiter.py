@@ -1,4 +1,5 @@
 import logging
+import math
 import time
 from typing import Optional
 
@@ -11,6 +12,44 @@ logger = logging.getLogger(__name__)
 
 # Module-level Redis connection for connection pooling
 _redis_client: Optional[redis.Redis] = None
+_rate_limit_script: Optional[redis.client.Script] = None
+
+_RATE_LIMIT_LUA = """
+local tokens_key = KEYS[1]
+local refill_key = KEYS[2]
+local max_tokens = tonumber(ARGV[1])
+local refill_rate = tonumber(ARGV[2])
+local now = tonumber(ARGV[3])
+local ttl_seconds = tonumber(ARGV[4])
+
+local tokens = tonumber(redis.call("GET", tokens_key))
+if not tokens then
+    tokens = max_tokens
+end
+
+local last_refill = tonumber(redis.call("GET", refill_key))
+if not last_refill then
+    last_refill = now
+end
+
+local elapsed = now - last_refill
+if elapsed < 0 then
+    elapsed = 0
+end
+
+tokens = math.min(max_tokens, tokens + (elapsed * refill_rate))
+
+local allowed = 0
+if tokens >= 1 then
+    allowed = 1
+    tokens = tokens - 1
+end
+
+redis.call("SET", tokens_key, tokens, "EX", ttl_seconds)
+redis.call("SET", refill_key, now, "EX", ttl_seconds)
+
+return allowed
+"""
 
 
 def _get_redis() -> Optional[redis.Redis]:
@@ -40,30 +79,30 @@ def check_rate_limit(
     if r is None:
         return True  # Allow sending if Redis is unavailable
 
+    if max_tokens <= 0 or refill_rate <= 0:
+        return False
+
     key = f"rate_limit:{channel}:{chat_id}"
     current_time = time.time()
+    ttl_seconds = max(60, int(math.ceil((max_tokens / refill_rate) * 4)))
+    tokens_key = key + ":tokens"
+    last_refill_key = key + ":last_refill"
 
-    # Get current token count and last refill time
-    pipeline = r.pipeline()
-    pipeline.get(key + ":tokens")
-    pipeline.get(key + ":last_refill")
-    tokens, last_refill = pipeline.execute()
+    global _rate_limit_script
+    if _rate_limit_script is None:
+        _rate_limit_script = r.register_script(_RATE_LIMIT_LUA)
 
-    tokens = int(tokens) if tokens else max_tokens
-    last_refill = float(last_refill) if last_refill else current_time
-
-    # Refill tokens
-    tokens_to_add = int((current_time - last_refill) * refill_rate)
-    if tokens_to_add > 0:
-        tokens = min(tokens + tokens_to_add, max_tokens)
-        r.set(key + ":last_refill", current_time)
-        r.set(key + ":tokens", tokens)
-
-    if tokens > 0:
-        r.decr(key + ":tokens")
+    try:
+        allowed = _rate_limit_script(
+            keys=[tokens_key, last_refill_key],
+            args=[max_tokens, refill_rate, current_time, ttl_seconds],
+        )
+        return bool(int(allowed))
+    except Exception as e:
+        logger.warning(
+            f"[RateLimiter] Lua script failed, allowing message as fallback: {e}"
+        )
         return True
-    else:
-        return False
 
 
 def get_rate_limit_config(channel: str):
