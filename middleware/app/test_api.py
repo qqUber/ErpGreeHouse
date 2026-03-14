@@ -24,7 +24,9 @@ def _verify_admin_secret(x_admin_secret: Optional[str]) -> None:
     # Get expected secret from environment variable
     import os
 
-    expected = os.environ.get("E2E_ADMIN_SECRET", "test-secret-key")
+    expected = os.environ.get("E2E_ADMIN_SECRET")
+    if not expected:
+        raise HTTPException(status_code=500, detail="E2E_ADMIN_SECRET not configured")
     if not x_admin_secret or x_admin_secret != expected:
         raise HTTPException(status_code=401, detail="Invalid admin secret")
 
