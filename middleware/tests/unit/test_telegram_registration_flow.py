@@ -74,6 +74,7 @@ class MockMessage:
     def __init__(self, user_data, text=None, chat_id=123456):
         self.from_user = type("User", (), user_data)()
         self.text = text
+        self.contact = None
         self.chat = type("Chat", (), {"id": chat_id})()
         self.answer = AsyncMock()
         self.bot = Mock()
@@ -186,33 +187,28 @@ class TestStartCommand:
 class TestConsentCallback:
     """Test consent callback handling (agree/refuse)."""
 
-    def test_consent_agree_proceeds_to_name_request(
+    def test_consent_agree_proceeds_to_phone_request(
         self, setup_test_db, clean_redis, sample_user
     ):
-        """Test that clicking consent button proceeds to name request."""
+        """Test that clicking consent button proceeds to phone request."""
         from app.handlers import cb_consent
 
-        # Set up consent state in Redis (simulating user clicked /start first)
-        with patch("app.handlers.get_redis") as mock_redis:
+        with patch("app.handlers.get_redis") as mock_redis, patch(
+            "app.handlers.resolve_or_create_customer", return_value=(1, True)
+        ), patch("app.handlers._store_consent"):
             mock_r = Mock()
-            mock_r.hgetall = Mock(return_value={})  # No existing consent
             mock_redis.return_value = mock_r
 
-            # Create callback query with consent:yes
             cb = MockCallbackQuery(sample_user, "consent:yes")
 
-            # Run the handler
             import asyncio
 
             asyncio.run(cb_consent(cb))
 
-            # Verify message was edited to ask for name
             cb.message.edit_text.assert_called_once()
-            call_args = cb.message.edit_text.call_args
-
-            assert "Как тебя зовут" in call_args[0][0]
-
-            # Verify consent state was saved
+            cb.message.answer.assert_called_once()
+            call_args = cb.message.answer.call_args
+            assert "номер" in call_args[0][0].lower() or "телефон" in call_args[0][0].lower()
             mock_r.hset.assert_called_once()
 
     def test_consent_refuse_cleans_user_data(
@@ -274,71 +270,57 @@ class TestConsentCallback:
 
 
 class TestRegistrationMessage:
-    """Test registration message handling (name and phone collection)."""
+    """Test registration message handling."""
 
-    def test_name_input_stores_name_and_asks_for_phone(
+    def test_phone_input_stores_phone_and_asks_for_full_name(
         self, setup_test_db, clean_redis, sample_user
     ):
-        """Test that entering name stores it and asks for phone."""
+        """Test that entering phone stores it and asks for full name."""
         from app.handlers import handle_registration_message
 
-        # Set up consent state in Redis (user already gave consent)
         with patch("app.handlers.get_redis") as mock_redis:
             mock_r = Mock()
-            mock_r.hgetall = Mock(return_value={"consent_given": "1", "step": "name"})
+            mock_r.hgetall = Mock(return_value={"consent_given": "1", "step": "phone"})
             mock_r.hset = Mock()
             mock_redis.return_value = mock_r
 
-            # Create message with user's name
-            message = MockMessage(sample_user, text="Иван Иванов")
-
-            # Run the handler
+            message = MockMessage(sample_user, text="+79991234567")
             import asyncio
 
             asyncio.run(handle_registration_message(message))
 
-            # Verify name was stored and phone was asked
             mock_r.hset.assert_called_once()
             message.answer.assert_called_once()
-
             call_args = message.answer.call_args
-            assert "телефон" in call_args[0][0].lower()
+            assert "имя" in call_args[0][0].lower() or "фамили" in call_args[0][0].lower()
 
-    def test_phone_input_stores_phone_and_asks_for_marketing(
+    def test_full_name_input_stores_name_and_asks_for_gender(
         self, setup_test_db, clean_redis, sample_user
     ):
-        """Test that entering phone stores it and asks for marketing consent."""
+        """Test that entering full name stores it and asks for gender."""
         from app.handlers import handle_registration_message
 
-        # Set up consent state in Redis (user already entered name)
         with patch("app.handlers.get_redis") as mock_redis:
             mock_r = Mock()
             mock_r.hgetall = Mock(
                 return_value={
                     "consent_given": "1",
-                    "step": "phone",
-                    "name": "Иван Иванов",
+                    "step": "full_name",
+                    "phone": "+79991234567",
                 }
             )
             mock_r.hset = Mock()
             mock_redis.return_value = mock_r
 
-            # Create message with user's phone
-            message = MockMessage(sample_user, text="+79991234567")
-
-            # Run the handler
+            message = MockMessage(sample_user, text="Иван Иванов")
             import asyncio
 
             asyncio.run(handle_registration_message(message))
 
-            # Verify phone was stored and marketing consent was asked
             mock_r.hset.assert_called_once()
             message.answer.assert_called_once()
-
             call_args = message.answer.call_args
-            assert "Хотите получать" in call_args[0][0] or "новости" in call_args[0][0]
-
-            # Verify marketing buttons were shown
+            assert "пол" in call_args[0][0].lower()
             assert call_args[1].get("reply_markup") is not None
 
     def test_invalid_phone_shows_error(self, setup_test_db, clean_redis, sample_user):
@@ -352,7 +334,6 @@ class TestRegistrationMessage:
                 return_value={
                     "consent_given": "1",
                     "step": "phone",
-                    "name": "Иван Иванов",
                 }
             )
             mock_redis.return_value = mock_r
@@ -391,7 +372,7 @@ class TestMarketingConsent:
                 return_value={
                     "consent_given": "1",
                     "step": "marketing",
-                    "name": "Иван Иванов",
+                    "full_name": "Иван Иванов",
                     "phone": "+79991234567",
                 }
             )
@@ -459,7 +440,7 @@ class TestMarketingConsent:
                 return_value={
                     "consent_given": "1",
                     "step": "marketing",
-                    "name": "Иван Иванов",
+                    "full_name": "Иван Иванов",
                     "phone": "+79991234568",
                 }
             )
@@ -577,6 +558,7 @@ class TestRegistrationFlow:
         """Test complete registration flow: start → consent → name → phone → marketing yes."""
         from app.handlers import (
             cb_consent,
+            cb_gender,
             cb_marketing_consent,
             cmd_start,
             handle_registration_message,
@@ -610,26 +592,76 @@ class TestRegistrationFlow:
                     # Verify Redis has consent state
                     assert mock_r.hset.called
 
-                    # Step 3: Enter name
-                    mock_r.hgetall.return_value = {"consent_given": "1", "step": "name"}
-                    message = MockMessage(sample_user, text="Тест Тестов")
-                    await handle_registration_message(message)
-
-                    # Step 4: Enter phone
-                    mock_r.hgetall.return_value = {
-                        "consent_given": "1",
-                        "step": "phone",
-                        "name": "Тест Тестов",
-                    }
+                    # Step 3: Enter phone
+                    mock_r.hgetall.return_value = {"consent_given": "1", "step": "phone"}
                     message = MockMessage(sample_user, text="+79991234560")
                     await handle_registration_message(message)
 
-                    # Step 5: Accept marketing
+                    # Step 4: Enter full name
+                    mock_r.hgetall.return_value = {
+                        "consent_given": "1",
+                        "step": "full_name",
+                        "phone": "+79991234560",
+                    }
+                    message = MockMessage(sample_user, text="Тест Тестов")
+                    await handle_registration_message(message)
+
+                    # Step 5: Select gender
+                    mock_r.hgetall.return_value = {
+                        "consent_given": "1",
+                        "step": "gender",
+                        "phone": "+79991234560",
+                        "full_name": "Тест Тестов",
+                    }
+                    gender_cb = MockCallbackQuery(sample_user, "gender:male")
+                    await cb_gender(gender_cb)
+
+                    # Step 6: Enter birthday
+                    mock_r.hgetall.return_value = {
+                        "consent_given": "1",
+                        "step": "birthday",
+                        "phone": "+79991234560",
+                        "full_name": "Тест Тестов",
+                        "gender": "male",
+                    }
+                    message = MockMessage(sample_user, text="01.01.2000")
+                    await handle_registration_message(message)
+
+                    # Step 7: Enter email
+                    mock_r.hgetall.return_value = {
+                        "consent_given": "1",
+                        "step": "email",
+                        "phone": "+79991234560",
+                        "full_name": "Тест Тестов",
+                        "gender": "male",
+                        "birthday": "2000-01-01",
+                    }
+                    message = MockMessage(sample_user, text="test@example.com")
+                    await handle_registration_message(message)
+
+                    # Step 8: Enter city
+                    mock_r.hgetall.return_value = {
+                        "consent_given": "1",
+                        "step": "city",
+                        "phone": "+79991234560",
+                        "full_name": "Тест Тестов",
+                        "gender": "male",
+                        "birthday": "2000-01-01",
+                        "email": "test@example.com",
+                    }
+                    message = MockMessage(sample_user, text="Москва")
+                    await handle_registration_message(message)
+
+                    # Step 9: Accept marketing
                     mock_r.hgetall.return_value = {
                         "consent_given": "1",
                         "step": "marketing",
-                        "name": "Тест Тестов",
                         "phone": "+79991234560",
+                        "full_name": "Тест Тестов",
+                        "gender": "male",
+                        "birthday": "2000-01-01",
+                        "email": "test@example.com",
+                        "city": "Москва",
                     }
                     cb = MockCallbackQuery(sample_user, "marketing:yes")
                     await cb_marketing_consent(cb)

@@ -10,10 +10,11 @@ The platform-specific adapters (VK, Telegram) handle the actual message sending
 while this module handles the state management and business logic.
 """
 
-from typing import Any, Dict, Literal, Optional, Tuple
+from typing import Dict, Literal, Optional, Tuple
 
+from ....customer_identity import get_customer_row, resolve_or_create_customer
 from ....db import get_db
-from ....identify import generate_qr_token, normalize_name, normalize_phone
+from ....identify import normalize_name, normalize_phone
 from ....storage import get_redis
 from .consent import CURRENT_POLICY_VERSION, store_consent
 from .keys import consent_key
@@ -184,96 +185,25 @@ class RegistrationFlow:
         db = get_db()
         conn = db.connect()
         try:
-            # Check for existing customer by phone
-            cur = conn.execute(
-                "SELECT * FROM customers WHERE phone = ?", (normalized_phone,)
+            customer_id, is_new = resolve_or_create_customer(
+                conn,
+                telegram_id=int(user_id) if self.source == "tg" else None,
+                vk_id=int(user_id) if self.source == "vk" else None,
+                phone=normalized_phone,
+                full_name=normalized_name,
+                marketing_allowed=marketing_allowed,
+                data_processing_allowed=1,
+                preferred_channel=self.source,
+                onboarding_status="completed",
+                phone_verification_method="shared_registration",
             )
-            existing = cur.fetchone()
-
-            is_new = False
-
-            if existing:
-                # Customer exists - link the social account if not already linked
-                updates: list[str] = []
-                params: list[Any] = []
-
-                # Update platform ID if currently empty
-                id_column = f"{self.source}_id"
-                if existing[id_column] is None:
-                    updates.append(f"{id_column} = ?")
-                    params.append(int(user_id))
-
-                # Update full_name
-                updates.append("full_name = ?")
-                params.append(normalized_name)
-
-                # Update marketing_allowed
-                updates.append("marketing_allowed = ?")
-                params.append(marketing_allowed)
-
-                # Update data_processing_allowed
-                updates.append("data_processing_allowed = ?")
-                params.append(1)
-
-                # Update preferred_channel if not set
-                if existing["preferred_channel"] is None:
-                    updates.append("preferred_channel = ?")
-                    params.append(self.source)
-
-                updates.append("updated_at = datetime('now')")
-                params.append(existing["id"])
-
-                # noqa: B608 - updates built from hardcoded column names
-                conn.execute(
-                    f"UPDATE customers SET {', '.join(updates)} WHERE id = ?",
-                    tuple(params),
-                )
-                conn.commit()
-
-                # Fetch updated record
-                cur = conn.execute(
-                    "SELECT * FROM customers WHERE id = ?", (existing["id"],)
-                )
-                customer = cur.fetchone()
-                customer_dict = dict(customer) if customer else dict(existing)
-            else:
-                # Create new customer
-                qr_token = generate_qr_token()
-
-                conn.execute(
-                    """
-                    INSERT INTO customers
-                    (phone, full_name, {0}_id, qr_token, preferred_channel,
-                     marketing_allowed, data_processing_allowed, balance_points,
-                     created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 0, datetime('now'), datetime('now'))
-                    """.format(self.source),
-                    (
-                        normalized_phone,
-                        normalized_name,
-                        int(user_id),
-                        qr_token,
-                        self.source,
-                        marketing_allowed,
-                        1,
-                    ),
-                )
-                conn.commit()
-
-                # Fetch the newly created record
-                cur = conn.execute(
-                    "SELECT * FROM customers WHERE phone = ?", (normalized_phone,)
-                )
-                customer = cur.fetchone()
-                customer_dict = dict(customer) if customer else {}
-                is_new = True
-
-            customer_id = customer_dict.get("id")
+            conn.commit()
+            customer_dict = get_customer_row(conn, customer_id)
 
             # Store consent records for 152-ФЗ compliance
-            if customer_id is not None:
+            if customer_id:
                 store_consent(
-                    int(customer_id),
+                    customer_id,
                     self.source,
                     "Я ознакомлен с Политикой конфиденциальности и даю согласие "
                     "на обработку персональных данных в соответствии с 152-ФЗ.",
@@ -281,9 +211,9 @@ class RegistrationFlow:
                     "data_processing",
                 )
 
-            if marketing_allowed and customer_id is not None:
+            if marketing_allowed and customer_id:
                 store_consent(
-                    int(customer_id),
+                    customer_id,
                     self.source,
                     "Я даю согласие на получение рекламных рассылок и акций",
                     CURRENT_POLICY_VERSION,

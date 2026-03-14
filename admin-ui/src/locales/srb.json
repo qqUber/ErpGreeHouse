@@ -90,7 +90,8 @@
     "enabled": "Активно",
     "disabled": "Онемогућено",
     "yesShort": "Да",
-    "noShort": "Не"
+    "noShort": "Не",
+    "backToList": "Назад на листу"
   },
   "dashboard": {
     "title": "Главна",
@@ -519,5 +520,52 @@
     "prev": "Претходна",
     "next": "Следећа",
     "page": "Страница {{page}} од {{total}}"
+  },
+  "widgets": {
+    "showDetails": "Прикажи детаље",
+    "hideDetails": "Сакриј детаље",
+    "detailsSuffix": "детаљи",
+    "common": {
+      "newThisWeek": "Ново ове недеље",
+      "active": "Активно",
+      "plusThisWeek": "+{{count}} ове недеље"
+    },
+    "customers": {
+      "title": "Клијенти",
+      "activeCustomers": "Активни клијенти",
+      "details": "Детаљи клијената",
+      "newCustomers": "Нови клијенти",
+      "returningCustomers": "Повратни клијенти",
+      "avgVisitFrequency": "Просечна фреквенција посета",
+      "visitsPerWeek": "{{count}} посета/нед",
+      "totalCustomers": "Укупно клијената",
+      "returning": "Повратни",
+      "telegram": "Telegram",
+      "vk": "VK",
+      "unknown": "Непознато",
+      "noChannel": "Нема канала",
+      "consent": "Сагласност",
+      "noConsent": "Нема сагласности",
+      "ltv": "LTV"
+    },
+    "products": {
+      "title": "Производи",
+      "activeProducts": "Активни производи",
+      "details": "Детаљи производа",
+      "newProducts": "Нови производи",
+      "topSelling": "Најпродаванији",
+      "stockLevels": "Нивови залиха",
+      "lowItems": "Ниско: {{count}} ставки",
+      "totalProducts": "Укупно производа",
+      "lowStock": "Ниске залихе",
+      "espresso": "Еспресо",
+      "trendingNow": "У тренду",
+      "demandSignal": "Сигнал потражње",
+      "unnamedProduct": "Безимени производ",
+      "quantity": "Кол.",
+      "revenue": "Приход",
+      "trend": "Тренд",
+      "productDetail": "Детаљи производа"
+    }
   }
 }

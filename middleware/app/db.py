@@ -27,6 +27,32 @@ class DB:
             conn.execute("ALTER TABLE customers ADD COLUMN birthday TEXT")
         except sqlite3.OperationalError:
             pass
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN gender TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN email TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN city TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute(
+                "ALTER TABLE customers ADD COLUMN onboarding_status TEXT DEFAULT 'registered'"
+            )
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN phone_verified_at TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN phone_verification_method TEXT")
+        except sqlite3.OperationalError:
+            pass
         # Analytics fields for customers
         try:
             conn.execute(
@@ -141,6 +167,10 @@ class DB:
             conn.execute("ALTER TABLE customers ADD COLUMN tg_id INTEGER")
         except sqlite3.OperationalError:  # Column already exists
             pass
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN preferred_language TEXT")
+        except sqlite3.OperationalError:
+            pass
 
         # Migration for consent_type column
         try:
@@ -211,6 +241,12 @@ def init_db() -> None:
                 marketing_allowed INTEGER NOT NULL DEFAULT 0,
                 data_processing_allowed INTEGER NOT NULL DEFAULT 0,
                 birthday TEXT, -- YYYY-MM-DD
+                gender TEXT,
+                email TEXT,
+                city TEXT,
+                onboarding_status TEXT NOT NULL DEFAULT 'registered',
+                phone_verified_at TEXT,
+                phone_verification_method TEXT,
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
             );

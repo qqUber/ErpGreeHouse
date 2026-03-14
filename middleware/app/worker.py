@@ -642,7 +642,7 @@ def process_periodic_marketing() -> dict:
         # Points expiration triggers
         # Check for points that will expire in next 7 days
         rows = conn.execute("""
-            SELECT c.id, SUM(t.points_earned - t.points_redeemed) as points_to_expire
+            SELECT c.id, SUM(t.bonus_earned - t.bonus_used) as points_to_expire
             FROM customers c
             LEFT JOIN transactions t ON c.id = t.customer_id
             WHERE t.created_at <= datetime('now', '-365 days')
@@ -687,3 +687,4 @@ def process_telegram_update(payload: dict) -> dict:
 
 if __name__ == "__main__":
     celery_app.start()
+

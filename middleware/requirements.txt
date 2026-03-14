@@ -21,6 +21,7 @@ pytest-html==4.1.1
 pytest-mock==3.14.0
 python-dotenv==1.2.1
 python-multipart==0.0.22
+qrcode[pil]==8.2
 redis>=7.2.0
 responses==0.25.6
 respx==0.22.0

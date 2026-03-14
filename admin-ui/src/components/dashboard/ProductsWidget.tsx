@@ -34,8 +34,8 @@ export function ProductsWidget({ data }: { data?: ProductsData }) {
     <div className="crm-widget-compact">
       <div className="crm-kpi-grid">
         <StatCard variant="success" value={total} label={t('widgets.products.activeProducts')} />
-        <StatCard variant="info" value={trendingCount} label="Trending now" />
-        <StatCard variant="warning" value={demandSignal} label="Demand signal" />
+        <StatCard variant="info" value={trendingCount} label={t('widgets.products.trendingNow')} />
+        <StatCard variant="warning" value={demandSignal} label={t('widgets.products.demandSignal')} />
       </div>
     </div>
   );
@@ -49,17 +49,17 @@ export function ProductsWidget({ data }: { data?: ProductsData }) {
     >
       <div className="crm-product-main">
         <span className="crm-customer-id">{product.code ?? '--'}</span>
-        <span className="crm-customer-name">{product.name ?? 'Unnamed product'}</span>
+        <span className="crm-customer-name">{product.name ?? t('widgets.products.unnamedProduct')}</span>
       </div>
       <div className="crm-customer-badges">
         {Number.isFinite(Number(product.quantity)) && (
-          <span className="crm-badge crm-badge-value">Qty {Number(product.quantity ?? 0)}</span>
+          <span className="crm-badge crm-badge-value">{t('widgets.products.quantity')} {Number(product.quantity ?? 0)}</span>
         )}
         {Number.isFinite(Number(product.revenue)) && (
-          <span className="crm-badge crm-badge-good">Rev {Number(product.revenue ?? 0).toLocaleString()}</span>
+          <span className="crm-badge crm-badge-good">{t('widgets.products.revenue')} {Number(product.revenue ?? 0).toLocaleString()}</span>
         )}
         {Number.isFinite(Number(product.growth_percent)) && (
-          <span className="crm-badge crm-badge-channel">Trend {Number(product.growth_percent ?? 0)}%</span>
+          <span className="crm-badge crm-badge-channel">{t('widgets.products.trend')} {Number(product.growth_percent ?? 0)}%</span>
         )}
       </div>
     </button>
@@ -70,13 +70,13 @@ export function ProductsWidget({ data }: { data?: ProductsData }) {
       {selectedProduct ? (
         <section className="crm-detail-card">
           <div className="crm-detail-head">
-            <h3 className="crm-section-title">Product detail</h3>
+            <h3 className="crm-section-title">{t('widgets.products.productDetail')}</h3>
             <button
               type="button"
               className="crm-inline-back"
               onClick={() => setSelectedProductCode(null)}
             >
-              Back to list
+              {t('common.backToList')}
             </button>
           </div>
           <div className="crm-detail-grid">

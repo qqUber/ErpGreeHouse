@@ -60,66 +60,57 @@ class TestHandlersHelperFunctions:
 
     @patch("app.handlers.get_db")
     @patch("app.handlers.normalize_phone")
-    @patch("app.handlers.generate_qr_token")
+    @patch("app.handlers.get_customer_row")
+    @patch("app.handlers.resolve_or_create_customer")
     def test_register_or_link_user_new_customer_tg(
-        self, mock_qr, mock_normalize, mock_get_db
+        self, mock_resolve, mock_get_customer_row, mock_normalize, mock_get_db
     ):
         """Test register_or_link_user for new Telegram customer."""
-        # Setup mocks
         mock_normalize.return_value = "+79991234567"
-        mock_qr.return_value = "test_qr_token"
+        mock_resolve.return_value = (1, True)
+        mock_get_customer_row.return_value = {"id": 1, "phone": "+79991234567"}
 
         mock_conn = Mock()
-        mock_cursor = Mock()
-        mock_cursor.fetchone.return_value = None  # No existing customer
-        mock_conn.execute.return_value = mock_cursor
-        mock_cursor.lastrowid = 1
-
         mock_db = Mock()
         mock_db.connect.return_value = mock_conn
         mock_get_db.return_value = mock_db
 
-        # Test
         customer, is_new = register_or_link_user("+79991234567", "12345", "tg")
 
-        # Verify
         assert is_new is True
-        assert customer is not None
+        assert customer == {"id": 1, "phone": "+79991234567"}
         mock_normalize.assert_called_once_with("+79991234567")
-        mock_qr.assert_called_once()
+        mock_resolve.assert_called_once_with(
+            mock_conn,
+            telegram_id=12345,
+            vk_id=None,
+            phone="+79991234567",
+            preferred_channel="tg",
+            onboarding_status="linked",
+        )
+        mock_conn.commit.assert_called_once()
 
     @patch("app.handlers.get_db")
     @patch("app.handlers.normalize_phone")
-    @patch("app.handlers.generate_qr_token")
+    @patch("app.handlers.get_customer_row")
+    @patch("app.handlers.resolve_or_create_customer")
     def test_register_or_link_user_existing_customer(
-        self, mock_qr, mock_normalize, mock_get_db
+        self, mock_resolve, mock_get_customer_row, mock_normalize, mock_get_db
     ):
         """Test register_or_link_user for existing customer."""
-        # Setup mocks
         mock_normalize.return_value = "+79991234567"
-        mock_qr.return_value = "test_qr_token"
+        mock_resolve.return_value = (1, False)
+        mock_get_customer_row.return_value = {"id": 1, "phone": "+79991234567"}
 
         mock_conn = Mock()
-        mock_cursor = Mock()
-        mock_cursor.fetchone.return_value = {
-            "id": 1,
-            "telegram_id": None,
-            "vk_id": None,
-            "preferred_channel": None,
-            "qr_token": "existing_qr",
-        }
-        mock_conn.execute.return_value = mock_cursor
-
         mock_db = Mock()
         mock_db.connect.return_value = mock_conn
         mock_get_db.return_value = mock_db
 
-        # Test
         customer, is_new = register_or_link_user("+79991234567", "12345", "tg")
 
-        # Verify
         assert is_new is False
-        assert customer is not None
+        assert customer == {"id": 1, "phone": "+79991234567"}
 
     @patch("app.handlers.get_db")
     @patch("app.handlers.normalize_phone")
@@ -134,18 +125,12 @@ class TestHandlersHelperFunctions:
 
     @patch("app.handlers.get_db")
     @patch("app.handlers.normalize_name")
-    @patch("app.handlers.generate_qr_token")
-    def test_upsert_local_customer_new(self, mock_qr, mock_normalize, mock_get_db):
+    @patch("app.handlers.resolve_or_create_customer")
+    def test_upsert_local_customer_new(self, mock_resolve, mock_normalize, mock_get_db):
         """Test _upsert_local_customer for new customer."""
-        mock_normalize.return_value = "Test User"
-        mock_qr.return_value = "test_qr"
+        mock_resolve.return_value = (1, True)
 
         mock_conn = Mock()
-        mock_cursor = Mock()
-        mock_cursor.fetchone.return_value = None
-        mock_conn.execute.return_value = mock_cursor
-        mock_cursor.lastrowid = 1
-
         mock_db = Mock()
         mock_db.connect.return_value = mock_conn
         mock_get_db.return_value = mock_db
@@ -153,21 +138,20 @@ class TestHandlersHelperFunctions:
         customer_id = _upsert_local_customer(123, "Test User", "+79991234567")
 
         assert customer_id == 1
-        mock_normalize.assert_called_once()
-        mock_qr.assert_called_once()
+        mock_resolve.assert_called_once()
+        mock_conn.commit.assert_called_once()
 
     @patch("app.handlers.get_db")
     @patch("app.handlers.normalize_name")
-    @patch("app.handlers.generate_qr_token")
-    def test_upsert_local_customer_existing(self, mock_qr, mock_normalize, mock_get_db):
+    @patch("app.handlers.resolve_or_create_customer")
+    def test_upsert_local_customer_existing(
+        self, mock_resolve, mock_normalize, mock_get_db
+    ):
         """Test _upsert_local_customer for existing customer."""
         mock_normalize.return_value = "Test User"
+        mock_resolve.return_value = (1, False)
 
         mock_conn = Mock()
-        mock_cursor = Mock()
-        mock_cursor.fetchone.return_value = {"id": 1, "qr_token": "existing_qr"}
-        mock_conn.execute.return_value = mock_cursor
-
         mock_db = Mock()
         mock_db.connect.return_value = mock_conn
         mock_get_db.return_value = mock_db

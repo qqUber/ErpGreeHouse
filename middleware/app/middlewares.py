@@ -1,4 +1,5 @@
 import logging
+import math
 import time
 from typing import Any, Awaitable, Callable, Dict, Optional, Set
 
@@ -188,5 +189,6 @@ class ThrottleMiddleware(BaseMiddleware):
             last = float(last_raw or "0")
             if now - last < self.rate:
                 return
-            self.r.setex(key, int(self.rate), str(now))
+            ttl_seconds = max(1, math.ceil(self.rate))
+            self.r.setex(key, ttl_seconds, str(now))
         return await handler(event, data)

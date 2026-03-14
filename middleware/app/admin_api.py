@@ -16,8 +16,9 @@ from .auth import (
     check_roles,
     get_default_permissions,
 )
+from .customer_identity import generate_unique_qr_token, resolve_or_create_customer
 from .db import get_db
-from .identify import generate_qr_token, normalize_name, normalize_phone
+from .identify import normalize_name, normalize_phone
 from .integration_events import dispatch_event
 from .integrations.pos.erpnext_client import ERPClient
 from .loyalty import LoyaltyRules, calc_earned_points, clamp_redeem_points
@@ -182,6 +183,9 @@ class CreateCustomerIn(BaseModel):
     phone: str | None = None
     notes: str | None = None
     birthday: str | None = None  # YYYY-MM-DD
+    gender: str | None = None
+    email: str | None = None
+    city: str | None = None
     marketing_allowed: int = 1
     data_processing_allowed: int = 1
 
@@ -656,10 +660,11 @@ def list_customers(
 
         # Get paginated data
         offset = (page - 1) * limit
-        sql = "SELECT id, phone, full_name, telegram_id, qr_token, balance_points, created_at FROM customers"
+        sql = "SELECT id, phone, full_name, telegram_id, qr_token, balance_points, birthday, gender, email, city, onboarding_status, created_at FROM customers"
         if where:
             sql += " WHERE " + " AND ".join(where)
-        sql += f" ORDER BY id DESC LIMIT {limit} OFFSET {offset}"
+        sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
+        args.extend([limit, offset])
 
         cur = conn.execute(sql, tuple(args))
         items = [dict(r) for r in cur.fetchall()]
@@ -778,7 +783,7 @@ def get_customer(
     conn = db.connect()
     try:
         cur = conn.execute(
-            "SELECT id, phone, full_name, telegram_id, qr_token, balance_points, preferences_json, created_at FROM customers WHERE id=?",
+            "SELECT id, phone, full_name, telegram_id, qr_token, balance_points, preferences_json, birthday, gender, email, city, onboarding_status, phone_verified_at, phone_verification_method, created_at FROM customers WHERE id=?",
             (customer_id,),
         )
         row = cur.fetchone()
@@ -820,13 +825,13 @@ def create_customer(
                     status_code=400, detail="Customer with this phone already exists"
                 )
 
-        token = generate_qr_token()
+        token = generate_unique_qr_token(conn)
         prefs = json.dumps({"notes": payload.notes} if payload.notes else {})
 
         cur = conn.execute(
             """
-            INSERT INTO customers(full_name, phone, qr_token, preferences_json, balance_points, birthday, marketing_allowed, data_processing_allowed)
-            VALUES(?,?,?,?,0,?,?,?)
+            INSERT INTO customers(full_name, phone, qr_token, preferences_json, balance_points, birthday, gender, email, city, onboarding_status, marketing_allowed, data_processing_allowed)
+            VALUES(?,?,?,?,0,?,?,?,?,?,?,?)
             """,
             (
                 payload.full_name,
@@ -834,6 +839,10 @@ def create_customer(
                 token,
                 prefs,
                 payload.birthday,
+                payload.gender,
+                payload.email,
+                payload.city,
+                "completed",
                 payload.marketing_allowed,
                 payload.data_processing_allowed,
             ),
@@ -887,14 +896,15 @@ def identify_phone(
         row = cur.fetchone()
         if row:
             return {"customer_id": int(row[0])}
-        token = generate_qr_token()
-        cur2 = conn.execute(
-            "INSERT INTO customers(phone, full_name, qr_token) VALUES(?,?,?)",
-            (phone, "", token),
+        customer_id, _ = resolve_or_create_customer(
+            conn,
+            phone=phone,
+            preferred_channel=None,
+            onboarding_status="identified",
         )
         conn.commit()
         _cache_del_prefix("crm:cache:customers:")
-        return {"customer_id": int(cur2.lastrowid)}  # type: ignore[arg-type]
+        return {"customer_id": customer_id}
     finally:
         conn.close()
 

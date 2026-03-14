@@ -7,10 +7,10 @@ from urllib.parse import parse_qsl
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from .config import get_settings
 from .db import get_db
+from .integrations.bots.telegram_handler import get_configured_telegram_token
 from .integrations.pos.erpnext_client import ERPClient
-from .loyalty import LoyaltyRules, get_next_tier, get_tier
+from .loyalty_profile import build_customer_loyalty_profile
 
 router = APIRouter(prefix="/api/v1/tma")
 
@@ -48,8 +48,7 @@ def validate_init_data(init_data: str, bot_token: str) -> dict:
 
 @router.post("/me")
 async def get_tma_me(req: InitDataRequest) -> dict[str, Any]:
-    settings = get_settings()
-    bot_token = settings.telegram_bot_token
+    bot_token = get_configured_telegram_token()
 
     if not bot_token:
         # Development fallback if token is unset
@@ -70,43 +69,41 @@ async def get_tma_me(req: InitDataRequest) -> dict[str, Any]:
     if not customer:
         return {"error": "Вы не зарегистрированы. Напишите боту /start."}
 
-    # Get balance
     balance = await client.get_balance(customer["name"])
-
-    # Get local QR token and historical spent
     db = get_db()
     conn = db.connect()
-    spent_amount = 0
     try:
         cur = conn.execute(
             "SELECT id, qr_token FROM customers WHERE telegram_id=?", (telegram_id,)
         )
         row = cur.fetchone()
-        qr_token = row["qr_token"] if row else ""
         cust_id = row["id"] if row else None
-
-        if cust_id:
-            spent_row = conn.execute(
-                "SELECT SUM(total_amount) FROM transactions WHERE customer_id=?",
-                (cust_id,),
-            ).fetchone()
-            spent_amount = int(spent_row[0]) if spent_row and spent_row[0] else 0
-
+        if not cust_id:
+            return {"error": "Локальный профиль клиента не найден."}
+        profile = build_customer_loyalty_profile(
+            conn,
+            int(cust_id),
+            balance_override=int(balance),
+        )
     finally:
         conn.close()
 
-    rules = LoyaltyRules()
-    tier = get_tier(spent_amount, rules)
-    next_tier = get_next_tier(spent_amount, rules)
+    if not profile:
+        return {"error": "Лояльность клиента недоступна."}
 
     return {
         "first_name": user_data.get("first_name", customer.get("first_name", "Гость")),
         "telegram_id": telegram_id,
-        "balance": balance,
-        "qr_token": qr_token,
-        "tier": tier.name,
-        "percent": tier.accrual_percent,
-        "spent_amount": spent_amount,
-        "next_tier_name": next_tier.name if next_tier else None,
-        "next_tier_spent": next_tier.min_spent if next_tier else None,
+        "balance": profile["balance"],
+        "qr_token": profile["qr_token"],
+        "tier": profile["tier"],
+        "percent": profile["percent"],
+        "spent_amount": profile["spent_amount"],
+        "next_tier_name": profile["next_tier_name"],
+        "next_tier_spent": profile["next_tier_spent"],
+        "loyalty_percent": profile["loyalty_percent"],
+        "date_to": profile["date_to"],
+        "balance_minus": profile["balance_minus"],
+        "payUp": profile["payUp"],
+        "orders_to_next_tier": profile["orders_to_next_tier"],
     }

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../stores/auth';
 
 export function LoginPage() {
   const { login } = useAuth();
+  const { t } = useTranslation();
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -21,7 +23,7 @@ export function LoginPage() {
     try {
       await login(username, password);
     } catch (err) {
-      setError('Неверное имя пользователя или пароль');
+      setError(t('auth.invalidCredentials'));
     } finally {
       setLoading(false);
     }

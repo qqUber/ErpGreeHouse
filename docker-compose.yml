@@ -25,6 +25,8 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
     volumes:
       - ./middleware:/app
     depends_on:
@@ -36,6 +38,41 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  worker:
+    build:
+      context: ./middleware
+      dockerfile: Dockerfile
+      target: development
+    container_name: erp_worker
+    command: ["celery", "-A", "app.worker", "worker", "-l", "info"]
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./middleware:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  ngrok:
+    build:
+      context: ./admin-ui
+      dockerfile: Dockerfile
+      target: development
+    container_name: erp_ngrok
+    command: ["node", "scripts/ngrok/backend.mjs"]
+    env_file:
+      - .env
+    environment:
+      - NGROK_ADDR=backend:8000
+    volumes:
+      - ./admin-ui:/app
+      - /app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
 
   # Frontend
   frontend:

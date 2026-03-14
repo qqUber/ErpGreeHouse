@@ -26,15 +26,14 @@ class TestIntegrationsAPI:
         """Test finding or creating customer by phone."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
-        mock_cursor.fetchone.side_effect = [None, None]
-        mock_cursor.lastrowid = 2
-
+        mock_cursor.fetchone.side_effect = [None]
         mock_conn.execute.return_value = mock_cursor
 
         customer = ReceiptCustomer(
             qr_token=None, phone="+79001234567", telegram_id=None
         )
-        result = _find_or_create_customer(mock_conn, customer)
+        with patch("app.integrations_api.resolve_or_create_customer", return_value=(2, True)):
+            result = _find_or_create_customer(mock_conn, customer)
 
         assert result == 2
 
@@ -42,12 +41,11 @@ class TestIntegrationsAPI:
         """Test finding or creating customer by Telegram ID."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
-        mock_cursor.fetchone.side_effect = [None, None, None]
-        mock_cursor.lastrowid = 3
-
+        mock_cursor.fetchone.side_effect = [None]
         mock_conn.execute.return_value = mock_cursor
 
         customer = ReceiptCustomer(qr_token=None, phone=None, telegram_id=12345)
-        result = _find_or_create_customer(mock_conn, customer)
+        with patch("app.integrations_api.resolve_or_create_customer", return_value=(3, True)):
+            result = _find_or_create_customer(mock_conn, customer)
 
         assert result == 3

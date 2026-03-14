@@ -1,5 +1,5 @@
 import re
-import secrets
+import random
 
 _phone_re = re.compile(r"[^0-9+]")
 
@@ -34,4 +34,4 @@ def normalize_name(raw: str) -> str:
 
 
 def generate_qr_token() -> str:
-    return secrets.token_urlsafe(16)
+    return f"{random.randint(0, 999999):06d}"

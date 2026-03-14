@@ -5,19 +5,58 @@ Provides endpoints for managing Telegram and VK bot configurations
 
 import json
 import secrets
+import shutil
+from pathlib import Path
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from .admin_auth_api import require_jwt_auth
-from .auth import check_roles, require_roles
+from .auth import check_roles
 from .config import get_settings
 from .db import get_db
-from .integrations.bots.telegram_handler import create_bot, create_bot_with_token
+from .integrations.bots.telegram_handler import (
+    create_bot,
+    create_bot_with_token,
+    ensure_telegram_bot_menu,
+    get_configured_telegram_token,
+    get_stored_telegram_token,
+)
 from .integrations.bots.vk_handler import validate_vk_token
 
 router = APIRouter(prefix="/api/v1/admin/integrations")
+
+
+async def _setup_telegram_webhook_impl(
+    webhook_url: Optional[str] = None,
+    secret: Optional[str] = None,
+) -> dict[str, Any]:
+    settings = get_settings()
+    bot = create_bot()
+
+    resolved_webhook_url = webhook_url or f"{settings.base_web_url}/telegram/webhook"
+    resolved_secret = secret or settings.webhook_secret
+
+    if not settings.base_web_url and not webhook_url:
+        raise HTTPException(
+            status_code=400,
+            detail="BASE_WEB_URL is not configured, cannot set Telegram webhook automatically.",
+        )
+
+    try:
+        await bot.set_webhook(
+            url=resolved_webhook_url,
+            secret_token=resolved_secret,
+        )
+        await ensure_telegram_bot_menu(bot)
+        return {
+            "webhook_set": True,
+            "url": resolved_webhook_url,
+            "secret": resolved_secret,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to set webhook: {e}")
 
 
 # --- Request Models ---
@@ -26,6 +65,8 @@ router = APIRouter(prefix="/api/v1/admin/integrations")
 class TelegramSettingsIn(BaseModel):
     bot_token: str = Field(min_length=1)
     enabled: bool = True
+    menu_items: list[dict[str, Any]] = Field(default_factory=list)
+    support_chat_id: str = ""
 
 
 class VKSettingsIn(BaseModel):
@@ -52,19 +93,12 @@ class IntegrationStatus(BaseModel):
 # --- Telegram Endpoints ---
 
 
-@router.get("/telegram/status")
-def get_telegram_status(
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
-) -> dict[str, Any]:
-    """Get current Telegram bot status"""
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
-    settings = get_settings()
-
+def _get_telegram_status_impl() -> dict[str, Any]:
     db = get_db()
     conn = db.connect()
     try:
         cur = conn.execute(
-            "SELECT config_json FROM integrations WHERE kind='telegram' LIMIT 1"
+            "SELECT enabled, config_json FROM integrations WHERE kind='telegram' ORDER BY id DESC LIMIT 1"
         )
         row = cur.fetchone()
 
@@ -73,18 +107,28 @@ def get_telegram_status(
         if row:
             try:
                 config = json.loads(row["config_json"] or "{}")
-                enabled = config.get("enabled", False)
+                enabled = bool(int(row["enabled"] or 0))
             except Exception:
                 config = {}
 
+        configured_token = get_stored_telegram_token()
         return {
             "enabled": enabled,
-            "configured": bool(settings.telegram_bot_token),
-            "bot_token_set": bool(settings.telegram_bot_token),
+            "configured": bool(configured_token),
+            "bot_token_set": bool(configured_token),
             "config": config,
         }
     finally:
         conn.close()
+
+
+@router.get("/telegram/status")
+def get_telegram_status(
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Get current Telegram bot status"""
+    check_roles(auth_result, roles=("owner", "marketer"))
+    return _get_telegram_status_impl()
 
 
 @router.post("/telegram/validate")
@@ -118,10 +162,10 @@ async def validate_telegram_token(
 @router.post("/telegram/save")
 async def save_telegram_settings(
     payload: TelegramSettingsIn,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     """Save Telegram bot settings"""
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
 
     db = get_db()
     conn = db.connect()
@@ -133,6 +177,8 @@ async def save_telegram_settings(
         config = {
             "bot_token": payload.bot_token,
             "enabled": payload.enabled,
+            "menu_items": payload.menu_items,
+            "support_chat_id": payload.support_chat_id.strip(),
         }
 
         if row:
@@ -158,49 +204,80 @@ async def save_telegram_settings(
             )
 
         conn.commit()
-        return {"saved": True}
     finally:
         conn.close()
+
+    result: dict[str, Any] = {"saved": True}
+    if payload.enabled:
+        result["webhook"] = await _setup_telegram_webhook_impl()
+    return result
+
+
+@router.post("/telegram/upload_media")
+async def upload_telegram_media(
+    file: UploadFile = File(...),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    check_roles(auth_result, roles=("owner", "marketer"))
+    
+    # Input validation
+    ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.mp4', '.webm', '.pdf'}
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+    
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No filename provided")
+    
+    original_name = Path(file.filename).name
+    file_ext = Path(original_name).suffix.lower()
+    
+    if file_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"File type {file_ext} not allowed. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+    
+    if file.size and file.size > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File too large (max 10MB)")
+    
+    settings = get_settings()
+    upload_root = Path(__file__).resolve().parents[2] / "media" / "telegram"
+    upload_root.mkdir(parents=True, exist_ok=True)
+
+    safe_name = f"{secrets.token_hex(8)}-{original_name}"
+    target = upload_root / safe_name
+
+    try:
+        with target.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        # Clean up on error
+        if target.exists():
+            target.unlink()
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {e}")
+    finally:
+        # Ensure file handle is closed
+        file.file.close()
+
+    base_url = settings.base_web_url.rstrip("/")
+    media_url = f"{base_url}/media/telegram/{safe_name}" if base_url else f"/media/telegram/{safe_name}"
+
+    return {"uploaded": True, "url": media_url, "name": original_name}
 
 
 @router.post("/telegram/set_webhook")
 async def setup_telegram_webhook(
     payload: WebhookSetupIn,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     """Setup Telegram webhook"""
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
-
-    settings = get_settings()
-    bot = create_bot()
-
-    webhook_url = payload.webhook_url or f"{settings.base_web_url}/telegram/webhook"
-    secret = payload.secret or settings.webhook_secret
-
-    try:
-        await bot.set_webhook(
-            url=webhook_url,
-            secret_token=secret,
-        )
-        return {
-            "webhook_set": True,
-            "url": webhook_url,
-            "secret": secret,
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to set webhook: {e}")
+    check_roles(auth_result, roles=("owner", "marketer"))
+    return await _setup_telegram_webhook_impl(payload.webhook_url, payload.secret)
 
 
 # --- VK Endpoints ---
 
 
-@router.get("/vk/status")
-def get_vk_status(
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
-) -> dict[str, Any]:
-    """Get current VK bot status"""
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
-
+def _get_vk_status_impl() -> dict[str, Any]:
     db = get_db()
     conn = db.connect()
     try:
@@ -225,13 +302,22 @@ def get_vk_status(
         conn.close()
 
 
+@router.get("/vk/status")
+def get_vk_status(
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Get current VK bot status"""
+    check_roles(auth_result, roles=("owner", "marketer"))
+    return _get_vk_status_impl()
+
+
 @router.post("/vk/validate")
 async def validate_vk_settings(
     payload: VKSettingsIn,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     """Validate VK access token and group ID"""
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
 
     result = await validate_vk_token(
         access_token=payload.access_token,
@@ -245,10 +331,10 @@ async def validate_vk_settings(
 @router.post("/vk/save")
 async def save_vk_settings(
     payload: VKSettingsIn,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     """Save VK bot settings"""
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
 
     # Set VK config for webhook processing
     from .integrations.bots.vk_handler import set_vk_config
@@ -300,10 +386,10 @@ async def save_vk_settings(
 @router.post("/vk/set_webhook")
 async def setup_vk_webhook(
     payload: WebhookSetupIn,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     """Setup VK webhook (callback API)"""
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
 
     settings = get_settings()
     webhook_url = payload.webhook_url or f"{settings.base_web_url}/vk/webhook"
@@ -338,17 +424,12 @@ async def setup_vk_webhook(
 
 @router.get("/status")
 def get_all_integrations_status(
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     """Get status of all integrations (Telegram and VK)"""
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
-
-    # Get Telegram status
-    tg_status = get_telegram_status(x_admin_secret)
-
-    # Get VK status
-    vk_status = get_vk_status(x_admin_secret)
-
+    check_roles(auth_result, roles=("owner", "marketer"))
+    tg_status = _get_telegram_status_impl()
+    vk_status = _get_vk_status_impl()
     return {
         "telegram": tg_status,
         "vk": vk_status,

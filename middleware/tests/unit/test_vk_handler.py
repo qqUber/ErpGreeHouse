@@ -1238,20 +1238,17 @@ class TestRegistrationFlowComplete:
 
     def test_complete_registration_new_user_vk(self, setup_test_db, clean_redis):
         """Test completing registration for new VK user."""
-        from app.db import get_db
-        from app.integrations.bots.shared.consent import store_consent
         from app.integrations.bots.shared.registration import RegistrationFlow
 
         with patch("app.integrations.bots.shared.registration.get_redis"):
-            with patch("app.integrations.bots.shared.registration.get_db") as mock_db:
-                with patch(
-                    "app.integrations.bots.shared.registration.store_consent"
-                ) as mock_store:
-                    # Setup mock database
+            with patch("app.integrations.bots.shared.registration.get_db") as mock_db, patch(
+                "app.integrations.bots.shared.registration.resolve_or_create_customer",
+                return_value=(1, True),
+            ), patch(
+                "app.integrations.bots.shared.registration.get_customer_row",
+                return_value={"id": 1},
+            ), patch("app.integrations.bots.shared.registration.store_consent"):
                     mock_conn = MagicMock()
-                    mock_cursor = MagicMock()
-                    mock_cursor.fetchone.return_value = None  # No existing customer
-                    mock_conn.execute.return_value = mock_cursor
                     mock_db.return_value.connect.return_value = mock_conn
 
                     flow = RegistrationFlow("vk")
@@ -1262,23 +1259,22 @@ class TestRegistrationFlowComplete:
                         1,  # marketing allowed
                     )
 
-                    # Verify new customer was created
                     assert is_new is True
-                    mock_conn.execute.assert_called()
                     mock_conn.commit.assert_called()
 
     def test_complete_registration_new_user_tg(self, setup_test_db, clean_redis):
         """Test completing registration for new Telegram user."""
-        from app.db import get_db
         from app.integrations.bots.shared.registration import RegistrationFlow
 
         with patch("app.integrations.bots.shared.registration.get_redis"):
-            with patch("app.integrations.bots.shared.registration.get_db") as mock_db:
-                with patch("app.integrations.bots.shared.registration.store_consent"):
+            with patch("app.integrations.bots.shared.registration.get_db") as mock_db, patch(
+                "app.integrations.bots.shared.registration.resolve_or_create_customer",
+                return_value=(2, True),
+            ), patch(
+                "app.integrations.bots.shared.registration.get_customer_row",
+                return_value={"id": 2},
+            ), patch("app.integrations.bots.shared.registration.store_consent"):
                     mock_conn = MagicMock()
-                    mock_cursor = MagicMock()
-                    mock_cursor.fetchone.return_value = None
-                    mock_conn.execute.return_value = mock_cursor
                     mock_db.return_value.connect.return_value = mock_conn
 
                     flow = RegistrationFlow("tg")
@@ -1293,34 +1289,17 @@ class TestRegistrationFlowComplete:
 
     def test_complete_registration_existing_user_vk(self, setup_test_db, clean_redis):
         """Test completing registration for existing VK user."""
-        from app.db import get_db
         from app.integrations.bots.shared.registration import RegistrationFlow
 
-        existing_customer = {
-            "id": 1,
-            "phone": "+79991234567",
-            "full_name": "Old Name",
-            "vk_id": None,
-            "telegram_id": None,
-            "qr_token": "old_qr",
-            "preferred_channel": None,
-            "marketing_allowed": 0,
-            "data_processing_allowed": 0,
-            "balance_points": 0,
-        }
-
         with patch("app.integrations.bots.shared.registration.get_redis"):
-            with patch("app.integrations.bots.shared.registration.get_db") as mock_db:
-                with patch("app.integrations.bots.shared.registration.store_consent"):
+            with patch("app.integrations.bots.shared.registration.get_db") as mock_db, patch(
+                "app.integrations.bots.shared.registration.resolve_or_create_customer",
+                return_value=(1, False),
+            ), patch(
+                "app.integrations.bots.shared.registration.get_customer_row",
+                return_value={"id": 1, "full_name": "New Name"},
+            ), patch("app.integrations.bots.shared.registration.store_consent"):
                     mock_conn = MagicMock()
-                    mock_cursor = MagicMock()
-                    # First call: check existing (returns customer)
-                    # Second call: update and fetch
-                    mock_cursor.fetchone.side_effect = [
-                        existing_customer,
-                        existing_customer,
-                    ]
-                    mock_conn.execute.return_value = mock_cursor
                     mock_db.return_value.connect.return_value = mock_conn
 
                     flow = RegistrationFlow("vk")
@@ -1328,7 +1307,6 @@ class TestRegistrationFlowComplete:
                         123456789, "New Name", "+79991234567", 1
                     )
 
-                    # Should not be new
                     assert is_new is False
 
 

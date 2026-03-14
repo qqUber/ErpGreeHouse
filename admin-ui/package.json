@@ -26,9 +26,11 @@
     "screenshot:compare": "node scripts/screenshot/capture.cjs --compare --json screenshot-report.json",
     "screenshot:baseline": "node scripts/screenshot/capture.cjs --update-baseline",
     "screenshot:parallel": "node scripts/screenshot/capture.cjs --parallel 4",
-    "screenshot:docker": "./scripts/docker-screenshot/run.sh"
+    "screenshot:docker": "./scripts/docker-screenshot/run.sh",
+    "ngrok:backend": "dotenv -e ../.env -- node scripts/ngrok/backend.mjs"
   },
   "dependencies": {
+    "@ngrok/ngrok": "^1.5.1",
     "@twa-dev/sdk": "^8.0.2",
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.6",

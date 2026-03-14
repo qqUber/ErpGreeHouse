@@ -47,7 +47,7 @@ async def test_cmd_register_invalid_format(telegram_mock):
 
     await handlers.cmd_register(message)
 
-    message.answer.assert_called_once_with("Формат: /register Имя Телефон")
+    message.answer.assert_called_once_with("Используйте /start для начала регистрации.")
 
 
 @pytest.mark.asyncio
@@ -58,10 +58,7 @@ async def test_cmd_register_valid(telegram_mock, redis_client):
     with patch("app.handlers.get_redis", return_value=redis_client):
         await handlers.cmd_register(message)
 
-    message.answer.assert_called_once()
-    args, kwargs = message.answer.call_args
-    assert "соглашаюсь" in args[0]
-    assert "reply_markup" in kwargs
+    message.answer.assert_called_once_with("Используйте /start для начала регистрации.")
 
 
 @pytest.mark.asyncio

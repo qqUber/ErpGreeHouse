@@ -50,11 +50,11 @@ export function CustomersWidget({ data }: { data?: CustomersData }) {
           <span className="crm-kpi-value">{total}</span>
         </div>
         <div className="crm-kpi-card">
-          <span className="crm-kpi-label">Telegram</span>
+          <span className="crm-kpi-label">{t('widgets.customers.telegram')}</span>
           <span className="crm-kpi-value">{telegramReachable}</span>
         </div>
         <div className="crm-kpi-card">
-          <span className="crm-kpi-label">VK</span>
+          <span className="crm-kpi-label">{t('widgets.customers.vk')}</span>
           <span className="crm-kpi-value">{vkReachable}</span>
         </div>
         <div className="crm-kpi-card">
@@ -80,16 +80,16 @@ export function CustomersWidget({ data }: { data?: CustomersData }) {
       >
         <div className="crm-customer-main">
           <span className="crm-customer-id">#{id}</span>
-          <span className="crm-customer-name">{customer.name ?? 'Unknown'}</span>
+          <span className="crm-customer-name">{customer.name ?? t('widgets.customers.unknown')}</span>
         </div>
         <div className="crm-customer-badges">
-          {hasTelegram && <span className="crm-badge crm-badge-channel">Telegram</span>}
-          {hasVk && <span className="crm-badge crm-badge-channel">VK</span>}
-          {!hasTelegram && !hasVk && <span className="crm-badge crm-badge-muted">No channel</span>}
+          {hasTelegram && <span className="crm-badge crm-badge-channel">{t('widgets.customers.telegram')}</span>}
+          {hasVk && <span className="crm-badge crm-badge-channel">{t('widgets.customers.vk')}</span>}
+          {!hasTelegram && !hasVk && <span className="crm-badge crm-badge-muted">{t('widgets.customers.noChannel')}</span>}
           <span className={`crm-badge ${consent ? 'crm-badge-good' : 'crm-badge-warn'}`}>
-            {consent ? 'Consent' : 'No consent'}
+            {consent ? t('widgets.customers.consent') : t('widgets.customers.noConsent')}
           </span>
-          <span className="crm-badge crm-badge-value">LTV {ltv.toLocaleString()}</span>
+          <span className="crm-badge crm-badge-value">{t('widgets.customers.ltv')} {ltv.toLocaleString()}</span>
         </div>
       </button>
     );

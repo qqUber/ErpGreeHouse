@@ -8,10 +8,12 @@ from pydantic import BaseModel, Field
 
 from .admin_auth_api import require_jwt_auth
 from .auth import check_roles, has_permission, require_integration_secret
+from .customer_identity import resolve_or_create_customer
 from .db import get_db
-from .identify import generate_qr_token, normalize_phone
+from .identify import normalize_phone
 from .integration_events import dispatch_event
 from .loyalty import LoyaltyRules, calc_earned_points, clamp_redeem_points
+from .loyalty_profile import build_customer_loyalty_profile
 from .pos_templates import list_integration_templates
 from .runtime import is_debug
 from .storage import get_redis
@@ -480,12 +482,19 @@ def create_dev_sale(
     )
 
     result = ingest_pos_receipt(integration_id, receipt_payload, integration_secret)
+    db = get_db()
+    conn = db.connect()
+    try:
+        profile = build_customer_loyalty_profile(conn, customer_id)
+    finally:
+        conn.close()
     return {
         **result,
         "customer_id": int(result.get("customer_id") or customer_id),
         "integration_id": integration_id,
         "receipt_id": receipt_payload.receipt_id,
         "debug_mode": True,
+        "loyalty_profile": profile,
     }
 
 
@@ -504,28 +513,31 @@ def _find_or_create_customer(conn, cust: ReceiptCustomer) -> int:
             ).fetchone()
             if row:
                 return int(row[0])
-            token = generate_qr_token()
-            cur = conn.execute(
-                "INSERT INTO customers(phone, full_name, qr_token, telegram_id) VALUES(?,?,?,?)",
-                (phone, "", token, int(cust.telegram_id) if cust.telegram_id else None),
+            customer_id, _ = resolve_or_create_customer(
+                conn,
+                telegram_id=int(cust.telegram_id) if cust.telegram_id else None,
+                phone=phone,
+                preferred_channel="tg" if cust.telegram_id else None,
+                onboarding_status="identified",
             )
-            return int(cur.lastrowid)
+            return customer_id
     if cust.telegram_id:
         row = conn.execute(
             "SELECT id FROM customers WHERE telegram_id=?", (int(cust.telegram_id),)
         ).fetchone()
         if row:
             return int(row[0])
-        token = generate_qr_token()
-        cur = conn.execute(
-            "INSERT INTO customers(phone, full_name, qr_token, telegram_id) VALUES(?,?,?,?)",
-            (None, "", token, int(cust.telegram_id)),
+        customer_id, _ = resolve_or_create_customer(
+            conn,
+            telegram_id=int(cust.telegram_id),
+            preferred_channel="tg",
+            onboarding_status="identified",
         )
-        return int(cur.lastrowid)
+        return customer_id
 
-    token = generate_qr_token()
-    cur = conn.execute(
-        "INSERT INTO customers(phone, full_name, qr_token) VALUES(?,?,?)",
-        (None, "", token),
+    customer_id, _ = resolve_or_create_customer(
+        conn,
+        preferred_channel=None,
+        onboarding_status="identified",
     )
-    return int(cur.lastrowid)
+    return customer_id

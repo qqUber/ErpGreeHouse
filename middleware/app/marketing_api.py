@@ -43,6 +43,66 @@ def get_customers_with_consent(
         conn.close()
 
 
+def _build_segment_query(criteria: dict[str, Any]) -> tuple[str, list[Any]]:
+    query = """
+        SELECT
+            id,
+            telegram_id,
+            vk_id,
+            phone,
+            full_name,
+            marketing_allowed,
+            balance_points,
+            city,
+            gender,
+            purchase_frequency,
+            last_purchase_date
+        FROM customers
+        WHERE marketing_allowed = 1 AND (telegram_id IS NOT NULL OR vk_id IS NOT NULL)
+    """
+    params: list[Any] = []
+    conditions: list[str] = []
+
+    if criteria.get("min_balance") is not None:
+        conditions.append("balance_points >= ?")
+        params.append(int(criteria["min_balance"]))
+
+    if criteria.get("days_since_visit") is not None:
+        conditions.append(
+            "(last_purchase_date IS NOT NULL AND julianday('now') - julianday(last_purchase_date) >= ?)"
+        )
+        params.append(int(criteria["days_since_visit"]))
+
+    if criteria.get("min_purchase_amount") is not None:
+        conditions.append(
+            """
+            EXISTS (
+                SELECT 1 FROM transactions
+                WHERE customer_id = customers.id
+                AND total_amount >= ?
+            )
+            """
+        )
+        params.append(int(criteria["min_purchase_amount"]))
+
+    if criteria.get("purchase_frequency") is not None:
+        conditions.append("purchase_frequency >= ?")
+        params.append(int(criteria["purchase_frequency"]))
+
+    if criteria.get("city"):
+        conditions.append("LOWER(city) = LOWER(?)")
+        params.append(str(criteria["city"]))
+
+    if criteria.get("gender"):
+        conditions.append("gender = ?")
+        params.append(str(criteria["gender"]))
+
+    if conditions:
+        query += " AND " + " AND ".join(conditions)
+
+    return query, params
+
+
 class SegmentCreate(BaseModel):
     name: str
     criteria: dict[str, Any]
@@ -92,7 +152,7 @@ def create_segment(
     db = get_db()
     conn = db.connect()
     cursor = conn.execute(
-        "INSERT INTO marketing_segments (name, criteria_json, last_updated) VALUES (?, ?, datetime('now'))",
+        "INSERT INTO marketing_segments (name, criteria_json) VALUES (?, ?)",
         (segment.name, json.dumps(segment.criteria)),
     )
     conn.commit()
@@ -123,71 +183,7 @@ def preview_segment(
 
         criteria = json.loads(segment["criteria_json"])
 
-        # Build query to find matching customers with marketing consent
-        query = """
-            SELECT id, telegram_id, vk_id, phone, full_name, marketing_allowed, points_balance
-            FROM customers
-            WHERE marketing_allowed = 1 AND (telegram_id IS NOT NULL OR vk_id IS NOT NULL)
-        """
-        params = []
-
-        # Apply segmentation criteria
-        conditions = []
-
-        if "min_balance" in criteria:
-            conditions.append("points_balance >= ?")
-            params.append(criteria["min_balance"])
-
-        if "days_since_visit" in criteria:
-            conditions.append("julianday('now') - julianday(last_visit) >= ?")
-            params.append(criteria["days_since_visit"])
-
-        if "min_purchase_amount" in criteria:
-            conditions.append("""
-                EXISTS (
-                    SELECT 1 FROM transactions
-                    WHERE customer_id = customers.id
-                    AND total_amount >= ?
-                )
-            """)
-            params.append(criteria["min_purchase_amount"])
-
-        if "purchase_frequency" in criteria:
-            conditions.append("""
-                (SELECT COUNT(*) FROM transactions WHERE customer_id = customers.id) >= ?
-            """)
-            params.append(criteria["purchase_frequency"])
-
-        if "preferences" in criteria and criteria["preferences"]:
-            conditions.append(
-                """
-                EXISTS (
-                    SELECT 1 FROM customer_preferences
-                    WHERE customer_id = customers.id
-                    AND preference IN ({})
-                )
-            """.format(
-                    ",".join(["?"] * len(criteria["preferences"]))
-                )  # noqa: B608 - safe, uses parameterized placeholders
-            )
-            params.extend(criteria["preferences"])
-
-        if "gender" in criteria:
-            conditions.append("gender = ?")
-            params.append(criteria["gender"])
-
-        if "age_range" in criteria:
-            age_range = criteria["age_range"]
-            if "min" in age_range:
-                conditions.append("age >= ?")
-                params.append(age_range["min"])
-            if "max" in age_range:
-                conditions.append("age <= ?")
-                params.append(age_range["max"])
-
-        if conditions:
-            query += " AND " + " AND ".join(conditions)
-
+        query, params = _build_segment_query(criteria)
         query += " LIMIT ? OFFSET ?"
         params.extend([limit, offset])
 
@@ -226,11 +222,6 @@ def refresh_segment(
     conn = db.connect()
 
     try:
-        conn.execute(
-            "UPDATE marketing_segments SET last_updated = datetime('now') WHERE id = ?",
-            (id,),
-        )
-        conn.commit()
         return {"status": "success", "message": "Segment refreshed"}
     finally:
         conn.close()
@@ -320,11 +311,20 @@ def send_campaign(
         if not campaign:
             raise HTTPException(status_code=404, detail="Campaign not found")
 
-        # Count customers with marketing consent
-        cur = conn.execute(
-            "SELECT COUNT(*) as count FROM customers WHERE marketing_allowed = 1"
-        )
-        consented_count = cur.fetchone()["count"]
+        criteria: dict[str, Any] = {}
+        if campaign["segment_id"]:
+            segment_row = conn.execute(
+                "SELECT criteria_json FROM marketing_segments WHERE id=?",
+                (campaign["segment_id"],),
+            ).fetchone()
+            if segment_row and segment_row["criteria_json"]:
+                criteria = json.loads(segment_row["criteria_json"])
+
+        segment_query, segment_params = _build_segment_query(criteria)
+        customers = [
+            dict(row) for row in conn.execute(segment_query, segment_params).fetchall()
+        ]
+        consented_count = len(customers)
 
         # Update campaign status
         conn.execute(
@@ -334,7 +334,6 @@ def send_campaign(
         conn.commit()
 
         # Queue messages for delivery based on content type
-        customers = get_customers_with_consent()
         for customer in customers:
             if customer["telegram_id"]:
                 if campaign.get("content_type") == "photo" and campaign.get(
@@ -588,3 +587,5 @@ def get_events_breakdown(
         return {"events": events}
     finally:
         conn.close()
+
+

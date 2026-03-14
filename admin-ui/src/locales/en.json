@@ -90,7 +90,8 @@
     "enabled": "Enabled",
     "disabled": "Disabled",
     "yesShort": "Yes",
-    "noShort": "No"
+    "noShort": "No",
+    "backToList": "Back to list"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -543,7 +544,14 @@
       "avgVisitFrequency": "Average Visit Frequency",
       "visitsPerWeek": "{{count}} visits/week",
       "totalCustomers": "Total Customers",
-      "returning": "Returning"
+      "returning": "Returning",
+      "telegram": "Telegram",
+      "vk": "VK",
+      "unknown": "Unknown",
+      "noChannel": "No channel",
+      "consent": "Consent",
+      "noConsent": "No consent",
+      "ltv": "LTV"
     },
     "products": {
       "title": "Products",
@@ -555,7 +563,14 @@
       "lowItems": "Low: {{count}} items",
       "totalProducts": "Total Products",
       "lowStock": "Low Stock",
-      "espresso": "Espresso"
+      "espresso": "Espresso",
+      "trendingNow": "Trending now",
+      "demandSignal": "Demand signal",
+      "unnamedProduct": "Unnamed product",
+      "quantity": "Qty",
+      "revenue": "Rev",
+      "trend": "Trend",
+      "productDetail": "Product detail"
     },
     "marketing": {
       "title": "Marketing",

@@ -90,7 +90,8 @@
     "enabled": "Активна",
     "disabled": "Отключена",
     "yesShort": "Да",
-    "noShort": "Нет"
+    "noShort": "Нет",
+    "backToList": "Назад к списку"
   },
   "dashboard": {
     "title": "Главная",
@@ -538,7 +539,14 @@
       "avgVisitFrequency": "Средняя частота визитов",
       "visitsPerWeek": "{{count}} визита/нед",
       "totalCustomers": "Всего клиентов",
-      "returning": "Вернувшиеся"
+      "returning": "Вернувшиеся",
+      "telegram": "Telegram",
+      "vk": "VK",
+      "unknown": "Неизвестно",
+      "noChannel": "Нет канала",
+      "consent": "Согласие",
+      "noConsent": "Нет согласия",
+      "ltv": "LTV"
     },
     "products": {
       "title": "Товары",
@@ -550,7 +558,14 @@
       "lowItems": "Низкий остаток: {{count}}",
       "totalProducts": "Всего товаров",
       "lowStock": "Низкий остаток",
-      "espresso": "Эспрессо"
+      "espresso": "Эспрессо",
+      "trendingNow": "В тренде",
+      "demandSignal": "Сигнал спроса",
+      "unnamedProduct": "Безымянный товар",
+      "quantity": "Кол-во",
+      "revenue": "Доход",
+      "trend": "Тренд",
+      "productDetail": "Детали товара"
     },
     "marketing": {
       "title": "Маркетинг",

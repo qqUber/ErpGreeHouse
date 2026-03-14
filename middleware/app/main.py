@@ -70,7 +70,7 @@ from .debug_api import router as debug_router
 from .dev_seed import ensure_seed_data, should_auto_seed
 from .erp_scheduler import start_erp_sync_scheduler
 from .integration_settings_api import router as integration_settings_router
-from .integrations.bots.telegram_handler import create_bot
+from .integrations.bots.telegram_handler import create_bot, ensure_telegram_bot_menu
 from .integrations.bots.vk_handler import (
     create_vk_bot,
     process_vk_webhook_event,
@@ -127,6 +127,7 @@ PUBLIC_PREFIXES = (
     "/api/v1/test/",
     "/telegram/",
     "/vk/",
+    "/media/",
     "/admin/broadcast",
     "/webhooks/",
 )
@@ -339,6 +340,10 @@ app.include_router(erp_webhook_router)
 if os.getenv("E2E_TEST_MODE", "false").lower() in ("1", "true", "yes"):
     app.include_router(test_router)
 
+media_root = Path(__file__).resolve().parents[2] / "media"
+media_root.mkdir(parents=True, exist_ok=True)
+app.mount("/media", StaticFiles(directory=media_root), name="media")
+
 admin_dist_override = os.getenv("ADMIN_UI_DIST", "").strip()
 admin_dist = (
     Path(admin_dist_override)
@@ -407,11 +412,17 @@ async def health() -> dict:
 @app.post("/telegram/webhook", status_code=HTTP_200_OK)
 async def telegram_webhook(
     request: Request,
-    x_webhook_secret: str | None = Header(default=None, convert_underscores=False),
 ) -> dict:
     settings = get_settings()
     admin_secret = os.getenv("ADMIN_SECRET", "")
-    verify_webhook_secret(x_webhook_secret, settings.webhook_secret, admin_secret)
+    secret_header = request.headers.get(
+        "x-telegram-bot-api-secret-token"
+    ) or request.headers.get("x_webhook_secret")
+    verify_webhook_secret(
+        secret_header,
+        settings.webhook_secret,
+        admin_secret,
+    )
     payload = await request.json()
     process_telegram_update.delay(payload)
     return {"accepted": True}
@@ -428,6 +439,7 @@ async def set_webhook(
     url = f"{settings.base_web_url}/telegram/webhook"
     try:
         await bot.set_webhook(url)
+        await ensure_telegram_bot_menu(bot)
     except Exception as e:
         logger.exception("[WEBHOOK] Failed to set Telegram webhook")
         raise HTTPException(status_code=400, detail=f"Failed to set webhook: {e}")

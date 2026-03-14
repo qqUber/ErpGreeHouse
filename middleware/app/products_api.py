@@ -367,7 +367,8 @@ def list_products(
         sql = "SELECT id, code, name, kind, price, active, created_at, updated_at FROM products"
         if where:
             sql += " WHERE " + " AND ".join(where)
-        sql += f" ORDER BY id DESC LIMIT {limit} OFFSET {offset}"
+        sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
+        args.extend([limit, offset])
 
         cur = conn.execute(sql, tuple(args))
         items = []

@@ -129,6 +129,11 @@ export type CustomerListItem = {
   telegram_id: number | null;
   qr_token: string | null;
   balance_points: number;
+  birthday?: string | null;
+  gender?: string | null;
+  email?: string | null;
+  city?: string | null;
+  onboarding_status?: string | null;
   created_at: string;
 };
 
@@ -163,6 +168,13 @@ export type CustomerDetails = {
     telegram_id: number | null;
     qr_token: string | null;
     balance_points: number;
+    birthday?: string | null;
+    gender?: string | null;
+    email?: string | null;
+    city?: string | null;
+    onboarding_status?: string | null;
+    phone_verified_at?: string | null;
+    phone_verification_method?: string | null;
     preferences: Record<string, unknown>;
     created_at: string;
   };
@@ -307,6 +319,7 @@ let refreshRetryCount = 0;
 const MAX_REFRESH_RETRIES = 3;
 const REFRESH_RETRY_DELAY_MS = 500;
 let pendingRequests: Array<(success: boolean) => void> = [];
+const TOKEN_VALIDATION_KEY = 'auth_validation_state';
 
 // Event listener for aborting requests on navigation
 const AbortControllers = new Map<string, AbortController>();
@@ -319,6 +332,13 @@ function processQueue(success: boolean) {
     callback(success);
   });
   pendingRequests = [];
+}
+
+function clearClientAuthState() {
+  setAdminSecret('');
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.removeItem(TOKEN_VALIDATION_KEY);
+  }
 }
 
 /**
@@ -412,7 +432,7 @@ export async function fetchWithAuth(
         processQueue(false);
         isRefreshing = false;
         if (typeof window !== 'undefined') {
-          setAdminSecret(''); // Remove token from localStorage
+          clearClientAuthState();
           // Use router if available, otherwise fall back to href
           const loginPath = '/admin/login';
           if (typeof window !== 'undefined' && window.location.pathname !== loginPath) {
@@ -456,7 +476,7 @@ export async function fetchWithAuth(
       // This prevents the 401 refresh loop when user is not logged in
       const hadValidSession =
         typeof sessionStorage !== 'undefined' &&
-        sessionStorage.getItem('auth_validation_state') === 'valid';
+        sessionStorage.getItem(TOKEN_VALIDATION_KEY) === 'valid';
 
       if (!hadValidSession) {
         console.log('[fetchWithAuth] No previous valid session, skipping refresh attempt');
@@ -464,6 +484,7 @@ export async function fetchWithAuth(
         processQueue(false);
         // Redirect to login without trying to refresh - but check if already on login
         if (typeof window !== 'undefined') {
+          clearClientAuthState();
           const loginPath = '/admin/login';
           if (window.location.pathname !== loginPath) {
             window.location.href = loginPath;
@@ -494,7 +515,7 @@ export async function fetchWithAuth(
           processQueue(false);
           // Redirect to login - but check if already on login page
           if (typeof window !== 'undefined') {
-            setAdminSecret(''); // Remove token from localStorage
+            clearClientAuthState();
             const loginPath = '/admin/login';
             if (window.location.pathname !== loginPath) {
               window.location.href = loginPath;
@@ -507,7 +528,7 @@ export async function fetchWithAuth(
         processQueue(false);
         // Redirect to login on refresh failure
         if (typeof window !== 'undefined') {
-          setAdminSecret(''); // Remove token from localStorage
+          clearClientAuthState();
           window.location.href = '/admin/login';
         }
         throw refreshError;
@@ -565,15 +586,9 @@ async function refreshTokenInternal(): Promise<boolean> {
         console.log('[fetchWithAuth] Refresh token successful');
         return true;
       } else if (response.status === 401) {
-        console.log(
-          `[fetchWithAuth] Refresh token expired (attempt ${refreshRetryCount + 1}/${MAX_REFRESH_RETRIES})`
-        );
-        refreshRetryCount++;
-        // If we've exhausted retries, return false
-        if (refreshRetryCount >= MAX_REFRESH_RETRIES) {
-          console.error('[fetchWithAuth] Max refresh retries reached, will redirect to login');
-          return false;
-        }
+        console.log('[fetchWithAuth] Refresh token expired, clearing client auth state');
+        clearClientAuthState();
+        return false;
       } else {
         console.log(`[fetchWithAuth] Refresh token failed with status: ${response.status}`);
         refreshRetryCount++;
@@ -1025,11 +1040,47 @@ export const Api = {
       method: 'POST',
       body: JSON.stringify({ bot_token, enabled }),
     }),
-  saveTelegramSettings: (bot_token: string, enabled: boolean) =>
+  saveTelegramSettings: (
+    bot_token: string,
+    enabled: boolean,
+    support_chat_id: string,
+    menu_items: Array<{
+      id: string;
+      label: string;
+      text?: string;
+      media_urls?: string[];
+      button_text?: string;
+      button_url?: string;
+      use_text?: boolean;
+      use_media?: boolean;
+      use_button?: boolean;
+      use_city_list?: boolean;
+      use_support_forward?: boolean;
+      city_entries?: Array<{
+        city: string;
+        text?: string;
+        media_urls?: string[];
+        button_text?: string;
+        button_url?: string;
+      }>;
+    }>
+  ) =>
     api<{ saved: boolean }>('/api/v1/admin/integrations/telegram/save', {
       method: 'POST',
-      body: JSON.stringify({ bot_token, enabled }),
+      body: JSON.stringify({ bot_token, enabled, support_chat_id, menu_items }),
     }),
+  uploadTelegramMedia: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api<{ uploaded: boolean; url: string; name: string }>(
+      '/api/v1/admin/integrations/telegram/upload_media',
+      {
+        method: 'POST',
+        body: formData,
+        headers: {},
+      }
+    );
+  },
   setTelegramWebhook: (webhook_url?: string, secret?: string) =>
     api<{ webhook_set: boolean; url: string; secret: string }>(
       '/api/v1/admin/integrations/telegram/set_webhook',
