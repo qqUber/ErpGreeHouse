@@ -167,19 +167,20 @@ def test_external_api_endpoints(client: TestClient):
     response = client.get("/api/v1/analytics/api/reports/sales?api_key=invalid_key")
     assert response.status_code == 401
 
-    # Test with valid API key (using default)
-    response = client.get("/api/v1/analytics/api/reports/sales?api_key=default_api_key")
-    assert response.status_code == 200
-
-    # Test other external endpoints
-    endpoints = [
-        "/api/v1/analytics/api/reports/customers",
-        "/api/v1/analytics/api/reports/loyalty",
-    ]
-
-    for endpoint in endpoints:
-        response = client.get(f"{endpoint}?api_key=default_api_key")
+    # Test with valid API key (using environment variable)
+    with patch.dict("os.environ", {"ANALYTICS_API_KEY": "test_api_key"}):
+        response = client.get("/api/v1/analytics/api/reports/sales?api_key=test_api_key")
         assert response.status_code == 200
+
+        # Test other external endpoints
+        endpoints = [
+            "/api/v1/analytics/api/reports/customers",
+            "/api/v1/analytics/api/reports/loyalty",
+        ]
+
+        for endpoint in endpoints:
+            response = client.get(f"{endpoint}?api_key=test_api_key")
+            assert response.status_code == 200
 
 
 def test_api_key_configuration():
