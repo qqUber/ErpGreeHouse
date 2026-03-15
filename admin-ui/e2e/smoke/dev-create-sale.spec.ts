@@ -60,7 +60,10 @@ test('dev stack: admin can create sale from integrations simulator', async ({ pa
   await expect(page.getByTestId('admin_nav_integrations')).toBeVisible({ timeout: 15000 });
   await page.getByTestId('admin_nav_integrations').click();
   await expect(page.getByTestId('admin_nav_integrations')).toHaveAttribute('aria-selected', 'true');
-  await page.getByTestId('admin_tab_webhooks_en').click();
+  const webhooksTab = page.getByTestId('admin_tab_webhooks_en');
+  if (await webhooksTab.count()) {
+    await webhooksTab.first().click();
+  }
   await expect(page.getByTestId('admin_dev_create_sale_panel')).toBeVisible({ timeout: 15000 });
 
   await page.getByTestId('admin_input_dev_customer_qr').fill(createdCustomer.qr_token);

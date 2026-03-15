@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { login, resetTestDatabase, attachConsole } from '../_shared';
+import { attachConsole, login, resetTestDatabase } from '../_shared';
 
 /**
  * 🤖 Green House Loyalty Demo – End‑to‑End Test (MVP Flow)
@@ -56,6 +56,7 @@ test.describe('Green House Loyalty Demo - MVP Flow', () => {
     // Step 1: Verify Telegram bot integration is available
     console.log('📋 Step 1: Verify Telegram bot integration');
     await page.goto('/admin/integrations');
+    await page.getByTestId('admin_nav_integrations').click();
     await expect(page.getByTestId('admin_nav_integrations')).toHaveAttribute('aria-selected', 'true');
     
     // Check Telegram bot status
@@ -285,7 +286,9 @@ test.describe('Green House Loyalty Demo - MVP Flow', () => {
     
     // Check security headers
     const privacyHeaders = privacyResponse.headers();
-    expect(privacyHeaders['strict-transport-security']).toBeTruthy();
+    if ((new URL(page.url())).protocol === 'https:') {
+      expect(privacyHeaders['strict-transport-security']).toBeTruthy();
+    }
     expect(privacyHeaders['x-content-type-options']).toBeTruthy();
     
     // Verify consent versioning and audit trail
