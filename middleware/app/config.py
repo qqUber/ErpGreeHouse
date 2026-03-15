@@ -23,7 +23,7 @@ def detect_environment() -> str:
         return "testing"
 
     # Auto-detect based on common development indicators
-    if os.getenv("ERP_MOCK_MODE", "true").lower() in ("1", "true", "yes"):
+    if os.getenv("ERP_MOCK_MODE", "false").lower() in ("1", "true", "yes"):
         return "development"
     if os.getenv("DEBUG", "").lower() in ("1", "true", "yes"):
         return "development"
