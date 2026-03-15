@@ -9,6 +9,10 @@ const runtimeEnv =
 
 const TEST_ADMIN_SECRET = runtimeEnv.E2E_ADMIN_SECRET || 'test-secret-key';
 
+function jwtHeaders(token: string) {
+  return { Authorization: `Bearer ${token}` };
+}
+
 async function apiLogin(request: APIRequestContext, username: string, password: string) {
   const response = await request.post('/api/v1/public/auth/login', {
     data: { username, password },
@@ -28,7 +32,7 @@ async function createLoyaltyCustomer(request: APIRequestContext, ownerToken: str
   const phone = `+7999${numericSuffix}`;
   const fullName = `Loyalty E2E ${suffix}`;
   const response = await request.post('/api/v1/customers', {
-    headers: { 'x-admin-secret': ownerToken },
+    headers: jwtHeaders(ownerToken),
     data: { full_name: fullName, phone },
   });
   expect(response.ok()).toBeTruthy();
@@ -74,7 +78,7 @@ test.describe('Green House Loyalty Demo - Virtual Card & QR Code', () => {
     const customer = await createLoyaltyCustomer(request, ownerToken, suffix);
 
     const identifyResponse = await request.post('/api/v1/identify/qr', {
-      headers: { 'x-admin-secret': ownerToken },
+      headers: jwtHeaders(ownerToken),
       data: { qr: customer.qrToken },
     });
     expect(identifyResponse.ok()).toBeTruthy();
@@ -96,7 +100,7 @@ test.describe('Green House Loyalty Demo - Virtual Card & QR Code', () => {
     const productCode = `LOYALTY_${suffix}`.slice(0, 24);
 
     const productResponse = await request.post('/api/v1/products', {
-      headers: { 'x-admin-secret': ownerToken },
+      headers: jwtHeaders(ownerToken),
       data: { code: productCode, name: `Loyalty Drink ${suffix}`, kind: 'goods', price: 250, active: true },
     });
     expect(productResponse.ok()).toBeTruthy();
@@ -104,7 +108,7 @@ test.describe('Green House Loyalty Demo - Virtual Card & QR Code', () => {
     const customer = await createLoyaltyCustomer(request, ownerToken, suffix);
 
     const saleResponse = await request.post('/api/v1/pos/sale', {
-      headers: { 'x-admin-secret': operatorToken },
+      headers: jwtHeaders(operatorToken),
       data: {
         customer_id: customer.id,
         items: [{ code: productCode, name: `Loyalty Drink ${suffix}`, price: 250, qty: 1 }],
@@ -138,7 +142,7 @@ test.describe('Green House Loyalty Demo - Virtual Card & QR Code', () => {
     expect(seedResponse.ok()).toBeTruthy();
 
     const loyaltyChartResponse = await request.get('/api/v1/analytics/dashboard/loyalty?time_range=7d&interval=day', {
-      headers: { 'x-admin-secret': ownerToken },
+      headers: jwtHeaders(ownerToken),
     });
     expect(loyaltyChartResponse.ok()).toBeTruthy();
     const loyaltyChart = await loyaltyChartResponse.json();
@@ -146,7 +150,7 @@ test.describe('Green House Loyalty Demo - Virtual Card & QR Code', () => {
     expect(Array.isArray(loyaltyChart.datasets)).toBeTruthy();
 
     const loyaltyOverviewResponse = await request.get('/api/v1/analytics/reports/loyalty/overview?time_range=30d', {
-      headers: { 'x-admin-secret': ownerToken },
+      headers: jwtHeaders(ownerToken),
     });
     expect(loyaltyOverviewResponse.ok()).toBeTruthy();
     const overview = await loyaltyOverviewResponse.json();
@@ -154,7 +158,7 @@ test.describe('Green House Loyalty Demo - Virtual Card & QR Code', () => {
     expect(Number(overview.metrics.points_earned ?? 0)).toBeGreaterThanOrEqual(0);
 
     const loyaltyDetailedResponse = await request.get('/api/v1/analytics/reports/loyalty/detailed?time_range=30d', {
-      headers: { 'x-admin-secret': ownerToken },
+      headers: jwtHeaders(ownerToken),
     });
     expect(loyaltyDetailedResponse.ok()).toBeTruthy();
     const detailed = await loyaltyDetailedResponse.json();

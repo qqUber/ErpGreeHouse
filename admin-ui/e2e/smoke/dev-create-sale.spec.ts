@@ -57,10 +57,11 @@ test('dev stack: admin can create sale from integrations simulator', async ({ pa
   expect(createdCustomer.qr_token).toBeTruthy();
 
   await login(page, 'admin');
-  await expect(page.getByTestId('admin_nav_integrations')).toBeVisible({ timeout: 15000 });
-  await page.getByTestId('admin_nav_integrations').click();
-  await expect(page.getByTestId('admin_nav_integrations')).toHaveAttribute('aria-selected', 'true');
-  const webhooksTab = page.getByTestId('admin_tab_webhooks_en');
+  const integrationsNav = page.getByTestId(/admin_nav_integrations(_en)?/);
+  await expect(integrationsNav).toBeVisible({ timeout: 15000 });
+  await integrationsNav.first().click();
+  await expect(integrationsNav.first()).toHaveAttribute('aria-selected', 'true');
+  const webhooksTab = page.getByTestId(/admin_tab_webhooks(_en)?/);
   if (await webhooksTab.count()) {
     await webhooksTab.first().click();
   }
