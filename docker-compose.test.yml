@@ -87,6 +87,7 @@ services:
       ADMIN_SECRET: test-secret-key
       E2E_TEST_MODE: "true"
       E2E_ADMIN_SECRET: test-secret-key
+      CORS_ORIGINS: http://frontend-e2e:5173,http://localhost:5173,http://localhost:3000
       TELEGRAM_BOT_TOKEN: test_token_123456789:AABBccDDeeFFggHHiiJJkkLLmmNNooP
       TELEGRAM_CHANNEL_ID: "-100123456789"
     volumes:
