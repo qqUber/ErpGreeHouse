@@ -9,10 +9,9 @@ const runtimeEnv =
 
 const TEST_ADMIN_SECRET = runtimeEnv.E2E_ADMIN_SECRET || 'test-secret-key';
 
-function authHeaders(token: string) {
+function authHeaders(_token: string) {
   return {
-    Authorization: `Bearer ${token}`,
-    'x-admin-secret': token,
+    'x-admin-secret': TEST_ADMIN_SECRET,
   };
 }
 
@@ -92,8 +91,9 @@ test.describe('Green House Loyalty Demo - Virtual Card & QR Code', () => {
     expect(String(customerDb.qr_token)).toBe(customer.qrToken);
     expect(Number(customerDb.balance_points ?? 0)).toBeGreaterThanOrEqual(0);
 
-    await page.getByTestId('admin_nav_customers').click();
-    await expect(page.getByTestId('admin_nav_customers')).toHaveAttribute('aria-selected', 'true');
+    const customersNav = page.getByTestId(/admin_nav_customers(_en)?/).first();
+    await customersNav.click();
+    await expect(customersNav).toHaveAttribute('aria-selected', 'true');
   });
 
   test('loyalty sale updates customer transaction history', async ({ page, request }) => {
@@ -132,8 +132,9 @@ test.describe('Green House Loyalty Demo - Virtual Card & QR Code', () => {
     expect(Number(firstTx.total_amount)).toBe(250);
     expect(Number(firstTx.bonus_earned ?? 0)).toBeGreaterThanOrEqual(0);
 
-    await page.getByTestId('admin_nav_pos').click();
-    await expect(page.getByTestId('admin_nav_pos')).toHaveAttribute('aria-selected', 'true');
+    const posNav = page.getByTestId(/admin_nav_pos(_en)?/).first();
+    await posNav.click();
+    await expect(posNav).toHaveAttribute('aria-selected', 'true');
   });
 
   test('loyalty analytics endpoints respond for seeded data', async ({ page, request }) => {
@@ -166,7 +167,8 @@ test.describe('Green House Loyalty Demo - Virtual Card & QR Code', () => {
     const detailed = await loyaltyDetailedResponse.json();
     expect(Array.isArray(detailed.customer_data)).toBeTruthy();
 
-    await page.getByTestId('admin_nav_analytics').click();
-    await expect(page.getByTestId('admin_nav_analytics')).toHaveAttribute('aria-selected', 'true');
+    const analyticsNav = page.getByTestId(/admin_nav_analytics(_en)?/).first();
+    await analyticsNav.click();
+    await expect(analyticsNav).toHaveAttribute('aria-selected', 'true');
   });
 });

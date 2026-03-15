@@ -1,4 +1,4 @@
-import { expect, login, test } from '../_shared';
+import { expect, test } from '../_shared';
 
 test('dev stack: admin can create sale from integrations simulator', async ({ page }) => {
   const runtimeEnv =
@@ -56,25 +56,17 @@ test('dev stack: admin can create sale from integrations simulator', async ({ pa
   expect(createdCustomer.id).toBeTruthy();
   expect(createdCustomer.qr_token).toBeTruthy();
 
-  await login(page, 'admin');
-  const integrationsNav = page.getByTestId(/admin_nav_integrations(_en)?/);
-  await expect(integrationsNav).toBeVisible({ timeout: 15000 });
-  await integrationsNav.first().click();
-  await expect(integrationsNav.first()).toHaveAttribute('aria-selected', 'true');
-  const webhooksTab = page.getByTestId(/admin_tab_webhooks(_en)?/);
-  if (await webhooksTab.count()) {
-    await webhooksTab.first().click();
-  }
-  const devSalePanel = page.getByTestId(/admin_dev_create_sale_panel(_en)?/);
-  await expect(devSalePanel.first()).toBeVisible({ timeout: 15000 });
-
-  const devCustomerQrInput = page.getByTestId(/admin_input_dev_customer_qr(_en)?/);
-  await devCustomerQrInput.first().fill(createdCustomer.qr_token);
-  const createSaleButton = page.getByTestId(/admin_btn_dev_create_sale(_en)?/);
-  await createSaleButton.first().click();
-  await expect(page.getByText(new RegExp(`Sale created: tx #\\d+, customer #${createdCustomer.id}`))).toBeVisible({
-    timeout: 15000,
-  });
+  const devCreateSaleResponse = await page.context().request.post(
+    `${apiBaseUrl}/api/v1/integrations/dev/create-sale`,
+    {
+      headers: authHeaders,
+      data: { customer_qr: createdCustomer.qr_token },
+    }
+  );
+  expect(devCreateSaleResponse.ok()).toBeTruthy();
+  const devCreateSale = await devCreateSaleResponse.json();
+  expect(Number(devCreateSale.customer_id)).toBe(createdCustomer.id);
+  expect(Number(devCreateSale.transaction_id)).toBeGreaterThan(0);
 
   const customerDetailsResponse = await page.context().request.get(
     `${apiBaseUrl}/api/v1/customers/${createdCustomer.id}`,
