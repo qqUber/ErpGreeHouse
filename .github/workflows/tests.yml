@@ -68,6 +68,8 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     needs: [unit-tests, integration-tests]
+    env:
+      E2E_ARGS: --project ${{ matrix.project }} --shard ${{ matrix.shard }}/${{ matrix.shards }}
     strategy:
       fail-fast: false
       matrix:
@@ -90,8 +92,6 @@ jobs:
         run: touch .env
       
       - name: Start E2E stack in detached mode
-        env:
-          E2E_ARGS: --project ${{ matrix.project }} --shard ${{ matrix.shard }}/${{ matrix.shards }}
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build e2e-runner
       
@@ -101,7 +101,12 @@ jobs:
       
       - name: Wait for E2E completion
         run: |
-          CID="$(docker compose -f docker-compose.yml -f docker-compose.test.yml ps -q e2e-runner)"
+          CID="$(docker compose -f docker-compose.yml -f docker-compose.test.yml ps -aq e2e-runner | tail -n 1)"
+          if [ -z "$CID" ]; then
+            echo "E2E runner container ID not found"
+            docker compose -f docker-compose.yml -f docker-compose.test.yml logs e2e-runner
+            exit 1
+          fi
           timeout 1800 bash -c "until [ \"\$(docker inspect -f '{{.State.Status}}' \"$CID\")\" = \"exited\" ]; do sleep 10; done" || \
           { echo "E2E tests timed out"; docker compose -f docker-compose.yml -f docker-compose.test.yml logs e2e-runner; exit 1; }
           [ "$(docker inspect -f '{{.State.ExitCode}}' "$CID")" = "0" ] || \

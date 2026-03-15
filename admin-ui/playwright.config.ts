@@ -15,16 +15,19 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'chromium',
+      name: 'smoke',
+      testMatch: '**/smoke/**/*.spec.ts',
       use: { ...devices['Desktop Chrome'] },
     },
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      name: 'critical',
+      testMatch: '**/critical/**/*.spec.ts',
+      use: { ...devices['Desktop Chrome'] },
     },
     {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      name: 'loyalty',
+      testMatch: '**/loyalty/**/*.spec.ts',
+      use: { ...devices['Desktop Chrome'] },
     },
   ],
   // Disable webServer for Docker environment - services are started separately
