@@ -27,7 +27,6 @@ export { expect } from '@playwright/test';
 
 /**
  * Test IDs matching the actual app components
- * Based on E2E_TEST_FIX_PLAN.md
  */
 export const TestIds = {
   // Navigation (admin)
@@ -415,10 +414,10 @@ export function hasPermission(role: TestRole, feature: string): boolean {
  * Login helper with proper error handling and waiting
  * Uses credentials from TEST_CREDENTIALS (fetched from DB)
  * 
- * PURE UI-BASED LOGIN for CI/Docker reliability
- * - No hybrid API+UI approach (causes race conditions)
- * - No addInitScript (causes SecurityError in Docker)
- * - Simple, predictable UI flow that works everywhere
+ * OPTIMIZED FOR HASH-BASED SPA (no URL navigation)
+ * - App uses hash routing (#dashboard), not path routing
+ * - Login shows/hides content, doesn't navigate URLs
+ * - Wait for dashboard elements to appear, not URL changes
  */
 export async function login(page: Page, role: TestRole = 'admin') {
   if (Object.keys(TEST_CREDENTIALS).length === 0) {
@@ -444,11 +443,11 @@ export async function login(page: Page, role: TestRole = 'admin') {
 
   console.log(`[Test] Logging in as ${resolvedRole} (${creds.username})`);
 
-  // Set language preference before navigation
+  // Set language preference
   setTestLanguage('en');
 
-  // Navigate to login page
-  await page.goto('/admin/login', { waitUntil: 'domcontentloaded' });
+  // Navigate to app root (hash-based SPA)
+  await page.goto('/admin/', { waitUntil: 'domcontentloaded' });
   
   // Wait for login form to be ready
   await page.waitForSelector('[data-testid="common_input_username_en"]', { 
@@ -456,21 +455,26 @@ export async function login(page: Page, role: TestRole = 'admin') {
     timeout: 10000 
   });
 
+  console.log(`[Test] Login form ready, filling credentials`);
+
   // Fill credentials
   await page.getByTestId('common_input_username_en').fill(creds.username);
   await page.getByTestId('common_input_password_en').fill(creds.password);
 
-  // Submit and wait for navigation
-  await Promise.all([
-    page.waitForURL('**/admin/dashboard', { timeout: 20000 }),
-    page.getByTestId('common_btn_password_login_en').click()
-  ]);
+  console.log(`[Test] Credentials filled, clicking login button`);
 
-  // Wait for dashboard to be fully loaded
+  // Click login and wait for dashboard to appear (no URL navigation in hash-based SPA)
+  await page.getByTestId('common_btn_login_en').click();
+
+  // Wait for dashboard navigation tab to appear (indicates successful login)
+  console.log(`[Test] Waiting for dashboard to appear...`);
   await page.waitForSelector('[data-testid="admin_nav_dashboard_en"]', {
     state: 'visible',
-    timeout: 10000
+    timeout: 15000
   });
+
+  // Additional wait for dashboard content to stabilize
+  await page.waitForTimeout(500);
 
   console.log(`[Test] Successfully logged in as ${role}`);
 }
