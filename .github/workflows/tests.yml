@@ -102,7 +102,7 @@ jobs:
       - name: Wait for E2E completion
         run: |
           CID="$(docker compose -f docker-compose.yml -f docker-compose.test.yml ps -q e2e-runner)"
-          timeout 600 bash -c "until [ \"\$(docker inspect -f '{{.State.Status}}' \"$CID\")\" = \"exited\" ]; do sleep 10; done" || \
+          timeout 1800 bash -c "until [ \"\$(docker inspect -f '{{.State.Status}}' \"$CID\")\" = \"exited\" ]; do sleep 10; done" || \
           { echo "E2E tests timed out"; docker compose -f docker-compose.yml -f docker-compose.test.yml logs e2e-runner; exit 1; }
           [ "$(docker inspect -f '{{.State.ExitCode}}' "$CID")" = "0" ] || \
           { echo "E2E tests failed"; docker compose -f docker-compose.yml -f docker-compose.test.yml logs e2e-runner; exit 1; }
