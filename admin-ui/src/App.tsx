@@ -352,8 +352,15 @@ function App() {
   }, [authLoading, user]);
 
   useEffect(() => {
-    // Skip password clearing in E2E test mode to prevent login failures
-    const isE2EMode = import.meta.env.VITE_E2E_TEST_MODE === 'true';
+    // Detect E2E mode at runtime using multiple signals
+    const isE2EMode = 
+      // Check if running in Playwright (sets navigator.webdriver)
+      (navigator as any).webdriver === true ||
+      // Check for e2e query parameter
+      window.location.search.includes('e2e=true') ||
+      // Check for test user agent
+      navigator.userAgent.includes('Playwright');
+    
     if (isE2EMode) {
       console.log('[App] E2E mode detected - skipping visibility handler for password security');
       return;
