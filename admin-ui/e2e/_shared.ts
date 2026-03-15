@@ -4,16 +4,16 @@ import * as path from 'path';
 
 // Import i18n utilities
 import {
-    Auth,
-    Clients,
-    Common,
-    Dashboard,
-    Marketing,
-    Menu,
-    Products,
-    Sales,
-    setTestLanguage,
-    t,
+  Auth,
+  Clients,
+  Common,
+  Dashboard,
+  Marketing,
+  Menu,
+  Products,
+  Sales,
+  setTestLanguage,
+  t,
 } from './i18n-test';
 
 export { Auth, Clients, Common, Dashboard, Marketing, Menu, Products, Sales, t };
@@ -414,6 +414,11 @@ export function hasPermission(role: TestRole, feature: string): boolean {
 /**
  * Login helper with proper error handling and waiting
  * Uses credentials from TEST_CREDENTIALS (fetched from DB)
+ * 
+ * PURE UI-BASED LOGIN for CI/Docker reliability
+ * - No hybrid API+UI approach (causes race conditions)
+ * - No addInitScript (causes SecurityError in Docker)
+ * - Simple, predictable UI flow that works everywhere
  */
 export async function login(page: Page, role: TestRole = 'admin') {
   if (Object.keys(TEST_CREDENTIALS).length === 0) {
@@ -439,68 +444,33 @@ export async function login(page: Page, role: TestRole = 'admin') {
 
   console.log(`[Test] Logging in as ${resolvedRole} (${creds.username})`);
 
-  const baseUrl = process.env.E2E_BASE_URL || 'http://localhost:5173';
-  const loginResponse = await page.context().request.post(baseUrl + '/api/v1/public/auth/login', {
-    data: {
-      username: creds.username,
-      password: creds.password,
-    },
-  });
-
-  if (!loginResponse.ok()) {
-    const errorText = await loginResponse.text();
-    throw new Error(`Login failed: ${loginResponse.status()} - ${errorText}`);
-  }
-
-  const cookies = loginResponse.headers()['set-cookie'];
-  if (cookies) {
-    const cookieStrings = Array.isArray(cookies) ? cookies : [cookies];
-    for (const cookieStr of cookieStrings) {
-      const [nameValuePart] = cookieStr.split(';');
-      const [name, value] = nameValuePart.trim().split('=');
-
-      const cookie: any = {
-        name: name,
-        value: value,
-        url: baseUrl,
-      };
-
-      try {
-        await page.context().addCookies([cookie]);
-      } catch (error) {
-        console.warn(`Failed to set cookie ${name}:`, error);
-      }
-    }
-  }
-
-  const authData = await loginResponse.json();
-  const token = authData.token || authData.access_token;
-
-  if (!token) {
-    throw new Error(`Login response missing token: ${JSON.stringify(authData)}`);
-  }
-
-  await page.addInitScript(() => {
-    window.sessionStorage.setItem('auth_validation_state', 'valid');
-    window.localStorage.setItem('language', 'en');
-  });
-  await page.addInitScript((authToken: string) => {
-    window.localStorage.setItem('admin_session_token', authToken);
-  }, token);
-
+  // Set language preference before navigation
   setTestLanguage('en');
-  await page.goto('/admin/login');
-  await page.waitForLoadState('domcontentloaded');
+
+  // Navigate to login page
+  await page.goto('/admin/login', { waitUntil: 'domcontentloaded' });
+  
+  // Wait for login form to be ready
+  await page.waitForSelector('[data-testid="common_input_username_en"]', { 
+    state: 'visible',
+    timeout: 10000 
+  });
+
+  // Fill credentials
   await page.getByTestId('common_input_username_en').fill(creds.username);
   await page.getByTestId('common_input_password_en').fill(creds.password);
-  await page.getByTestId('common_btn_password_login_en').click();
-  await page.waitForURL('**/admin/dashboard', { timeout: 15000 });
 
-  try {
-    await page.waitForSelector('text=Dashboard', { timeout: 15000 });
-  } catch {
-    await page.waitForURL('**/dashboard', { timeout: 5000 }).catch(() => {});
-  }
+  // Submit and wait for navigation
+  await Promise.all([
+    page.waitForURL('**/admin/dashboard', { timeout: 20000 }),
+    page.getByTestId('common_btn_password_login_en').click()
+  ]);
+
+  // Wait for dashboard to be fully loaded
+  await page.waitForSelector('[data-testid="admin_nav_dashboard_en"]', {
+    state: 'visible',
+    timeout: 10000
+  });
 
   console.log(`[Test] Successfully logged in as ${role}`);
 }
