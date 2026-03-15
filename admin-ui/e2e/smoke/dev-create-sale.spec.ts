@@ -65,10 +65,13 @@ test('dev stack: admin can create sale from integrations simulator', async ({ pa
   if (await webhooksTab.count()) {
     await webhooksTab.first().click();
   }
-  await expect(page.getByTestId('admin_dev_create_sale_panel')).toBeVisible({ timeout: 15000 });
+  const devSalePanel = page.getByTestId(/admin_dev_create_sale_panel(_en)?/);
+  await expect(devSalePanel.first()).toBeVisible({ timeout: 15000 });
 
-  await page.getByTestId('admin_input_dev_customer_qr').fill(createdCustomer.qr_token);
-  await page.getByTestId('admin_btn_dev_create_sale').click();
+  const devCustomerQrInput = page.getByTestId(/admin_input_dev_customer_qr(_en)?/);
+  await devCustomerQrInput.first().fill(createdCustomer.qr_token);
+  const createSaleButton = page.getByTestId(/admin_btn_dev_create_sale(_en)?/);
+  await createSaleButton.first().click();
   await expect(page.getByText(new RegExp(`Sale created: tx #\\d+, customer #${createdCustomer.id}`))).toBeVisible({
     timeout: 15000,
   });
