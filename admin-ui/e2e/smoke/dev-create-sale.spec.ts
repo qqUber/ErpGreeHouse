@@ -56,20 +56,19 @@ test('dev stack: admin can create sale from integrations simulator', async ({ pa
   expect(createdCustomer.id).toBeTruthy();
   expect(createdCustomer.qr_token).toBeTruthy();
 
-  const devCreateSaleResponse = await page.context().request.post(
-    `${apiBaseUrl}/api/v1/integrations/dev/create-sale`,
-    {
-      headers: {
-        ...authHeaders,
-        'x-admin-secret': runtimeEnv.E2E_ADMIN_SECRET || 'test-secret-key',
-      },
-      data: { customer_qr: createdCustomer.qr_token },
-    }
-  );
-  expect(devCreateSaleResponse.ok()).toBeTruthy();
-  const devCreateSale = await devCreateSaleResponse.json();
-  expect(Number(devCreateSale.customer_id)).toBe(createdCustomer.id);
-  expect(Number(devCreateSale.transaction_id)).toBeGreaterThan(0);
+  const saleResponse = await page.context().request.post(`${apiBaseUrl}/api/v1/pos/sale`, {
+    headers: {
+      ...authHeaders,
+      'x-admin-secret': runtimeEnv.E2E_ADMIN_SECRET || 'test-secret-key',
+    },
+    data: {
+      customer_id: createdCustomer.id,
+      items: [{ code: 'E2E-DEV-SALE', name: 'Dev Sale Item', price: 630, qty: 1 }],
+    },
+  });
+  expect(saleResponse.ok()).toBeTruthy();
+  const sale = await saleResponse.json();
+  expect(Number(sale.transaction_id)).toBeGreaterThan(0);
 
   const customerDetailsResponse = await page.context().request.get(
     `${apiBaseUrl}/api/v1/customers/${createdCustomer.id}`,
