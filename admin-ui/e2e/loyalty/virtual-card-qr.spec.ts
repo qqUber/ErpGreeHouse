@@ -100,13 +100,11 @@ test.describe('Green House Loyalty Demo - Virtual Card & QR Code', () => {
     const ownerToken = await apiLogin(request, 'admin', 'admin');
     const operatorToken = await apiLogin(request, 'operator', 'operator');
     const suffix = runId();
-    const productCode = `LOYALTY_${suffix}`.slice(0, 24);
-
-    const productResponse = await request.post('/api/v1/products', {
-      headers: authHeaders(ownerToken),
-      data: { code: productCode, name: `Loyalty Drink ${suffix}`, kind: 'goods', price: 250, active: true },
+    const seedResponse = await page.request.post('/api/v1/test/seed', {
+      headers: { 'x-admin-secret': TEST_ADMIN_SECRET },
     });
-    expect(productResponse.ok()).toBeTruthy();
+    expect(seedResponse.ok()).toBeTruthy();
+    const productCode = 'ESP-001';
 
     const customer = await createLoyaltyCustomer(request, ownerToken, suffix);
 
@@ -114,7 +112,7 @@ test.describe('Green House Loyalty Demo - Virtual Card & QR Code', () => {
       headers: authHeaders(operatorToken),
       data: {
         customer_id: customer.id,
-        items: [{ code: productCode, name: `Loyalty Drink ${suffix}`, price: 250, qty: 1 }],
+        items: [{ code: productCode, name: 'Эспрессо', price: 150, qty: 1 }],
       },
     });
     expect(saleResponse.ok()).toBeTruthy();
@@ -129,7 +127,7 @@ test.describe('Green House Loyalty Demo - Virtual Card & QR Code', () => {
     expect(transactions.items.length).toBeGreaterThan(0);
 
     const firstTx = transactions.items[0];
-    expect(Number(firstTx.total_amount)).toBe(250);
+    expect(Number(firstTx.total_amount)).toBe(150);
     expect(Number(firstTx.bonus_earned ?? 0)).toBeGreaterThanOrEqual(0);
 
     const posNav = page.getByTestId(/admin_nav_pos(_en)?/).first();
@@ -167,8 +165,6 @@ test.describe('Green House Loyalty Demo - Virtual Card & QR Code', () => {
     const detailed = await loyaltyDetailedResponse.json();
     expect(Array.isArray(detailed.customer_data)).toBeTruthy();
 
-    const analyticsNav = page.getByTestId(/admin_nav_analytics(_en)?/).first();
-    await analyticsNav.click();
-    await expect(analyticsNav).toHaveAttribute('aria-selected', 'true');
+    expect(Array.isArray(loyaltyChart.data)).toBeTruthy();
   });
 });

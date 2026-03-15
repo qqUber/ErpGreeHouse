@@ -59,7 +59,10 @@ test('dev stack: admin can create sale from integrations simulator', async ({ pa
   const devCreateSaleResponse = await page.context().request.post(
     `${apiBaseUrl}/api/v1/integrations/dev/create-sale`,
     {
-      headers: authHeaders,
+      headers: {
+        ...authHeaders,
+        'x-admin-secret': runtimeEnv.E2E_ADMIN_SECRET || 'test-secret-key',
+      },
       data: { customer_qr: createdCustomer.qr_token },
     }
   );
