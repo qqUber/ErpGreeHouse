@@ -494,15 +494,12 @@ export async function login(page: Page, role: TestRole = 'admin') {
   }, token);
 
   setTestLanguage('en');
-  await page.goto('/admin/dashboard');
+  await page.goto('/admin/login');
   await page.waitForLoadState('domcontentloaded');
-
-  if (page.url().includes('/admin/login')) {
-    await page.getByTestId('common_input_username_en').fill(creds.username);
-    await page.getByTestId('common_input_password_en').fill(creds.password);
-    await page.getByTestId('common_btn_password_login_en').click();
-    await page.waitForURL('**/admin/dashboard', { timeout: 15000 });
-  }
+  await page.getByTestId('common_input_username_en').fill(creds.username);
+  await page.getByTestId('common_input_password_en').fill(creds.password);
+  await page.getByTestId('common_btn_password_login_en').click();
+  await page.waitForURL('**/admin/dashboard', { timeout: 15000 });
 
   try {
     await page.waitForSelector('text=Dashboard', { timeout: 15000 });
