@@ -153,7 +153,7 @@ def get_settings() -> Settings:
         redis_url=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
         webhook_secret=os.getenv("WEBHOOK_SECRET", ""),
         base_web_url=os.getenv("BASE_WEB_URL", ""),
-        erp_mock_mode=os.getenv("ERP_MOCK_MODE", "true").lower()
+        erp_mock_mode=os.getenv("ERP_MOCK_MODE", "false").lower()
         in ("1", "true", "yes"),
         # Rate limiting settings for password recovery
         recovery_rate_limit_attempts=int(
