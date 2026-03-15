@@ -33,11 +33,12 @@ async def test_cmd_start_new_user(telegram_mock, clean_database, redis_client):
     with patch("app.handlers.get_redis", return_value=redis_client):
         await handlers.cmd_start(message)
 
-    # Verify that message.answer was called with the welcome text and keyboard
-    message.answer.assert_called_once()
-    args, kwargs = message.answer.call_args
-    assert "Добро пожаловать" in args[0]
-    assert "reply_markup" in kwargs
+    # Verify that message.answer was called twice (welcome + menu help)
+    assert message.answer.call_count == 2
+    # First call should contain consent intro
+    first_args, first_kwargs = message.answer.call_args_list[0]
+    assert "соглас" in first_args[0].lower()
+    assert "reply_markup" in first_kwargs
 
 
 @pytest.mark.asyncio
@@ -47,7 +48,9 @@ async def test_cmd_register_invalid_format(telegram_mock):
 
     await handlers.cmd_register(message)
 
-    message.answer.assert_called_once_with("Используйте /start для начала регистрации.")
+    message.answer.assert_called_once_with(
+        "Используйте главное меню или /start для начала регистрации."
+    )
 
 
 @pytest.mark.asyncio
@@ -58,7 +61,9 @@ async def test_cmd_register_valid(telegram_mock, redis_client):
     with patch("app.handlers.get_redis", return_value=redis_client):
         await handlers.cmd_register(message)
 
-    message.answer.assert_called_once_with("Используйте /start для начала регистрации.")
+    message.answer.assert_called_once_with(
+        "Используйте главное меню или /start для начала регистрации."
+    )
 
 
 @pytest.mark.asyncio

@@ -29,7 +29,9 @@ def _merge_preferences(existing_json: str | None, updates: dict[str, Any]) -> st
         current = json.loads(existing_json or "{}")
     except Exception:
         current = {}
-    current.update({key: value for key, value in updates.items() if value not in (None, "")})
+    current.update(
+        {key: value for key, value in updates.items() if value not in (None, "")}
+    )
     return json.dumps(current, ensure_ascii=False)
 
 
@@ -156,7 +158,11 @@ def resolve_or_create_customer(
             if telegram_id is not None and target["telegram_id"] != telegram_id:
                 updates.append("telegram_id = ?")
                 params.append(telegram_id)
-            if telegram_id is not None and "tg_id" in target.keys() and target["tg_id"] != telegram_id:
+            if (
+                telegram_id is not None
+                and "tg_id" in target.keys()
+                and target["tg_id"] != telegram_id
+            ):
                 updates.append("tg_id = ?")
                 params.append(telegram_id)
             if vk_id is not None and target["vk_id"] != vk_id:
@@ -180,10 +186,14 @@ def resolve_or_create_customer(
             if preferred_channel and target["preferred_channel"] != preferred_channel:
                 updates.append("preferred_channel = ?")
                 params.append(preferred_channel)
-            if marketing_allowed is not None and int(target["marketing_allowed"] or 0) != int(marketing_allowed):
+            if marketing_allowed is not None and int(
+                target["marketing_allowed"] or 0
+            ) != int(marketing_allowed):
                 updates.append("marketing_allowed = ?")
                 params.append(marketing_allowed)
-            if data_processing_allowed is not None and int(target["data_processing_allowed"] or 0) != int(data_processing_allowed):
+            if data_processing_allowed is not None and int(
+                target["data_processing_allowed"] or 0
+            ) != int(data_processing_allowed):
                 updates.append("data_processing_allowed = ?")
                 params.append(data_processing_allowed)
             if _should_update_onboarding_status(
@@ -197,7 +207,11 @@ def resolve_or_create_customer(
                 params.append(phone_verification_method)
 
             preferences_json = _merge_preferences(
-                target["preferences_json"] if "preferences_json" in target.keys() else None,
+                (
+                    target["preferences_json"]
+                    if "preferences_json" in target.keys()
+                    else None
+                ),
                 {
                     "telegram_username": username,
                     "telegram_first_name": first_name,
@@ -205,7 +219,9 @@ def resolve_or_create_customer(
                     "telegram_contact_user_id": telegram_id,
                 },
             )
-            if "preferences_json" in target.keys() and preferences_json != (target["preferences_json"] or "{}"):
+            if "preferences_json" in target.keys() and preferences_json != (
+                target["preferences_json"] or "{}"
+            ):
                 updates.append("preferences_json = ?")
                 params.append(preferences_json)
 
@@ -264,8 +280,13 @@ def resolve_or_create_customer(
                     email,
                     city,
                     resolved_onboarding_status,
-                    datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S") if normalized_phone else None,
-                    phone_verification_method or ("telegram_contact" if normalized_phone else None),
+                    (
+                        datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                        if normalized_phone
+                        else None
+                    ),
+                    phone_verification_method
+                    or ("telegram_contact" if normalized_phone else None),
                 ),
             )
             return int(cur.lastrowid), True

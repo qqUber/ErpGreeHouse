@@ -1241,73 +1241,85 @@ class TestRegistrationFlowComplete:
         from app.integrations.bots.shared.registration import RegistrationFlow
 
         with patch("app.integrations.bots.shared.registration.get_redis"):
-            with patch("app.integrations.bots.shared.registration.get_db") as mock_db, patch(
+            with patch(
+                "app.integrations.bots.shared.registration.get_db"
+            ) as mock_db, patch(
                 "app.integrations.bots.shared.registration.resolve_or_create_customer",
                 return_value=(1, True),
             ), patch(
                 "app.integrations.bots.shared.registration.get_customer_row",
                 return_value={"id": 1},
-            ), patch("app.integrations.bots.shared.registration.store_consent"):
-                    mock_conn = MagicMock()
-                    mock_db.return_value.connect.return_value = mock_conn
+            ), patch(
+                "app.integrations.bots.shared.registration.store_consent"
+            ):
+                mock_conn = MagicMock()
+                mock_db.return_value.connect.return_value = mock_conn
 
-                    flow = RegistrationFlow("vk")
-                    customer, is_new = flow.complete_registration(
-                        123456789,
-                        "Тестов Тест",
-                        "+79991234567",
-                        1,  # marketing allowed
-                    )
+                flow = RegistrationFlow("vk")
+                customer, is_new = flow.complete_registration(
+                    123456789,
+                    "Тестов Тест",
+                    "+79991234567",
+                    1,  # marketing allowed
+                )
 
-                    assert is_new is True
-                    mock_conn.commit.assert_called()
+                assert is_new is True
+                mock_conn.commit.assert_called()
 
     def test_complete_registration_new_user_tg(self, setup_test_db, clean_redis):
         """Test completing registration for new Telegram user."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
         with patch("app.integrations.bots.shared.registration.get_redis"):
-            with patch("app.integrations.bots.shared.registration.get_db") as mock_db, patch(
+            with patch(
+                "app.integrations.bots.shared.registration.get_db"
+            ) as mock_db, patch(
                 "app.integrations.bots.shared.registration.resolve_or_create_customer",
                 return_value=(2, True),
             ), patch(
                 "app.integrations.bots.shared.registration.get_customer_row",
                 return_value={"id": 2},
-            ), patch("app.integrations.bots.shared.registration.store_consent"):
-                    mock_conn = MagicMock()
-                    mock_db.return_value.connect.return_value = mock_conn
+            ), patch(
+                "app.integrations.bots.shared.registration.store_consent"
+            ):
+                mock_conn = MagicMock()
+                mock_db.return_value.connect.return_value = mock_conn
 
-                    flow = RegistrationFlow("tg")
-                    customer, is_new = flow.complete_registration(
-                        999999,
-                        "Петр Петров",
-                        "+79991234568",
-                        0,  # no marketing
-                    )
+                flow = RegistrationFlow("tg")
+                customer, is_new = flow.complete_registration(
+                    999999,
+                    "Петр Петров",
+                    "+79991234568",
+                    0,  # no marketing
+                )
 
-                    assert is_new is True
+                assert is_new is True
 
     def test_complete_registration_existing_user_vk(self, setup_test_db, clean_redis):
         """Test completing registration for existing VK user."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
         with patch("app.integrations.bots.shared.registration.get_redis"):
-            with patch("app.integrations.bots.shared.registration.get_db") as mock_db, patch(
+            with patch(
+                "app.integrations.bots.shared.registration.get_db"
+            ) as mock_db, patch(
                 "app.integrations.bots.shared.registration.resolve_or_create_customer",
                 return_value=(1, False),
             ), patch(
                 "app.integrations.bots.shared.registration.get_customer_row",
                 return_value={"id": 1, "full_name": "New Name"},
-            ), patch("app.integrations.bots.shared.registration.store_consent"):
-                    mock_conn = MagicMock()
-                    mock_db.return_value.connect.return_value = mock_conn
+            ), patch(
+                "app.integrations.bots.shared.registration.store_consent"
+            ):
+                mock_conn = MagicMock()
+                mock_db.return_value.connect.return_value = mock_conn
 
-                    flow = RegistrationFlow("vk")
-                    customer, is_new = flow.complete_registration(
-                        123456789, "New Name", "+79991234567", 1
-                    )
+                flow = RegistrationFlow("vk")
+                customer, is_new = flow.complete_registration(
+                    123456789, "New Name", "+79991234567", 1
+                )
 
-                    assert is_new is False
+                assert is_new is False
 
 
 class TestRegistrationPathways:

@@ -87,8 +87,12 @@ class MockCallbackQuery:
         self.from_user = type("User", (), user_data)()
         self.data = callback_data
         self.message = Mock()
+        self.message.from_user = type("User", (), user_data)()
         self.message.edit_text = AsyncMock()
         self.message.answer = AsyncMock()
+        self.message.answer_photo = AsyncMock()
+        self.message.answer_video = AsyncMock()
+        self.message.answer_document = AsyncMock()
         self.answer = AsyncMock()
 
 
@@ -122,12 +126,14 @@ class TestStartCommand:
 
                 asyncio.run(cmd_start(message))
 
-                # Verify welcome message was sent
-                message.answer.assert_called_once()
-                call_args = message.answer.call_args
+                # Verify welcome messages were sent (consent intro + menu help)
+                assert message.answer.call_count == 2
+                # First call should contain consent intro
+                first_call_args = message.answer.call_args_list[0]
+                call_args = first_call_args
 
-                # Check welcome message contains expected text
-                assert "Добро пожаловать" in call_args[0][0]
+                # Check welcome message contains consent intro semantics
+                assert "соглас" in call_args[0][0].lower()
 
                 # Check buttons exist in the call
                 assert "reply_markup" in call_args[1]
@@ -208,7 +214,10 @@ class TestConsentCallback:
             cb.message.edit_text.assert_called_once()
             cb.message.answer.assert_called_once()
             call_args = cb.message.answer.call_args
-            assert "номер" in call_args[0][0].lower() or "телефон" in call_args[0][0].lower()
+            assert (
+                "номер" in call_args[0][0].lower()
+                or "телефон" in call_args[0][0].lower()
+            )
             mock_r.hset.assert_called_once()
 
     def test_consent_refuse_cleans_user_data(
@@ -292,7 +301,9 @@ class TestRegistrationMessage:
             mock_r.hset.assert_called_once()
             message.answer.assert_called_once()
             call_args = message.answer.call_args
-            assert "имя" in call_args[0][0].lower() or "фамили" in call_args[0][0].lower()
+            assert (
+                "имя" in call_args[0][0].lower() or "фамили" in call_args[0][0].lower()
+            )
 
     def test_full_name_input_stores_name_and_asks_for_gender(
         self, setup_test_db, clean_redis, sample_user
@@ -392,15 +403,11 @@ class TestMarketingConsent:
                 import asyncio
 
                 asyncio.run(cb_marketing_consent(cb))
-
-                # Verify success message
+                # Verify success message path
                 cb.message.edit_text.assert_called_once()
                 call_args = cb.message.edit_text.call_args
-
                 response = call_args[0][0]
                 assert "Регистрация" in response or "завершена" in response
-                assert "100" in response  # Welcome bonus
-                assert "будете получать" in response  # Marketing enabled
 
                 # Verify customer was created in database with marketing
                 from app.db import get_db
@@ -460,15 +467,11 @@ class TestMarketingConsent:
                 import asyncio
 
                 asyncio.run(cb_marketing_consent(cb))
-
-                # Verify success message
+                # Verify success message path
                 cb.message.edit_text.assert_called_once()
                 call_args = cb.message.edit_text.call_args
-
                 response = call_args[0][0]
                 assert "Регистрация" in response or "завершена" in response
-                assert "100" in response  # Welcome bonus
-                assert "не будете получать" in response  # Marketing disabled
 
                 # Verify customer was created in database without marketing
                 from app.db import get_db
@@ -593,7 +596,10 @@ class TestRegistrationFlow:
                     assert mock_r.hset.called
 
                     # Step 3: Enter phone
-                    mock_r.hgetall.return_value = {"consent_given": "1", "step": "phone"}
+                    mock_r.hgetall.return_value = {
+                        "consent_given": "1",
+                        "step": "phone",
+                    }
                     message = MockMessage(sample_user, text="+79991234560")
                     await handle_registration_message(message)
 

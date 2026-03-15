@@ -74,15 +74,13 @@ def _build_segment_query(criteria: dict[str, Any]) -> tuple[str, list[Any]]:
         params.append(int(criteria["days_since_visit"]))
 
     if criteria.get("min_purchase_amount") is not None:
-        conditions.append(
-            """
+        conditions.append("""
             EXISTS (
                 SELECT 1 FROM transactions
                 WHERE customer_id = customers.id
                 AND total_amount >= ?
             )
-            """
-        )
+            """)
         params.append(int(criteria["min_purchase_amount"]))
 
     if criteria.get("purchase_frequency") is not None:
@@ -587,5 +585,3 @@ def get_events_breakdown(
         return {"events": events}
     finally:
         conn.close()
-
-

@@ -30,7 +30,9 @@ COLUMN_MAPPINGS: dict[Source, str] = {
 def _get_id_column(source: Source) -> str:
     """Get database column name for platform source with validation."""
     if source not in COLUMN_MAPPINGS:
-        raise ValueError(f"Invalid source: {source}. Must be one of: {list(COLUMN_MAPPINGS.keys())}")
+        raise ValueError(
+            f"Invalid source: {source}. Must be one of: {list(COLUMN_MAPPINGS.keys())}"
+        )
     return COLUMN_MAPPINGS[source]
 
 

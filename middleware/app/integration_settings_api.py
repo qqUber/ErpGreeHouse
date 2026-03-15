@@ -219,26 +219,26 @@ async def upload_telegram_media(
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     check_roles(auth_result, roles=("owner", "marketer"))
-    
+
     # Input validation
-    ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.mp4', '.webm', '.pdf'}
+    ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".mp4", ".webm", ".pdf"}
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
-    
+
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided")
-    
+
     original_name = Path(file.filename).name
     file_ext = Path(original_name).suffix.lower()
-    
+
     if file_ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
-            status_code=400, 
-            detail=f"File type {file_ext} not allowed. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
+            status_code=400,
+            detail=f"File type {file_ext} not allowed. Allowed: {', '.join(ALLOWED_EXTENSIONS)}",
         )
-    
+
     if file.size and file.size > MAX_FILE_SIZE:
         raise HTTPException(status_code=400, detail="File too large (max 10MB)")
-    
+
     settings = get_settings()
     upload_root = Path(__file__).resolve().parents[2] / "media" / "telegram"
     upload_root.mkdir(parents=True, exist_ok=True)
@@ -259,7 +259,11 @@ async def upload_telegram_media(
         file.file.close()
 
     base_url = settings.base_web_url.rstrip("/")
-    media_url = f"{base_url}/media/telegram/{safe_name}" if base_url else f"/media/telegram/{safe_name}"
+    media_url = (
+        f"{base_url}/media/telegram/{safe_name}"
+        if base_url
+        else f"/media/telegram/{safe_name}"
+    )
 
     return {"uploaded": True, "url": media_url, "name": original_name}
 

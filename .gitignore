@@ -39,7 +39,6 @@ middleware/.pytest_cache/
 coverage.xml
 .roo/mcp.json
 admin-ui/e2e/.test-credentials.json
-.windsurf/
 cookies.txt
 
 # Generated test reports

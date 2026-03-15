@@ -8,6 +8,7 @@ from typing import Any, AsyncGenerator, Coroutine, Optional
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+
 # Try to import aiogram - may fail in some versions
 MemoryStorage: type | None = None
 RedisStorage: type | None = None
@@ -38,36 +39,34 @@ async def ensure_telegram_bot_menu(bot: Bot) -> None:
     """Set up Telegram bot menu commands based on configuration."""
     import logging
     from aiogram.types import BotCommand
-    
+
     logger = logging.getLogger(__name__)
-    
+
     # Import here to avoid circular imports
     from ...handlers import _get_telegram_menu_item_config, _get_telegram_menu_label
-    
+
     # Get menu items configuration
     menu_commands = []
-    
+
     # Define core menu items
     core_items = [
         "balance_card",
-        "menu_addresses", 
+        "menu_addresses",
         "open_coffee_shop",
         "ask_question",
         "leave_feedback",
         "vacancies",
-        "about_club"
+        "about_club",
     ]
-    
+
     for item_id in core_items:
         config = _get_telegram_menu_item_config(item_id)
         if config and config.get("enabled", True):
             # Get localized label
             label = _get_telegram_menu_label(item_id)
             # Use item_id as command since labels can be localized
-            menu_commands.append(
-                BotCommand(command=item_id, description=label)
-            )
-    
+            menu_commands.append(BotCommand(command=item_id, description=label))
+
     if menu_commands:
         try:
             await bot.set_my_commands(menu_commands)

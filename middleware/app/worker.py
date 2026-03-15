@@ -687,4 +687,3 @@ def process_telegram_update(payload: dict) -> dict:
 
 if __name__ == "__main__":
     celery_app.start()
-

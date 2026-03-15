@@ -40,7 +40,7 @@ EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 # Move gender labels to TELEGRAM_I18N for proper internationalization
 GENDER_LABELS = {
     "male": "male",
-    "female": "female", 
+    "female": "female",
     "other": "other",
 }
 
@@ -129,7 +129,7 @@ TELEGRAM_I18N = {
         "registration_marketing_off": "\n\nYou will not receive marketing messages.",
         # Add gender labels
         "gender_male": "Male",
-        "gender_female": "Female", 
+        "gender_female": "Female",
         "gender_other": "Prefer not to say",
         # Add menu labels
         "menu_balance_card": "Balance & Card",
@@ -155,15 +155,15 @@ def get_telegram_text(key: str, language: str = "en", **kwargs) -> str:
     """Get localized text for Telegram bot."""
     if language not in TELEGRAM_I18N:
         language = "en"
-    
+
     text = TELEGRAM_I18N[language].get(key, TELEGRAM_I18N["en"].get(key, key))
-    
+
     if kwargs:
         try:
             text = text.format(**kwargs)
         except (KeyError, ValueError):
             pass  # Fallback to original text if formatting fails
-    
+
     return text
 
 
@@ -180,43 +180,35 @@ def get_menu_label(menu_key: str, language: str = "en") -> str:
 
 
 async def send_video_with_circle(
-    message: Message, 
-    video_path: str, 
-    caption: str = "",
-    language: str = "en"
+    message: Message, video_path: str, caption: str = "", language: str = "en"
 ) -> None:
     """Send video with circular overlay effect."""
     from aiogram.types import FSInputFile
-    
+
     try:
         # Send video with caption
         video = FSInputFile(video_path)
-        await message.answer_video(
-            video=video,
-            caption=caption,
-            parse_mode="HTML"
-        )
-        
+        await message.answer_video(video=video, caption=caption, parse_mode="HTML")
+
         # Follow up with welcome message and catalog button
         settings = get_settings()
         tma_url = f"{settings.base_web_url}/tma"
-        
+
         kb = InlineKeyboardMarkup(
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
                         text=get_telegram_text("open_catalog", language),
-                        web_app=WebAppInfo(url=tma_url)
+                        web_app=WebAppInfo(url=tma_url),
                     )
                 ]
             ]
         )
-        
+
         await message.answer(
-            get_telegram_text("coffee_shop_welcome", language),
-            reply_markup=kb
+            get_telegram_text("coffee_shop_welcome", language), reply_markup=kb
         )
-        
+
     except Exception as e:
         logger.error(f"Error sending video: {e}")
         # Fallback to regular message if video fails
@@ -348,7 +340,11 @@ def _upsert_local_customer(
 def _registration_phone_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text=_telegram_text(None, "share_contact"), request_contact=True)]
+            [
+                KeyboardButton(
+                    text=_telegram_text(None, "share_contact"), request_contact=True
+                )
+            ]
         ],
         resize_keyboard=True,
         one_time_keyboard=True,
@@ -494,7 +490,9 @@ def _get_customer_preferred_language(telegram_id: int | None) -> str | None:
         conn.close()
 
 
-def _store_customer_preferred_language(telegram_id: int | None, language_code: str | None) -> None:
+def _store_customer_preferred_language(
+    telegram_id: int | None, language_code: str | None
+) -> None:
     if not telegram_id:
         return
     language = _normalize_language_code(language_code)
@@ -607,7 +605,9 @@ async def _send_virtual_card(message: Message, customer: dict[str, Any]) -> None
     qr_token = str(customer.get("qr_token") or "").strip()
     customer_id = int(customer.get("id") or 0)
     if not qr_token or not customer_id:
-        await message.answer(_telegram_text(message, "virtual_card_ready", qr_token=qr_token or "—"))
+        await message.answer(
+            _telegram_text(message, "virtual_card_ready", qr_token=qr_token or "—")
+        )
         return
 
     profile = customer.get("_loyalty_profile")
@@ -622,7 +622,10 @@ async def _send_virtual_card(message: Message, customer: dict[str, Any]) -> None
         profile = {}
 
     config = _get_telegram_menu_item_config("balance_card")
-    caption_template = str(config.get("text") or _telegram_text(message, "virtual_card_ready", qr_token=qr_token))
+    caption_template = str(
+        config.get("text")
+        or _telegram_text(message, "virtual_card_ready", qr_token=qr_token)
+    )
     caption = _render_command_text(
         caption_template,
         {
@@ -732,11 +735,17 @@ async def _send_configured_command_message(
         first_media = media_urls[0]
         lowered = first_media.lower()
         if lowered.endswith((".png", ".jpg", ".jpeg", ".webp", ".gif")):
-            await message.answer_photo(first_media, caption=text or None, reply_markup=reply_markup)
+            await message.answer_photo(
+                first_media, caption=text or None, reply_markup=reply_markup
+            )
         elif lowered.endswith((".mp4", ".mov", ".webm")):
-            await message.answer_video(first_media, caption=text or None, reply_markup=reply_markup)
+            await message.answer_video(
+                first_media, caption=text or None, reply_markup=reply_markup
+            )
         else:
-            await message.answer_document(first_media, caption=text or None, reply_markup=reply_markup)
+            await message.answer_document(
+                first_media, caption=text or None, reply_markup=reply_markup
+            )
         if len(media_urls) > 1:
             await _send_media_urls(message, media_urls[1:])
         return True
@@ -777,7 +786,9 @@ def _find_city_entry(config: dict[str, Any], city: str) -> dict[str, Any] | None
     return None
 
 
-async def _send_city_menu_content(message: Message, config: dict[str, Any], city: str) -> bool:
+async def _send_city_menu_content(
+    message: Message, config: dict[str, Any], city: str
+) -> bool:
     entry = _find_city_entry(config, city)
     if not entry:
         return False
@@ -794,17 +805,25 @@ async def _send_city_menu_content(message: Message, config: dict[str, Any], city
         first_media = media_urls[0]
         lowered = first_media.lower()
         if lowered.endswith((".png", ".jpg", ".jpeg", ".webp", ".gif")):
-            await message.answer_photo(first_media, caption=text or None, reply_markup=reply_markup)
+            await message.answer_photo(
+                first_media, caption=text or None, reply_markup=reply_markup
+            )
         elif lowered.endswith((".mp4", ".mov", ".webm")):
-            await message.answer_video(first_media, caption=text or None, reply_markup=reply_markup)
+            await message.answer_video(
+                first_media, caption=text or None, reply_markup=reply_markup
+            )
         else:
-            await message.answer_document(first_media, caption=text or None, reply_markup=reply_markup)
+            await message.answer_document(
+                first_media, caption=text or None, reply_markup=reply_markup
+            )
         if len(media_urls) > 1:
             await _send_media_urls(message, media_urls[1:])
         return True
 
     if text or reply_markup:
-        await message.answer(text or _telegram_text(message, "city_info"), reply_markup=reply_markup)
+        await message.answer(
+            text or _telegram_text(message, "city_info"), reply_markup=reply_markup
+        )
         return True
 
     return False
@@ -882,9 +901,10 @@ async def cmd_start(message: Message) -> None:
                             callback_data="consent:yes",
                         ),
                         InlineKeyboardButton(
-                            text=_telegram_text(message, "decline"), callback_data="consent:no"
+                            text=_telegram_text(message, "decline"),
+                            callback_data="consent:no",
                         ),
-                    ]
+                    ],
                 ]
             )
             await message.answer(
@@ -977,7 +997,10 @@ async def cb_consent(cb: CallbackQuery) -> None:
 
 
 @router.message(
-    lambda message: bool(get_redis().hgetall(_consent_key(message.from_user.id)).get("consent_given") == "1")
+    lambda message: bool(
+        get_redis().hgetall(_consent_key(message.from_user.id)).get("consent_given")
+        == "1"
+    )
 )
 async def handle_registration_message(message: Message) -> None:
     _remember_telegram_language(message)
@@ -1060,8 +1083,12 @@ async def handle_registration_message(message: Message) -> None:
         kb = InlineKeyboardMarkup(
             inline_keyboard=[
                 [
-                    InlineKeyboardButton(text="Да, хочу", callback_data="marketing:yes"),
-                    InlineKeyboardButton(text="Нет, спасибо", callback_data="marketing:no"),
+                    InlineKeyboardButton(
+                        text="Да, хочу", callback_data="marketing:yes"
+                    ),
+                    InlineKeyboardButton(
+                        text="Нет, спасибо", callback_data="marketing:no"
+                    ),
                 ]
             ]
         )
@@ -1081,7 +1108,9 @@ async def cb_gender(cb: CallbackQuery) -> None:
     key = _consent_key(cb.from_user.id)
     data = r.hgetall(key)
     if not data or data.get("consent_given") != "1":
-        await cb.message.edit_text("Сессия регистрации истекла. Начните заново с /start")
+        await cb.message.edit_text(
+            "Сессия регистрации истекла. Начните заново с /start"
+        )
         await cb.answer()
         return
     r.hset(key, mapping={"gender": gender, "step": "birthday"})
@@ -1170,7 +1199,9 @@ async def cb_marketing_consent(cb: CallbackQuery) -> None:
 
     except Exception as e:
         logger.error(f"Registration error: {e}")
-        await cb.message.edit_text(_telegram_text(cb, "registration_error", error=str(e)))
+        await cb.message.edit_text(
+            _telegram_text(cb, "registration_error", error=str(e))
+        )
 
     await cb.answer()
 
@@ -1214,7 +1245,8 @@ async def cmd_menu(message: Message) -> None:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=_telegram_text(message, "open_catalog"), web_app=WebAppInfo(url=tma_url)
+                    text=_telegram_text(message, "open_catalog"),
+                    web_app=WebAppInfo(url=tma_url),
                 )
             ]
         ]
@@ -1223,7 +1255,9 @@ async def cmd_menu(message: Message) -> None:
         _telegram_text(message, "catalog_available_in_app"),
         reply_markup=kb,
     )
-    await message.answer(_telegram_text(message, "menu_help"), reply_markup=reply_markup)
+    await message.answer(
+        _telegram_text(message, "menu_help"), reply_markup=reply_markup
+    )
 
 
 @router.message(lambda message: _matches_telegram_menu_label(message, "balance_card"))
@@ -1264,17 +1298,21 @@ async def menu_menu_and_addresses(message: Message) -> None:
     )
 
 
-@router.message(lambda message: _matches_telegram_menu_label(message, "open_coffee_shop"))
+@router.message(
+    lambda message: _matches_telegram_menu_label(message, "open_coffee_shop")
+)
 async def menu_open_coffee_shop(message: Message) -> None:
     _remember_telegram_language(message)
     language = message.from_user.language_code or "en"
-    
+
     # Path to your video file (should be stored in middleware/assets/videos/)
     video_path = "assets/videos/coffee_shop_intro.mp4"
-    
+
     # Send video with circular overlay effect
     caption = _telegram_text(message, "coffee_shop_video_caption")
-    await send_video_with_circle(message, video_path, caption, _telegram_language(message))
+    await send_video_with_circle(
+        message, video_path, caption, _telegram_language(message)
+    )
 
 
 @router.message(lambda message: _matches_telegram_menu_label(message, "ask_question"))
@@ -1290,7 +1328,7 @@ async def menu_ask_question(message: Message) -> None:
     sent = await _send_configured_command_message(
         message,
         "ask_question",
-        "Напиши свой вопрос следующим сообщением, и мы передадим его в поддержку."
+        "Напиши свой вопрос следующим сообщением, и мы передадим его в поддержку.",
     )
     if sent:
         return
@@ -1305,7 +1343,7 @@ async def menu_leave_feedback(message: Message) -> None:
     sent = await _send_configured_command_message(
         message,
         "leave_feedback",
-        "Спасибо! Отправь отзыв следующим сообщением — мы обязательно его прочитаем и передадим команде."
+        "Спасибо! Отправь отзыв следующим сообщением — мы обязательно его прочитаем и передадим команде.",
     )
     if sent:
         return
@@ -1320,7 +1358,7 @@ async def menu_vacancies(message: Message) -> None:
     sent = await _send_configured_command_message(
         message,
         "vacancies",
-        "Актуальные вакансии можно уточнить у менеджера или в наших соцсетях."
+        "Актуальные вакансии можно уточнить у менеджера или в наших соцсетях.",
     )
     if sent:
         return
@@ -1335,7 +1373,7 @@ async def menu_about_club(message: Message) -> None:
     sent = await _send_configured_command_message(
         message,
         "about_club",
-        "Клуб Green House — это программа лояльности с бонусами, персональными предложениями и виртуальной картой."
+        "Клуб Green House — это программа лояльности с бонусами, персональными предложениями и виртуальной картой.",
     )
     if sent:
         return
@@ -1345,7 +1383,9 @@ async def menu_about_club(message: Message) -> None:
 
 
 @router.message(
-    lambda message: isinstance(get_json(_support_request_key(message.from_user.id)), dict)
+    lambda message: isinstance(
+        get_json(_support_request_key(message.from_user.id)), dict
+    )
     and bool(get_json(_support_request_key(message.from_user.id)).get("active"))
 )
 async def handle_support_request_message(message: Message) -> None:
@@ -1360,7 +1400,11 @@ async def handle_support_request_message(message: Message) -> None:
 
     bot = create_bot()
     customer_name = " ".join(
-        [part for part in [message.from_user.first_name, message.from_user.last_name] if part]
+        [
+            part
+            for part in [message.from_user.first_name, message.from_user.last_name]
+            if part
+        ]
     ).strip() or (message.from_user.username or str(message.from_user.id))
     support_text = (
         f"Новое сообщение в поддержку\n\n"

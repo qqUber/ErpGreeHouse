@@ -1343,7 +1343,10 @@ class TestAuthenticationIntegration:
         )
 
         assert response.status_code == 409, response.text
-        assert "Multiple enabled pos_webhook integrations found" in response.json()["detail"]
+        assert (
+            "Multiple enabled pos_webhook integrations found"
+            in response.json()["detail"]
+        )
 
 
 # =============================================================================

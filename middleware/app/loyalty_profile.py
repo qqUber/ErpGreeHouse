@@ -94,7 +94,9 @@ def build_customer_loyalty_profile(
         elif expires_at.date() == nearest_expiration_date.date():
             expiring_points += net_points
 
-    balance = int(balance_override if balance_override is not None else customer["balance_points"])
+    balance = int(
+        balance_override if balance_override is not None else customer["balance_points"]
+    )
     average_check = float(customer["average_check"] or 0)
     orders_to_next_tier = 0
     if pay_up > 0:

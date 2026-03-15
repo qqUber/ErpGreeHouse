@@ -50,7 +50,9 @@ class DB:
         except sqlite3.OperationalError:
             pass
         try:
-            conn.execute("ALTER TABLE customers ADD COLUMN phone_verification_method TEXT")
+            conn.execute(
+                "ALTER TABLE customers ADD COLUMN phone_verification_method TEXT"
+            )
         except sqlite3.OperationalError:
             pass
         # Analytics fields for customers

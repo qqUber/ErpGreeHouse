@@ -32,7 +32,9 @@ class TestIntegrationsAPI:
         customer = ReceiptCustomer(
             qr_token=None, phone="+79001234567", telegram_id=None
         )
-        with patch("app.integrations_api.resolve_or_create_customer", return_value=(2, True)):
+        with patch(
+            "app.integrations_api.resolve_or_create_customer", return_value=(2, True)
+        ):
             result = _find_or_create_customer(mock_conn, customer)
 
         assert result == 2
@@ -45,7 +47,9 @@ class TestIntegrationsAPI:
         mock_conn.execute.return_value = mock_cursor
 
         customer = ReceiptCustomer(qr_token=None, phone=None, telegram_id=12345)
-        with patch("app.integrations_api.resolve_or_create_customer", return_value=(3, True)):
+        with patch(
+            "app.integrations_api.resolve_or_create_customer", return_value=(3, True)
+        ):
             result = _find_or_create_customer(mock_conn, customer)
 
         assert result == 3

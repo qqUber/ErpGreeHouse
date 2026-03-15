@@ -244,29 +244,83 @@ def get_marketing_analytics():
     try:
         # Customer metrics
         total_customers = conn.execute("SELECT COUNT(*) FROM customers").fetchone()[0]
-        marketing_consent = conn.execute("SELECT COUNT(*) FROM customers WHERE marketing_allowed = 1").fetchone()[0]
-        
+        marketing_consent = conn.execute(
+            "SELECT COUNT(*) FROM customers WHERE marketing_allowed = 1"
+        ).fetchone()[0]
+
         # LTV and balance averages
-        avg_ltv_result = conn.execute("SELECT AVG(ltv) FROM customers WHERE ltv IS NOT NULL").fetchone()
-        avg_ltv = round(avg_ltv_result[0], 0) if avg_ltv_result and avg_ltv_result[0] else 14567
-        
-        avg_balance_result = conn.execute("SELECT AVG(balance_points) FROM customers").fetchone()
-        avg_balance = round(avg_balance_result[0], 0) if avg_balance_result and avg_balance_result[0] else 1343
+        avg_ltv_result = conn.execute(
+            "SELECT AVG(ltv) FROM customers WHERE ltv IS NOT NULL"
+        ).fetchone()
+        avg_ltv = (
+            round(avg_ltv_result[0], 0)
+            if avg_ltv_result and avg_ltv_result[0]
+            else 14567
+        )
+
+        avg_balance_result = conn.execute(
+            "SELECT AVG(balance_points) FROM customers"
+        ).fetchone()
+        avg_balance = (
+            round(avg_balance_result[0], 0)
+            if avg_balance_result and avg_balance_result[0]
+            else 1343
+        )
 
         # Customer segments based on LTV
-        high_value = conn.execute("SELECT COUNT(*) FROM customers WHERE ltv > 15000").fetchone()[0] if total_customers > 0 else 8
-        active = conn.execute("SELECT COUNT(*) FROM customers WHERE last_purchase_date > datetime('now', '-30 days')").fetchone()[0] if total_customers > 0 else 12
-        new_customers = conn.execute("SELECT COUNT(*) FROM customers WHERE created_at > datetime('now', '-30 days')").fetchone()[0] if total_customers > 0 else 6
+        high_value = (
+            conn.execute("SELECT COUNT(*) FROM customers WHERE ltv > 15000").fetchone()[
+                0
+            ]
+            if total_customers > 0
+            else 8
+        )
+        active = (
+            conn.execute(
+                "SELECT COUNT(*) FROM customers WHERE last_purchase_date > datetime('now', '-30 days')"
+            ).fetchone()[0]
+            if total_customers > 0
+            else 12
+        )
+        new_customers = (
+            conn.execute(
+                "SELECT COUNT(*) FROM customers WHERE created_at > datetime('now', '-30 days')"
+            ).fetchone()[0]
+            if total_customers > 0
+            else 6
+        )
 
         # Channel preferences
-        telegram_count = conn.execute("SELECT COUNT(*) FROM customers WHERE telegram_id IS NOT NULL").fetchone()[0] if total_customers > 0 else 15
-        vk_count = conn.execute("SELECT COUNT(*) FROM customers WHERE vk_id IS NOT NULL").fetchone()[0] if total_customers > 0 else 8
-        mixed = conn.execute("SELECT COUNT(*) FROM customers WHERE telegram_id IS NOT NULL AND vk_id IS NOT NULL").fetchone()[0] if total_customers > 0 else 2
+        telegram_count = (
+            conn.execute(
+                "SELECT COUNT(*) FROM customers WHERE telegram_id IS NOT NULL"
+            ).fetchone()[0]
+            if total_customers > 0
+            else 15
+        )
+        vk_count = (
+            conn.execute(
+                "SELECT COUNT(*) FROM customers WHERE vk_id IS NOT NULL"
+            ).fetchone()[0]
+            if total_customers > 0
+            else 8
+        )
+        mixed = (
+            conn.execute(
+                "SELECT COUNT(*) FROM customers WHERE telegram_id IS NOT NULL AND vk_id IS NOT NULL"
+            ).fetchone()[0]
+            if total_customers > 0
+            else 2
+        )
 
         # Campaign metrics
-        active_campaigns = conn.execute("SELECT COUNT(*) FROM marketing_campaigns WHERE status = 'active'").fetchone()[0] if total_customers > 0 else 3
-        upcoming_campaigns = conn.execute("SELECT COUNT(*) FROM marketing_campaigns WHERE status = 'scheduled'").fetchone()[0] if total_customers > 0 else 2
-        
+        active_campaigns = conn.execute(
+            "SELECT COUNT(*) FROM marketing_campaigns WHERE status = 'active'"
+        ).fetchone()[0]
+        upcoming_campaigns = conn.execute(
+            "SELECT COUNT(*) FROM marketing_campaigns WHERE status = 'scheduled'"
+        ).fetchone()[0]
+
         # Messages sent in last 24h (mock data for now)
         messages_sent_24h = 156
 
@@ -295,7 +349,13 @@ def get_marketing_analytics():
                 "click_rate": 23,
             },
             "performance": {
-                "total_revenue": conn.execute("SELECT COALESCE(SUM(total_amount), 0) FROM transactions").fetchone()[0] if total_customers > 0 else 524880,
+                "total_revenue": (
+                    conn.execute(
+                        "SELECT COALESCE(SUM(total_amount), 0) FROM transactions"
+                    ).fetchone()[0]
+                    if total_customers > 0
+                    else 524880
+                ),
                 "avg_order_value": avg_ltv * 0.083,  # Approximate based on LTV
                 "purchase_frequency": 2.3,
                 "customer_retention": 78,
