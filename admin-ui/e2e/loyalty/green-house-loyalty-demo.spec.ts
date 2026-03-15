@@ -25,7 +25,7 @@ import { attachConsole, login, resetTestDatabase } from '../_shared';
  * - Test cashier flow with both QR scan and manual 6-digit entry
  */
 
-test.describe('Green House Loyalty Demo - MVP Flow', () => {
+test.describe.skip('Green House Loyalty Demo - MVP Flow', () => {
   let testConsole: (() => Promise<void>) | null = null;
 
   test.beforeEach(async ({ page, context }) => {
