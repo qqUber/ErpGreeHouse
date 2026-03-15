@@ -468,7 +468,7 @@ export async function login(page: Page, role: TestRole = 'admin') {
 
   // Wait for dashboard navigation tab to appear (indicates successful login)
   console.log(`[Test] Waiting for dashboard to appear...`);
-  await page.waitForSelector('[data-testid="admin_nav_dashboard_en"]', {
+  await page.waitForSelector('[data-testid="admin_nav_dashboard"]', {
     state: 'visible',
     timeout: 15000
   });

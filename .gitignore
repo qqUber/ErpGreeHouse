@@ -42,6 +42,7 @@ admin-ui/e2e/.test-credentials.json
 cookies.txt
 
 # Generated test reports
+temp-artifacts/
 unit-report-2/
 middleware/test-reports/*.txt
 admin-ui/localhost_*.report.html

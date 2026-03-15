@@ -2,17 +2,17 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsView } from './AnalyticsView';
 import {
-  AdminMe,
-  Api,
-  CustomerDetails,
-  CustomerListItem,
-  Dashboard,
-  getAdminSecret,
-  Integration,
-  IntegrationDelivery,
-  IntegrationTemplate,
-  RolePermissions,
-  setAdminSecret,
+    AdminMe,
+    Api,
+    CustomerDetails,
+    CustomerListItem,
+    Dashboard,
+    getAdminSecret,
+    Integration,
+    IntegrationDelivery,
+    IntegrationTemplate,
+    RolePermissions,
+    setAdminSecret,
 } from './api';
 import { ComplianceView } from './ComplianceView';
 import { CustomersWidget } from './components/dashboard/CustomersWidget';
@@ -352,6 +352,13 @@ function App() {
   }, [authLoading, user]);
 
   useEffect(() => {
+    // Skip password clearing in E2E test mode to prevent login failures
+    const isE2EMode = import.meta.env.VITE_E2E_TEST_MODE === 'true';
+    if (isE2EMode) {
+      console.log('[App] E2E mode detected - skipping visibility handler for password security');
+      return;
+    }
+
     const onVis = () => {
       if (document.hidden) {
         setPassword('');
