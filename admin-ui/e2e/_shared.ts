@@ -487,11 +487,6 @@ export async function login(page: Page, role: TestRole = 'admin') {
   await page.addInitScript((authToken: string) => {
     window.localStorage.setItem('admin_session_token', authToken);
   }, token);
-  await page.evaluate((authToken: string) => {
-    window.sessionStorage.setItem('auth_validation_state', 'valid');
-    window.localStorage.setItem('language', 'en');
-    window.localStorage.setItem('admin_session_token', authToken);
-  }, token);
 
   setTestLanguage('en');
   await page.goto('/admin/login');
