@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { login, resetTestDatabase, attachConsole } from '../_shared';
+import { attachConsole, login, resetTestDatabase } from '../_shared';
 
 /**
  * 📢 Green House Loyalty Demo – Marketing Menu Integration Tests
@@ -455,7 +455,7 @@ test.describe('Green House Loyalty Demo - Marketing Integration', () => {
 
     // Test customer journey analytics
     const journeyResponse = await page.request.get('/api/v1/test/marketing/customer-journey');
-    expect(journeyResponse.ok()).toBeTruthy());
+    expect(journeyResponse.ok()).toBeTruthy();
     const journey = await journeyResponse.json();
     
     expect(journey.touchpoints).toBeTruthy();
@@ -465,7 +465,7 @@ test.describe('Green House Loyalty Demo - Marketing Integration', () => {
 
     // Test ROI and revenue attribution
     const roiResponse = await page.request.get('/api/v1/test/marketing/roi-analysis');
-    expect(roiResponse.ok()).toBeTruthy());
+    expect(roiResponse.ok()).toBeTruthy();
     const roi = await roiResponse.json();
     
     expect(roi.total_revenue).toBeGreaterThan(0);
@@ -482,7 +482,7 @@ test.describe('Green House Loyalty Demo - Marketing Integration', () => {
       }
     });
 
-    expect(predictiveResponse.ok()).toBeTruthy());
+    expect(predictiveResponse.ok()).toBeTruthy();
     const predictive = await predictiveResponse.json();
     
     expect(predictive.predictions).toBeTruthy();
@@ -519,7 +519,7 @@ test.describe('Green House Loyalty Demo - Marketing Integration', () => {
       }
     });
 
-    expect(multiChannelUserResponse.ok()).toBeTruthy());
+    expect(multiChannelUserResponse.ok()).toBeTruthy();
 
     // Test coordinated multi-channel campaign
     const multiChannelResponse = await page.request.post('/api/v1/test/marketing/multi-channel-campaign', {
@@ -536,7 +536,7 @@ test.describe('Green House Loyalty Demo - Marketing Integration', () => {
       }
     });
 
-    expect(multiChannelResponse.ok()).toBeTruthy());
+    expect(multiChannelResponse.ok()).toBeTruthy();
     const multiChannel = await multiChannelResponse.json();
     expect(multiChannel.campaign_launched).toBeTruthy();
     expect(multiChannel.channels_deployed).toHaveLength(3);
@@ -550,7 +550,7 @@ test.describe('Green House Loyalty Demo - Marketing Integration', () => {
       }
     });
 
-    expect(preferenceResponse.ok()).toBeTruthy());
+    expect(preferenceResponse.ok()).toBeTruthy();
     const preference = await preferenceResponse.json();
     expect(preference.respected_channels).toEqual(['telegram', 'email', 'sms']);
     expect(preference.skipped_channels).toEqual(['push']);
@@ -567,7 +567,7 @@ test.describe('Green House Loyalty Demo - Marketing Integration', () => {
       }
     });
 
-    expect(trackingResponse.ok()).toBeTruthy());
+    expect(trackingResponse.ok()).toBeTruthy();
     const tracking = await trackingResponse.json();
     expect(tracking.tracked).toBeTruthy();
     expect(tracking.attribution).toBeTruthy();
@@ -592,7 +592,7 @@ test.describe('Green House Loyalty Demo - Marketing Integration', () => {
       params: { user_id: 'test_multichannel_user' }
     });
 
-    expect(unifiedViewResponse.ok()).toBeTruthy());
+    expect(unifiedViewResponse.ok()).toBeTruthy();
     const unifiedView = await unifiedViewResponse.json();
     
     expect(unifiedView.customer_profile).toBeTruthy();
@@ -698,7 +698,7 @@ test.describe('Green House Loyalty Demo - Marketing Integration', () => {
 
     // Test automation performance monitoring
     const performanceResponse = await page.request.get('/api/v1/test/marketing/automation/performance');
-    expect(performanceResponse.ok()).toBeTruthy());
+    expect(performanceResponse.ok()).toBeTruthy();
     const performance = await performanceResponse.json();
     
     expect(performance.active_workflows).toBeGreaterThan(0);
