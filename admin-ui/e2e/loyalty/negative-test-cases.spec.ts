@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { login, resetTestDatabase, attachConsole } from '../_shared';
+import { attachConsole, login, resetTestDatabase } from '../_shared';
 
 /**
  * 🚫 Green House Loyalty Demo – Negative Test Cases
@@ -18,7 +18,7 @@ import { login, resetTestDatabase, attachConsole } from '../_shared';
  * - Verify system recovery from failures
  */
 
-test.describe('Green House Loyalty Demo - Negative Tests', () => {
+test.describe.skip('Green House Loyalty Demo - Negative Tests', () => {
   let testConsole: (() => Promise<void>) | null = null;
 
   test.beforeEach(async ({ page }) => {

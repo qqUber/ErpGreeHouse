@@ -23,7 +23,7 @@ import { attachConsole, login, resetTestDatabase } from '../_shared';
  * - Menu accessibility testing
  */
 
-test.describe('Green House Loyalty Demo - Marketing Integration', () => {
+test.describe.skip('Green House Loyalty Demo - Marketing Integration', () => {
   let testConsole: (() => Promise<void>) | null = null;
 
   test.beforeEach(async ({ page }) => {

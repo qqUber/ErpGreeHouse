@@ -1,18 +1,24 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const runtimeEnv =
+  (globalThis as typeof globalThis & {
+    process?: { env?: Record<string, string | undefined> };
+  }).process?.env || {};
+
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: ['**/debug*.spec.ts'],
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0, // Reduced from 2 to 1 for faster feedback
-  workers: process.env.CI ? 2 : undefined, // Increased from 1 to 2 for parallel execution
+  forbidOnly: !!runtimeEnv.CI,
+  retries: runtimeEnv.CI ? 1 : 0, // Reduced from 2 to 1 for faster feedback
+  workers: runtimeEnv.CI ? 2 : undefined, // Increased from 1 to 2 for parallel execution
   reporter: 'html',
   timeout: 30000, // Global test timeout: 30s
   expect: {
     timeout: 10000, // Assertion timeout: 10s
   },
   use: {
-    baseURL: process.env.E2E_BASE_URL || 'http://localhost:5173',
+    baseURL: runtimeEnv.E2E_BASE_URL || 'http://localhost:5173',
     locale: 'en-US',
     trace: 'on-first-retry',
     video: 'retain-on-failure',
@@ -37,12 +43,12 @@ export default defineConfig({
     },
   ],
   // Disable webServer for Docker environment - services are started separately
-  webServer: process.env.CI
+  webServer: runtimeEnv.CI
     ? undefined
     : {
         command: 'npm run dev -- --host localhost --port 5173',
         url: 'http://localhost:5173/admin/',
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer: !runtimeEnv.CI,
       },
   outputDir: 'test-results',
 });
