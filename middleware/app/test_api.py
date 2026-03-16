@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Any, Optional
 
@@ -6,6 +7,8 @@ from pydantic import BaseModel, Field
 
 from .db import get_db
 from .security import hash_password, new_salt
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/test")
 
@@ -163,8 +166,11 @@ def reset_test_database(
 
         deleted = {}
         for table in tables_to_clean:  # noqa: B608 - table from hardcoded list
-            result = conn.execute(f"DELETE FROM {table}")
-            deleted[table] = result.rowcount
+            try:
+                result = conn.execute(f"DELETE FROM {table}")
+                deleted[table] = result.rowcount
+            except Exception:
+                deleted[table] = 0
 
         # Reset auto-increment
         conn.execute(
@@ -872,5 +878,14 @@ def seed_test_data(
 - {stats["integration_deliveries"]} webhook deliveries""",
         }
 
+    except Exception as exc:
+        import traceback
+
+        logger.error(f"[SEED] seed_test_data failed: {exc}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(
+            status_code=500,
+            detail=f"Seed failed: {type(exc).__name__}: {exc}",
+        )
     finally:
         conn.close()
