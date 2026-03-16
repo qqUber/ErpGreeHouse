@@ -9,7 +9,6 @@ import requests
 import time
 import uuid
 from typing import Dict, Any, Generator
-import docker
 from contextlib import contextmanager
 
 
@@ -19,6 +18,7 @@ class QRTokenFunctionalTest:
     @pytest.fixture(scope="class")
     def docker_container(self) -> Generator[Dict[str, Any], None, None]:
         """Spin up Docker container for testing"""
+        docker = pytest.importorskip("docker")
         client = docker.from_env()
         
         # Use existing docker-compose setup
