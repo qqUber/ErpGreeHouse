@@ -172,9 +172,11 @@ def reset_test_database(
             except Exception:
                 deleted[table] = 0
 
-        # Reset auto-increment
+        # Reset auto-increment for all cleaned tables
+        placeholders = ",".join("?" for _ in tables_to_clean)
         conn.execute(
-            "DELETE FROM sqlite_sequence WHERE name IN ('customers', 'products', 'transactions')"
+            f"DELETE FROM sqlite_sequence WHERE name IN ({placeholders})",
+            tables_to_clean,
         )
 
         conn.commit()
@@ -681,6 +683,7 @@ def seed_test_data(
             ),
         ]
 
+        trigger_ids = []
         for name, event, criteria, delay, msg, active in triggers:
             conn.execute(
                 """INSERT INTO marketing_triggers
@@ -688,6 +691,7 @@ def seed_test_data(
                    VALUES (?, ?, ?, ?, ?, ?, datetime('now'))""",
                 (name, event, criteria, delay, msg, active),
             )
+            trigger_ids.append(conn.execute("SELECT last_insert_rowid()").fetchone()[0])
 
         stats["marketing_triggers"] = len(triggers)
 
@@ -754,8 +758,6 @@ def seed_test_data(
         stats["marketing_campaigns"] = len(campaigns)
 
         # ============ TRIGGER EVENTS ============
-        trigger_ids = list(range(1, len(triggers) + 1))
-
         for _ in range(250):
             trigger_id = random.choice(trigger_ids)
             customer_id = random.choice(customer_ids)
