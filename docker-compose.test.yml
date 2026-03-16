@@ -79,7 +79,7 @@ services:
       PYTHONPATH: /app
       TEST_MODE: "true"
       ERP_MOCK_MODE: "true"
-      DEBUG_MODE: "false"
+      DEBUG_MODE: "true"
       REDIS_URL: redis://redis:6379/1
       DATABASE_URL: sqlite:///app/data/test_telegram_crm.db
       CRM_DB_PATH: /app/data/test_telegram_crm.db
