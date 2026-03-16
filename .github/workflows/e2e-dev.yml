@@ -30,6 +30,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
+      - name: Ensure compose base .env exists
+        run: touch .env
       - name: run e2e in docker compose
         env:
           E2E_ARGS: --project ${{ matrix.project }} --shard ${{ matrix.shard }}/${{ matrix.shards }}

@@ -110,8 +110,15 @@ else:
 os.environ["TEST_MODE"] = "true"
 os.environ["ERP_MOCK_MODE"] = "true"
 os.environ["REDIS_URL"] = os.getenv("REDIS_URL", "redis://localhost:6379/1")
-os.environ["DATABASE_URL"] = "sqlite:///app/data/test_telegram_crm.db"
-os.environ["CRM_DB_PATH"] = "/app/data/test_telegram_crm.db"
+# Use /app/data in Docker, otherwise use .local/ relative to middleware dir
+if os.path.isdir("/app"):
+    _test_db_dir = "/app/data"
+else:
+    _test_db_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".local")
+os.makedirs(_test_db_dir, exist_ok=True)
+_TEST_DB_PATH = os.path.join(_test_db_dir, "test_telegram_crm.db")
+os.environ["DATABASE_URL"] = f"sqlite:///{_TEST_DB_PATH}"
+os.environ["CRM_DB_PATH"] = _TEST_DB_PATH
 os.environ["JWT_SECRET_KEY"] = "test-jwt-secret-key-ci-2026-secure-random-entropy-32b"
 
 # Only set fake Telegram token if no real token is provided in environment
@@ -165,7 +172,7 @@ def clean_database(test_db_path: str) -> Generator[str, None, None]:
 
     # Step 1: Restore the test database path before each test
     # This ensures tests that change CRM_DB_PATH don't affect other tests
-    db_path = "/app/data/test_telegram_crm.db"
+    db_path = _TEST_DB_PATH
     os.environ["CRM_DB_PATH"] = db_path
 
     # Step 2: Ensure all connections are closed before attempting to delete

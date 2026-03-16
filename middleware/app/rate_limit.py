@@ -32,7 +32,14 @@ def require_rate_limit(request: Request, *, scope: str, limit: int, window_sec: 
         return
 
 
-def require_bruteforce_guard(request: Request, *, username: str, max_attempts: int, window_sec: int, lock_sec: int) -> None:
+def require_bruteforce_guard(
+    request: Request,
+    *,
+    username: str,
+    max_attempts: int,
+    window_sec: int,
+    lock_sec: int,
+) -> None:
     ip = _client_ip(request)
     uname = (username or "").strip().lower()[:80]
     lock_key = f"bf:lock:{uname}:{ip}"
@@ -48,7 +55,14 @@ def require_bruteforce_guard(request: Request, *, username: str, max_attempts: i
         return
 
 
-def register_bruteforce_failure(request: Request, *, username: str, max_attempts: int, window_sec: int, lock_sec: int) -> None:
+def register_bruteforce_failure(
+    request: Request,
+    *,
+    username: str,
+    max_attempts: int,
+    window_sec: int,
+    lock_sec: int,
+) -> None:
     ip = _client_ip(request)
     uname = (username or "").strip().lower()[:80]
     lock_key = f"bf:lock:{uname}:{ip}"

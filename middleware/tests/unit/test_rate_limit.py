@@ -5,12 +5,21 @@ from starlette.requests import Request
 from app import rate_limit
 
 
-def _make_request(*, headers: dict[str, str] | None = None, client: tuple[str, int] | None = ("127.0.0.1", 1234)) -> Request:
+def _make_request(
+    *,
+    headers: dict[str, str] | None = None,
+    client: tuple[str, int] | None = ("127.0.0.1", 1234),
+) -> Request:
     raw_headers: list[tuple[bytes, bytes]] = []
     for k, v in (headers or {}).items():
         raw_headers.append((k.lower().encode(), v.encode()))
 
-    scope: dict[str, object] = {"type": "http", "method": "GET", "path": "/", "headers": raw_headers}
+    scope: dict[str, object] = {
+        "type": "http",
+        "method": "GET",
+        "path": "/",
+        "headers": raw_headers,
+    }
     if client is not None:
         scope["client"] = client
     return Request(scope)
@@ -70,7 +79,13 @@ def test_require_bruteforce_guard_raises_when_locked(mocker) -> None:
 
     request = _make_request(headers={"x-forwarded-for": "203.0.113.9"})
     with pytest.raises(HTTPException) as exc:
-        rate_limit.require_bruteforce_guard(request, username="  Admin@Example.COM  ", max_attempts=5, window_sec=60, lock_sec=300)
+        rate_limit.require_bruteforce_guard(
+            request,
+            username="  Admin@Example.COM  ",
+            max_attempts=5,
+            window_sec=60,
+            lock_sec=300,
+        )
 
     assert exc.value.status_code == 429
     r.get.assert_called_once_with("bf:lock:admin@example.com:203.0.113.9")
