@@ -1,27 +1,117 @@
 import json
-import random
+import logging
+import secrets
 import sqlite3
 from datetime import datetime
 from typing import Any
 
 from .identify import normalize_name, normalize_phone
 
+logger = logging.getLogger(__name__)
+
 
 class CustomerIdentityConflictError(ValueError):
     pass
 
 
-def generate_unique_qr_token(conn: sqlite3.Connection, max_attempts: int = 50) -> str:
-    for _ in range(max_attempts):
-        token = f"{random.randint(0, 999999):06d}"
-        # Check if token already exists
-        row = conn.execute(
-            "SELECT id FROM customers WHERE qr_token=?",
-            (token,),
-        ).fetchone()
-        if not row:
-            return token
-    raise RuntimeError("Failed to generate unique loyalty code")
+def generate_unique_qr_token(conn: sqlite3.Connection, max_attempts: int = 10) -> str:
+    """Generate unique QR token using UUID-based system with overflow protection"""
+    import uuid
+    
+    # Get or generate base GUID from system settings
+    base_guid = get_or_generate_base_guid(conn)
+    
+    # Get current max customer ID for increment
+    try:
+        max_id_row = conn.execute("SELECT MAX(id) FROM customers").fetchone()
+        current_max_id = max_id_row[0] if max_id_row and max_id_row[0] else 0
+    except sqlite3.OperationalError as e:
+        if "no such table" in str(e):
+            # Table doesn't exist, start from 0
+            current_max_id = 0
+        else:
+            raise
+    
+    # Generate token using UUID5 to avoid overflow issues
+    for attempt in range(max_attempts):
+        try:
+            # Use UUID5 with namespace for deterministic but unique tokens
+            namespace = uuid.UUID(base_guid)
+            counter_value = current_max_id + attempt + 1
+            
+            # Generate deterministic UUID from namespace + counter
+            token_uuid = uuid.uuid5(namespace, str(counter_value))
+            
+            # Take last 8 characters of hex representation
+            token = token_uuid.hex[-8:].upper()
+            
+            # Verify uniqueness (should be unique by design)
+            try:
+                existing = conn.execute("SELECT id FROM customers WHERE qr_token=?", (token,)).fetchone()
+                if not existing:
+                    return token
+                else:
+                    logger.warning(f"Token collision detected: {token}, retrying...")
+                    continue
+            except sqlite3.OperationalError as e:
+                if "no such table" in str(e):
+                    # Table doesn't exist, token is unique by default
+                    return token
+                else:
+                    raise
+                
+        except Exception as e:
+            logger.warning(f"Token generation attempt {attempt + 1} failed: {e}")
+            continue
+    
+    # Fallback to cryptographically secure random token
+    logger.warning("UUID-based generation failed, using secure random fallback")
+    return secrets.token_hex(4).upper()
+
+
+def get_or_generate_base_guid(conn: sqlite3.Connection) -> str:
+    """Get base GUID from system settings or generate new one with proper transaction"""
+    # Create system_settings table if not exists
+    try:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS system_settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+            )
+        """)
+    except sqlite3.Error:
+        pass  # Table might already exist
+    
+    # Check if base GUID exists
+    guid_row = conn.execute(
+        "SELECT value FROM system_settings WHERE key=?",
+        ("qr_token_base_guid",)
+    ).fetchone()
+    
+    if not guid_row:
+        # Generate and store new GUID
+        import uuid
+        base_guid = str(uuid.uuid4())
+        try:
+            conn.execute(
+                "INSERT INTO system_settings (key, value) VALUES (?, ?)",
+                ("qr_token_base_guid", base_guid)
+            )
+            conn.commit()  # Ensure immediate commit for base GUID
+            logger.info(f"Generated new base GUID: {base_guid}")
+        except sqlite3.IntegrityError:
+            # Handle race condition - another thread might have inserted it
+            guid_row = conn.execute(
+                "SELECT value FROM system_settings WHERE key=?",
+                ("qr_token_base_guid",)
+            ).fetchone()
+            if guid_row:
+                base_guid = guid_row[0]
+        return base_guid
+    
+    return guid_row[0]
 
 
 def _merge_preferences(existing_json: str | None, updates: dict[str, Any]) -> str:
@@ -112,106 +202,148 @@ def resolve_or_create_customer(
     onboarding_status: str | None = None,
     phone_verification_method: str | None = None,
 ) -> tuple[int, bool]:
+    """Resolve or create customer with proper error handling to prevent race conditions."""
     normalized_phone = normalize_phone(phone or "") if phone else None
     normalized_name = normalize_name(full_name or "") if full_name else None
     resolved_onboarding_status = onboarding_status or "registered"
 
-    for _ in range(5):
-        by_telegram = None
-        if telegram_id is not None:
-            by_telegram = conn.execute(
-                "SELECT * FROM customers WHERE telegram_id=?",
-                (telegram_id,),
-            ).fetchone()
+    max_attempts = 10
+    for attempt in range(max_attempts):
+        try:
+            # Check if we're already in a transaction
+            in_transaction = conn.in_transaction
+            
+            if not in_transaction:
+                conn.execute("BEGIN IMMEDIATE")
+            
+            by_telegram = None
+            if telegram_id is not None:
+                by_telegram = conn.execute(
+                    "SELECT * FROM customers WHERE telegram_id=?",
+                    (telegram_id,),
+                ).fetchone()
 
-        by_vk = None
-        if vk_id is not None:
-            by_vk = conn.execute(
-                "SELECT * FROM customers WHERE vk_id=?",
-                (vk_id,),
-            ).fetchone()
+            by_vk = None
+            if vk_id is not None:
+                by_vk = conn.execute(
+                    "SELECT * FROM customers WHERE vk_id=?",
+                    (vk_id,),
+                ).fetchone()
 
-        by_phone = None
-        if normalized_phone:
-            by_phone = conn.execute(
-                "SELECT * FROM customers WHERE phone=?",
-                (normalized_phone,),
-            ).fetchone()
+            by_phone = None
+            if normalized_phone:
+                by_phone = conn.execute(
+                    "SELECT * FROM customers WHERE phone=?",
+                    (normalized_phone,),
+                ).fetchone()
 
-        matches = [row for row in (by_telegram, by_vk, by_phone) if row]
-        if matches:
-            customer_ids = {int(row["id"]) for row in matches}
-            if len(customer_ids) > 1:
-                raise CustomerIdentityConflictError(
-                    "Provided identifiers are linked to different customers"
+            matches = [row for row in (by_telegram, by_vk, by_phone) if row]
+            if matches:
+                customer_ids = {int(row["id"]) for row in matches}
+                if len(customer_ids) > 1:
+                    if not in_transaction:
+                        conn.rollback()
+                    raise CustomerIdentityConflictError(
+                        "Provided identifiers are linked to different customers"
+                    )
+
+            target = by_telegram or by_vk or by_phone
+            if target:
+                customer_id = int(target["id"])
+                updates: list[str] = []
+                params: list[Any] = []
+
+                if normalized_phone and target["phone"] != normalized_phone:
+                    updates.append("phone = ?")
+                    params.append(normalized_phone)
+                if telegram_id is not None and target["telegram_id"] != telegram_id:
+                    updates.append("telegram_id = ?")
+                    params.append(telegram_id)
+                if vk_id is not None and target["vk_id"] != vk_id:
+                    updates.append("vk_id = ?")
+                    params.append(vk_id)
+                if normalized_name and target["full_name"] != normalized_name:
+                    updates.append("full_name = ?")
+                    params.append(normalized_name)
+                if gender and target["gender"] != gender:
+                    updates.append("gender = ?")
+                    params.append(gender)
+                if birthday and target["birthday"] != birthday:
+                    updates.append("birthday = ?")
+                    params.append(birthday)
+                if email and target["email"] != email:
+                    updates.append("email = ?")
+                    params.append(email)
+                if city and target["city"] != city:
+                    updates.append("city = ?")
+                    params.append(city)
+                if marketing_allowed is not None and int(
+                    target["marketing_allowed"] or 0
+                ) != int(marketing_allowed):
+                    updates.append("marketing_allowed = ?")
+                    params.append(marketing_allowed)
+                if data_processing_allowed is not None and int(
+                    target["data_processing_allowed"] or 0
+                ) != int(data_processing_allowed):
+                    updates.append("data_processing_allowed = ?")
+                    params.append(data_processing_allowed)
+                if _should_update_onboarding_status(
+                    target["onboarding_status"], resolved_onboarding_status
+                ):
+                    updates.append("onboarding_status = ?")
+                    params.append(resolved_onboarding_status)
+                if normalized_phone and phone_verification_method:
+                    updates.append("phone_verified_at = datetime('now')")
+                    updates.append("phone_verification_method = ?")
+                    params.append(phone_verification_method)
+
+                preferences_json = _merge_preferences(
+                    (
+                        target["preferences_json"]
+                        if "preferences_json" in target.keys()
+                        else None
+                    ),
+                    {
+                        "telegram_username": username,
+                        "telegram_first_name": first_name,
+                        "telegram_last_name": last_name,
+                        "telegram_contact_user_id": telegram_id,
+                    },
                 )
+                if "preferences_json" in target.keys() and preferences_json != (
+                    target["preferences_json"] or "{}"
+                ):
+                    updates.append("preferences_json = ?")
+                    params.append(preferences_json)
 
-        target = by_telegram or by_vk or by_phone
-        if target:
-            customer_id = int(target["id"])
-            updates: list[str] = []
-            params: list[Any] = []
+                if not target["qr_token"]:
+                    updates.append("qr_token = ?")
+                    params.append(generate_unique_qr_token(conn))
 
-            if normalized_phone and target["phone"] != normalized_phone:
-                updates.append("phone = ?")
-                params.append(normalized_phone)
-            if telegram_id is not None and target["telegram_id"] != telegram_id:
-                updates.append("telegram_id = ?")
-                params.append(telegram_id)
-            if (
-                telegram_id is not None
-                and "tg_id" in target.keys()
-                and target["tg_id"] != telegram_id
-            ):
-                updates.append("tg_id = ?")
-                params.append(telegram_id)
-            if vk_id is not None and target["vk_id"] != vk_id:
-                updates.append("vk_id = ?")
-                params.append(vk_id)
-            if normalized_name and target["full_name"] != normalized_name:
-                updates.append("full_name = ?")
-                params.append(normalized_name)
-            if gender and target["gender"] != gender:
-                updates.append("gender = ?")
-                params.append(gender)
-            if birthday and target["birthday"] != birthday:
-                updates.append("birthday = ?")
-                params.append(birthday)
-            if email and target["email"] != email:
-                updates.append("email = ?")
-                params.append(email)
-            if city and target["city"] != city:
-                updates.append("city = ?")
-                params.append(city)
-            if preferred_channel and target["preferred_channel"] != preferred_channel:
-                updates.append("preferred_channel = ?")
-                params.append(preferred_channel)
-            if marketing_allowed is not None and int(
-                target["marketing_allowed"] or 0
-            ) != int(marketing_allowed):
-                updates.append("marketing_allowed = ?")
-                params.append(marketing_allowed)
-            if data_processing_allowed is not None and int(
-                target["data_processing_allowed"] or 0
-            ) != int(data_processing_allowed):
-                updates.append("data_processing_allowed = ?")
-                params.append(data_processing_allowed)
-            if _should_update_onboarding_status(
-                target["onboarding_status"], resolved_onboarding_status
-            ):
-                updates.append("onboarding_status = ?")
-                params.append(resolved_onboarding_status)
-            if normalized_phone and phone_verification_method:
-                updates.append("phone_verified_at = datetime('now')")
-                updates.append("phone_verification_method = ?")
-                params.append(phone_verification_method)
+                if updates:
+                    updates.append("updated_at = datetime('now')")
+                    params.append(customer_id)
+                    try:
+                        conn.execute(
+                            f"UPDATE customers SET {', '.join(updates)} WHERE id = ?",
+                            tuple(params),
+                        )
+                    except sqlite3.IntegrityError as exc:
+                        if not in_transaction:
+                            conn.rollback()
+                        if "qr_token" in str(exc).lower():
+                            logger.warning(f"QR token collision, retrying (attempt {attempt + 1})")
+                            continue
+                        raise
+                
+                if not in_transaction:
+                    conn.commit()
+                return customer_id, False
 
+            # Create new customer
+            qr_token = generate_unique_qr_token(conn)
             preferences_json = _merge_preferences(
-                (
-                    target["preferences_json"]
-                    if "preferences_json" in target.keys()
-                    else None
-                ),
+                None,
                 {
                     "telegram_username": username,
                     "telegram_first_name": first_name,
@@ -219,83 +351,67 @@ def resolve_or_create_customer(
                     "telegram_contact_user_id": telegram_id,
                 },
             )
-            if "preferences_json" in target.keys() and preferences_json != (
-                target["preferences_json"] or "{}"
-            ):
-                updates.append("preferences_json = ?")
-                params.append(preferences_json)
-
-            if not target["qr_token"]:
-                updates.append("qr_token = ?")
-                params.append(generate_unique_qr_token(conn))
-
-            if updates:
-                updates.append("updated_at = datetime('now')")
-                params.append(customer_id)
-                try:
-                    conn.execute(
-                        f"UPDATE customers SET {', '.join(updates)} WHERE id = ?",
-                        tuple(params),
+            try:
+                cur = conn.execute(
+                    """
+                    INSERT INTO customers(
+                        phone, full_name, telegram_id, vk_id, qr_token,
+                        preferences_json, marketing_allowed, data_processing_allowed,
+                        birthday, gender, email, city, onboarding_status,
+                        phone_verified_at, phone_verification_method
                     )
-                except sqlite3.IntegrityError as exc:
-                    if "qr_token" in str(exc).lower():
-                        continue
-                    raise
-            return customer_id, False
-
-        qr_token = generate_unique_qr_token(conn)
-        preferences_json = _merge_preferences(
-            None,
-            {
-                "telegram_username": username,
-                "telegram_first_name": first_name,
-                "telegram_last_name": last_name,
-                "telegram_contact_user_id": telegram_id,
-            },
-        )
-        try:
-            cur = conn.execute(
-                """
-                INSERT INTO customers(
-                    phone, full_name, telegram_id, tg_id, vk_id, qr_token, preferred_channel,
-                    preferences_json, marketing_allowed, data_processing_allowed,
-                    birthday, gender, email, city, onboarding_status,
-                    phone_verified_at, phone_verification_method
-                )
-                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                """,
-                (
-                    normalized_phone,
-                    normalized_name or "",
-                    telegram_id,
-                    telegram_id,
-                    vk_id,
-                    qr_token,
-                    preferred_channel,
-                    preferences_json,
-                    int(marketing_allowed or 0),
-                    int(data_processing_allowed or 0),
-                    birthday,
-                    gender,
-                    email,
-                    city,
-                    resolved_onboarding_status,
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    """,
                     (
-                        datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-                        if normalized_phone
-                        else None
+                        normalized_phone,
+                        normalized_name or "",
+                        telegram_id,
+                        vk_id,
+                        qr_token,
+                        preferences_json,
+                        int(marketing_allowed or 0),
+                        int(data_processing_allowed or 0),
+                        birthday,
+                        gender,
+                        email,
+                        city,
+                        resolved_onboarding_status,
+                        (
+                            datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                            if normalized_phone
+                            else None
+                        ),
+                        phone_verification_method
+                        or ("telegram_contact" if normalized_phone else None),
                     ),
-                    phone_verification_method
-                    or ("telegram_contact" if normalized_phone else None),
-                ),
-            )
-            return int(cur.lastrowid), True
-        except sqlite3.IntegrityError as exc:
-            if "qr_token" in str(exc).lower():
+                )
+                if not in_transaction:
+                    conn.commit()
+                return int(cur.lastrowid), True
+            except sqlite3.IntegrityError as exc:
+                if not in_transaction:
+                    conn.rollback()
+                if "qr_token" in str(exc).lower():
+                    logger.warning(f"QR token collision during insert, retrying (attempt {attempt + 1})")
+                    continue
+                raise
+
+        except sqlite3.OperationalError as exc:
+            if not conn.in_transaction:
+                conn.rollback()
+            if "database is locked" in str(exc).lower():
+                logger.warning(f"Database locked, retrying (attempt {attempt + 1})")
                 continue
             raise
+        except Exception as exc:
+            if not conn.in_transaction:
+                conn.rollback()
+            logger.error(f"Unexpected error in customer creation (attempt {attempt + 1}): {exc}")
+            if attempt == max_attempts - 1:
+                raise
+            continue
 
-    raise RuntimeError("Failed to assign a unique loyalty code after multiple attempts")
+    raise RuntimeError(f"Failed to resolve/create customer after {max_attempts} attempts")
 
 
 def get_customer_row(conn: sqlite3.Connection, customer_id: int) -> dict[str, Any]:

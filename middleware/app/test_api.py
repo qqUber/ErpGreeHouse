@@ -308,9 +308,26 @@ def _generate_phone() -> str:
 
 
 def _generate_qr_token() -> str:
+    """Generate QR token using GUID-based system for test data"""
+    import uuid
     import secrets
-
-    return secrets.token_urlsafe(16)
+    
+    # Use deterministic GUID for reproducible tests
+    base_guid = "550e8400-e29b-41d4-a716-446655440000"
+    
+    # Use incremental counter for test data
+    if not hasattr(_generate_qr_token, "_counter"):
+        _generate_qr_token._counter = 1
+    
+    increment = _generate_qr_token._counter
+    _generate_qr_token._counter += 1
+    
+    # Generate deterministic UUID5 for consistent test results
+    namespace = uuid.UUID(base_guid)
+    token_uuid = uuid.uuid5(namespace, str(increment))
+    
+    # Return last 8 chars as QR token (consistent for tests)
+    return token_uuid.hex[-8:].upper()
 
 
 @router.post("/seed")

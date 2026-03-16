@@ -1,5 +1,6 @@
 import logging
 import logging.config
+import mimetypes
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -44,13 +45,6 @@ logging.config.dictConfig(
 )
 
 logger = logging.getLogger(__name__)
-
-# Environment variables are loaded from .env in project root by uvicorn
-
-# Environment variables are loaded from .env in project root by uvicorn
-# or set explicitly in shell before running
-
-import mimetypes
 
 from .config import get_settings
 from .db import init_db
@@ -151,66 +145,62 @@ def _is_public_path(path: str) -> bool:
     return False
 
 
-@app.middleware("http")
-async def _auth_protection(request: Request, call_next):
-    """Middleware to protect routes and handle authentication properly."""
-    from fastapi import HTTPException
+def _resolve_access_token(request: Request) -> str | None:
+    access_token = request.cookies.get("access_token")
+    if access_token:
+        return access_token
 
-    from .auth import validate_access_token
+    auth_header = request.headers.get("authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        return auth_header[7:]
+
+    access_token = request.headers.get("x-admin-secret")
+    if access_token:
+        return access_token
+
     from .request_context import get_admin_session_token
 
+    return get_admin_session_token()
+
+
+def _resolve_request_user(access_token: str | None) -> dict[str, object] | None:
+    if not access_token or access_token.count(".") != 2:
+        return None
+
+    from .auth import validate_access_token
+
+    payload = validate_access_token(access_token)
+    if not payload:
+        return None
+
+    return {
+        "is_authenticated": True,
+        "user_id": int(payload.get("sub", 0)),
+        "username": payload.get("username", ""),
+        "role": payload.get("role", ""),
+        "permissions": payload.get("permissions", []),
+    }
+
+
+@app.middleware("http")
+async def _auth_protection(request: Request, call_next):
+    from fastapi import HTTPException
+
     try:
-        # Get the path
         path = request.url.path
         method = request.method
 
-        # Skip auth for public paths
         if _is_public_path(path):
-            logger.info(f"[AUTH] Skipping auth for public path: {path}")
             return await call_next(request)
 
-        # Skip auth for GET / (root) - redirect to /admin/
         if method == "GET" and path == "/":
-            logger.info(f"[AUTH] Root path request, allowing: {path}")
             return await call_next(request)
 
-        # Get token from cookies or headers
-        access_token = request.cookies.get("access_token")
-        if not access_token:
-            auth_header = request.headers.get("authorization")
-            if auth_header and auth_header.startswith("Bearer "):
-                access_token = auth_header[7:]
-        if not access_token:
-            access_token = request.headers.get("x-admin-secret")
-        if not access_token:
-            access_token = get_admin_session_token()
+        request_user = _resolve_request_user(_resolve_access_token(request))
+        if request_user:
+            request.state.user = request_user
 
-        # Try JWT first, then fall back to legacy token
-        payload = None
-        if access_token:
-            # Check if it's a JWT token (has 2 dots)
-            if access_token.count(".") == 2:
-                payload = validate_access_token(access_token)
-            else:
-                # Legacy token - will be validated by the endpoint
-                pass
-
-        # If we have a valid JWT payload, add user info to request state
-        if payload:
-            request.state.user = {
-                "is_authenticated": True,
-                "user_id": int(payload.get("sub", 0)),
-                "username": payload.get("username", ""),
-                "role": payload.get("role", ""),
-                "permissions": payload.get("permissions", []),
-            }
-        else:
-            # No valid token - let the endpoint handle auth (will return 401)
-            logger.info(f"[AUTH] No valid token for protected route: {path}")
-
-        # Continue processing the request
-        response = await call_next(request)
-        return response
+        return await call_next(request)
 
     except HTTPException as e:
         # Return proper HTTP exceptions as JSON
@@ -219,8 +209,8 @@ async def _auth_protection(request: Request, call_next):
         # Log the error and return 500 instead of letting it propagate
         import traceback
 
-        logger.error(f"[AUTH] Middleware error: {type(e).__name__}: {e}")
-        logger.error(f"[AUTH] Traceback: {traceback.format_exc()}")
+        logger.error("[AUTH] Middleware error: %s: %s", type(e).__name__, e)
+        logger.error("[AUTH] Traceback: %s", traceback.format_exc())
         return JSONResponse(
             status_code=500,
             content={"detail": "Internal server error in auth middleware"},

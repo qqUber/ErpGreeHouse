@@ -348,6 +348,17 @@ def init_db() -> None:
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 FOREIGN KEY(admin_user_id) REFERENCES admin_users(id) ON DELETE CASCADE
             );
+
+            CREATE TABLE IF NOT EXISTS system_settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+
+            -- Performance indexes for QR token system
+            CREATE INDEX IF NOT EXISTS idx_customers_qr_token ON customers(qr_token);
+            CREATE INDEX IF NOT EXISTS idx_system_settings_key ON system_settings(key);
             CREATE INDEX IF NOT EXISTS idx_admin_tokens_admin_user_id ON admin_tokens(admin_user_id);
 
             CREATE TABLE IF NOT EXISTS role_permissions (

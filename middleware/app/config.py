@@ -67,6 +67,8 @@ class Settings:
     rate_limit_requests: int
     # RATE_LIMIT_WINDOW_SECONDS: Time window in seconds
     rate_limit_window_seconds: int
+    rate_limited_paths: tuple[str, ...]
+    rate_limited_prefixes: tuple[str, ...]
 
     # Messaging rate limiting settings
     # TELEGRAM_RATE_LIMIT_PER_CHAT: Messages per second per chat
@@ -141,6 +143,33 @@ def get_settings() -> Settings:
         default_access_expire = 30  # 30 minutes - standard for access tokens
         default_refresh_expire = 30  # 30 days - convenient for dev testing
 
+    default_rate_limited_paths = (
+        "/api/v1/public/auth/login",
+        "/api/v1/public/auth/recover",
+        "/api/v1/public/auth/reset-password",
+        "/api/v1/auth/login",
+    )
+    default_rate_limited_prefixes = (
+        "/api/v1/public/auth",
+        "/api/v1/auth",
+    )
+    configured_rate_limited_paths = tuple(
+        path.strip()
+        for path in os.getenv(
+            "RATE_LIMITED_PATHS",
+            ",".join(default_rate_limited_paths),
+        ).split(",")
+        if path.strip()
+    )
+    configured_rate_limited_prefixes = tuple(
+        path.strip()
+        for path in os.getenv(
+            "RATE_LIMITED_PREFIXES",
+            ",".join(default_rate_limited_prefixes),
+        ).split(",")
+        if path.strip()
+    )
+
     return Settings(
         environment=environment,
         telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", ""),
@@ -165,6 +194,8 @@ def get_settings() -> Settings:
         # API Rate limiting settings
         rate_limit_requests=int(os.getenv("RATE_LIMIT_REQUESTS", "100")),
         rate_limit_window_seconds=int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60")),
+        rate_limited_paths=configured_rate_limited_paths,
+        rate_limited_prefixes=configured_rate_limited_prefixes,
         # Messaging rate limiting settings
         telegram_rate_limit_per_chat=float(
             os.getenv("TELEGRAM_RATE_LIMIT_PER_CHAT", "1.0")
