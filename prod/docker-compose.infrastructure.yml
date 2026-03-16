@@ -1,0 +1,133 @@
+# Production Infrastructure - только базовые сервисы (без ERPNext)
+# Используется когда ERPNext уже развёрнут отдельно
+
+version: "3.9"
+
+services:
+  # ============================================
+  # Redis Stack
+  # ============================================
+  redis-cache:
+    image: redis:8.0-alpine
+    restart: always
+    command: ["redis-server", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000"]
+    volumes:
+      - redis-cache-data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    ports:
+      - "${REDIS_CACHE_PORT:-6379}:6379"
+
+  redis-queue:
+    image: redis:8.0-alpine
+    restart: always
+    command: ["redis-server", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000"]
+    volumes:
+      - redis-queue-data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    ports:
+      - "${REDIS_QUEUE_PORT:-6380}:6379"
+
+  # ============================================
+  # PostgreSQL для Middleware
+  # ============================================
+  postgres:
+    image: postgres:18-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:?DB_PASSWORD is required}
+      - POSTGRES_DB=${DB_NAME:-telegram_crm}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - postgres-backups:/backups
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-telegram_crm}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  # ============================================
+  # Middleware (Telegram CRM)
+  # ============================================
+  middleware:
+    build:
+      context: ../middleware
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - ./.env
+    environment:
+      - REDIS_URL=redis://redis-queue:6379/1
+      - ERP_API_BASE_URL=${ERP_API_BASE_URL:?ERP_API_BASE_URL is required}
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-telegram_crm}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG_MODE=false
+    depends_on:
+      redis-queue:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${MIDDLEWARE_PORT:-8000}:8000"
+    networks:
+      - backend
+    volumes:
+      - middleware-receipts:/app/receipts
+      - middleware-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  worker:
+    build:
+      context: ../middleware
+      dockerfile: Dockerfile
+    restart: always
+    command: ["celery", "-A", "app.worker", "worker", "-l", "info", "-c", "${CELERY_WORKER_CONCURRENCY:-4}"]
+    env_file:
+      - ./.env
+    environment:
+      - REDIS_URL=redis://redis-queue:6379/1
+      - ERP_API_BASE_URL=${ERP_API_BASE_URL:?ERP_API_BASE_URL is required}
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-telegram_crm}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      redis-queue:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+    volumes:
+      - middleware-receipts:/app/receipts
+      - middleware-logs:/app/logs
+
+volumes:
+  redis-cache-data:
+  redis-queue-data:
+  postgres-data:
+  postgres-backups:
+  middleware-receipts:
+  middleware-logs:
+
+networks:
+  backend:
+    driver: bridge

@@ -26,7 +26,9 @@ def _percentile(data: list[float], p: float) -> float:
     return s[f] + (s[c] - s[f]) * (k - f)
 
 
-async def _one(client: httpx.AsyncClient, url: str, headers: dict[str, str]) -> tuple[bool, float]:
+async def _one(
+    client: httpx.AsyncClient, url: str, headers: dict[str, str]
+) -> tuple[bool, float]:
     t0 = time.perf_counter()
     try:
         r = await client.get(url, headers=headers)

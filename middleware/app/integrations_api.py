@@ -3,18 +3,22 @@ import secrets
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 
-from .auth import require_integration_secret, require_roles
+from .admin_auth_api import require_jwt_auth
+from .auth import check_roles, has_permission, require_integration_secret
+from .customer_identity import resolve_or_create_customer
 from .db import get_db
-from .identify import generate_qr_token, normalize_phone
+from .identify import normalize_phone
 from .integration_events import dispatch_event
 from .loyalty import LoyaltyRules, calc_earned_points, clamp_redeem_points
+from .loyalty_profile import build_customer_loyalty_profile
 from .pos_templates import list_integration_templates
+from .runtime import is_debug
 from .storage import get_redis
+from .trigger_engine import evaluate_and_queue_triggers
 from .worker import send_customer_message
-
 
 router = APIRouter(prefix="/api/v1/integrations")
 public_router = APIRouter(prefix="/api/v1/public/integrations")
@@ -25,9 +29,10 @@ def _cache_del_prefix(prefix: str) -> None:
         r = get_redis()
         keys = r.keys(prefix + "*") or []
         if keys:
-            r.delete(*keys)
+            r.delete(*keys)  # type: ignore[misc]
     except Exception:
         return
+
 
 class IntegrationIn(BaseModel):
     name: str = Field(min_length=1, max_length=200)
@@ -47,13 +52,15 @@ class IntegrationOut(BaseModel):
 
 @router.get("")
 def list_integrations(
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
-) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> list[IntegrationOut]:
+    check_roles(auth_result, roles=("owner", "marketer"))
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute("SELECT id, name, kind, enabled, secret, config_json FROM integrations ORDER BY id DESC")
+        cur = conn.execute(
+            "SELECT id, name, kind, enabled, secret, config_json FROM integrations ORDER BY id DESC"
+        )
         items = []
         for r in cur.fetchall():
             try:
@@ -65,30 +72,30 @@ def list_integrations(
                     "id": int(r["id"]),
                     "name": str(r["name"]),
                     "kind": str(r["kind"]),
-                    "enabled": bool(int(r["enabled"])) ,
+                    "enabled": bool(int(r["enabled"])),
                     "secret": str(r["secret"]),
                     "config": cfg,
                 }
             )
-        return {"items": items}
+        return items  # type: ignore[return-value]
     finally:
         conn.close()
 
 
 @router.get("/templates")
 def list_templates(
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
     return {"items": list_integration_templates()}
 
 
 @router.post("")
 def create_integration(
     payload: IntegrationIn,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
     secret = secrets.token_urlsafe(24)
     cfg = json.dumps(payload.config or {}, ensure_ascii=False)
     db = get_db()
@@ -99,7 +106,7 @@ def create_integration(
             (payload.name, payload.kind, 1 if payload.enabled else 0, secret, cfg),
         )
         conn.commit()
-        return {"id": int(cur.lastrowid)}
+        return {"id": int(cur.lastrowid)}  # type: ignore[arg-type]
     finally:
         conn.close()
 
@@ -107,13 +114,16 @@ def create_integration(
 @router.get("/{integration_id}")
 def get_integration(
     integration_id: int,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute("SELECT id, name, kind, enabled, secret, config_json FROM integrations WHERE id=?", (integration_id,))
+        cur = conn.execute(
+            "SELECT id, name, kind, enabled, secret, config_json FROM integrations WHERE id=?",
+            (integration_id,),
+        )
         r = cur.fetchone()
         if not r:
             raise HTTPException(status_code=404, detail="Integration not found")
@@ -126,7 +136,7 @@ def get_integration(
                 "id": int(r["id"]),
                 "name": str(r["name"]),
                 "kind": str(r["kind"]),
-                "enabled": bool(int(r["enabled"])) ,
+                "enabled": bool(int(r["enabled"])),
                 "secret": str(r["secret"]),
                 "config": cfg,
             }
@@ -139,16 +149,22 @@ def get_integration(
 def update_integration(
     integration_id: int,
     payload: IntegrationIn,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
     cfg = json.dumps(payload.config or {}, ensure_ascii=False)
     db = get_db()
     conn = db.connect()
     try:
         cur = conn.execute(
             "UPDATE integrations SET name=?, kind=?, enabled=?, config_json=?, updated_at=datetime('now') WHERE id=?",
-            (payload.name, payload.kind, 1 if payload.enabled else 0, cfg, integration_id),
+            (
+                payload.name,
+                payload.kind,
+                1 if payload.enabled else 0,
+                cfg,
+                integration_id,
+            ),
         )
         conn.commit()
         if cur.rowcount == 0:
@@ -161,9 +177,9 @@ def update_integration(
 @router.post("/{integration_id}/rotate-secret")
 def rotate_secret(
     integration_id: int,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
     secret = secrets.token_urlsafe(24)
     db = get_db()
     conn = db.connect()
@@ -183,9 +199,9 @@ def rotate_secret(
 @router.delete("/{integration_id}")
 def delete_integration(
     integration_id: int,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
     db = get_db()
     conn = db.connect()
     try:
@@ -201,9 +217,9 @@ def delete_integration(
 @router.get("/{integration_id}/deliveries")
 def list_deliveries(
     integration_id: int,
-    x_admin_secret: str | None = Header(default=None, alias="x-admin-secret"),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    require_roles(x_admin_secret, roles=("owner", "marketer"))
+    check_roles(auth_result, roles=("owner", "marketer"))
     db = get_db()
     conn = db.connect()
     try:
@@ -239,16 +255,25 @@ class ReceiptIn(BaseModel):
     items: list[ReceiptItem]
 
 
+class DevCreateSaleIn(BaseModel):
+    customer_qr: str = Field(min_length=1, max_length=120)
+
+
 @public_router.post("/{integration_id}/pos/receipt")
 def ingest_pos_receipt(
     integration_id: int,
     payload: ReceiptIn,
-    x_integration_secret: str | None = Header(default=None, alias="x-integration-secret"),
+    x_integration_secret: str | None = Header(
+        default=None, alias="x-integration-secret"
+    ),
 ) -> dict[str, Any]:
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute("SELECT id, enabled, secret, kind FROM integrations WHERE id=?", (integration_id,))
+        cur = conn.execute(
+            "SELECT id, enabled, secret, kind FROM integrations WHERE id=?",
+            (integration_id,),
+        )
         integ = cur.fetchone()
         if not integ:
             raise HTTPException(status_code=404, detail="Integration not found")
@@ -258,9 +283,15 @@ def ingest_pos_receipt(
             raise HTTPException(status_code=403, detail="Integration disabled")
         require_integration_secret(x_integration_secret, str(integ["secret"]))
 
-        existing = conn.execute("SELECT id FROM transactions WHERE pos_receipt_id=?", (payload.receipt_id,)).fetchone()
+        existing = conn.execute(
+            "SELECT id FROM transactions WHERE pos_receipt_id=?", (payload.receipt_id,)
+        ).fetchone()
         if existing:
-            return {"accepted": True, "duplicate": True, "transaction_id": int(existing[0])}
+            return {
+                "accepted": True,
+                "duplicate": True,
+                "transaction_id": int(existing[0]),
+            }
 
         cust_id = _find_or_create_customer(conn, payload.customer)
         cust = conn.execute(
@@ -274,15 +305,28 @@ def ingest_pos_receipt(
         if total is None:
             total = sum(i.price * i.qty for i in payload.items)
 
+        spent_row = conn.execute(
+            "SELECT SUM(total_amount) FROM transactions WHERE customer_id=?", (cust_id,)
+        ).fetchone()
+        spent_amount = int(spent_row[0]) if spent_row and spent_row[0] else 0
+
         rules = LoyaltyRules()
         available = int(cust["balance_points"])
         requested_used = int(payload.bonus_used or 0)
-        bonus_used = clamp_redeem_points(int(total), requested_used, available, rules)
+        bonus_used = clamp_redeem_points(
+            int(total), spent_amount, requested_used, available, rules
+        )
         payable = int(total) - bonus_used
-        bonus_earned = int(payload.bonus_earned) if payload.bonus_earned is not None else calc_earned_points(payable, rules)
+        bonus_earned = (
+            int(payload.bonus_earned)
+            if payload.bonus_earned is not None
+            else calc_earned_points(payable, spent_amount, rules)
+        )
         new_balance = available - bonus_used + bonus_earned
 
-        items_json = json.dumps([i.model_dump() for i in payload.items], ensure_ascii=False)
+        items_json = json.dumps(
+            [i.model_dump() for i in payload.items], ensure_ascii=False
+        )
         cur2 = conn.execute(
             "INSERT INTO transactions(customer_id, total_amount, bonus_used, bonus_earned, items_json, pos_receipt_id, created_at) VALUES(?,?,?,?,?,?,?)",
             (
@@ -300,22 +344,35 @@ def ingest_pos_receipt(
             (new_balance, cust_id),
         )
         conn.commit()
-        tx_id = int(cur2.lastrowid)
+        tx_id = int(cur2.lastrowid)  # type: ignore[arg-type]
 
         _cache_del_prefix("crm:cache:dashboard:")
         _cache_del_prefix("crm:cache:customers:")
 
         tg_id = cust["telegram_id"]
         if tg_id:
-            send_customer_message.delay(int(tg_id), f"Покупка: {int(total)} ₽\nБаланс: {new_balance}")
+            send_customer_message.delay(
+                int(tg_id), f"Покупка: {int(total)} ₽\nБаланс: {new_balance}"
+            )
 
         dispatch_event(
             "pos.receipt.ingested",
-            {"transaction_id": tx_id, "customer_id": cust_id, "receipt_id": payload.receipt_id, "total": int(total)},
+            {
+                "transaction_id": tx_id,
+                "customer_id": cust_id,
+                "receipt_id": payload.receipt_id,
+                "total": int(total),
+            },
         )
         dispatch_event(
             "transaction.created",
-            {"transaction_id": tx_id, "customer_id": cust_id, "total": int(total), "bonus_used": int(bonus_used), "bonus_earned": int(bonus_earned)},
+            {
+                "transaction_id": tx_id,
+                "customer_id": cust_id,
+                "total": int(total),
+                "bonus_used": int(bonus_used),
+                "bonus_earned": int(bonus_earned),
+            },
         )
 
         return {"accepted": True, "transaction_id": tx_id, "customer_id": cust_id}
@@ -323,34 +380,164 @@ def ingest_pos_receipt(
         conn.close()
 
 
+@router.post("/dev/create-sale")
+def create_dev_sale(
+    payload: DevCreateSaleIn,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    if not is_debug():
+        raise HTTPException(status_code=404, detail="Not found")
+
+    role = str(auth_result.get("role") or "")
+    if not (
+        has_permission(role, "pos.sale") or has_permission(role, "integration.update")
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden: missing permission 'pos.sale' or 'integration.update'",
+        )
+
+    customer_qr = payload.customer_qr.strip()
+    if not customer_qr:
+        raise HTTPException(status_code=400, detail="customer_qr is required")
+
+    db = get_db()
+    conn = db.connect()
+    try:
+        integrations = conn.execute(
+            "SELECT id, secret FROM integrations WHERE kind='pos_webhook' AND enabled=1 ORDER BY id DESC"
+        ).fetchall()
+        if not integrations:
+            raise HTTPException(
+                status_code=404, detail="Enabled pos_webhook integration not found"
+            )
+        if len(integrations) > 1:
+            raise HTTPException(
+                status_code=409,
+                detail="Multiple enabled pos_webhook integrations found; select a single active integration for DEV sale",
+            )
+        integration = integrations[0]
+        customer = conn.execute(
+            "SELECT id FROM customers WHERE qr_token=?",
+            (customer_qr,),
+        ).fetchone()
+        if not customer:
+            raise HTTPException(status_code=404, detail="Customer QR not found")
+        integration_id = int(integration["id"])
+        integration_secret = str(integration["secret"])
+        customer_id = int(customer["id"])
+    finally:
+        conn.close()
+
+    now = datetime.now()
+    transaction_id = (
+        f"POS-KAF-{now.strftime('%Y%m%d-%H%M%S-%f')}-{secrets.token_hex(3).upper()}"
+    )
+    pos_payload = {
+        "transactionId": transaction_id,
+        "posDeviceId": "KAFANA-BG-01",
+        "businessDate": now.strftime("%Y-%m-%d"),
+        "timestamp": now.isoformat(timespec="seconds"),
+        "operatorId": "barista_anon",
+        "customerQr": customer_qr,
+        "items": [
+            {
+                "name": "Espresso",
+                "quantity": 1,
+                "price": 280,
+                "vatRate": 20,
+                "total": 280,
+            },
+            {
+                "name": "Kafa sa mlekom",
+                "quantity": 1,
+                "price": 350,
+                "vatRate": 20,
+                "total": 350,
+            },
+        ],
+        "totalAmount": 630,
+        "paymentMethod": "CARD",
+        "fiscalInfo": {
+            "pib": "123456789",
+            "fiscalNumber": f"FSC-{now.strftime('%Y%m%d-%H%M%S')}",
+            "invoiceNumber": "R-001/2026",
+            "qrCodeUrl": "https://efiskal.poreskauprava.gov.rs/qr?tx=abc123",
+        },
+        "loyaltyTrigger": True,
+        "notes": "Anonimna prodaja preko QR",
+    }
+
+    receipt_payload = ReceiptIn(
+        receipt_id=pos_payload["transactionId"],
+        occurred_at=pos_payload["timestamp"],
+        total_amount=int(pos_payload["totalAmount"]),
+        bonus_used=0,
+        bonus_earned=0,
+        customer=ReceiptCustomer(qr_token=customer_qr),
+        items=[
+            ReceiptItem(code="ESPRESSO", name="Espresso", price=280, qty=1),
+            ReceiptItem(code="KAFA_MLEKO", name="Kafa sa mlekom", price=350, qty=1),
+        ],
+    )
+
+    result = ingest_pos_receipt(integration_id, receipt_payload, integration_secret)
+    db = get_db()
+    conn = db.connect()
+    try:
+        profile = build_customer_loyalty_profile(conn, customer_id)
+    finally:
+        conn.close()
+    return {
+        **result,
+        "customer_id": int(result.get("customer_id") or customer_id),
+        "integration_id": integration_id,
+        "receipt_id": receipt_payload.receipt_id,
+        "debug_mode": True,
+        "loyalty_profile": profile,
+    }
+
+
 def _find_or_create_customer(conn, cust: ReceiptCustomer) -> int:
     if cust.qr_token:
-        row = conn.execute("SELECT id FROM customers WHERE qr_token=?", (cust.qr_token.strip(),)).fetchone()
+        row = conn.execute(
+            "SELECT id FROM customers WHERE qr_token=?", (cust.qr_token.strip(),)
+        ).fetchone()
         if row:
             return int(row[0])
     if cust.phone:
         phone = normalize_phone(cust.phone)
         if phone:
-            row = conn.execute("SELECT id FROM customers WHERE phone=?", (phone,)).fetchone()
+            row = conn.execute(
+                "SELECT id FROM customers WHERE phone=?", (phone,)
+            ).fetchone()
             if row:
                 return int(row[0])
-            token = generate_qr_token()
-            cur = conn.execute(
-                "INSERT INTO customers(phone, full_name, qr_token, telegram_id) VALUES(?,?,?,?)",
-                (phone, "", token, int(cust.telegram_id) if cust.telegram_id else None),
+            customer_id, _ = resolve_or_create_customer(
+                conn,
+                telegram_id=int(cust.telegram_id) if cust.telegram_id else None,
+                phone=phone,
+                preferred_channel="tg" if cust.telegram_id else None,
+                onboarding_status="identified",
             )
-            return int(cur.lastrowid)
+            return customer_id
     if cust.telegram_id:
-        row = conn.execute("SELECT id FROM customers WHERE telegram_id=?", (int(cust.telegram_id),)).fetchone()
+        row = conn.execute(
+            "SELECT id FROM customers WHERE telegram_id=?", (int(cust.telegram_id),)
+        ).fetchone()
         if row:
             return int(row[0])
-        token = generate_qr_token()
-        cur = conn.execute(
-            "INSERT INTO customers(phone, full_name, qr_token, telegram_id) VALUES(?,?,?,?)",
-            (None, "", token, int(cust.telegram_id)),
+        customer_id, _ = resolve_or_create_customer(
+            conn,
+            telegram_id=int(cust.telegram_id),
+            preferred_channel="tg",
+            onboarding_status="identified",
         )
-        return int(cur.lastrowid)
+        return customer_id
 
-    token = generate_qr_token()
-    cur = conn.execute("INSERT INTO customers(phone, full_name, qr_token) VALUES(?,?,?)", (None, "", token))
-    return int(cur.lastrowid)
+    customer_id, _ = resolve_or_create_customer(
+        conn,
+        preferred_channel=None,
+        onboarding_status="identified",
+    )
+    return customer_id

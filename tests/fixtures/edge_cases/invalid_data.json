@@ -1,0 +1,253 @@
+{
+  "description": "Test data for validation and edge case testing",
+  "customer_validation": {
+    "empty_fields": [
+      {
+        "name": "Empty customer name",
+        "input": {
+          "customer_name": "",
+          "phone": "+79991234567"
+        },
+        "expected_error": "Customer name is required"
+      },
+      {
+        "name": "Empty phone",
+        "input": {
+          "customer_name": "Test Customer",
+          "phone": ""
+        },
+        "expected_error": "Phone number is required"
+      },
+      {
+        "name": "Both fields empty",
+        "input": {
+          "customer_name": "",
+          "phone": ""
+        },
+        "expected_error": "Customer name and phone are required"
+      }
+    ],
+    "invalid_phone_formats": [
+      {
+        "name": "Too short",
+        "input": "+7999",
+        "expected_error": "Phone number must be at least 11 digits"
+      },
+      {
+        "name": "Letters instead of numbers",
+        "input": "+7999ABCD1234",
+        "expected_error": "Phone number must contain only digits"
+      },
+      {
+        "name": "Special characters",
+        "input": "+7(999)123-45-67",
+        "expected_error": "Phone number format is invalid"
+      },
+      {
+        "name": "Missing country code",
+        "input": "9991234567",
+        "expected_error": "Phone number must start with +7"
+      },
+      {
+        "name": "Extra digits",
+        "input": "+7999123456789",
+        "expected_error": "Phone number is too long"
+      },
+      {
+        "name": "Leading zeros",
+        "input": "+799901234567",
+        "is_valid": false,
+        "note": "Russian mobile numbers typically start with 9 after +7"
+      },
+      {
+        "name": "Valid Russian mobile",
+        "input": "+79991234567",
+        "is_valid": true
+      },
+      {
+        "name": "Valid with spaces",
+        "input": "+7 999 123 45 67",
+        "is_valid": false,
+        "expected_error": "Phone number must not contain spaces"
+      }
+    ],
+    "invalid_email": [
+      {
+        "name": "Missing @",
+        "input": "testexample.com",
+        "expected_error": "Invalid email format"
+      },
+      {
+        "name": "Missing domain",
+        "input": "test@",
+        "expected_error": "Invalid email format"
+      },
+      {
+        "name": "Missing local part",
+        "input": "@example.com",
+        "expected_error": "Invalid email format"
+      },
+      {
+        "name": "Double dots",
+        "input": "test..test@example.com",
+        "expected_error": "Invalid email format"
+      }
+    ]
+  },
+  "product_validation": {
+    "empty_fields": [
+      {
+        "name": "Empty product code",
+        "input": {
+          "item_code": "",
+          "item_name": "Test Product",
+          "rate": 100
+        },
+        "expected_error": "Product code is required"
+      },
+      {
+        "name": "Empty product name",
+        "input": {
+          "item_code": "TEST-001",
+          "item_name": "",
+          "rate": 100
+        },
+        "expected_error": "Product name is required"
+      },
+      {
+        "name": "Empty price",
+        "input": {
+          "item_code": "TEST-001",
+          "item_name": "Test Product",
+          "rate": ""
+        },
+        "expected_error": "Price is required"
+      }
+    ],
+    "invalid_price": [
+      {
+        "name": "Negative price",
+        "input": -50,
+        "expected_error": "Price cannot be negative"
+      },
+      {
+        "name": "Zero price",
+        "input": 0,
+        "is_valid": true,
+        "note": "Free products are allowed"
+      },
+      {
+        "name": "Non-numeric price",
+        "input": "abc",
+        "expected_error": "Price must be a number"
+      },
+      {
+        "name": "Very large price",
+        "input": 999999999,
+        "is_valid": true,
+        "note": "No upper limit enforced"
+      }
+    ]
+  },
+  "order_validation": {
+    "empty_items": {
+      "name": "Order with no items",
+      "input": {
+        "items": []
+      },
+      "expected_error": "Order must contain at least one item"
+    },
+    "invalid_quantity": [
+      {
+        "name": "Zero quantity",
+        "input": {
+          "items": [{"item_code": "TEST-001", "qty": 0, "rate": 100}]
+        },
+        "expected_error": "Quantity must be at least 1"
+      },
+      {
+        "name": "Negative quantity",
+        "input": {
+          "items": [{"item_code": "TEST-001", "qty": -1, "rate": 100}]
+        },
+        "expected_error": "Quantity cannot be negative"
+      }
+    ],
+    "bonus_exceeds_total": {
+      "name": "Bonus exceeds order total",
+      "input": {
+        "items": [{"item_code": "TEST-001", "qty": 1, "rate": 100}],
+        "bonus_used": 150,
+        "bonus_available": 200
+      },
+      "expected_error": "Bonus used cannot exceed available bonus or order total"
+    }
+  },
+  "loyalty_validation": {
+    "negative_points": {
+      "name": "Negative points for accrual",
+      "input": {
+        "points": -100,
+        "transaction_type": "Accrual"
+      },
+      "expected_error": "Points must be positive"
+    },
+    "invalid_transaction_type": {
+      "name": "Invalid transaction type",
+      "input": {
+        "points": 100,
+        "transaction_type": "InvalidType"
+      },
+      "expected_error": "Invalid transaction type"
+    }
+  },
+  "string_length_validation": {
+    "customer_name_max_length": {
+      "name": "Customer name exceeds max length",
+      "input": "A" * 256,
+      "max_length": 255,
+      "expected_error": "Customer name cannot exceed 255 characters"
+    },
+    "product_code_max_length": {
+      "name": "Product code exceeds max length",
+      "input": "A" * 51,
+      "max_length": 50,
+      "expected_error": "Product code cannot exceed 50 characters"
+    }
+  },
+  "special_characters": {
+    "sql_injection_attempt": {
+      "name": "SQL injection in customer name",
+      "input": "'; DROP TABLE customers; --",
+      "should_sanitize": true
+    },
+    "xss_attempt": {
+      "name": "XSS in customer name",
+      "input": "<script>alert('xss')</script>",
+      "should_sanitize": true
+    },
+    "html_tags": {
+      "name": "HTML tags in customer name",
+      "input": "<b>Test</b> Customer",
+      "should_sanitize": true
+    }
+  },
+  "null_handling": {
+    "null_customer_name": {
+      "name": "Null customer name",
+      "input": {
+        "customer_name": null,
+        "phone": "+79991234567"
+      },
+      "expected_error": "Customer name is required"
+    },
+    "null_phone": {
+      "name": "Null phone",
+      "input": {
+        "customer_name": "Test Customer",
+        "phone": null
+      },
+      "expected_error": "Phone number is required"
+    }
+  }
+}

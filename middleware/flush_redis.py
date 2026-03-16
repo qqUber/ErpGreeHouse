@@ -1,5 +1,7 @@
-import redis
 import os
+
+import redis
+
 
 def flush_redis():
     host = os.getenv("REDIS_HOST", "localhost")
@@ -10,6 +12,7 @@ def flush_redis():
         print("Redis flushed successfully.")
     except Exception as e:
         print(f"Error flushing Redis: {e}")
+
 
 if __name__ == "__main__":
     flush_redis()

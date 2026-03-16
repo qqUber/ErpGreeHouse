@@ -53,71 +53,71 @@ Write-Host "[DEPS] Installing test dependencies..." -ForegroundColor Yellow
 # Run different test types based on parameter
 function Run-UnitTests {
     Write-Host "[TEST] Running Unit Tests..." -ForegroundColor Green
-    
+
     $UNIT_TEST_CMD = "$PYTHON_CMD -m pytest tests/ -v --tb=short"
-    
+
     if ($Coverage) {
         $UNIT_TEST_CMD += " --cov=app --cov-report=term-missing --cov-report=html:$REPORT_SUBDIR/coverage"
     }
-    
+
     if ($HtmlReport) {
         $UNIT_TEST_CMD += " --html=$REPORT_SUBDIR/unit_tests.html --self-contained-html"
     }
-    
+
     if ($Verbose) {
         $UNIT_TEST_CMD += " -s"
     }
-    
+
     Invoke-Expression $UNIT_TEST_CMD
-    
+
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[FAILED] Unit tests failed" -ForegroundColor Red
         return $false
     }
-    
+
     Write-Host "[PASSED] Unit tests passed" -ForegroundColor Green
     return $true
 }
 
 function Run-IntegrationTests {
     Write-Host "[INTEGRATION] Running Integration Tests..." -ForegroundColor Green
-    
+
     $INTEGRATION_CMD = "$PYTHON_CMD -m pytest tests/integration -v --tb=short"
-    
+
     if ($HtmlReport) {
         $INTEGRATION_CMD += " --html=$REPORT_SUBDIR/integration_tests.html --self-contained-html"
     }
-    
+
     if ($Verbose) {
         $INTEGRATION_CMD += " -s"
     }
-    
+
     # Set mock mode for integration tests
     $env:ERP_MOCK_MODE = "true"
-    
+
     Invoke-Expression $INTEGRATION_CMD
-    
+
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[FAILED] Integration tests failed" -ForegroundColor Red
         return $false
     }
-    
+
     Write-Host "[PASSED] Integration tests passed" -ForegroundColor Green
     return $true
 }
 
 function Run-SecurityTests {
     Write-Host "[SECURITY] Running Security Tests..." -ForegroundColor Green
-    
+
     try {
         & $PYTHON_CMD -m pip install bandit safety
-        
+
         Write-Host "Running Bandit security scan..." -ForegroundColor Yellow
         & $PYTHON_CMD -m bandit -r app/ -f json -o $REPORT_SUBDIR/bandit_report.json
-        
+
         Write-Host "Running Safety check..." -ForegroundColor Yellow
         & $PYTHON_CMD -m safety check --json > $REPORT_SUBDIR/safety_report.json
-        
+
         Write-Host "[SUCCESS] Security tests completed" -ForegroundColor Green
         return $true
     } catch {
@@ -128,19 +128,19 @@ function Run-SecurityTests {
 
 function Run-Linting {
     Write-Host "[LINTING] Running Code Linting..." -ForegroundColor Green
-    
+
     try {
         & $PYTHON_CMD -m pip install flake8 black isort
-        
+
         Write-Host "Running Black formatting check..." -ForegroundColor Yellow
         & $PYTHON_CMD -m black --check app/ tests/
-        
+
         Write-Host "Running isort import check..." -ForegroundColor Yellow
         & $PYTHON_CMD -m isort --check-only app/ tests/
-        
+
         Write-Host "Running Flake8 linting..." -ForegroundColor Yellow
         & $PYTHON_CMD -m flake8 app/ tests/ --max-line-length=88 --extend-ignore=E203,W503
-        
+
         Write-Host "[PASSED] Linting passed" -ForegroundColor Green
         return $true
     } catch {

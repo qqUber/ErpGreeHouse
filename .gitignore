@@ -4,7 +4,8 @@ __pycache__/
 env/
 venv/
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
 *.log
 *.sqlite3
 *.db
@@ -15,9 +16,10 @@ __dist__/
 dist/
 build/
 *.egg-info/
-
+.pdf
 .env
 .env.*
+!.env.example
 
 node_modules/
 admin-ui/test-results/
@@ -35,3 +37,35 @@ middleware/reports/
 middleware/.pytest_cache/
 .coverage
 coverage.xml
+.roo/mcp.json
+admin-ui/e2e/.test-credentials.json
+cookies.txt
+
+# Generated test reports
+temp-artifacts/
+unit-report-2/
+middleware/test-reports/*.txt
+admin-ui/localhost_*.report.html
+localhost_*.report.html
+/.gsd/
+/.kilocode/
+/.planning/
+/.qwen/
+/docs/
+/logs/
+/.opencode/
+/admin-ui/exploration/
+/admin-ui/test-report/
+/audit/
+/.opencodeignore
+/.kilocodeignore
+/.kilocodemodes
+/.claudecodeignore
+/middleware/test-reports/
+
+# Test Artifacts and Caches
+screenshots/
+tests/artifacts/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/

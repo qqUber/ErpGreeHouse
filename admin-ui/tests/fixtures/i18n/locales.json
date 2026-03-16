@@ -1,0 +1,53 @@
+{
+  "supported_locales": [
+    {
+      "code": "ru",
+      "name": "Русский",
+      "date_format": "DD.MM.YYYY",
+      "currency_symbol": "₽",
+      "currency_code": "RUB"
+    },
+    {
+      "code": "en",
+      "name": "English",
+      "date_format": "MM/DD/YYYY",
+      "currency_symbol": "$",
+      "currency_code": "USD"
+    },
+    {
+      "code": "srb",
+      "name": "Српски",
+      "date_format": "DD.MM.YYYY",
+      "currency_symbol": "дин",
+      "currency_code": "RSD"
+    }
+  ],
+  "default_locale": "en",
+  "fallback_locale": "en",
+  "test_scenarios": [
+    {
+      "scenario": "Default locale",
+      "input": {},
+      "expected_code": "en",
+      "expected_name": "English"
+    },
+    {
+      "scenario": "Query parameter override",
+      "input": { "lang": "en" },
+      "expected_code": "en",
+      "expected_name": "English"
+    },
+    {
+      "scenario": "LocalStorage override",
+      "input": { "localStorage": "srb" },
+      "expected_code": "srb",
+      "expected_name": "Српски"
+    },
+    {
+      "scenario": "Browser language detection",
+      "input": { "navigator": "en-US" },
+      "expected_code": "en",
+      "expected_name": "English"
+    }
+  ]
+}

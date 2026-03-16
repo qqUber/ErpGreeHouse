@@ -1,6 +1,10 @@
 # Clean pre-commit configuration for Telegram CRM MVP
 # Production-focused hooks only - no unnecessary scripts
 
+# Common directories to exclude from all hooks
+default_install_hook_attrs:
+  exclude: '(^|/)(?:.venv|venv|vendor|node_modules|__pycache__|\.git)/'
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
@@ -22,27 +26,36 @@ repos:
     rev: 23.3.0
     hooks:
       - id: black
-        language_version: python3.11
+        language_version: python3
         files: \.py$
-        exclude: ^(tests/|reports/)
+        exclude: ^(tests/|reports/|.venv/|venv/|vendor/|node_modules/)
 
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
       - id: isort
         args: ["--profile", "black"]
-        exclude: ^(tests/|reports/)
+        exclude: ^(tests/|reports/|.venv/|venv/|vendor/|node_modules/)
 
   - repo: https://github.com/pycqa/flake8
     rev: 6.0.0
     hooks:
       - id: flake8
         args: ['--max-line-length=88', '--extend-ignore=E203,W503']
-        exclude: ^(tests/|reports/)
+        exclude: ^(tests/|reports/|.venv/|venv/|vendor/|node_modules/)
 
   - repo: https://github.com/pycqa/bandit
     rev: 1.7.5
     hooks:
       - id: bandit
         args: ['-r', 'middleware/app/', '-f', 'json']
-        exclude: ^(tests/|reports/)
+        exclude: ^(tests/|reports/|.venv/|venv/|vendor/|node_modules/)
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-requests]
+        args: ['--config-file=middleware/mypy.ini', '--ignore-missing-imports']
+        files: ^middleware/app/
+        exclude: ^(tests/|\.venv/|venv/|vendor/|node_modules/)

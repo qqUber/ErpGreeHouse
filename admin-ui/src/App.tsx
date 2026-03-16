@@ -1,1439 +1,2321 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { AdminMe, Api, CustomerDetails, CustomerListItem, Dashboard, Integration, IntegrationDelivery, IntegrationTemplate, getAdminSecret, setAdminSecret } from './api'
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { AnalyticsView } from './AnalyticsView';
+import {
+    AdminMe,
+    Api,
+    CustomerDetails,
+    CustomerListItem,
+    Dashboard,
+    getAdminSecret,
+    Integration,
+    IntegrationDelivery,
+    IntegrationTemplate,
+    RolePermissions,
+    setAdminSecret,
+} from './api';
+import { ComplianceView } from './ComplianceView';
+import { CustomersWidget } from './components/dashboard/CustomersWidget';
+import { DashboardWrapper } from './components/dashboard/DashboardWrapper';
+import { IntegrationsWidget } from './components/dashboard/IntegrationsWidget';
+import { MarketingWidget } from './components/dashboard/MarketingWidget';
+import { OperationalWidget } from './components/dashboard/OperationalWidget';
+import { ProductsWidget } from './components/dashboard/ProductsWidget';
+import { IntegrationSettings } from './components/IntegrationSettings';
+import { LanguageSwitcher } from './components/LanguageSwitcher';
+import { ProductImport } from './components/ProductImport';
+import { ErrorMessage, LoadingSpinner, SuccessMessage, WarningMessage } from './components/ui';
+import { useDashboard } from './hooks/useDashboard';
+import { useViewportMode } from './hooks/useViewportMode';
+import { MarketingView } from './MarketingView';
+import { useAuth } from './stores/auth';
 
-type Tab = 'dashboard' | 'customers' | 'pos' | 'integrations' | 'products' | 'settings'
+type Tab =
+  | 'dashboard'
+  | 'customers'
+  | 'pos'
+  | 'integrations'
+  | 'products'
+  | 'settings'
+  | 'marketing'
+  | 'compliance'
+  | 'analytics';
 
 type PublicStatus = {
-  api: string
-  admin_auth_configured: boolean
-  erp_sync_enabled: boolean
-}
+  api: string;
+  admin_auth_configured: boolean;
+  debug_mode: boolean;
+  erp_sync_enabled: boolean;
+};
 
 type AuthStatus = {
-  bootstrap_enabled: boolean
-  default_admin_present: boolean
-  default_admin_username: string
-  must_change_password: boolean
-}
+  bootstrap_enabled: boolean;
+  default_admin_present: boolean;
+  default_admin_username: string;
+  must_change_password: boolean;
+};
 
-type NoticeLevel = 'ok' | 'warn' | 'err'
-type Notice = { level: NoticeLevel; message: string; visible: boolean }
+type NoticeLevel = 'ok' | 'warn' | 'err';
+type Notice = { level: NoticeLevel; message: string; visible: boolean };
 
 type AuthFlow = {
-  active: boolean
-  step: number
-  percent: number
-  label: string
-  steps: Array<{ label: string; done: boolean }>
-}
-
-function roleLabel(role: string) {
-  const r = String(role || '').toLowerCase()
-  if (r === 'owner') return 'Админ'
-  if (r === 'operator') return 'Оператор'
-  if (r === 'marketer') return 'Менеджер'
-  return r || '—'
-}
+  active: boolean;
+  step: number;
+  percent: number;
+  label: string;
+  steps: Array<{ label: string; done: boolean }>;
+};
 
 function money(n: number) {
-  return new Intl.NumberFormat('ru-RU').format(n)
+  return new Intl.NumberFormat('ru-RU').format(n);
 }
 
 function App() {
-  const [tab, setTab] = useState<Tab>('dashboard')
-  const [dash, setDash] = useState<Dashboard | null>(null)
-  const [customers, setCustomers] = useState<CustomerListItem[]>([])
-  const [q, setQ] = useState('')
-  const [selectedId, setSelectedId] = useState<number | null>(null)
-  const [details, setDetails] = useState<CustomerDetails | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<Notice | null>(null)
-  const [authFlow, setAuthFlow] = useState<AuthFlow | null>(null)
-  const authAbortRef = useRef<AbortController | null>(null)
-  const authWorkerRef = useRef<Worker | null>(null)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showNewPassword, setShowNewPassword] = useState(false)
-  const [showSettingsOld, setShowSettingsOld] = useState(false)
-  const [showSettingsNew, setShowSettingsNew] = useState(false)
+  // Use auth context for authentication state
+  const { t } = useTranslation();
+  const viewport = useViewportMode();
 
-  const [publicStatus, setPublicStatus] = useState<PublicStatus | null>(null)
-  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
-  const [loginMode, setLoginMode] = useState<'password' | 'key' | 'recover'>('password')
-  const [username, setUsername] = useState('admin')
-  const [password, setPassword] = useState('')
-  const [recoverySecret, setRecoverySecret] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [adminKey, setAdminKey] = useState(getAdminSecret())
-  const [authReady, setAuthReady] = useState(false)
-  const [mustChangePassword, setMustChangePassword] = useState(false)
-  const [oldPassword, setOldPassword] = useState('')
-  const [settingsNewPassword, setSettingsNewPassword] = useState('')
-  const [integrations, setIntegrations] = useState<Integration[]>([])
-  const [integrationTemplates, setIntegrationTemplates] = useState<IntegrationTemplate[]>([])
-  const [selectedIntegrationId, setSelectedIntegrationId] = useState<number | null>(null)
-  const [integrationDeliveries, setIntegrationDeliveries] = useState<IntegrationDelivery[]>([])
-  const [integrationsBusy, setIntegrationsBusy] = useState(false)
-  const [me, setMe] = useState<AdminMe | null>(null)
-  const [products, setProducts] = useState<Array<{ id: number; code: string; name: string; kind: string; price: number; active: boolean }>>([])
+  // Role label helper - uses translation from component scope
+  function roleLabel(role: string) {
+    const r = String(role || '').toLowerCase();
+    if (r === 'owner') return t('roles.owner');
+    if (r === 'operator') return t('roles.operator');
+    if (r === 'marketer') return t('roles.marketer');
+    return r || '—';
+  }
 
-  console.log(`[App] Render. LoginMode=${loginMode} Username=${username} PasswordLen=${password.length} Notice=${notice ? JSON.stringify(notice) : 'null'}`)
+  const {
+    isAuthenticated,
+    isLoading: authLoading,
+    user,
+    mustChangePassword: authMustChangePassword,
+    login: authLogin,
+    logout: authLogout,
+    setUser: setAuthUser,
+    validateToken,
+  } = useAuth();
 
-  const selected = useMemo(() => customers.find(c => c.id === selectedId) || null, [customers, selectedId])
+  const [tab, setTab] = useState<Tab>('dashboard');
+  const [dash, setDash] = useState<Dashboard | null>(null);
+  const [customers, setCustomers] = useState<CustomerListItem[]>([]);
+  const [q, setQ] = useState('');
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [details, setDetails] = useState<CustomerDetails | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const [authFlow, setAuthFlow] = useState<AuthFlow | null>(null);
+  const authAbortRef = useRef<AbortController | null>(null);
+  const authWorkerRef = useRef<Worker | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showSettingsOld, setShowSettingsOld] = useState(false);
+  const [showSettingsNew, setShowSettingsNew] = useState(false);
+
+  const [publicStatus, setPublicStatus] = useState<PublicStatus | null>(null);
+  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
+  const [loginMode, setLoginMode] = useState<'password' | 'key' | 'recover'>('password');
+  const [username, setUsername] = useState('admin');
+  const [password, setPassword] = useState('');
+  const [recoverySecret, setRecoverySecret] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [adminKey, setAdminKey] = useState(getAdminSecret());
+  const [authReady, setAuthReady] = useState(false);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [settingsNewPassword, setSettingsNewPassword] = useState('');
+  const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [integrationTemplates, setIntegrationTemplates] = useState<IntegrationTemplate[]>([]);
+  const [selectedIntegrationId, setSelectedIntegrationId] = useState<number | null>(null);
+  const [integrationDeliveries, setIntegrationDeliveries] = useState<IntegrationDelivery[]>([]);
+  const [integrationsBusy, setIntegrationsBusy] = useState(false);
+  const [integrationSubTab, setIntegrationSubTab] = useState<'settings' | 'webhooks'>('settings');
+  const [me, setMe] = useState<AdminMe | null>(null);
+  const [products, setProducts] = useState<
+    Array<{ id: number; code: string; name: string; kind: string; price: number; active: boolean }>
+  >([]);
+  const [showProductImport, setShowProductImport] = useState(false);
+  const [optimisticReady, setOptimisticReady] = useState(false); // Оптимистичный UI
+
+  // Use auth context values
+  const effectiveAuthReady = !authLoading && (isAuthenticated || authReady);
+  const effectiveMe = user || me;
+  const effectiveMustChangePassword = authMustChangePassword || mustChangePassword;
+
+  console.log(
+    `[App] Render. LoginMode=${loginMode} Username=${username} PasswordLen=${password.length} Notice=${notice ? JSON.stringify(notice) : 'null'} AuthLoading=${authLoading} IsAuth=${isAuthenticated}`
+  );
+
+  // Session restoration: check auth context on mount
+  useEffect(() => {
+    console.log('[App] Auth context check:', { authLoading, isAuthenticated, user: !!user });
+    if (!authLoading) {
+      if (isAuthenticated && user) {
+        console.log('[App] Session restored from JWT cookies');
+        setMe(user);
+        setAuthReady(true);
+        setOptimisticReady(true);
+      } else {
+        console.log('[App] No valid session, showing login');
+        setAuthReady(false);
+        setOptimisticReady(true);
+      }
+    }
+  }, [authLoading, isAuthenticated, user]);
+
+  const selected = useMemo(
+    () => customers.find((c) => c.id === selectedId) || null,
+    [customers, selectedId]
+  );
   const selectedIntegration = useMemo(
-    () => integrations.find(i => i.id === selectedIntegrationId) || null,
+    () => integrations.find((i) => i.id === selectedIntegrationId) || null,
     [integrations, selectedIntegrationId]
-  )
+  );
+  const effectivePermissions = useMemo(
+    () => new Set(effectiveMe?.permissions || []),
+    [effectiveMe?.permissions]
+  );
+  const canReadIntegrations = useMemo(
+    () =>
+      effectiveMe?.role === 'owner' ||
+      effectivePermissions.has('*') ||
+      effectivePermissions.has('integration.read'),
+    [effectiveMe?.role, effectivePermissions]
+  );
+  const canUseDevSale = useMemo(
+    () =>
+      Boolean(publicStatus?.debug_mode) &&
+      (effectiveMe?.role === 'owner' ||
+        effectivePermissions.has('*') ||
+        effectivePermissions.has('pos.sale') ||
+        effectivePermissions.has('integration.update')),
+    [effectiveMe?.role, effectivePermissions, publicStatus?.debug_mode]
+  );
+
+  // Navigation function for deep linking
+  function navigateTo(tabName: string, params?: Record<string, string | number>) {
+    let hash = `#${tabName}`;
+    if (params) {
+      const searchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        searchParams.set(key, String(value));
+      });
+      hash += `?${searchParams.toString()}`;
+    }
+    window.location.hash = hash;
+  }
 
   function clipMessage(s: string) {
-    const t = String(s || '').replace(/\s+/g, ' ').trim()
-    return t.length > 80 ? `${t.slice(0, 77)}...` : t
+    const t = String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return t.length > 80 ? `${t.slice(0, 77)}...` : t;
   }
 
   function showNotice(level: NoticeLevel, message: string) {
-    console.log(`[App] showNotice: ${level} - ${message}`)
-    const m = clipMessage(message)
-    setNotice({ level, message: m, visible: true })
-    window.setTimeout(() => setNotice(prev => (prev ? { ...prev, visible: false } : prev)), 3500)
+    console.log(`[App] showNotice: ${level} - ${message}`);
+    const m = clipMessage(message);
+    setNotice({ level, message: m, visible: true });
+    window.setTimeout(() => setNotice((prev) => (prev ? { ...prev, visible: false } : prev)), 3500);
   }
 
   function stopAuthFlow() {
-    console.log('[App] stopAuthFlow called')
-    authAbortRef.current?.abort()
-    authAbortRef.current = null
-    authWorkerRef.current?.postMessage({ type: 'stop' })
-    authWorkerRef.current?.terminate()
-    authWorkerRef.current = null
-    setAuthFlow(null)
+    console.log('[App] stopAuthFlow called');
+    authAbortRef.current?.abort();
+    authAbortRef.current = null;
+    authWorkerRef.current?.postMessage({ type: 'stop' });
+    authWorkerRef.current?.terminate();
+    authWorkerRef.current = null;
+    setAuthFlow(null);
   }
 
   async function loadPublicStatus() {
     try {
-      const s = await Api.publicStatus()
-      setPublicStatus(s)
+      const s = await Api.publicStatus();
+      setPublicStatus(s);
     } catch {
-      setPublicStatus(null)
+      setPublicStatus(null);
     }
   }
 
   async function loadAuthStatus() {
     try {
-      const s = await Api.authStatus()
-      setAuthStatus(s)
+      const s = await Api.authStatus();
+      setAuthStatus(s);
       if (!username.trim() && s.default_admin_username) {
-        setUsername(s.default_admin_username)
+        setUsername(s.default_admin_username);
       }
     } catch {
-      setAuthStatus(null)
+      setAuthStatus(null);
     }
   }
 
   async function loadDashboard() {
-    setError(null)
-    const d = await Api.dashboard()
-    setDash(d)
+    setError(null);
+    const d = await Api.dashboard();
+    setDash(d);
   }
 
   async function loadCustomers(query?: string) {
-    setError(null)
-    const res = await Api.customers(query)
-    setCustomers(res.items)
+    setError(null);
+    const res = await Api.customers(query);
+    setCustomers(res.items);
   }
 
   async function loadCustomer(id: number) {
-    setError(null)
-    const d = await Api.customer(id)
-    setDetails(d)
+    setError(null);
+    const d = await Api.customer(id);
+    setDetails(d);
   }
 
   async function loadIntegrations() {
-    setError(null)
-    setIntegrationsBusy(true)
+    setError(null);
+    setIntegrationsBusy(true);
     try {
-      const res = await Api.integrations()
-      setIntegrations(res.items)
+      const res = await Api.integrations();
+      setIntegrations(res);
     } finally {
-      setIntegrationsBusy(false)
+      setIntegrationsBusy(false);
     }
   }
 
   async function loadDeliveries(id: number) {
-    setError(null)
-    const res = await Api.integrationDeliveries(id)
-    setIntegrationDeliveries(res.items)
+    setError(null);
+    const res = await Api.integrationDeliveries(id);
+    setIntegrationDeliveries(res.items);
   }
 
   async function loadIntegrationTemplates() {
-    setError(null)
-    const res = await Api.integrationTemplates()
-    setIntegrationTemplates(res.items)
+    setError(null);
+    const res = await Api.integrationTemplates();
+    setIntegrationTemplates(res.items);
   }
 
   async function loadProducts() {
-    setError(null)
-    const res = await Api.products()
-    setProducts(res.items)
+    setError(null);
+    const res = await Api.products();
+    setProducts(res.items);
   }
 
   async function bootstrap() {
-    setError(null)
-    await loadPublicStatus()
-    await loadAuthStatus()
+    setError(null);
     try {
-      await Promise.all([loadDashboard(), loadCustomers(), loadProducts()])
-      try {
-        const m = await Api.me()
-        setMe(m)
-      } catch {
-        setMe(null)
+      // First, load public status (no auth required)
+      await loadPublicStatus();
+      await loadAuthStatus();
+
+      // Check if user is authenticated from auth context
+      if (user) {
+        // Use the user data from auth context instead of making redundant Api.me() call
+        setMe(user);
+        console.log('[Bootstrap] Using user from auth context:', user.username);
+
+        // Load protected data since user is authenticated
+        try {
+          await Promise.all([loadDashboard(), loadCustomers(), loadProducts()]);
+        } catch (dataError: any) {
+          // Failed to load protected data, but user is authenticated
+          console.warn('[Bootstrap] Failed to load some data:', dataError?.message);
+        }
+      } else {
+        // Not authenticated - this is expected, user needs to login
+        console.log('[Bootstrap] Not authenticated');
+        setMe(null);
       }
-      setAuthReady(true)
+
+      setAuthReady(true);
+      setOptimisticReady(true); // UI готов
     } catch (e: any) {
-      const msg = String(e?.message || e)
+      const msg = String(e?.message || e);
+      // Only show error for actual errors, not auth-related issues
       if (msg.includes('401') || msg.toLowerCase().includes('unauthorized')) {
-        setAuthReady(false)
-        return
+        setAuthReady(false);
+        setOptimisticReady(false);
+        return;
       }
-      showNotice('err', msg)
-      setAuthReady(false)
+      showNotice('err', msg);
+      setAuthReady(false);
+      setOptimisticReady(false);
     }
   }
 
+  // Bootstrap the app - only run after auth is initialized
+  // This prevents calling protected endpoints before knowing if user has a valid session
   useEffect(() => {
-    bootstrap()
-  }, [])
+    // Wait for auth to finish loading before bootstrapping
+    // This prevents the 401 refresh loop on initial page load when user is not logged in
+    if (authLoading) {
+      console.log('[App] Waiting for auth to finish loading before bootstrap...');
+      return;
+    }
+    console.log('[App] Auth loading complete, running bootstrap...');
+    bootstrap();
+  }, [authLoading, user]);
 
   useEffect(() => {
+    // Detect E2E mode at runtime using multiple signals
+    const isE2EMode = 
+      // Check if running in Playwright (sets navigator.webdriver)
+      (navigator as any).webdriver === true ||
+      // Check for e2e query parameter
+      window.location.search.includes('e2e=true') ||
+      // Check for test user agent
+      navigator.userAgent.includes('Playwright');
+    
+    if (isE2EMode) {
+      console.log('[App] E2E mode detected - skipping visibility handler for password security');
+      return;
+    }
+
     const onVis = () => {
       if (document.hidden) {
-        setPassword('')
-        setNewPassword('')
-        setRecoverySecret('')
-        setOldPassword('')
-        setSettingsNewPassword('')
+        setPassword('');
+        setNewPassword('');
+        setRecoverySecret('');
+        setOldPassword('');
+        setSettingsNewPassword('');
       }
-    }
-    document.addEventListener('visibilitychange', onVis)
-    return () => document.removeEventListener('visibilitychange', onVis)
-  }, [])
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
 
   useEffect(() => {
     if (selectedId != null && authReady) {
-      loadCustomer(selectedId).catch(e => setError(String(e)))
+      loadCustomer(selectedId).catch((e) => setError(String(e)));
     }
-  }, [selectedId, authReady])
+  }, [selectedId, authReady]);
+
+  // Hash-based navigation handler
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1); // Remove leading '#'
+      if (!hash) return;
+
+      const [tabName, queryString] = hash.split('?');
+      const params = new URLSearchParams(queryString || '');
+
+      // Map hash to tab
+      const tabMap: Record<string, Tab> = {
+        dashboard: 'dashboard',
+        customers: 'customers',
+        pos: 'pos',
+        integrations: 'integrations',
+        products: 'products',
+        settings: 'settings',
+        marketing: 'marketing',
+      };
+
+      if (tabMap[tabName]) {
+        setTab(tabMap[tabName]);
+      }
+
+      // Handle query parameters
+      const customerId = params.get('customer');
+      if (customerId) {
+        const id = parseInt(customerId, 10);
+        if (!isNaN(id)) {
+          setSelectedId(id);
+        }
+      }
+
+      const orderId = params.get('order');
+      if (orderId) {
+        // For now, just show in notification - could navigate to order details
+        console.log('Order ID:', orderId);
+      }
+    };
+
+    // Handle initial hash
+    if (window.location.hash) {
+      handleHashChange();
+    }
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   useEffect(() => {
-    if (!authReady) return
-    if (tab === 'integrations') {
-      Promise.all([loadIntegrations(), loadIntegrationTemplates()]).catch(e => setError(String(e)))
+    if (!authReady) return;
+    if (tab === 'integrations' && canReadIntegrations) {
+      Promise.all([loadIntegrations(), loadIntegrationTemplates()]).catch((e) =>
+        setError(String(e))
+      );
     }
-  }, [tab, authReady])
+  }, [tab, authReady, canReadIntegrations]);
 
   useEffect(() => {
-    if (!authReady) return
-    if (selectedIntegrationId != null) {
-      loadDeliveries(selectedIntegrationId).catch(e => setError(String(e)))
+    if (!authReady) return;
+    if (canReadIntegrations && selectedIntegrationId != null) {
+      loadDeliveries(selectedIntegrationId).catch((e) => setError(String(e)));
     }
-  }, [selectedIntegrationId, authReady])
+  }, [selectedIntegrationId, authReady, canReadIntegrations]);
+
+  useEffect(() => {
+    if (tab === 'integrations' && !canReadIntegrations && integrationSubTab === 'settings') {
+      setIntegrationSubTab('webhooks');
+    }
+  }, [tab, canReadIntegrations, integrationSubTab]);
 
   function startAuthFlowSteps(labels: string[]) {
-    stopAuthFlow()
-    const ctrl = new AbortController()
-    authAbortRef.current = ctrl
-    const steps = labels.map(label => ({ label, done: false }))
-    setAuthFlow({ active: true, step: 0, percent: 0, label: steps[0]?.label || '', steps })
-    const w = new Worker(new URL('./authWorker.ts', import.meta.url), { type: 'module' })
-    authWorkerRef.current = w
-    w.onmessage = e => {
-      const m = e.data as any
+    stopAuthFlow();
+    const ctrl = new AbortController();
+    authAbortRef.current = ctrl;
+    const steps = labels.map((label) => ({ label, done: false }));
+    setAuthFlow({ active: true, step: 0, percent: 0, label: steps[0]?.label || '', steps });
+    const w = new Worker(new URL('./authWorker.ts', import.meta.url), { type: 'module' });
+    authWorkerRef.current = w;
+    w.onmessage = (e) => {
+      const m = e.data as any;
       if (m?.type === 'progress') {
-        setAuthFlow(prev => (prev ? { ...prev, step: m.step, percent: m.percent, label: m.label } : prev))
+        setAuthFlow((prev) =>
+          prev ? { ...prev, step: m.step, percent: m.percent, label: m.label } : prev
+        );
       }
-    }
-    w.postMessage({ type: 'start', steps: labels.map(label => ({ label })) })
-    return ctrl.signal
+    };
+    w.postMessage({ type: 'start', steps: labels.map((label) => ({ label })) });
+    return ctrl.signal;
   }
 
   function markAuthStepDone(stepIndex: number) {
-    authWorkerRef.current?.postMessage({ type: 'completeStep', step: stepIndex })
-    setAuthFlow(prev => {
-      if (!prev) return prev
-      const next = prev.steps.map((s, i) => (i === stepIndex ? { ...s, done: true } : s))
-      return { ...prev, steps: next }
-    })
+    authWorkerRef.current?.postMessage({ type: 'completeStep', step: stepIndex });
+    setAuthFlow((prev) => {
+      if (!prev) return prev;
+      const next = prev.steps.map((s, i) => (i === stepIndex ? { ...s, done: true } : s));
+      return { ...prev, steps: next };
+    });
   }
 
   function setAuthStep(stepIndex: number, label: string) {
-    authWorkerRef.current?.postMessage({ type: 'setStep', step: stepIndex, label })
-    setAuthFlow(prev => (prev ? { ...prev, step: stepIndex, label } : prev))
+    authWorkerRef.current?.postMessage({ type: 'setStep', step: stepIndex, label });
+    setAuthFlow((prev) => (prev ? { ...prev, step: stepIndex, label } : prev));
   }
 
   async function doLoginByKey() {
-    setError(null)
+    setError(null);
     try {
-      const signal = startAuthFlowSteps(['Подключение к серверу', 'Проверка ключа', 'Создание сессии'])
-      setAuthStep(0, 'Подключение к серверу...')
-      await Api.publicStatus(signal)
-      markAuthStepDone(0)
+      const signal = startAuthFlowSteps([
+        t('authFlow.connecting'),
+        t('authFlow.checkingKey'),
+        t('authFlow.creatingSession'),
+      ]);
+      setAuthStep(0, t('authFlow.connectingServer'));
+      await Api.publicStatus(signal);
+      markAuthStepDone(0);
 
-      setAuthStep(1, 'Проверка ключа...')
-      setMustChangePassword(false)
-      setAdminSecret(adminKey.trim())
-      markAuthStepDone(1)
+      setAuthStep(1, t('authFlow.checkingKey_'));
+      setMustChangePassword(false);
+      setAdminSecret(adminKey.trim());
+      markAuthStepDone(1);
 
-      setAuthStep(2, 'Создание сессии...')
-      await bootstrap()
-      markAuthStepDone(2)
-      showNotice('ok', 'Вход выполнен.')
-      stopAuthFlow()
+      setAuthStep(2, t('authFlow.creatingSession_'));
+      await bootstrap();
+      markAuthStepDone(2);
+      showNotice('ok', t('auth.loginSuccess'));
+      stopAuthFlow();
     } catch (e: any) {
-      console.log(`[App] Login failed: ${e?.message || e}`)
-      if (String(e?.name || '').toLowerCase().includes('abort')) {
-        showNotice('warn', 'Вход отменён.')
+      console.log(`[App] Login failed: ${e?.message || e}`);
+      if (
+        String(e?.name || '')
+          .toLowerCase()
+          .includes('abort')
+      ) {
+        showNotice('warn', t('auth.loginCancelled'));
       } else {
-        showNotice('err', String(e?.message || e))
+        showNotice('err', String(e?.message || e));
       }
-      stopAuthFlow()
+      stopAuthFlow();
     }
   }
 
   async function doLoginByPassword() {
-    console.log('[App] doLoginByPassword started')
-    setError(null)
+    console.log('[App] doLoginByPassword started');
+    console.log(
+      '[App] Current auth state before login - isAuthenticated:',
+      isAuthenticated,
+      'user:',
+      user
+    );
+    setError(null);
     try {
-      const signal = startAuthFlowSteps(['Подключение к серверу', 'Проверка учетных данных', 'Создание сессии'])
-      setAuthStep(0, 'Подключение к серверу...')
-      await Promise.all([Api.publicStatus(signal), Api.authStatus(signal)])
-      markAuthStepDone(0)
+      const signal = startAuthFlowSteps([
+        t('authFlow.connecting'),
+        t('authFlow.checkingCredentials'),
+        t('authFlow.creatingSession'),
+      ]);
+      setAuthStep(0, t('authFlow.connectingServer'));
+      await Promise.all([Api.publicStatus(signal), Api.authStatus(signal)]);
+      markAuthStepDone(0);
 
-      setAuthStep(1, 'Проверка учетных данных...')
-      const res = await Api.login(username.trim(), password, signal)
-      setMustChangePassword(Boolean(res.must_change_password))
-      setPassword('')
-      markAuthStepDone(1)
+      setAuthStep(1, t('authFlow.verifyingCredentials'));
+      // Use auth context login which handles JWT cookies automatically
+      await authLogin(username.trim(), password);
+      console.log(
+        '[App] Auth login completed, checking auth state - isAuthenticated:',
+        isAuthenticated,
+        'user:',
+        user
+      );
+      setMustChangePassword(authMustChangePassword);
+      setPassword('');
+      // Note: JWT tokens are in httpOnly cookies, no need to setAdminSecret
+      markAuthStepDone(1);
 
-      setAuthStep(2, 'Создание сессии...')
-      await bootstrap()
-      markAuthStepDone(2)
-      if (res.must_change_password) {
-        setTab('settings')
+      setAuthStep(2, t('authFlow.creatingSession_'));
+      console.log('[App] Calling bootstrap with user:', user);
+      await bootstrap();
+      markAuthStepDone(2);
+      if (authMustChangePassword || mustChangePassword) {
+        setTab('settings');
       }
-      showNotice('ok', 'Вход выполнен.')
-      stopAuthFlow()
+      showNotice('ok', t('auth.loginSuccess'));
+      stopAuthFlow();
     } catch (e: any) {
-      console.error(`[App] Login failed (catch):`, e)
-      console.error(`[App] Login failed message:`, e.message)
-      if (String(e?.name || '').toLowerCase().includes('abort')) {
-        showNotice('warn', 'Вход отменён.')
+      console.error(`[App] Login failed (catch):`, e);
+      console.error(`[App] Login failed message:`, e.message);
+      if (
+        String(e?.name || '')
+          .toLowerCase()
+          .includes('abort')
+      ) {
+        showNotice('warn', t('auth.loginCancelled'));
       } else {
-        showNotice('err', String(e?.message || e))
+        showNotice('err', String(e?.message || e));
       }
-      stopAuthFlow()
+      stopAuthFlow();
     }
   }
 
   async function doRecoverPassword() {
-    setError(null)
+    setError(null);
     try {
-      const signal = startAuthFlowSteps(['Подключение к серверу', 'Проверка данных', 'Сброс пароля'])
-      setAuthStep(0, 'Подключение к серверу...')
-      await Promise.all([Api.publicStatus(signal), Api.authStatus(signal)])
-      markAuthStepDone(0)
+      const signal = startAuthFlowSteps([
+        t('authFlow.connecting'),
+        t('authFlow.checkingData'),
+        t('authFlow.resettingPassword'),
+      ]);
+      setAuthStep(0, t('authFlow.connectingServer'));
+      await Promise.all([Api.publicStatus(signal), Api.authStatus(signal)]);
+      markAuthStepDone(0);
 
-      setAuthStep(1, 'Проверка данных...')
-      markAuthStepDone(1)
+      setAuthStep(1, t('authFlow.checkingData_'));
+      markAuthStepDone(1);
 
-      setAuthStep(2, 'Сброс пароля...')
-      await Api.recoverPassword(username.trim(), newPassword, recoverySecret, signal)
-      markAuthStepDone(2)
-      setRecoverySecret('')
-      setNewPassword('')
-      setPassword('')
-      setLoginMode('password')
-      showNotice('ok', 'Пароль восстановлен. Выполните вход.')
-      stopAuthFlow()
+      setAuthStep(2, t('authFlow.resettingPassword_'));
+      await Api.recoverPassword(username.trim(), newPassword, recoverySecret, signal);
+      markAuthStepDone(2);
+      setRecoverySecret('');
+      setNewPassword('');
+      setPassword('');
+      setLoginMode('password');
+      showNotice('ok', t('auth.passwordResetSuccess'));
+      stopAuthFlow();
     } catch (e: any) {
-      if (String(e?.name || '').toLowerCase().includes('abort')) {
-        showNotice('warn', 'Операция отменена.')
+      if (
+        String(e?.name || '')
+          .toLowerCase()
+          .includes('abort')
+      ) {
+        showNotice('warn', t('auth.operationCancelled'));
       } else {
-        showNotice('err', String(e?.message || e))
+        showNotice('err', String(e?.message || e));
       }
-      stopAuthFlow()
+      stopAuthFlow();
     }
   }
 
   async function doChangePassword() {
-    setError(null)
+    setError(null);
     try {
-      const signal = startAuthFlowSteps(['Проверка учетных данных', 'Обновление пароля', 'Завершение'])
-      setAuthStep(0, 'Проверка учетных данных...')
-      markAuthStepDone(0)
+      const signal = startAuthFlowSteps([
+        t('authFlow.checkingCredentials'),
+        t('authFlow.updatingPassword'),
+        t('authFlow.completing'),
+      ]);
+      setAuthStep(0, t('authFlow.verifyingCredentials'));
+      markAuthStepDone(0);
 
-      setAuthStep(1, 'Обновление пароля...')
-      await Api.changePassword(oldPassword, settingsNewPassword, signal)
-      markAuthStepDone(1)
+      setAuthStep(1, t('authFlow.updatingPassword_'));
+      await Api.changePassword(oldPassword, settingsNewPassword, signal);
+      markAuthStepDone(1);
 
-      setAuthStep(2, 'Завершение...')
-      setOldPassword('')
-      setSettingsNewPassword('')
-      setAdminSecret('')
-      setAdminKey('')
-      setAuthReady(false)
-      setMustChangePassword(false)
-      setTab('dashboard')
-      markAuthStepDone(2)
-      showNotice('ok', 'Пароль изменён. Войдите заново.')
-      stopAuthFlow()
+      setAuthStep(2, t('authFlow.completing'));
+      setOldPassword('');
+      setSettingsNewPassword('');
+      setAdminSecret('');
+      setAdminKey('');
+      setAuthReady(false);
+      setMustChangePassword(false);
+      setTab('dashboard');
+      markAuthStepDone(2);
+      showNotice('ok', t('auth.passwordChanged'));
+      stopAuthFlow();
     } catch (e: any) {
-      if (String(e?.name || '').toLowerCase().includes('abort')) {
-        showNotice('warn', 'Операция отменена.')
+      if (
+        String(e?.name || '')
+          .toLowerCase()
+          .includes('abort')
+      ) {
+        showNotice('warn', 'Операция отменена.');
       } else {
-        showNotice('err', String(e?.message || e))
+        showNotice('err', String(e?.message || e));
       }
-      stopAuthFlow()
+      stopAuthFlow();
     }
   }
 
   async function doLogout() {
-    setError(null)
+    setError(null);
     try {
-      await Api.logout()
+      // Use auth context logout which clears JWT cookies automatically
+      await authLogout();
     } catch {
     } finally {
-      setAdminSecret('')
-      setAdminKey('')
-      setAuthReady(false)
-      setMustChangePassword(false)
-      setMe(null)
-      setTab('dashboard')
-      showNotice('ok', 'Вы вышли из системы.')
+      setAdminSecret('');
+      setAdminKey('');
+      setAuthReady(false);
+      setMustChangePassword(false);
+      setMe(null);
+      setTab('dashboard');
+      showNotice('ok', t('auth.loggedOut'));
     }
   }
 
   const allowedTabs: Tab[] = useMemo(() => {
-    const role = String(me?.role || '').toLowerCase()
-    if (!authReady) return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings']
-    if (role === 'operator') return ['dashboard', 'customers', 'pos', 'products', 'settings']
-    if (role === 'marketer') return ['dashboard', 'customers', 'integrations', 'products', 'settings']
-    return ['dashboard', 'customers', 'pos', 'integrations', 'products', 'settings']
-  }, [authReady, me?.role])
+    if (!effectiveAuthReady)
+      return [
+        'dashboard',
+        'customers',
+        'pos',
+        'integrations',
+        'products',
+        'settings',
+        'marketing',
+        'compliance',
+      ];
+    const effectiveUser = user || me;
+    // If authenticated but user data not yet loaded, show all tabs temporarily
+    // This prevents race condition where effectiveAuthReady=true but me is still null
+    if (!effectiveUser)
+      return [
+        'dashboard',
+        'customers',
+        'pos',
+        'integrations',
+        'products',
+        'settings',
+        'marketing',
+        'compliance',
+      ];
+    const role = String(effectiveUser?.role || '').toLowerCase();
+    if (role === 'owner')
+      return [
+        'dashboard',
+        'customers',
+        'pos',
+        'integrations',
+        'products',
+        'settings',
+        'marketing',
+        'compliance',
+      ];
+
+    const perms = new Set(effectiveUser?.permissions || []);
+    // If user has '*' permission, they see everything (though owner check above covers this usually)
+    if (perms.has('*'))
+      return [
+        'dashboard',
+        'customers',
+        'pos',
+        'integrations',
+        'products',
+        'settings',
+        'marketing',
+        'compliance',
+        'analytics',
+      ];
+
+    const tabs: Tab[] = [];
+    if (perms.has('dashboard.read')) tabs.push('dashboard');
+    if (perms.has('customer.list') || perms.has('customer.read')) tabs.push('customers');
+    if (perms.has('pos.sale')) tabs.push('pos');
+    if (perms.has('integration.read') || (publicStatus?.debug_mode && (perms.has('pos.sale') || perms.has('integration.update'))))
+      tabs.push('integrations');
+    if (perms.has('product.read')) tabs.push('products');
+    // Settings is always available for password change, but content inside depends on permissions
+    tabs.push('settings');
+    if (perms.has('marketing.campaign')) tabs.push('marketing');
+    if (perms.has('customer.delete') || perms.has('customer.read')) tabs.push('compliance');
+    if (perms.has('dashboard.read')) tabs.push('analytics');
+
+    return tabs;
+  }, [effectiveAuthReady, user, me?.role, me?.permissions, publicStatus?.debug_mode]);
 
   const safeTab: Tab = useMemo(() => {
-    if (!authReady) return tab
-    return allowedTabs.includes(tab) ? tab : allowedTabs[0] || 'dashboard'
-  }, [tab, authReady, allowedTabs])
+    if (!effectiveAuthReady) return tab;
+    return allowedTabs.includes(tab) ? tab : allowedTabs[0] || 'dashboard';
+  }, [tab, effectiveAuthReady, allowedTabs]);
+  const showProtectedPanels = optimisticReady && !!effectiveMe;
 
   useEffect(() => {
-    if (!authReady) return
-    if (tab !== safeTab) setTab(safeTab)
-  }, [safeTab, tab, authReady])
+    if (!effectiveAuthReady) return;
+    if (tab !== safeTab) setTab(safeTab);
+  }, [safeTab, tab, effectiveAuthReady]);
 
   return (
-    <div className="container">
-      <div className="header">
+    <div className={`container app-shell mode-${viewport.mode} density-${viewport.density}`}>
+      <header className="header">
         <div className="brand">
-          <div style={{ fontWeight: 800 }}>Панель управления</div>
+          <h1 style={{ fontWeight: 800, fontSize: 'var(--font-size-xl)', margin: 0 }}>
+            {t('app.controlPanel')}
+          </h1>
         </div>
-        <div className="tabs">
-          {allowedTabs.includes('dashboard') ? (
-            <div className={`tab ${safeTab === 'dashboard' ? 'tabActive' : ''}`} onClick={() => setTab('dashboard')}>Сводка</div>
-          ) : null}
-          {allowedTabs.includes('customers') ? (
-            <div className={`tab ${safeTab === 'customers' ? 'tabActive' : ''}`} onClick={() => setTab('customers')}>Клиенты</div>
-          ) : null}
-          {allowedTabs.includes('pos') ? (
-            <div className={`tab ${safeTab === 'pos' ? 'tabActive' : ''}`} onClick={() => setTab('pos')}>Операции</div>
-          ) : null}
-          {allowedTabs.includes('integrations') ? (
-            <div className={`tab ${safeTab === 'integrations' ? 'tabActive' : ''}`} onClick={() => setTab('integrations')}>Интеграции</div>
-          ) : null}
-          {allowedTabs.includes('products') ? (
-            <div className={`tab ${safeTab === 'products' ? 'tabActive' : ''}`} onClick={() => setTab('products')}>Товары</div>
-          ) : null}
-          {allowedTabs.includes('settings') ? (
-            <div className={`tab ${safeTab === 'settings' ? 'tabActive' : ''}`} onClick={() => setTab('settings')}>Настройки</div>
-          ) : null}
-        </div>
-        {authReady ? <div className="pill">Роль: {roleLabel(me?.role || '')}</div> : null}
-      </div>
-
-      {notice ? (
-        <div className="grid">
-          <StatusBar notice={notice} />
-        </div>
-      ) : null}
-
-      {!authReady ? (
-        <div className="grid">
-          <div className="card cardFull">
-            <div className="row">
-              <div>
-                <div style={{ fontWeight: 800, fontSize: 16 }}>Вход</div>
-                <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
-                  Используйте вход по паролю или по ключу x-admin-secret.
-                </div>
-              </div>
-              <div className="pill">API: {publicStatus?.api || 'недоступен'}</div>
-            </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-              <button className={`btn ${loginMode === 'password' ? 'btnPrimary' : ''}`} onClick={() => setLoginMode('password')}>По паролю</button>
-              <button className={`btn ${loginMode === 'key' ? 'btnPrimary' : ''}`} onClick={() => setLoginMode('key')}>По ключу</button>
-              <button className={`btn ${loginMode === 'recover' ? 'btnPrimary' : ''}`} onClick={() => setLoginMode('recover')}>Восстановление</button>
-              <button className="btn" onClick={() => void loadPublicStatus()}>Статус API</button>
-            </div>
-
-            {loginMode === 'password' ? (
-              <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
-                <div className="row">
-                  <div style={{ flex: 1 }}>
-                    <input className="input" value={username} onChange={e => setUsername(e.target.value)} placeholder="Логин" autoComplete="off" spellCheck={false} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input
-                        className="input"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        placeholder="Пароль"
-                        type={showPassword ? 'text' : 'password'}
-                        autoComplete="off"
-                        spellCheck={false}
-                      />
-                      <button className="btn" onClick={() => setShowPassword(v => !v)} aria-label="Показать пароль" type="button">
-                        {showPassword ? 'Скрыть' : 'Показать'}
-                      </button>
-                    </div>
-                  </div>
-                  <button className="btn btnPrimary" onClick={() => void doLoginByPassword()} disabled={!username.trim() || !password}>
-                    Войти
-                  </button>
-                </div>
-                <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
-                  {authStatus?.default_admin_present
-                    ? `Дефолтный админ: ${authStatus.default_admin_username}`
-                    : 'Дефолтный админ не создан. Проверьте ADMIN_BOOTSTRAP_DEFAULT.'}
-                </div>
-              </div>
-            ) : null}
-
-            {loginMode === 'key' ? (
-              <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
-                <div style={{ flex: '1 1 320px' }}>
-                  <input className="input" value={adminKey} onChange={e => setAdminKey(e.target.value)} placeholder="x-admin-secret" autoComplete="off" spellCheck={false} />
-                </div>
-                <button className="btn btnPrimary" onClick={() => void doLoginByKey()} disabled={!adminKey.trim()}>
-                  Войти
-                </button>
-              </div>
-            ) : null}
-
-            {loginMode === 'recover' ? (
-              <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
-                <div className="row">
-                  <div style={{ flex: 1 }}>
-                    <input className="input" value={username} onChange={e => setUsername(e.target.value)} placeholder="Логин" autoComplete="off" spellCheck={false} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input
-                        className="input"
-                        value={newPassword}
-                        onChange={e => setNewPassword(e.target.value)}
-                        placeholder="Новый пароль"
-                        type={showNewPassword ? 'text' : 'password'}
-                        autoComplete="off"
-                        spellCheck={false}
-                      />
-                      <button className="btn" onClick={() => setShowNewPassword(v => !v)} aria-label="Показать пароль" type="button">
-                        {showNewPassword ? 'Скрыть' : 'Показать'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div className="row">
-                  <div style={{ flex: 1 }}>
-                    <input
-                      className="input"
-                      value={recoverySecret}
-                      onChange={e => setRecoverySecret(e.target.value)}
-                      placeholder="Код восстановления"
-                      type="password"
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
-                  </div>
-                  <button className="btn btnPrimary" onClick={() => void doRecoverPassword()} disabled={!username.trim() || newPassword.length < 8 || !recoverySecret}>
-                    Сбросить пароль
-                  </button>
-                </div>
-              </div>
-            ) : null}
-
-            {mustChangePassword ? (
-              <div style={{ marginTop: 12, color: '#8b0000' }}>
-                Требуется смена пароля. Откройте вкладку «Настройки».
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-
-      {authReady && safeTab === 'dashboard' ? <DashboardView dash={dash} reload={() => loadDashboard()} /> : null}
-      {authReady && safeTab === 'customers' ? (
-        <CustomersView
-          q={q}
-          setQ={setQ}
-          customers={customers}
-          select={id => setSelectedId(id)}
-          selected={selected}
-          details={details}
-          search={() => loadCustomers(q)}
-          refresh={() => loadCustomers()}
-        />
-      ) : null}
-      {authReady && safeTab === 'pos' ? (
-        <PosView
-          refreshCustomers={() => loadCustomers()}
-          products={products}
-          reloadProducts={() => loadProducts()}
-          onSaleDone={async (customerId: number) => {
-            await loadDashboard()
-            await loadCustomers()
-            setSelectedId(customerId)
-            setTab('customers')
-          }}
-        />
-      ) : null}
-      {authReady && safeTab === 'integrations' ? (
-        <IntegrationsView
-          items={integrations}
-          templates={integrationTemplates}
-          busy={integrationsBusy}
-          selected={selectedIntegration}
-          deliveries={integrationDeliveries}
-          select={id => setSelectedIntegrationId(id)}
-          reload={() => loadIntegrations()}
-          create={async p => {
-            await Api.createIntegration(p)
-            await loadIntegrations()
-          }}
-          update={async (id, p) => {
-            await Api.updateIntegration(id, p)
-            await loadIntegrations()
-          }}
-          rotate={async id => {
-            await Api.rotateIntegrationSecret(id)
-            await loadIntegrations()
-            setSelectedIntegrationId(id)
-          }}
-          remove={async id => {
-            await Api.deleteIntegration(id)
-            setSelectedIntegrationId(null)
-            await loadIntegrations()
-          }}
-          refreshDeliveries={async id => {
-            await loadDeliveries(id)
-          }}
-        />
-      ) : null}
-      {authReady && safeTab === 'products' ? (
-        <ProductsView
-          items={products}
-          reload={() => loadProducts()}
-          canEdit={String(me?.role || '').toLowerCase() !== 'operator'}
-          create={async p => {
-            await Api.createProduct(p)
-            await loadProducts()
-          }}
-        />
-      ) : null}
-      {authReady && safeTab === 'settings' ? (
-        <div className="grid">
-          <div className="card cardFull">
-            <div className="row">
-              <div>
-                <div style={{ fontWeight: 900, fontSize: 18 }}>Настройки доступа</div>
-                <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
-                  {mustChangePassword ? 'Требуется смена пароля. После смены потребуется вход заново.' : 'Смена пароля администратора.'}
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <div className="pill">Сессия активна</div>
-                <button className="btn" onClick={() => void doLogout()} type="button">
-                  Выйти
-                </button>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
-              <div className="row">
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      className="input"
-                      value={oldPassword}
-                      onChange={e => setOldPassword(e.target.value)}
-                      placeholder="Текущий пароль"
-                      type={showSettingsOld ? 'text' : 'password'}
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
-                    <button className="btn" onClick={() => setShowSettingsOld(v => !v)} type="button">
-                      {showSettingsOld ? 'Скрыть' : 'Показать'}
-                    </button>
-                  </div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      className="input"
-                      value={settingsNewPassword}
-                      onChange={e => setSettingsNewPassword(e.target.value)}
-                      placeholder="Новый пароль (мин. 8 символов)"
-                      type={showSettingsNew ? 'text' : 'password'}
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
-                    <button className="btn" onClick={() => setShowSettingsNew(v => !v)} type="button">
-                      {showSettingsNew ? 'Скрыть' : 'Показать'}
-                    </button>
-                  </div>
-                </div>
-                <button className="btn btnPrimary" onClick={() => void doChangePassword()} disabled={!oldPassword || settingsNewPassword.length < 8}>
-                  Сменить пароль
-                </button>
-              </div>
-              <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
-                Восстановление выполняется через endpoint /api/v1/public/auth/recover с заголовком x-admin-recovery (значение ADMIN_RECOVERY_SECRET).
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {authFlow?.active ? (
-        <div className="overlay" role="dialog" aria-modal="true">
-          <div className="overlayPanel">
-            <div className="row">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div className="spinner" />
-                <div style={{ fontWeight: 800 }}>Авторизация</div>
-              </div>
-              <button className="btn" onClick={() => stopAuthFlow()} type="button">
-                Отменить
+        <nav aria-label="Main navigation">
+          <div className="tabs" role="tablist" aria-label="Main navigation">
+            {allowedTabs.includes('dashboard') ? (
+              <button
+                id="dashboard-tab"
+                className={`tab ${safeTab === 'dashboard' ? 'tabActive' : ''}`}
+                onClick={() => setTab('dashboard')}
+                role="tab"
+                aria-selected={safeTab === 'dashboard'}
+                aria-controls={showProtectedPanels ? 'dashboard-panel' : undefined}
+                data-testid="admin_nav_dashboard"
+              >
+                {t('menu.dashboard')}
               </button>
-            </div>
-            <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.65)', fontSize: 13 }}>{authFlow.label}</div>
-            <div style={{ marginTop: 10 }} className="progress" aria-label="progress">
-              <div className="progressFill" style={{ width: `${Math.max(0, Math.min(100, authFlow.percent))}%` }} />
-            </div>
-            <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(0,0,0,0.55)' }}>{Math.max(0, Math.min(100, authFlow.percent))}%</div>
-            <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
-              {authFlow.steps.map((s, idx) => (
-                <div key={idx} className="row" style={{ fontSize: 12, color: 'rgba(0,0,0,0.65)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span className={`pill ${s.done ? 'pillGood' : 'pillWarn'}`}>{s.done ? 'Готово' : '...'}</span>
-                    <span>{s.label}</span>
-                  </div>
-                  <span>{s.done ? '100%' : idx === authFlow.step ? `${Math.max(0, Math.min(100, authFlow.percent))}%` : '0%'}</span>
-                </div>
-              ))}
-            </div>
+            ) : null}
+            {allowedTabs.includes('customers') ? (
+              <button
+                id="customers-tab"
+                className={`tab ${safeTab === 'customers' ? 'tabActive' : ''}`}
+                onClick={() => setTab('customers')}
+                role="tab"
+                aria-selected={safeTab === 'customers'}
+                aria-controls={showProtectedPanels ? 'customers-panel' : undefined}
+                data-testid="admin_nav_customers"
+              >
+                {t('menu.clients')}
+              </button>
+            ) : null}
+            {allowedTabs.includes('pos') ? (
+              <button
+                id="pos-tab"
+                className={`tab ${safeTab === 'pos' ? 'tabActive' : ''}`}
+                onClick={() => setTab('pos')}
+                role="tab"
+                aria-selected={safeTab === 'pos'}
+                aria-controls={showProtectedPanels ? 'pos-panel' : undefined}
+                data-testid="admin_nav_pos"
+              >
+                {t('sales.title')}
+              </button>
+            ) : null}
+            {allowedTabs.includes('integrations') ? (
+              <button
+                id="integrations-tab"
+                className={`tab ${safeTab === 'integrations' ? 'tabActive' : ''}`}
+                onClick={() => setTab('integrations')}
+                role="tab"
+                aria-selected={safeTab === 'integrations'}
+                aria-controls={showProtectedPanels ? 'integrations-panel' : undefined}
+                data-testid="admin_nav_integrations"
+              >
+                {t('menu.integrations')}
+              </button>
+            ) : null}
+            {allowedTabs.includes('products') ? (
+              <button
+                id="products-tab"
+                className={`tab ${safeTab === 'products' ? 'tabActive' : ''}`}
+                onClick={() => setTab('products')}
+                role="tab"
+                aria-selected={safeTab === 'products'}
+                aria-controls={showProtectedPanels ? 'products-panel' : undefined}
+                data-testid="admin_nav_products"
+              >
+                {t('menu.products')}
+              </button>
+            ) : null}
+            {allowedTabs.includes('settings') ? (
+              <button
+                id="settings-tab"
+                className={`tab ${safeTab === 'settings' ? 'tabActive' : ''}`}
+                onClick={() => setTab('settings')}
+                role="tab"
+                aria-selected={safeTab === 'settings'}
+                aria-controls={showProtectedPanels ? 'settings-panel' : undefined}
+                data-testid="admin_nav_settings"
+              >
+                {t('menu.settings')}
+              </button>
+            ) : null}
+            {allowedTabs.includes('marketing') ? (
+              <button
+                id="marketing-tab"
+                className={`tab ${safeTab === 'marketing' ? 'tabActive' : ''}`}
+                onClick={() => setTab('marketing')}
+                role="tab"
+                aria-selected={safeTab === 'marketing'}
+                aria-controls={showProtectedPanels ? 'marketing-panel' : undefined}
+                data-testid="admin_nav_marketing"
+              >
+                {t('menu.marketing')}
+              </button>
+            ) : null}
+            {allowedTabs.includes('compliance') ? (
+              <button
+                id="compliance-tab"
+                className={`tab ${safeTab === 'compliance' ? 'tabActive' : ''}`}
+                onClick={() => setTab('compliance')}
+                role="tab"
+                aria-selected={safeTab === 'compliance'}
+                aria-controls={showProtectedPanels ? 'compliance-panel' : undefined}
+                data-testid="admin_nav_compliance"
+              >
+                {t('menu.compliance')}
+              </button>
+            ) : null}
+            {allowedTabs.includes('analytics') ? (
+              <button
+                id="analytics-tab"
+                className={`tab ${safeTab === 'analytics' ? 'tabActive' : ''}`}
+                onClick={() => setTab('analytics')}
+                role="tab"
+                aria-selected={safeTab === 'analytics'}
+                aria-controls={showProtectedPanels ? 'analytics-panel' : undefined}
+                data-testid="admin_nav_analytics"
+              >
+                {t('menu.analytics')}
+              </button>
+            ) : null}
           </div>
-        </div>
-      ) : null}
-      <div className="footerVersion">
-        v{__APP_VERSION__}
-        {__BUILD_ID__ ? ` · ${String(__BUILD_ID__).slice(0, 10)}` : ''}
-      </div>
-    </div>
-  )
-}
-
-function StatusBar({ notice }: { notice: Notice }) {
-  useEffect(() => {
-    console.log('[App] StatusBar MOUNTED')
-    return () => console.log('[App] StatusBar UNMOUNTED')
-  }, [])
-  console.log(`[App] StatusBar render: visible=${notice.visible} level=${notice.level} msg=${notice.message}`)
-  const cls =
-    notice.level === 'ok' ? 'statusBar statusBarOk' : notice.level === 'warn' ? 'statusBar statusBarWarn' : 'statusBar statusBarErr'
-  const icon = notice.level === 'ok' ? '✓' : notice.level === 'warn' ? '!' : '×'
-  return (
-    <div className={`${cls} ${notice.visible ? 'statusBarVisible' : ''}`} role="status" aria-live="polite" data-testid="status-bar">
-      <div className="statusBarIcon">{icon}</div>
-      <div className="statusBarText">{notice.message}</div>
-    </div>
-  )
-}
-
-function DashboardView({ dash, reload }: { dash: Dashboard | null; reload: () => Promise<void> }) {
-  return (
-    <div className="grid">
-      <div className="card">
-        <div className="kpiLabel">Продаж за день</div>
-        <div className="kpiValue">{dash ? dash.sales_count : '—'}</div>
-        <div className="kpiSub">{dash ? dash.today : ''}</div>
-      </div>
-      <div className="card">
-        <div className="kpiLabel">Выручка</div>
-        <div className="kpiValue">{dash ? `${money(dash.sales_total)} ₽` : '—'}</div>
-        <div className="kpiSub"><span className="pill pillGood">Начислено {dash ? dash.bonus_earned : '—'}</span> <span className="pill pillWarn">Списано {dash ? dash.bonus_used : '—'}</span></div>
-      </div>
-      <div className="card">
-        <div className="kpiLabel">Клиентов</div>
-        <div className="kpiValue">{dash ? dash.customers_total : '—'}</div>
-        <div className="kpiSub">Всего в системе</div>
-      </div>
-      <div className="card">
-        <div className="kpiLabel">Чистое начисление</div>
-        <div className="kpiValue">{dash ? Math.max(0, dash.bonus_earned - dash.bonus_used) : '—'}</div>
-        <div className="kpiSub">Итог за день</div>
-      </div>
-
-      <div className="card cardFull">
-        <div className="row">
-          <div>
-            <div style={{ fontWeight: 800 }}>Оперативные данные</div>
-            <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>Обновляйте сводку по мере проведения операций.</div>
+        </nav>
+        {authReady ? (
+          <div className="pill">
+            {t('common.role')}: {roleLabel(me?.role || '')}
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" onClick={() => void reload()}>Обновить</button>
-            <a className="btn" href="/api/v1/exports/transactions.csv" target="_blank" rel="noreferrer">Экспорт CSV</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+        ) : null}
+        <LanguageSwitcher />
+      </header>
 
-function CustomersView(props: {
-  q: string
-  setQ: (s: string) => void
-  customers: CustomerListItem[]
-  select: (id: number) => void
-  selected: CustomerListItem | null
-  details: CustomerDetails | null
-  search: () => Promise<void>
-  refresh: () => Promise<void>
-}) {
-  const { q, setQ, customers, select, selected, details, search, refresh } = props
-
-  return (
-    <div className="grid">
-      <div className="card cardFull">
-        <div className="row">
-          <div style={{ width: '100%', maxWidth: 520 }}>
-            <input className="input" value={q} onChange={e => setQ(e.target.value)} placeholder="Поиск по телефону или ФИО" />
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btnPrimary" onClick={() => void search()}>Поиск</button>
-            <button className="btn" onClick={() => void refresh()}>Сброс</button>
-          </div>
-        </div>
-      </div>
-
-      <div className="card cardWide">
-        <div style={{ fontWeight: 800, marginBottom: 10 }}>Список клиентов</div>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Телефон</th>
-              <th>ФИО</th>
-              <th>Баланс</th>
-            </tr>
-          </thead>
-          <tbody>
-            {customers.map(c => (
-              <tr key={c.id} style={{ cursor: 'pointer', background: selected?.id === c.id ? 'rgba(0,0,0,0.06)' : 'transparent' }} onClick={() => select(c.id)}>
-                <td>{c.id}</td>
-                <td>{c.phone || '—'}</td>
-                <td>{c.full_name || '—'}</td>
-                <td><span className="pill">{c.balance_points}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="card cardWide">
-        <div style={{ fontWeight: 800, marginBottom: 10 }}>Карточка клиента</div>
-        {!details ? (
-          <div style={{ color: 'rgba(0,0,0,0.55)' }}>Выберите клиента в списке</div>
-        ) : (
-          <div>
-            <div className="row" style={{ marginBottom: 10 }}>
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 900 }}>{details.customer.full_name || 'Без имени'}</div>
-                <div style={{ color: 'rgba(0,0,0,0.55)', marginTop: 6 }}>{details.customer.phone || '—'} · QR: {details.customer.qr_token || '—'}</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div className="pill pillGood">Баланс {details.customer.balance_points}</div>
-                <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12, marginTop: 6 }}>Telegram ID: {details.customer.telegram_id || '—'}</div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: 10, fontWeight: 800 }}>История операций</div>
-            <table className="table" style={{ marginTop: 8 }}>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Дата</th>
-                  <th>Сумма</th>
-                  <th>Списано</th>
-                  <th>Начислено</th>
-                  <th>Документ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {details.transactions.map(t => (
-                  <tr key={t.id}>
-                    <td>{t.id}</td>
-                    <td>{t.created_at}</td>
-                    <td>{money(t.total_amount)} ₽</td>
-                    <td>{t.bonus_used}</td>
-                    <td>{t.bonus_earned}</td>
-                    <td>
-                      <a href={Api.receiptUrl(t.id)} target="_blank" rel="noreferrer">Чек (PDF)</a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function ProductsView(props: {
-  items: Array<{ id: number; code: string; name: string; kind: string; price: number; active: boolean }>
-  reload: () => Promise<void>
-  canEdit: boolean
-  create: (p: { code: string; name: string; kind: string; price: number; active: boolean }) => Promise<void>
-}) {
-  const { items, reload, canEdit, create } = props
-  const [code, setCode] = useState('')
-  const [name, setName] = useState('')
-  const [kind, setKind] = useState('goods')
-  const [price, setPrice] = useState(0)
-  const [info, setInfo] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-
-  async function onCreate() {
-    setBusy(true)
-    setInfo(null)
-    try {
-      await create({ code: code.trim(), name: name.trim(), kind: kind.trim(), price: Math.max(0, Number(price || 0)), active: true })
-      setCode('')
-      setName('')
-      setPrice(0)
-      setInfo('Создано.')
-    } catch (e: any) {
-      setInfo(String(e?.message || e))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <div className="grid">
-      <div className="card cardFull">
-        <div className="row">
-          <div>
-            <div style={{ fontWeight: 900, fontSize: 18 }}>Товары / услуги</div>
-            <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>Каталог для быстрой продажи и демо-сценариев.</div>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" onClick={() => void reload()} disabled={busy}>Обновить</button>
-          </div>
-        </div>
-      </div>
-
-      {canEdit ? (
-        <div className="card cardFull">
-          <div className="row">
-            <div style={{ flex: 1 }}>
-              <input className="input" value={code} onChange={e => setCode(e.target.value)} placeholder="Код (например E2E_COFFEE)" />
-            </div>
-            <div style={{ flex: 2 }}>
-              <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Название" />
-            </div>
-            <div style={{ width: 160 }}>
-              <input className="input" value={kind} onChange={e => setKind(e.target.value)} placeholder="Тип" />
-            </div>
-            <div style={{ width: 140 }}>
-              <input className="input" value={price} onChange={e => setPrice(Math.max(0, Number(e.target.value || 0)))} placeholder="Цена" />
-            </div>
-            <button className="btn btnPrimary" disabled={busy || !code.trim() || !name.trim()} onClick={() => void onCreate()}>
-              Создать
-            </button>
-          </div>
-          {info ? <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.65)' }}>{info}</div> : null}
-        </div>
-      ) : (
-        <div className="card cardFull" style={{ color: 'rgba(0,0,0,0.55)' }}>
-          У вас нет прав на создание/изменение каталога.
-        </div>
-      )}
-
-      <div className="card cardFull">
-        <div style={{ fontWeight: 800, marginBottom: 10 }}>Список</div>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Код</th>
-              <th>Название</th>
-              <th>Тип</th>
-              <th>Цена</th>
-              <th>Активен</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map(p => (
-              <tr key={p.id}>
-                <td>{p.id}</td>
-                <td>{p.code}</td>
-                <td>{p.name}</td>
-                <td>{p.kind}</td>
-                <td>{money(p.price)} ₽</td>
-                <td><span className={`pill ${p.active ? 'pillGood' : 'pillWarn'}`}>{p.active ? 'Да' : 'Нет'}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-function PosView(props: {
-  refreshCustomers: () => Promise<void>
-  onSaleDone: (customerId: number) => Promise<void>
-  products: Array<{ id: number; code: string; name: string; kind: string; price: number; active: boolean }>
-  reloadProducts: () => Promise<void>
-}) {
-  const { refreshCustomers, onSaleDone, products, reloadProducts } = props
-
-  const [mode, setMode] = useState<'phone' | 'qr' | 'name'>('phone')
-  const [input, setInput] = useState('')
-  const [found, setFound] = useState<number | null>(null)
-  const [items, setItems] = useState<Array<{ code: string; name: string; price: number; qty: number }>>([
-    { code: 'COFFEE', name: 'Капучино', price: 240, qty: 1 },
-    { code: 'DESSERT', name: 'Чизкейк', price: 190, qty: 1 }
-  ])
-  const [productPick, setProductPick] = useState<number | ''>('')
-  const [bonus, setBonus] = useState(50)
-  const [busy, setBusy] = useState(false)
-  const [info, setInfo] = useState<string | null>(null)
-
-  const total = useMemo(() => items.reduce((a, b) => a + b.price * b.qty, 0), [items])
-
-  async function identify() {
-    setInfo(null)
-    setFound(null)
-    setBusy(true)
-    try {
-      if (mode === 'phone') {
-        const r = await Api.identifyPhone(input)
-        setFound(r.customer_id)
-      } else if (mode === 'qr') {
-        const r = await Api.identifyQr(input)
-        setFound(r.customer_id)
-      } else {
-        const r = await Api.identifyName(input)
-        if (r.items.length === 1) {
-          setFound(r.items[0].id)
-        } else {
-          setInfo(`Найдено: ${r.items.length}. Уточните параметры поиска.`)
-        }
-      }
-      await refreshCustomers()
-    } catch (e: any) {
-      setInfo(String(e?.message || e))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function sale() {
-    if (!found) return
-    setBusy(true)
-    setInfo(null)
-    try {
-      const res = await Api.createSale({ customer_id: found, items, requested_bonus: bonus })
-      setInfo(`Операция выполнена. Списано ${res.bonus_used}, начислено ${res.bonus_earned}, баланс ${res.balance}.`)
-      await onSaleDone(found)
-    } catch (e: any) {
-      setInfo(String(e?.message || e))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <div className="grid">
-      <div className="card cardFull">
-        <div className="row">
-          <div style={{ fontWeight: 900, fontSize: 18 }}>Операция продажи</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className={`btn ${mode === 'phone' ? 'btnPrimary' : ''}`} onClick={() => setMode('phone')}>Телефон</button>
-            <button className={`btn ${mode === 'name' ? 'btnPrimary' : ''}`} onClick={() => setMode('name')}>ФИО</button>
-            <button className={`btn ${mode === 'qr' ? 'btnPrimary' : ''}`} onClick={() => setMode('qr')}>QR</button>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 320px' }}>
-            <input className="input" value={input} onChange={e => setInput(e.target.value)} placeholder={mode === 'phone' ? '+79991234567' : mode === 'qr' ? 'QR токен' : 'Иванов Иван'} />
-          </div>
-          <button className="btn btnPrimary" disabled={busy} onClick={() => void identify()}>
-            Идентифицировать
-          </button>
-          <div className="pill">Клиент: {found || '—'}</div>
-        </div>
-        {info ? <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.65)' }}>{info}</div> : null}
-      </div>
-
-      <div className="card cardWide">
-        <div className="row" style={{ marginBottom: 10 }}>
-          <div style={{ fontWeight: 800 }}>Каталог</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" disabled={busy} onClick={() => void reloadProducts()}>
-              Обновить
-            </button>
-          </div>
-        </div>
-        <div className="row">
-          <select className="input" value={productPick} onChange={e => setProductPick((e.target.value ? Number(e.target.value) : '') as any)} style={{ maxWidth: 520 }}>
-            <option value="">Выберите товар/услугу</option>
-            {products.filter(p => p.active).map(p => (
-              <option key={p.id} value={p.id}>
-                {p.code} · {p.name} · {money(p.price)} ₽
-              </option>
-            ))}
-          </select>
-          <button
-            className="btn btnPrimary"
-            disabled={busy || !productPick}
-            onClick={() => {
-              const p = products.find(x => x.id === Number(productPick))
-              if (!p) return
-              setItems(prev => {
-                const idx = prev.findIndex(it => it.code === p.code)
-                if (idx >= 0) {
-                  return prev.map((it, i) => (i === idx ? { ...it, qty: it.qty + 1 } : it))
-                }
-                return [{ code: p.code, name: p.name, price: p.price, qty: 1 }, ...prev]
-              })
-              setProductPick('')
-            }}
-          >
-            Добавить в чек
-          </button>
-        </div>
-      </div>
-
-      <div className="card cardWide">
-        <div style={{ fontWeight: 800, marginBottom: 10 }}>Состав</div>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Код</th>
-              <th>Наименование</th>
-              <th>Цена</th>
-              <th>Кол-во</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((it, idx) => (
-              <tr key={idx}>
-                <td>{it.code}</td>
-                <td>{it.name}</td>
-                <td>{money(it.price)} ₽</td>
-                <td>
-                  <input
-                    className="input"
-                    style={{ width: 90, padding: '8px 10px' }}
-                    value={it.qty}
-                    onChange={e => {
-                      const v = Math.max(1, Number(e.target.value || 1))
-                      setItems(prev => prev.map((p, i) => (i === idx ? { ...p, qty: v } : p)))
-                    }}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="card cardWide">
-        <div style={{ fontWeight: 800, marginBottom: 10 }}>Лояльность</div>
-        <div className="row" style={{ marginBottom: 10 }}>
-          <div className="pill">Сумма {money(total)} ₽</div>
-          <div className="pill pillWarn">Списание {bonus}</div>
-        </div>
-        <input className="input" value={bonus} onChange={e => setBonus(Math.max(0, Number(e.target.value || 0)))} />
-        <button className="btn btnPrimary" style={{ marginTop: 12, width: '100%' }} disabled={!found || busy} onClick={() => void sale()}>
-          Провести
-        </button>
-        <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
-          Чек сохраняется в PDF. При наличии Telegram ID отправляется уведомление.
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function IntegrationsView(props: {
-  items: Integration[]
-  templates: IntegrationTemplate[]
-  busy: boolean
-  selected: Integration | null
-  deliveries: IntegrationDelivery[]
-  select: (id: number) => void
-  reload: () => Promise<void>
-  create: (p: { name: string; kind: string; enabled: boolean; config: any }) => Promise<void>
-  update: (id: number, p: { name: string; kind: string; enabled: boolean; config: any }) => Promise<void>
-  rotate: (id: number) => Promise<void>
-  remove: (id: number) => Promise<void>
-  refreshDeliveries: (id: number) => Promise<void>
-}) {
-  const { items, templates, busy, selected, deliveries, select, reload, create, update, rotate, remove, refreshDeliveries } = props
-
-  const [mode, setMode] = useState<'create' | 'edit'>('create')
-  const [templateId, setTemplateId] = useState('')
-  const [name, setName] = useState('')
-  const [kind, setKind] = useState('pos_webhook')
-  const [enabled, setEnabled] = useState(true)
-  const [configText, setConfigText] = useState('{}')
-  const [info, setInfo] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!selected) return
-    setMode('edit')
-    setTemplateId('')
-    setName(selected.name)
-    setKind(selected.kind)
-    setEnabled(selected.enabled)
-    setConfigText(JSON.stringify(selected.config || {}, null, 2))
-  }, [selected?.id])
-
-  useEffect(() => {
-    if (!templateId) return
-    const t = templates.find(x => x.id === templateId)
-    if (!t) return
-    setMode('create')
-    setName(t.name)
-    setKind(t.kind)
-    setEnabled(true)
-    setConfigText(JSON.stringify(t.config || {}, null, 2))
-  }, [templateId])
-
-  function parseConfig(): any {
-    const t = (configText || '').trim()
-    if (!t) return {}
-    return JSON.parse(t)
-  }
-
-  async function copyWithAutoClear(text: string) {
-    try {
-      await navigator.clipboard.writeText(text)
-      setInfo('Скопировано.')
-      window.setTimeout(async () => {
-        try {
-          const current = await navigator.clipboard.readText()
-          if (current === text) {
-            await navigator.clipboard.writeText('')
-          }
-        } catch {
-        }
-      }, 12000)
-    } catch {
-      setInfo('Не удалось скопировать.')
-    }
-  }
-
-  async function onSave() {
-    setInfo(null)
-    try {
-      const cfg = parseConfig()
-      if (mode === 'create') {
-        await create({ name: name.trim(), kind: kind.trim(), enabled, config: cfg })
-        setName('')
-        setKind('pos_webhook')
-        setEnabled(true)
-        setConfigText('{}')
-        setInfo('Интеграция создана.')
-      } else if (mode === 'edit' && selected) {
-        await update(selected.id, { name: name.trim(), kind: kind.trim(), enabled, config: cfg })
-        setInfo('Изменения сохранены.')
-      }
-    } catch (e: any) {
-      setInfo(String(e?.message || e))
-    }
-  }
-
-  const webhookUrl = selected ? `${location.origin}/api/v1/public/integrations/${selected.id}/pos/receipt` : ''
-
-  return (
-    <div className="grid">
-      <div className="card cardWide">
-        <div className="row" style={{ marginBottom: 10 }}>
-          <div style={{ fontWeight: 800 }}>Подключения</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" disabled={busy} onClick={() => void reload()}>Обновить</button>
-          </div>
-        </div>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Наименование</th>
-              <th>Тип</th>
-              <th>Статус</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map(i => (
-              <tr key={i.id} style={{ cursor: 'pointer', background: selected?.id === i.id ? 'rgba(0,0,0,0.04)' : 'transparent' }} onClick={() => select(i.id)}>
-                <td>{i.id}</td>
-                <td>{i.name}</td>
-                <td>{i.kind}</td>
-                <td><span className={`pill ${i.enabled ? 'pillGood' : 'pillWarn'}`}>{i.enabled ? 'Активна' : 'Отключена'}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
-          Типы: pos_webhook (входящий чек), outbound_webhook (исходящие события).
-        </div>
-      </div>
-
-      <div className="card cardWide">
-        <div className="row" style={{ marginBottom: 10 }}>
-          <div style={{ fontWeight: 800 }}>{mode === 'create' ? 'Создание' : 'Настройки'}</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className={`btn ${mode === 'create' ? 'btnPrimary' : ''}`} onClick={() => setMode('create')}>Новая</button>
-            <button className={`btn ${mode === 'edit' ? 'btnPrimary' : ''}`} disabled={!selected} onClick={() => setMode('edit')}>Редактирование</button>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gap: 10 }}>
-          {mode === 'create' ? (
-            <div>
-              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Шаблон</div>
-              <select className="input" value={templateId} onChange={e => setTemplateId(e.target.value)}>
-                <option value="">Без шаблона</option>
-                {templates.map(t => (
-                  <option key={t.id} value={t.id}>
-                    {t.region} · {t.name}
-                  </option>
-                ))}
-              </select>
-              <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12, marginTop: 6 }}>
-                {templateId ? templates.find(t => t.id === templateId)?.description : 'Выберите типовой сценарий для быстрых настроек.'}
-              </div>
-            </div>
-          ) : null}
-          <div>
-            <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Наименование</div>
-            <input className="input" value={name} onChange={e => setName(e.target.value)} />
-          </div>
-
-          <div className="row">
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Тип</div>
-              <input className="input" value={kind} onChange={e => setKind(e.target.value)} />
-            </div>
-            <div style={{ width: 180 }}>
-              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Статус</div>
-              <button className={`btn ${enabled ? 'btnPrimary' : ''}`} onClick={() => setEnabled(v => !v)}>{enabled ? 'Активна' : 'Отключена'}</button>
-            </div>
-          </div>
-
-          <div>
-            <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Конфигурация (JSON)</div>
-            <textarea className="input" style={{ height: 160, resize: 'vertical' }} value={configText} onChange={e => setConfigText(e.target.value)} />
-          </div>
-
-          <div className="row">
-            <button className="btn btnPrimary" onClick={() => void onSave()} disabled={!name.trim() || !kind.trim()}>
-              Сохранить
-            </button>
-            {mode === 'edit' && selected ? (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn" onClick={() => void rotate(selected.id)}>Сменить ключ</button>
-                <button className="btn" onClick={() => void remove(selected.id)}>Удалить</button>
-              </div>
+      <main
+        aria-label="Main content"
+        data-viewport-mode={viewport.mode}
+        data-viewport-density={viewport.density}
+      >
+        {notice && notice.visible ? (
+          <div className="grid">
+            {notice.level === 'ok' ? (
+              <SuccessMessage message={notice.message} />
+            ) : notice.level === 'warn' ? (
+              <WarningMessage message={notice.message} />
             ) : (
-              <div />
+              <ErrorMessage message={notice.message} />
             )}
           </div>
+        ) : null}
 
-          {info ? <div style={{ color: info.toLowerCase().includes('error') ? '#8b0000' : 'rgba(0,0,0,0.75)' }}>{info}</div> : null}
-
-          {selected && selected.kind === 'pos_webhook' ? (
-            <div>
-              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginBottom: 6 }}>Webhook URL (приём чека)</div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input className="input" readOnly value={webhookUrl} />
-                <button className="btn" onClick={() => void copyWithAutoClear(webhookUrl)} type="button">
-                  Копировать
+        {/* Show login form when not authenticated OR when auth is still loading */}
+        {!authReady || (!user && authReady) ? (
+          <div className="grid">
+            <div className="card cardFull">
+              <div className="row">
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 16 }}>{t('auth.login')}</div>
+                  <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
+                    {t('auth.accessSettingsDesc')}
+                  </div>
+                </div>
+                <div className="pill">
+                  {t('auth.apiStatus')}: {publicStatus?.api || t('auth.apiUnavailable')}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                <button
+                  className={`btn ${loginMode === 'password' ? 'btnPrimary' : ''}`}
+                  onClick={() => setLoginMode('password')}
+                  data-testid="common_btn_password_login_en"
+                >
+                  {t('auth.byPassword')}
+                </button>
+                <button
+                  className={`btn ${loginMode === 'key' ? 'btnPrimary' : ''}`}
+                  onClick={() => setLoginMode('key')}
+                  data-testid="common_btn_key_login_en"
+                >
+                  {t('auth.byKey')}
+                </button>
+                <button
+                  className={`btn ${loginMode === 'recover' ? 'btnPrimary' : ''}`}
+                  onClick={() => setLoginMode('recover')}
+                  data-testid="common_btn_recovery_en"
+                >
+                  {t('auth.recovery')}
+                </button>
+                <button
+                  className="btn"
+                  onClick={() => void loadPublicStatus()}
+                  data-testid="common_btn_api_status_en"
+                >
+                  {t('auth.apiStatus')}
                 </button>
               </div>
-              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginTop: 8 }}>
-                Заголовок авторизации: x-integration-secret
+
+              {loginMode === 'password' ? (
+                <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+                  <div className="row">
+                    <div style={{ flex: 1 }}>
+                      <input
+                        className="input"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder={t('auth.loginPlaceholder')}
+                        autoComplete="off"
+                        spellCheck={false}
+                        data-testid="common_input_username_en"
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          className="input"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder={t('auth.passwordPlaceholder')}
+                          type={showPassword ? 'text' : 'password'}
+                          autoComplete="off"
+                          spellCheck={false}
+                          data-testid="common_input_password_en"
+                        />
+                        <button
+                          className="btn"
+                          onClick={() => setShowPassword((v) => !v)}
+                          aria-label={t('forms.labels.showPassword')}
+                          type="button"
+                          data-testid="common_btn_toggle_password_en"
+                        >
+                          {showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      className="btn btnPrimary"
+                      onClick={() => void doLoginByPassword()}
+                      disabled={!username.trim() || !password}
+                      data-testid="common_btn_login_en"
+                    >
+                      {t('auth.loginButton')}
+                    </button>
+                  </div>
+                  <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
+                    {authStatus?.default_admin_present
+                      ? `${t('auth.defaultAdmin')}: ${authStatus.default_admin_username}`
+                      : t('auth.defaultAdminNotCreated')}
+                  </div>
+                </div>
+              ) : null}
+
+              {loginMode === 'key' ? (
+                <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1 1 320px' }}>
+                    <input
+                      className="input"
+                      value={adminKey}
+                      onChange={(e) => setAdminKey(e.target.value)}
+                      placeholder="x-admin-secret"
+                      autoComplete="off"
+                      spellCheck={false}
+                      data-testid="common_input_admin_key_en"
+                    />
+                  </div>
+                  <button
+                    className="btn btnPrimary"
+                    onClick={() => void doLoginByKey()}
+                    disabled={!adminKey.trim()}
+                    data-testid="common_btn_key_login_submit_en"
+                  >
+                    {t('auth.loginButton')}
+                  </button>
+                </div>
+              ) : null}
+
+              {loginMode === 'recover' ? (
+                <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+                  <div className="row">
+                    <div style={{ flex: 1 }}>
+                      <input
+                        className="input"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder={t('auth.loginPlaceholder')}
+                        autoComplete="off"
+                        spellCheck={false}
+                        data-testid="common_input_recover_username_en"
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          className="input"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder={t('auth.newPasswordPlaceholder')}
+                          type={showNewPassword ? 'text' : 'password'}
+                          autoComplete="off"
+                          spellCheck={false}
+                          data-testid="common_input_recover_new_password_en"
+                        />
+                        <button
+                          className="btn"
+                          onClick={() => setShowNewPassword((v) => !v)}
+                          aria-label={t('forms.labels.showPassword')}
+                          type="button"
+                          data-testid="common_btn_toggle_new_password_en"
+                        >
+                          {showNewPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="row">
+                    <div style={{ flex: 1 }}>
+                      <input
+                        className="input"
+                        value={recoverySecret}
+                        onChange={(e) => setRecoverySecret(e.target.value)}
+                        placeholder={t('auth.recoveryCode')}
+                        type="password"
+                        autoComplete="off"
+                        spellCheck={false}
+                        data-testid="common_input_recovery_secret_en"
+                      />
+                    </div>
+                    <button
+                      className="btn btnPrimary"
+                      onClick={() => void doRecoverPassword()}
+                      disabled={!username.trim() || newPassword.length < 8 || !recoverySecret}
+                      data-testid="common_btn_reset_password_en"
+                    >
+                      {t('auth.resetPassword')}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {mustChangePassword ? (
+                <div style={{ marginTop: 12, color: '#8b0000' }}>
+                  {t('auth.requirePasswordChange')}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {showProtectedPanels && safeTab === 'dashboard' ? (
+          <div id="dashboard-panel" role="tabpanel" aria-labelledby="dashboard-tab">
+            <DashboardView dash={dash} reload={() => loadDashboard()} onNavigate={navigateTo} />
+          </div>
+        ) : null}
+        {showProtectedPanels && safeTab === 'customers' ? (
+          <div id="customers-panel" role="tabpanel" aria-labelledby="customers-tab">
+            <CustomersView
+              q={q}
+              setQ={setQ}
+              customers={customers}
+              select={(id) => setSelectedId(id)}
+              selected={selected}
+              details={details}
+              search={() => loadCustomers(q)}
+              refresh={() => loadCustomers()}
+            />
+          </div>
+        ) : null}
+        {showProtectedPanels && safeTab === 'pos' ? (
+          <div id="pos-panel" role="tabpanel" aria-labelledby="pos-tab">
+            <PosView
+              refreshCustomers={() => loadCustomers()}
+              products={products}
+              reloadProducts={() => loadProducts()}
+              onSaleDone={async (customerId: number) => {
+                await loadDashboard();
+                await loadCustomers();
+                setSelectedId(customerId);
+                setTab('customers');
+              }}
+            />
+          </div>
+        ) : null}
+        {showProtectedPanels && safeTab === 'integrations' ? (
+          <div id="integrations-panel" role="tabpanel" aria-labelledby="integrations-tab">
+            <div className="grid">
+              <div className="card cardWide">
+                <div className="tabs" style={{ marginBottom: 15 }}>
+                  {canReadIntegrations ? (
+                    <div
+                      className={`tab ${integrationSubTab === 'settings' ? 'tabActive' : ''}`}
+                      onClick={() => setIntegrationSubTab('settings')}
+                      data-testid="admin_tab_integration_settings_en"
+                    >
+                      {t('integrations.botSettings')}
+                    </div>
+                  ) : null}
+                  <div
+                    className={`tab ${integrationSubTab === 'webhooks' ? 'tabActive' : ''}`}
+                    onClick={() => setIntegrationSubTab('webhooks')}
+                    data-testid="admin_tab_webhooks_en"
+                  >
+                    {t('integrations.connections')}
+                  </div>
+                </div>
+
+                {integrationSubTab === 'settings' && canReadIntegrations ? (
+                  <IntegrationSettings />
+                ) : (
+                  <IntegrationsView
+                    items={integrations}
+                    templates={integrationTemplates}
+                    busy={integrationsBusy}
+                    selected={selectedIntegration}
+                    deliveries={integrationDeliveries}
+                    canManage={canReadIntegrations}
+                    canUseDevSale={canUseDevSale}
+                    select={(id) => setSelectedIntegrationId(id)}
+                    reload={() => loadIntegrations()}
+                    create={async (p) => {
+                      await Api.createIntegration(p);
+                      await loadIntegrations();
+                    }}
+                    update={async (id, p) => {
+                      await Api.updateIntegration(id, p);
+                      await loadIntegrations();
+                    }}
+                    rotate={async (id) => {
+                      await Api.rotateIntegrationSecret(id);
+                      await loadIntegrations();
+                      setSelectedIntegrationId(id);
+                    }}
+                    remove={async (id) => {
+                      await Api.deleteIntegration(id);
+                      setSelectedIntegrationId(null);
+                      await loadIntegrations();
+                    }}
+                    refreshDeliveries={async (id) => {
+                      await loadDeliveries(id);
+                    }}
+                    createDevSale={async (customerQr) => {
+                      const result = await Api.createDevSale(customerQr);
+                      await Promise.all([loadDashboard(), loadCustomers()]);
+                      setSelectedId(result.customer_id);
+                      return result;
+                    }}
+                  />
+                )}
               </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                <input className="input" readOnly value={selected.secret} />
-                <button className="btn" onClick={() => void copyWithAutoClear(selected.secret)} type="button">
-                  Копировать
+            </div>
+          </div>
+        ) : null}
+        {showProtectedPanels && safeTab === 'products' ? (
+          <div id="products-panel" role="tabpanel" aria-labelledby="products-tab">
+            <ProductsView
+              items={products}
+              reload={() => loadProducts()}
+              canEdit={(me?.permissions || []).includes('product.create')}
+              showProductImport={showProductImport}
+              create={async (p) => {
+                await Api.createProduct(p);
+                await loadProducts();
+              }}
+              setShowProductImport={setShowProductImport}
+            />
+          </div>
+        ) : null}
+        {showProtectedPanels && safeTab === 'settings' ? (
+          <div id="settings-panel" role="tabpanel" aria-labelledby="settings-tab">
+            <div className="grid">
+              <div className="card cardFull" data-testid="settings_view_en">
+                <div className="row">
+                  <div>
+                    <div style={{ fontWeight: 900, fontSize: 18 }}>{t('auth.accessSettings')}</div>
+                    <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
+                      {mustChangePassword
+                        ? t('auth.requirePasswordChangeSettings')
+                        : t('auth.accessSettingsDesc')}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <div className="pill">{t('auth.sessionActive')}</div>
+                    <button
+                      className="btn"
+                      onClick={() => void doLogout()}
+                      type="button"
+                      data-testid="admin_btn_logout_en"
+                    >
+                      {t('auth.logout')}
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+                  <div className="row">
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          className="input"
+                          value={oldPassword}
+                          onChange={(e) => setOldPassword(e.target.value)}
+                          placeholder={t('auth.currentPassword')}
+                          type={showSettingsOld ? 'text' : 'password'}
+                          autoComplete="off"
+                          spellCheck={false}
+                          data-testid="admin_input_old_password_en"
+                        />
+                        <button
+                          className="btn"
+                          onClick={() => setShowSettingsOld((v) => !v)}
+                          type="button"
+                          data-testid="admin_btn_toggle_old_password_en"
+                        >
+                          {showSettingsOld ? t('auth.hidePassword') : t('auth.showPassword')}
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          className="input"
+                          value={settingsNewPassword}
+                          onChange={(e) => setSettingsNewPassword(e.target.value)}
+                          placeholder={t('auth.newPassword')}
+                          type={showSettingsNew ? 'text' : 'password'}
+                          autoComplete="off"
+                          spellCheck={false}
+                          data-testid="admin_input_new_password_en"
+                        />
+                        <button
+                          className="btn"
+                          onClick={() => setShowSettingsNew((v) => !v)}
+                          type="button"
+                          data-testid="admin_btn_toggle_new_password_en"
+                        >
+                          {showSettingsNew ? t('auth.hidePassword') : t('auth.showPassword')}
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      className="btn btnPrimary"
+                      onClick={() => void doChangePassword()}
+                      disabled={!oldPassword || settingsNewPassword.length < 8}
+                      data-testid="admin_btn_change_password_en"
+                    >
+                      {t('auth.changePassword')}
+                    </button>
+                  </div>
+                  <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
+                    {t('auth.recoveryInstructions')}
+                  </div>
+                </div>
+              </div>
+
+              {me?.role === 'owner' || (me?.permissions || []).includes('settings.access') ? (
+                <PermissionsTable />
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {showProtectedPanels && safeTab === 'marketing' ? (
+          <div id="marketing-panel" role="tabpanel" aria-labelledby="marketing-tab">
+            <MarketingView />
+          </div>
+        ) : null}
+
+        {showProtectedPanels && safeTab === 'compliance' ? (
+          <div id="compliance-panel" role="tabpanel" aria-labelledby="compliance-tab">
+            <ComplianceView />
+          </div>
+        ) : null}
+        {showProtectedPanels && safeTab === 'analytics' ? (
+          <div id="analytics-panel" role="tabpanel" aria-labelledby="analytics-tab">
+            <AnalyticsView />
+          </div>
+        ) : null}
+
+        {authFlow?.active ? (
+          <div className="overlay" role="dialog" aria-modal="true">
+            <div className="overlayPanel">
+              <div className="row">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <LoadingSpinner size="sm" />
+                  <div style={{ fontWeight: 800 }}>{t('authFlow.authorization')}</div>
+                </div>
+                <button className="btn" onClick={() => stopAuthFlow()} type="button">
+                  {t('authFlow.cancel')}
                 </button>
               </div>
+              <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.65)', fontSize: 13 }}>
+                {authFlow.label}
+              </div>
+              <div style={{ marginTop: 10 }} className="progress" aria-label="progress">
+                <div
+                  className="progressFill"
+                  style={{ width: `${Math.max(0, Math.min(100, authFlow.percent))}%` }}
+                />
+              </div>
+              <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(0,0,0,0.55)' }}>
+                {Math.max(0, Math.min(100, authFlow.percent))}%
+              </div>
+              <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
+                {authFlow.steps.map((s, idx) => (
+                  <div
+                    key={idx}
+                    className="row"
+                    style={{ fontSize: 12, color: 'rgba(0,0,0,0.65)' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className={`pill ${s.done ? 'pillGood' : 'pillWarn'}`}>
+                        {s.done ? t('authFlow.done') : '...'}
+                      </span>
+                      <span>{s.label}</span>
+                    </div>
+                    <span>
+                      {s.done
+                        ? '100%'
+                        : idx === authFlow.step
+                          ? `${Math.max(0, Math.min(100, authFlow.percent))}%`
+                          : '0%'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </main>
+      <footer role="contentinfo" className="footerVersion">
+        v{__APP_VERSION__}
+        {__BUILD_ID__ ? ` · ${String(__BUILD_ID__).slice(0, 10)}` : ''}
+      </footer>
+    </div>
+  );
+}
+
+type DashboardViewProps = {
+  dash: Dashboard | null;
+  reload: () => Promise<void>;
+  onNavigate: (tab: string, params?: Record<string, string | number>) => void;
+};
+
+function DashboardView({ dash, reload, onNavigate }: DashboardViewProps) {
+  const { t } = useTranslation();
+  const { data, loading, error, refresh } = useDashboard();
+
+  async function handleReload() {
+    await Promise.allSettled([reload(), refresh()]);
+  }
+
+  return (
+    <div className="grid" data-testid="admin-dashboard">
+      <div className="card cardFull">
+        <div className="row">
+          <div style={{ fontWeight: 800 }} data-testid="admin-dashboard-title">
+            {t('dashboard.title')}
+          </div>
+          <button className="btn" onClick={() => void handleReload()} type="button">
+            {t('common.refresh')}
+          </button>
+        </div>
+        {dash ? (
+          <div
+            style={{
+              marginTop: 10,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+              gap: 10,
+            }}
+          >
+            <div className="card cardCompact">
+              <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>{t('sales.title')}</div>
+              <div style={{ fontWeight: 800, fontSize: 18 }}>{dash.sales_count}</div>
+            </div>
+            <div className="card cardCompact">
+              <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
+                {t('dashboard.revenueToday')}
+              </div>
+              <div style={{ fontWeight: 800, fontSize: 18 }}>{money(dash.sales_total)} ₽</div>
+            </div>
+            <div className="card cardCompact">
+              <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>{t('menu.clients')}</div>
+              <div style={{ fontWeight: 800, fontSize: 18 }}>{dash.customers_total}</div>
+            </div>
+            <div className="card cardCompact">
+              <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
+                {t('sales.bonusEarned')}
+              </div>
+              <div style={{ fontWeight: 800, fontSize: 18 }}>{money(dash.bonus_earned)}</div>
+            </div>
+          </div>
+        ) : null}
+        {loading ? (
+          <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.55)' }}>{t('common.loading')}</div>
+        ) : null}
+        {error ? <div style={{ marginTop: 10, color: '#8b0000' }}>{error}</div> : null}
+      </div>
+
+      <DashboardWrapper data={data} onNavigate={onNavigate} />
+
+      {data.operational ? <OperationalWidget data={data.operational} /> : null}
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: 10,
+        }}
+      >
+        <div data-testid="admin_widget_customers">
+          <CustomersWidget data={data.customers || undefined} />
+        </div>
+        <div data-testid="admin_widget_products">
+          <ProductsWidget data={data.products || undefined} />
+        </div>
+        <div data-testid="admin_widget_marketing">
+          <MarketingWidget data={data.marketing || undefined} />
+        </div>
+        <div data-testid="admin_widget_integrations">
+          <IntegrationsWidget data={data.integrations || undefined} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type CustomersViewProps = {
+  q: string;
+  setQ: React.Dispatch<React.SetStateAction<string>>;
+  customers: CustomerListItem[];
+  select: (id: number) => void;
+  selected: CustomerListItem | null;
+  details: CustomerDetails | null;
+  search: () => Promise<void>;
+  refresh: () => Promise<void>;
+};
+
+function CustomersView({
+  q,
+  setQ,
+  customers,
+  select,
+  selected,
+  details,
+  search,
+  refresh,
+}: CustomersViewProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="grid">
+      <div className="card cardFull">
+        <div className="row">
+          <input
+            className="input"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t('customers.search')}
+            autoComplete="off"
+            data-testid="customers_search_input"
+          />
+          <button
+            className="btn btnPrimary"
+            onClick={() => void search()}
+            type="button"
+            data-testid="customers_search_button"
+          >
+            {t('common.search')}
+          </button>
+          <button
+            className="btn"
+            onClick={() => void refresh()}
+            type="button"
+            data-testid="customers_clear_button"
+          >
+            {t('common.refresh')}
+          </button>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: 10,
+        }}
+      >
+        <div className="card cardFull">
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>{t('customers.list')}</div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {customers.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className="btn"
+                onClick={() => select(c.id)}
+                style={{
+                  justifyContent: 'space-between',
+                  background: selected?.id === c.id ? 'var(--primary-light)' : undefined,
+                  borderColor: selected?.id === c.id ? 'var(--primary)' : undefined,
+                }}
+              >
+                <span>{c.full_name || c.phone || `#${c.id}`}</span>
+                <span style={{ color: 'rgba(0,0,0,0.55)' }}>{c.balance_points}</span>
+              </button>
+            ))}
+            {customers.length === 0 ? (
+              <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
+                {t('customers.noCustomers')}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="card cardFull">
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>{t('customers.details')}</div>
+          {!details ? (
+            <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
+              {t('customers.selectCustomer')}
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: 10 }}>
+              <div>
+                <div>{details.customer.full_name || '—'}</div>
+                <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
+                  {details.customer.phone || '—'}
+                </div>
+              </div>
+              <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.65)' }}>
+                {t('customers.balance')}: {details.customer.balance_points}
+              </div>
+              <div style={{ display: 'grid', gap: 6 }}>
+                {details.transactions.slice(0, 10).map((tx) => (
+                  <div key={tx.id} className="card cardCompact">
+                    <div style={{ fontWeight: 700 }}>#{tx.id}</div>
+                    <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)' }}>
+                      {new Date(tx.created_at).toLocaleString()}
+                    </div>
+                    <div style={{ fontSize: 13 }}>{money(tx.total_amount)} ₽</div>
+                  </div>
+                ))}
+                {details.transactions.length === 0 ? (
+                  <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
+                    {t('customers.noTransactions')}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type ProductRow = {
+  id: number;
+  code: string;
+  name: string;
+  kind: string;
+  price: number;
+  active: boolean;
+};
+
+type PosViewProps = {
+  refreshCustomers: () => Promise<void>;
+  products: ProductRow[];
+  reloadProducts: () => Promise<void>;
+  onSaleDone: (customerId: number) => Promise<void>;
+};
+
+function PosView({ refreshCustomers, products, reloadProducts, onSaleDone }: PosViewProps) {
+  const { t } = useTranslation();
+  const [customerId, setCustomerId] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [qty, setQty] = useState('1');
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function submitSale() {
+    const parsedCustomerId = Number(customerId);
+    const parsedQty = Number(qty);
+    const product = products.find((p) => String(p.id) === selectedProductId);
+
+    if (!parsedCustomerId || !product || !parsedQty || parsedQty < 1) {
+      setErr('Invalid sale data');
+      return;
+    }
+
+    setBusy(true);
+    setErr(null);
+    setNotice(null);
+    try {
+      await Api.createSale({
+        customer_id: parsedCustomerId,
+        items: [
+          { code: product.code, name: product.name, price: Number(product.price), qty: parsedQty },
+        ],
+      });
+      setNotice('Sale created successfully');
+      await Promise.allSettled([refreshCustomers(), onSaleDone(parsedCustomerId)]);
+      setQty('1');
+    } catch (e: any) {
+      setErr(String(e?.message || e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="grid">
+      <div className="card cardFull">
+        <div className="row">
+          <div style={{ fontWeight: 700 }}>{t('sales.title')}</div>
+          <button className="btn" onClick={() => void reloadProducts()} type="button">
+            {t('menu.products')}
+          </button>
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: 8,
+            marginTop: 10,
+          }}
+        >
+          <input
+            className="input"
+            value={customerId}
+            onChange={(e) => setCustomerId(e.target.value)}
+            placeholder={t('sales.customerId')}
+          />
+          <select
+            className="input"
+            value={selectedProductId}
+            onChange={(e) => setSelectedProductId(e.target.value)}
+          >
+            <option value="">{t('sales.selectProduct')}</option>
+            {products
+              .filter((p) => p.active)
+              .map((p) => (
+                <option key={p.id} value={String(p.id)}>
+                  {p.code} - {p.name} ({money(p.price)} ₽)
+                </option>
+              ))}
+          </select>
+          <input
+            className="input"
+            value={qty}
+            onChange={(e) => setQty(e.target.value)}
+            placeholder={t('sales.qty')}
+          />
+          <button
+            className="btn btnPrimary"
+            onClick={() => void submitSale()}
+            disabled={busy}
+            type="button"
+          >
+            {busy ? t('common.loading') : t('sales.createSale')}
+          </button>
+        </div>
+        {notice ? <div style={{ marginTop: 10, color: '#047857' }}>{notice}</div> : null}
+        {err ? <div style={{ marginTop: 10, color: '#8b0000' }}>{err}</div> : null}
+      </div>
+    </div>
+  );
+}
+
+type IntegrationPayload = {
+  name: string;
+  kind: string;
+  enabled: boolean;
+  config: Record<string, unknown>;
+};
+
+type IntegrationsViewProps = {
+  items: Integration[];
+  templates: IntegrationTemplate[];
+  busy: boolean;
+  selected: Integration | null;
+  deliveries: IntegrationDelivery[];
+  canManage: boolean;
+  canUseDevSale: boolean;
+  select: (id: number) => void;
+  reload: () => Promise<void>;
+  create: (payload: IntegrationPayload) => Promise<void>;
+  update: (id: number, payload: IntegrationPayload) => Promise<void>;
+  rotate: (id: number) => Promise<void>;
+  remove: (id: number) => Promise<void>;
+  refreshDeliveries: (id: number) => Promise<void>;
+  createDevSale: (customerQr: string) => Promise<{
+    accepted: boolean;
+    duplicate?: boolean;
+    transaction_id: number;
+    customer_id: number;
+    integration_id: number;
+    receipt_id: string;
+    debug_mode: boolean;
+  }>;
+};
+
+function IntegrationsView({
+  items,
+  templates,
+  busy,
+  selected,
+  deliveries,
+  canManage,
+  canUseDevSale,
+  select,
+  reload,
+  create,
+  update,
+  rotate,
+  remove,
+  refreshDeliveries,
+  createDevSale,
+}: IntegrationsViewProps) {
+  const { t } = useTranslation();
+  const [name, setName] = useState('');
+  const [kind, setKind] = useState('webhook');
+  const [enabled, setEnabled] = useState(true);
+  const [configText, setConfigText] = useState('{}');
+  const [err, setErr] = useState<string | null>(null);
+  const [saleQr, setSaleQr] = useState('');
+  const [saleBusy, setSaleBusy] = useState(false);
+  const [saleErr, setSaleErr] = useState<string | null>(null);
+  const [saleResult, setSaleResult] = useState<string | null>(null);
+
+  function readConfig(): Record<string, unknown> {
+    try {
+      const parsed = JSON.parse(configText);
+      return typeof parsed === 'object' && parsed !== null ? parsed : {};
+    } catch {
+      throw new Error('Invalid JSON in config');
+    }
+  }
+
+  async function handleCreate() {
+    try {
+      setErr(null);
+      await create({ name: name.trim(), kind: kind.trim(), enabled, config: readConfig() });
+      setName('');
+      setConfigText('{}');
+    } catch (e: any) {
+      setErr(String(e?.message || e));
+    }
+  }
+
+  async function handleUpdate() {
+    if (!selected) return;
+    try {
+      setErr(null);
+      await update(selected.id, {
+        name: name.trim() || selected.name,
+        kind: kind.trim() || selected.kind,
+        enabled,
+        config: readConfig(),
+      });
+    } catch (e: any) {
+      setErr(String(e?.message || e));
+    }
+  }
+
+  async function handleCreateSale() {
+    try {
+      setSaleBusy(true);
+      setSaleErr(null);
+      setSaleResult(null);
+      const result = await createDevSale(saleQr.trim());
+      setSaleResult(
+        `Sale created: tx #${result.transaction_id}, customer #${result.customer_id}${result.duplicate ? ' (duplicate)' : ''}`
+      );
+      setSaleQr('');
+    } catch (e: any) {
+      setSaleErr(String(e?.message || e));
+    } finally {
+      setSaleBusy(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: 10,
+      }}
+    >
+      <div className="card cardFull">
+        <div className="row">
+          <div style={{ fontWeight: 700 }}>{t('integrations.connections')}</div>
+          {canManage ? (
+            <button className="btn" onClick={() => void reload()} type="button">
+              {t('common.refresh')}
+            </button>
+          ) : null}
+        </div>
+        <div style={{ display: 'grid', gap: 8, marginTop: 10 }}>
+          {canManage
+            ? items.map((i) => (
+                <button
+                  key={i.id}
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    select(i.id);
+                    setName(i.name);
+                    setKind(i.kind);
+                    setEnabled(i.enabled);
+                    setConfigText(JSON.stringify(i.config || {}, null, 2));
+                  }}
+                  style={{
+                    justifyContent: 'space-between',
+                    background: selected?.id === i.id ? 'var(--primary-light)' : undefined,
+                    borderColor: selected?.id === i.id ? 'var(--primary)' : undefined,
+                  }}
+                >
+                  <span>
+                    {i.name} ({i.kind})
+                  </span>
+                  <span className={`pill ${i.enabled ? 'pillGood' : 'pillWarn'}`}>
+                    {i.enabled ? 'on' : 'off'}
+                  </span>
+                </button>
+              ))
+            : null}
+          {canManage && items.length === 0 && !busy ? (
+            <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
+              {t('integrations.noConnections')}
+            </div>
+          ) : null}
+          {!canManage && canUseDevSale ? (
+            <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
+              DEV cashier simulator is available without full integration management access.
             </div>
           ) : null}
         </div>
       </div>
 
-      {selected ? (
+      {canManage ? (
         <div className="card cardFull">
-          <div className="row">
-            <div style={{ fontWeight: 800 }}>Доставка событий</div>
-            <button className="btn" onClick={() => void refreshDeliveries(selected.id)}>Обновить</button>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>
+            {selected ? t('common.edit') : t('common.create')}
           </div>
-          <table className="table" style={{ marginTop: 10 }}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Событие</th>
-                <th>Статус</th>
-                <th>HTTP</th>
-                <th>Дата</th>
-              </tr>
-            </thead>
-            <tbody>
-              {deliveries.map(d => (
-                <tr key={d.id}>
-                  <td>{d.id}</td>
-                  <td>{d.event_type}</td>
-                  <td><span className={`pill ${d.status === 'ok' ? 'pillGood' : 'pillWarn'}`}>{d.status}</span></td>
-                  <td>{d.http_status ?? '—'}</td>
-                  <td>{d.created_at}</td>
-                </tr>
+          <div style={{ display: 'grid', gap: 8 }}>
+            <input
+              className="input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t('common.name')}
+            />
+            <input
+              className="input"
+              value={kind}
+              onChange={(e) => setKind(e.target.value)}
+              placeholder={t('common.type')}
+            />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="checkbox"
+                checked={enabled}
+                onChange={(e) => setEnabled(e.target.checked)}
+              />
+              {t('common.enabled')}
+            </label>
+            <textarea
+              className="input"
+              value={configText}
+              onChange={(e) => setConfigText(e.target.value)}
+              rows={8}
+              style={{ fontFamily: 'monospace' }}
+            />
+            <div className="row">
+              {selected ? (
+                <>
+                  <button
+                    className="btn btnPrimary"
+                    onClick={() => void handleUpdate()}
+                    type="button"
+                  >
+                    {t('common.save')}
+                  </button>
+                  <button className="btn" onClick={() => void rotate(selected.id)} type="button">
+                    {t('integrations.rotateSecret')}
+                  </button>
+                  <button className="btn" onClick={() => void remove(selected.id)} type="button">
+                    {t('common.delete')}
+                  </button>
+                  <button
+                    className="btn"
+                    onClick={() => void refreshDeliveries(selected.id)}
+                    type="button"
+                  >
+                    {t('integrations.deliveryLog')}
+                  </button>
+                </>
+              ) : (
+                <button className="btn btnPrimary" onClick={() => void handleCreate()} type="button">
+                  {t('common.create')}
+                </button>
+              )}
+            </div>
+            {err ? <div style={{ color: '#8b0000' }}>{err}</div> : null}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {templates.map((tpl) => (
+                <button
+                  key={tpl.id}
+                  className="btn"
+                  onClick={() => {
+                    setName(tpl.name);
+                    setKind(tpl.kind);
+                    setConfigText(JSON.stringify(tpl.config || {}, null, 2));
+                  }}
+                  type="button"
+                >
+                  {tpl.name}
+                </button>
               ))}
-            </tbody>
-          </table>
-          <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
-            Для outbound_webhook укажите config.url и (опционально) config.headers.
+            </div>
+            {selected && deliveries.length > 0 ? (
+              <div style={{ display: 'grid', gap: 6, marginTop: 8 }}>
+                {deliveries.slice(0, 10).map((d) => (
+                  <div key={d.id} className="card cardCompact">
+                    <div style={{ fontWeight: 700 }}>
+                      #{d.id} {d.event_type}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)' }}>
+                      {d.status} {d.http_status ? `(${d.http_status})` : ''} ·{' '}
+                      {new Date(d.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {canUseDevSale ? (
+        <div className="card cardFull" data-testid="admin_dev_create_sale_panel">
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>DEV Create Sale</div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            <input
+              className="input"
+              value={saleQr}
+              onChange={(e) => setSaleQr(e.target.value)}
+              placeholder="Customer QR"
+              data-testid="admin_input_dev_customer_qr"
+            />
+            <button
+              className="btn btnPrimary"
+              onClick={() => void handleCreateSale()}
+              disabled={saleBusy || !saleQr.trim()}
+              type="button"
+              data-testid="admin_btn_dev_create_sale"
+            >
+              {saleBusy ? 'Creating...' : 'Create Sale'}
+            </button>
+            {saleResult ? <SuccessMessage message={saleResult} /> : null}
+            {saleErr ? <ErrorMessage message={saleErr} /> : null}
           </div>
         </div>
       ) : null}
     </div>
-  )
+  );
 }
 
-export default App
+type ProductsViewProps = {
+  items: ProductRow[];
+  reload: () => Promise<void>;
+  canEdit: boolean;
+  showProductImport: boolean;
+  create: (payload: {
+    code: string;
+    name: string;
+    kind: string;
+    price: number;
+    active: boolean;
+  }) => Promise<void>;
+  setShowProductImport: React.Dispatch<React.SetStateAction<boolean>>;
+};
+
+function ProductsView({
+  items,
+  reload,
+  canEdit,
+  showProductImport,
+  create,
+  setShowProductImport,
+}: ProductsViewProps) {
+  const { t } = useTranslation();
+  const [code, setCode] = useState('');
+  const [name, setName] = useState('');
+  const [kind, setKind] = useState('drink');
+  const [price, setPrice] = useState('');
+  const [active, setActive] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function handleCreate() {
+    try {
+      setErr(null);
+      await create({
+        code: code.trim(),
+        name: name.trim(),
+        kind: kind.trim(),
+        price: Number(price),
+        active,
+      });
+      setCode('');
+      setName('');
+      setPrice('');
+    } catch (e: any) {
+      setErr(String(e?.message || e));
+    }
+  }
+
+  return (
+    <div className="grid">
+      <div className="card cardFull">
+        <div className="row">
+          <div style={{ fontWeight: 700 }}>{t('menu.products')}</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn" onClick={() => void reload()} type="button">
+              {t('common.refresh')}
+            </button>
+            <button className="btn" onClick={() => setShowProductImport(true)} type="button">
+              {t('products.import')}
+            </button>
+          </div>
+        </div>
+        {canEdit ? (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+              gap: 8,
+              marginTop: 10,
+            }}
+          >
+            <input
+              className="input"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder={t('products.code')}
+            />
+            <input
+              className="input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t('products.name')}
+            />
+            <input
+              className="input"
+              value={kind}
+              onChange={(e) => setKind(e.target.value)}
+              placeholder={t('products.category')}
+            />
+            <input
+              className="input"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder={t('products.price')}
+            />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <input
+                type="checkbox"
+                checked={active}
+                onChange={(e) => setActive(e.target.checked)}
+              />
+              {t('common.active')}
+            </label>
+            <button
+              className="btn btnPrimary"
+              onClick={() => void handleCreate()}
+              disabled={!code.trim() || !name.trim() || Number(price) <= 0}
+              type="button"
+            >
+              {t('common.create')}
+            </button>
+          </div>
+        ) : null}
+        {err ? <div style={{ marginTop: 10, color: '#8b0000' }}>{err}</div> : null}
+      </div>
+
+      <div className="card cardFull">
+        <div style={{ display: 'grid', gap: 8 }}>
+          {items.map((p) => (
+            <div key={p.id} className="row card cardCompact">
+              <div style={{ flex: 2 }}>
+                <div style={{ fontWeight: 700 }}>{p.name}</div>
+                <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)' }}>
+                  {p.code} · {p.kind}
+                </div>
+              </div>
+              <div>{money(p.price)} ₽</div>
+              <span className={`pill ${p.active ? 'pillGood' : 'pillWarn'}`}>
+                {p.active ? 'active' : 'inactive'}
+              </span>
+            </div>
+          ))}
+          {items.length === 0 ? (
+            <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
+              {t('products.noProducts')}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {showProductImport ? (
+        <ProductImport
+          onImportComplete={() => {
+            void reload();
+          }}
+          onClose={() => setShowProductImport(false)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function PermissionsTable() {
+  const { t } = useTranslation();
+  const [roles, setRoles] = useState<RolePermissions[]>([]);
+  const [allPermissions, setAllPermissions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [saving, setSaving] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        setErr(null);
+        const data = await Api.permissions();
+        const rawItems = Array.isArray((data as any)?.items) ? (data as any).items : [];
+        const grouped = new Map<string, Array<{ permission: string; is_allowed: boolean }>>();
+        const all = new Set<string>();
+
+        for (const item of rawItems) {
+          const role = String(item?.role || '');
+          const permission = String(item?.permission || '');
+          if (!role || !permission) continue;
+          const isAllowed = Boolean(item?.is_allowed);
+          if (!grouped.has(role)) grouped.set(role, []);
+          grouped.get(role)!.push({ permission, is_allowed: isAllowed });
+          all.add(permission);
+        }
+
+        const normalizedRoles: RolePermissions[] = Array.from(grouped.entries()).map(
+          ([role, permissions]) => ({
+            role,
+            permissions,
+          })
+        );
+        const declaredPermissions = Array.isArray((data as any)?.all_permissions)
+          ? (data as any).all_permissions
+          : [];
+
+        setRoles(normalizedRoles);
+        setAllPermissions(declaredPermissions.length > 0 ? declaredPermissions : Array.from(all));
+      } catch (e: any) {
+        setErr(String(e?.message || e));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  async function togglePermission(role: string, permission: string, next: boolean) {
+    const key = `${role}:${permission}`;
+    try {
+      setSaving(key);
+      await Api.updatePermission(role, permission, next);
+      setRoles((prev) =>
+        prev.map((r) =>
+          r.role !== role
+            ? r
+            : {
+                ...r,
+                permissions: r.permissions.map((p) =>
+                  p.permission === permission ? { ...p, is_allowed: next } : p
+                ),
+              }
+        )
+      );
+    } catch (e: any) {
+      setErr(String(e?.message || e));
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  if (loading) return <div className="card cardFull">{t('common.loading')}</div>;
+  if (err)
+    return (
+      <div className="card cardFull" style={{ color: '#8b0000' }}>
+        {err}
+      </div>
+    );
+
+  return (
+    <div className="card cardFull">
+      <div style={{ fontWeight: 800, marginBottom: 10 }}>{t('settings.permissions')}</div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={{ textAlign: 'left', padding: 8 }}>Permission</th>
+              {roles.map((r) => (
+                <th key={r.role} style={{ textAlign: 'center', padding: 8 }}>
+                  {r.role}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {allPermissions.map((permission) => (
+              <tr key={permission}>
+                <td style={{ padding: 8, borderTop: '1px solid var(--border)' }}>{permission}</td>
+                {roles.map((r) => {
+                  const state =
+                    r.permissions.find((p) => p.permission === permission)?.is_allowed ?? false;
+                  const key = `${r.role}:${permission}`;
+                  return (
+                    <td
+                      key={key}
+                      style={{
+                        textAlign: 'center',
+                        padding: 8,
+                        borderTop: '1px solid var(--border)',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={state}
+                        disabled={saving === key}
+                        onChange={(e) =>
+                          void togglePermission(r.role, permission, e.target.checked)
+                        }
+                      />
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
+export default App;

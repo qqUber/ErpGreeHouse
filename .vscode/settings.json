@@ -1,0 +1,200 @@
+{
+  "$schema": "vscode://schemas/settings/default",
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "files.eol": "\n",
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/node_modules": true,
+    "**/.venv": true,
+    "**/venv": true,
+    "**/env": true,
+    "**/*.log": true,
+    "**/*.sqlite3": true,
+    "**/*.db": true,
+    "**/.pytest_cache": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.venv/**": true,
+    "**/venv/**": true,
+    "**/__pycache__/**": true,
+    "**/*.pyc": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/.venv": true,
+    "**/venv": true,
+    "**/admin-ui/test-results": true,
+    "**/admin-ui/playwright-report": true,
+    "**/admin-ui/allure-results": true,
+    "**/admin-ui/allure-report": true
+  },
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    },
+    "editor.rulers": [
+      80,
+      100,
+      120
+    ],
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.banditEnabled": true,
+    "python.formatting.provider": "black",
+    "python.formatting.blackPath": "black"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    },
+    "editor.rulers": [
+      80,
+      100,
+      120
+    ],
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.wordWrap": "wordWrapColumn",
+    "editor.wordWrapColumn": 80
+  },
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.profiles.windows": {
+    "Git Bash": {
+      "path": "C:\\Program Files\\Git\\bin\\bash.exe",
+      "icon": "terminal-bash"
+    },
+    "PowerShell": {
+      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "icon": "terminal-powershell"
+    },
+    "Command Prompt": {
+      "path": [
+        "${env:windir}\\Sysnative\\cmd.exe",
+        "${env:windir}\\System32\\cmd.exe"
+      ],
+      "icon": "terminal-cmd"
+    }
+  },
+  "terminal.integrated.env.windows": {
+    "CHOKIDAR_USEPOLLING": "1",
+    "WATCHPACK_POLLING": "true"
+  },
+  "python.defaultInterpreterPath": "C:\\Users\\vuser\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+  "python.terminal.activateEnvironment": true,
+  "python.analysis.extraPaths": [
+    "./middleware"
+  ],
+  "python.analysis.typeCheckingMode": "basic",
+  "python.linting.flake8Args": [
+    "--max-line-length=120",
+    "--ignore=E203,W503"
+  ],
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": [
+    "middleware/tests",
+    "--cov=middleware/app",
+    "--cov-report=html",
+    "--cov-fail-under=80"
+  ],
+  "typescript.tsdk": "admin-ui/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "npm.packageManager": "npm",
+  "npm.runScriptSilent": false,
+  "git.enabled": true,
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.path": "C:\\Program Files\\Git\\cmd\\git.exe",
+  "git.ignoreLimitWarning": true,
+  "gitlens.codeLens.enabled": false,
+  "prettier.configPath": "admin-ui/.prettierrc",
+  "docker.compose.command": "docker-compose",
+  "docker.compose.project": "erpgreehouse",
+  "remote.extensionKind": {
+    "ms-python.python": [
+      "workspace"
+    ],
+    "dbaeumer.vscode-eslint": [
+      "workspace"
+    ]
+  },
+  "security.workspace.trust.untrustedFiles": "open",
+  "workbench.colorTheme": "Default Dark+",
+  "workbench.iconTheme": "material-icon-theme",
+  "breadcrumbs.enabled": true,
+  "explorer.confirmDelete": false,
+  "explorer.confirmDragAndDrop": false,
+  "chat.mcp.autostart": "newAndOutdated",
+  "chat.mcp.serverSampling": {},
+  "AI.toolcall.v2.ide.mcp.autoRun": "alwaysRun",
+  "AI.rules.importClaudeMd": true,
+  "chat.tools.terminal.autoApprove": {
+    "bash": true,
+    "npx": true,
+    "npm": true,
+    "python": true,
+    "pytest": true,
+    "git": true,
+    "docker": true,
+    "docker-compose": true
+  },
+  "chat.tools.global.autoApprove": false,
+  "trae.mcp.beta.enableWorkspaceMcp": false,
+  "chat.mcp.discovery.enabled": {
+    "cursor-workspace": false,
+    "cursor-global": false,
+    "windsurf": false,
+    "claude-desktop": false
+  },
+  "chat.mcp.gallery.enabled": true,
+  "Qwen.companion.enabled": true,
+  "Qwen.companion.rulesPath": "${workspaceFolder}/.qwen/rules.md",
+  "Qwen.companion.configPath": "${workspaceFolder}/.qwen",
+  "Qwen.companion.mcpConfigPath": "${workspaceFolder}/.roo/mcp.json",
+  "Qwen.companion.autoImportRules": true,
+  "Qwen.companion.contextAware": true,
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  }
+}

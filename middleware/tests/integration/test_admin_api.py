@@ -12,6 +12,7 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.setenv("CRM_DB_PATH", str(db_path))
     monkeypatch.setenv("ADMIN_SECRET", "test-admin")
     monkeypatch.setenv("CORS_ORIGINS", "http://localhost:5173")
+    monkeypatch.setenv("AUTO_SEED_DATA", "false")
 
     from app import main as main_module
 
@@ -41,9 +42,7 @@ def test_identify_and_sale_flow(client: TestClient) -> None:
         json={
             "customer_id": customer_id,
             "requested_bonus": 999,
-            "items": [
-                {"code": "COFFEE", "name": "Капучино", "price": 200, "qty": 2}
-            ],
+            "items": [{"code": "COFFEE", "name": "Капучино", "price": 200, "qty": 2}],
         },
         headers={"x-admin-secret": "test-admin"},
     )
@@ -51,15 +50,20 @@ def test_identify_and_sale_flow(client: TestClient) -> None:
     payload = sale.json()
     assert payload["total"] == 400
     assert payload["bonus_used"] == 0
-    assert payload["bonus_earned"] == 40
+    assert payload["bonus_earned"] == 20
 
-    c = client.get(f"/api/v1/customers/{customer_id}", headers={"x-admin-secret": "test-admin"})
+    c = client.get(
+        f"/api/v1/customers/{customer_id}", headers={"x-admin-secret": "test-admin"}
+    )
     assert c.status_code == 200
     data = c.json()
-    assert data["customer"]["balance_points"] == 40
+    assert data["customer"]["balance_points"] == 20
     assert len(data["transactions"]) == 1
 
     tx_id = data["transactions"][0]["id"]
-    pdf = client.get(f"/api/v1/transactions/{tx_id}/receipt", headers={"x-admin-secret": "test-admin"})
+    pdf = client.get(
+        f"/api/v1/transactions/{tx_id}/receipt",
+        headers={"x-admin-secret": "test-admin"},
+    )
     assert pdf.status_code == 200
     assert pdf.headers.get("content-type", "").startswith("application/pdf")

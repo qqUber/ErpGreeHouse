@@ -1,12 +1,13 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App'
-import './styles.css'
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './i18n';
+import { AuthProvider } from './stores/auth';
+import './styles.css';
 
-console.error('[Main] Starting React App')
+console.log('[Main] Starting React App');
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+  <AuthProvider>
     <App />
-  </React.StrictMode>
-)
+  </AuthProvider>
+);
