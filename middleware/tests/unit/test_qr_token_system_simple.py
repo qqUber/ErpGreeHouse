@@ -12,7 +12,7 @@ from app.customer_identity import (
     generate_unique_qr_token,
     get_or_generate_base_guid,
     resolve_or_create_customer,
-    CustomerIdentityConflictError
+    CustomerIdentityConflictError,
 )
 from app.identify import generate_qr_token
 
@@ -37,14 +37,14 @@ class TestImprovedQRTokenSystem:
                 updated_at TEXT DEFAULT (datetime('now'))
             )
         """)
-        
+
         # Set a fixed base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
-            ("qr_token_base_guid", base_guid)
+            ("qr_token_base_guid", base_guid),
         )
-        
+
         # Generate many tokens to test for overflow
         tokens = set()
         for i in range(100):
@@ -52,11 +52,11 @@ class TestImprovedQRTokenSystem:
             conn.execute("INSERT INTO customers (qr_token) VALUES (?)", (f"temp_{i}",))
             token = generate_unique_qr_token(conn)
             tokens.add(token)
-            
+
             # Verify token format
             assert len(token) == 8
             assert all(c in "0123456789ABCDEF" for c in token)
-        
+
         # Should have generated unique tokens
         assert len(tokens) == 100
 
@@ -71,16 +71,16 @@ class TestImprovedQRTokenSystem:
                 updated_at TEXT DEFAULT (datetime('now'))
             )
         """)
-        
+
         # First call should generate new GUID
         guid1 = get_or_generate_base_guid(conn)
         assert guid1 is not None
         assert len(guid1) == 36  # UUID format
-        
+
         # Second call should return same GUID
         guid2 = get_or_generate_base_guid(conn)
         assert guid1 == guid2
-        
+
         # Should be valid UUID
         uuid.UUID(guid1)  # Will raise if invalid
 
@@ -101,24 +101,24 @@ class TestImprovedQRTokenSystem:
                 updated_at TEXT DEFAULT (datetime('now'))
             )
         """)
-        
+
         # Set base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
-            ("qr_token_base_guid", base_guid)
+            ("qr_token_base_guid", base_guid),
         )
-        
+
         # Generate multiple tokens
         tokens = []
         for i in range(50):
             conn.execute("INSERT INTO customers (qr_token) VALUES (?)", (f"temp_{i}",))
             token = generate_unique_qr_token(conn)
             tokens.append(token)
-        
+
         # All tokens should be unique
         assert len(set(tokens)) == len(tokens)
-        
+
         # All tokens should be valid format
         for token in tokens:
             assert len(token) == 8
@@ -127,7 +127,9 @@ class TestImprovedQRTokenSystem:
     def test_customer_creation_and_update(self):
         """Test customer creation and update logic."""
         conn = sqlite3.connect(":memory:")
-        conn.row_factory = sqlite3.Row  # Set row factory to match real database behavior
+        conn.row_factory = (
+            sqlite3.Row
+        )  # Set row factory to match real database behavior
         conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -159,14 +161,14 @@ class TestImprovedQRTokenSystem:
                 updated_at TEXT DEFAULT (datetime('now'))
             )
         """)
-        
+
         # Set base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
-            ("qr_token_base_guid", base_guid)
+            ("qr_token_base_guid", base_guid),
         )
-        
+
         # Create first customer
         customer_id1, is_new1 = resolve_or_create_customer(
             conn,
@@ -174,12 +176,12 @@ class TestImprovedQRTokenSystem:
             telegram_id=123456789,
             full_name="First User",
             marketing_allowed=1,
-            data_processing_allowed=1
+            data_processing_allowed=1,
         )
-        
+
         assert is_new1
         assert customer_id1 is not None
-        
+
         # Try to create customer with same phone (should update existing)
         customer_id2, is_new2 = resolve_or_create_customer(
             conn,
@@ -187,18 +189,18 @@ class TestImprovedQRTokenSystem:
             telegram_id=987654321,  # Different telegram
             full_name="Updated User",
             marketing_allowed=0,  # Different marketing
-            data_processing_allowed=1
+            data_processing_allowed=1,
         )
-        
+
         assert not is_new2  # Should be existing customer
         assert customer_id2 == customer_id1  # Same customer
-        
+
         # Verify the update was applied
         row = conn.execute(
             "SELECT telegram_id, marketing_allowed, full_name FROM customers WHERE id=?",
-            (customer_id1,)
+            (customer_id1,),
         ).fetchone()
-        
+
         assert row[0] == 987654321  # Updated telegram_id
         assert row[1] == 0  # Updated marketing_allowed
         assert row[2] == "Updated User"  # Updated name
@@ -208,10 +210,10 @@ class TestImprovedQRTokenSystem:
         # Test the identify.py function
         token1 = generate_qr_token()
         token2 = generate_qr_token()
-        
+
         # Should be different
         assert token1 != token2
-        
+
         # Should be valid format
         assert len(token1) == 8
         assert len(token2) == 8
@@ -235,21 +237,21 @@ class TestImprovedQRTokenSystem:
                 updated_at TEXT DEFAULT (datetime('now'))
             )
         """)
-        
+
         # Set base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
-            ("qr_token_base_guid", base_guid)
+            ("qr_token_base_guid", base_guid),
         )
-        
+
         # Mock UUID5 to raise an exception
-        with patch('uuid.uuid5') as mock_uuid5:
+        with patch("uuid.uuid5") as mock_uuid5:
             mock_uuid5.side_effect = Exception("UUID5 failed")
-            
+
             # Should fallback to secure random
             token = generate_unique_qr_token(conn)
-            
+
             # Should still be valid format
             assert len(token) == 8
             assert all(c in "0123456789ABCDEF" for c in token)
@@ -257,7 +259,9 @@ class TestImprovedQRTokenSystem:
     def test_customer_conflict_error(self):
         """Test CustomerIdentityConflictError for conflicting identifiers."""
         conn = sqlite3.connect(":memory:")
-        conn.row_factory = sqlite3.Row  # Set row factory to match real database behavior
+        conn.row_factory = (
+            sqlite3.Row
+        )  # Set row factory to match real database behavior
         conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -289,29 +293,29 @@ class TestImprovedQRTokenSystem:
                 updated_at TEXT DEFAULT (datetime('now'))
             )
         """)
-        
+
         # Set base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
-            ("qr_token_base_guid", base_guid)
+            ("qr_token_base_guid", base_guid),
         )
-        
+
         # Create first customer with phone
         customer_id1, _ = resolve_or_create_customer(
             conn,
             phone="79123456789",
             full_name="User One",
             marketing_allowed=1,
-            data_processing_allowed=1
+            data_processing_allowed=1,
         )
-        
+
         # Manually insert second customer with same phone but different telegram_id
         conn.execute(
             "INSERT INTO customers (phone, telegram_id, qr_token, marketing_allowed, data_processing_allowed) VALUES (?, ?, ?, ?, ?)",
-            ("79123456789", 987654321, "TOKEN123", 1, 1)
+            ("79123456789", 987654321, "TOKEN123", 1, 1),
         )
-        
+
         # Try to create customer with conflicting identifiers
         with pytest.raises(CustomerIdentityConflictError):
             resolve_or_create_customer(
@@ -320,7 +324,7 @@ class TestImprovedQRTokenSystem:
                 telegram_id=987654321,  # This conflicts with second customer
                 full_name="Conflict User",
                 marketing_allowed=1,
-                data_processing_allowed=1
+                data_processing_allowed=1,
             )
 
     def test_token_collision_retry(self):
@@ -340,28 +344,28 @@ class TestImprovedQRTokenSystem:
                 updated_at TEXT DEFAULT (datetime('now'))
             )
         """)
-        
+
         # Set base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
-            ("qr_token_base_guid", base_guid)
+            ("qr_token_base_guid", base_guid),
         )
-        
+
         # Pre-insert a token to cause collision
         conn.execute("INSERT INTO customers (qr_token) VALUES (?)", ("TEST1234",))
-        
+
         # Mock UUID5 to return the colliding token first, then a different one
-        with patch('uuid.uuid5') as mock_uuid5:
+        with patch("uuid.uuid5") as mock_uuid5:
             mock_uuid = MagicMock()
             mock_uuid.hex = "TEST1234"
             mock_uuid2 = MagicMock()
             mock_uuid2.hex = "DIFF5678"
             mock_uuid5.side_effect = [mock_uuid, mock_uuid2]
-            
+
             # Should handle collision and retry
             token = generate_unique_qr_token(conn)
-            
+
             # Should get the non-colliding token
             assert token == "DIFF5678"
 
@@ -382,25 +386,25 @@ class TestImprovedQRTokenSystem:
                 updated_at TEXT DEFAULT (datetime('now'))
             )
         """)
-        
+
         # Set base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
-            ("qr_token_base_guid", base_guid)
+            ("qr_token_base_guid", base_guid),
         )
-        
+
         # Generate many tokens
         tokens = set()
         for i in range(1000):
             conn.execute("INSERT INTO customers (qr_token) VALUES (?)", (f"temp_{i}",))
             token = generate_unique_qr_token(conn)
             tokens.add(token)
-            
+
             # Verify token format
             assert len(token) == 8
             assert all(c in "0123456789ABCDEF" for c in token)
-        
+
         # Should have generated unique tokens
         assert len(tokens) == 1000
 
@@ -419,14 +423,14 @@ class TestEdgeCases:
                 updated_at TEXT DEFAULT (datetime('now'))
             )
         """)
-        
+
         # Set base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
-            ("qr_token_base_guid", base_guid)
+            ("qr_token_base_guid", base_guid),
         )
-        
+
         # Should handle empty customers table
         token = generate_unique_qr_token(conn)
         assert len(token) == 8
@@ -442,12 +446,12 @@ class TestEdgeCases:
             )
         """)
         # No system_settings table initially
-        
+
         # Should create base GUID automatically
         token = generate_unique_qr_token(conn)
         assert len(token) == 8
         assert all(c in "0123456789ABCDEF" for c in token)
-        
+
         # Check that base GUID was created
         guid = get_or_generate_base_guid(conn)
         assert guid is not None
@@ -470,20 +474,20 @@ class TestEdgeCases:
                 updated_at TEXT DEFAULT (datetime('now'))
             )
         """)
-        
+
         # Set base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
-            ("qr_token_base_guid", base_guid)
+            ("qr_token_base_guid", base_guid),
         )
-        
+
         # Mock UUID5 to always return the same colliding token
-        with patch('uuid.uuid5') as mock_uuid5:
+        with patch("uuid.uuid5") as mock_uuid5:
             mock_uuid = MagicMock()
             mock_uuid.hex = "0C0FFEE1"  # Valid hex characters
             mock_uuid5.return_value = mock_uuid
-            
+
             # Should eventually fallback to secure random
             token = generate_unique_qr_token(conn)
             print(f"Generated token: {token}")  # Debug output

@@ -17,10 +17,10 @@ class CustomerIdentityConflictError(ValueError):
 def generate_unique_qr_token(conn: sqlite3.Connection, max_attempts: int = 10) -> str:
     """Generate unique QR token using UUID-based system with overflow protection"""
     import uuid
-    
+
     # Get or generate base GUID from system settings
     base_guid = get_or_generate_base_guid(conn)
-    
+
     # Get current max customer ID for increment
     try:
         max_id_row = conn.execute("SELECT MAX(id) FROM customers").fetchone()
@@ -31,23 +31,25 @@ def generate_unique_qr_token(conn: sqlite3.Connection, max_attempts: int = 10) -
             current_max_id = 0
         else:
             raise
-    
+
     # Generate token using UUID5 to avoid overflow issues
     for attempt in range(max_attempts):
         try:
             # Use UUID5 with namespace for deterministic but unique tokens
             namespace = uuid.UUID(base_guid)
             counter_value = current_max_id + attempt + 1
-            
+
             # Generate deterministic UUID from namespace + counter
             token_uuid = uuid.uuid5(namespace, str(counter_value))
-            
+
             # Take last 8 characters of hex representation
             token = token_uuid.hex[-8:].upper()
-            
+
             # Verify uniqueness (should be unique by design)
             try:
-                existing = conn.execute("SELECT id FROM customers WHERE qr_token=?", (token,)).fetchone()
+                existing = conn.execute(
+                    "SELECT id FROM customers WHERE qr_token=?", (token,)
+                ).fetchone()
                 if not existing:
                     return token
                 else:
@@ -59,11 +61,11 @@ def generate_unique_qr_token(conn: sqlite3.Connection, max_attempts: int = 10) -
                     return token
                 else:
                     raise
-                
+
         except Exception as e:
             logger.warning(f"Token generation attempt {attempt + 1} failed: {e}")
             continue
-    
+
     # Fallback to cryptographically secure random token
     logger.warning("UUID-based generation failed, using secure random fallback")
     return secrets.token_hex(4).upper()
@@ -83,34 +85,33 @@ def get_or_generate_base_guid(conn: sqlite3.Connection) -> str:
         """)
     except sqlite3.Error:
         pass  # Table might already exist
-    
+
     # Check if base GUID exists
     guid_row = conn.execute(
-        "SELECT value FROM system_settings WHERE key=?",
-        ("qr_token_base_guid",)
+        "SELECT value FROM system_settings WHERE key=?", ("qr_token_base_guid",)
     ).fetchone()
-    
+
     if not guid_row:
         # Generate and store new GUID
         import uuid
+
         base_guid = str(uuid.uuid4())
         try:
             conn.execute(
                 "INSERT INTO system_settings (key, value) VALUES (?, ?)",
-                ("qr_token_base_guid", base_guid)
+                ("qr_token_base_guid", base_guid),
             )
             conn.commit()  # Ensure immediate commit for base GUID
             logger.info(f"Generated new base GUID: {base_guid}")
         except sqlite3.IntegrityError:
             # Handle race condition - another thread might have inserted it
             guid_row = conn.execute(
-                "SELECT value FROM system_settings WHERE key=?",
-                ("qr_token_base_guid",)
+                "SELECT value FROM system_settings WHERE key=?", ("qr_token_base_guid",)
             ).fetchone()
             if guid_row:
                 base_guid = guid_row[0]
         return base_guid
-    
+
     return guid_row[0]
 
 
@@ -212,10 +213,10 @@ def resolve_or_create_customer(
         try:
             # Check if we're already in a transaction
             in_transaction = conn.in_transaction
-            
+
             if not in_transaction:
                 conn.execute("BEGIN IMMEDIATE")
-            
+
             by_telegram = None
             if telegram_id is not None:
                 by_telegram = conn.execute(
@@ -332,10 +333,12 @@ def resolve_or_create_customer(
                         if not in_transaction:
                             conn.rollback()
                         if "qr_token" in str(exc).lower():
-                            logger.warning(f"QR token collision, retrying (attempt {attempt + 1})")
+                            logger.warning(
+                                f"QR token collision, retrying (attempt {attempt + 1})"
+                            )
                             continue
                         raise
-                
+
                 if not in_transaction:
                     conn.commit()
                 return customer_id, False
@@ -392,7 +395,9 @@ def resolve_or_create_customer(
                 if not in_transaction:
                     conn.rollback()
                 if "qr_token" in str(exc).lower():
-                    logger.warning(f"QR token collision during insert, retrying (attempt {attempt + 1})")
+                    logger.warning(
+                        f"QR token collision during insert, retrying (attempt {attempt + 1})"
+                    )
                     continue
                 raise
 
@@ -406,12 +411,16 @@ def resolve_or_create_customer(
         except Exception as exc:
             if not conn.in_transaction:
                 conn.rollback()
-            logger.error(f"Unexpected error in customer creation (attempt {attempt + 1}): {exc}")
+            logger.error(
+                f"Unexpected error in customer creation (attempt {attempt + 1}): {exc}"
+            )
             if attempt == max_attempts - 1:
                 raise
             continue
 
-    raise RuntimeError(f"Failed to resolve/create customer after {max_attempts} attempts")
+    raise RuntimeError(
+        f"Failed to resolve/create customer after {max_attempts} attempts"
+    )
 
 
 def get_customer_row(conn: sqlite3.Connection, customer_id: int) -> dict[str, Any]:
