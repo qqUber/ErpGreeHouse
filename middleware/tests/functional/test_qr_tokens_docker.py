@@ -12,51 +12,52 @@ from typing import Dict, Any, Generator
 from contextlib import contextmanager
 
 
+@pytest.fixture(scope="module")
+def docker_container() -> Generator[Dict[str, Any], None, None]:
+    """Spin up Docker container for testing"""
+    docker = pytest.importorskip("docker")
+    client = docker.from_env()
+    
+    # Use existing docker-compose setup
+    container_name = "middleware_test"
+    
+    try:
+        # Start container if not running
+        container = client.containers.get(container_name)
+        if container.status != "running":
+            container.start()
+    except docker.errors.NotFound:
+        # Create and start new container
+        container = client.containers.run(
+            "python:3.14-slim",
+            name=container_name,
+            detach=True,
+            ports={"8000": "8000"},
+            environment={
+                "CRM_DB_PATH": "/app/test.db",
+                "PYTHONPATH": "/app"
+            }
+        )
+    
+    # Wait for container to be ready
+    time.sleep(2)
+    
+    yield {
+        "container": container,
+        "base_url": "http://localhost:8000",
+        "container_name": container_name
+    }
+    
+    # Cleanup
+    try:
+        container.stop()
+        container.remove()
+    except:
+        pass
+
+
 class QRTokenFunctionalTest:
     """Functional tests for QR token system using Docker"""
-
-    @pytest.fixture(scope="class")
-    def docker_container(self) -> Generator[Dict[str, Any], None, None]:
-        """Spin up Docker container for testing"""
-        docker = pytest.importorskip("docker")
-        client = docker.from_env()
-        
-        # Use existing docker-compose setup
-        container_name = "middleware_test"
-        
-        try:
-            # Start container if not running
-            container = client.containers.get(container_name)
-            if container.status != "running":
-                container.start()
-        except docker.errors.NotFound:
-            # Create and start new container
-            container = client.containers.run(
-                "python:3.14-slim",
-                name=container_name,
-                detach=True,
-                ports={"8000": "8000"},
-                environment={
-                    "CRM_DB_PATH": "/app/test.db",
-                    "PYTHONPATH": "/app"
-                }
-            )
-        
-        # Wait for container to be ready
-        time.sleep(2)
-        
-        yield {
-            "container": container,
-            "base_url": "http://localhost:8000",
-            "container_name": container_name
-        }
-        
-        # Cleanup
-        try:
-            container.stop()
-            container.remove()
-        except:
-            pass
 
     @pytest.fixture
     def test_db(self) -> Generator[sqlite3.Connection, None, None]:
