@@ -1,5 +1,3 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { Role } from '../../types/roles';
 import { WidgetGrid } from '../WidgetGrid';
 import { getAvailableWidgets } from './widgetRegistry';
@@ -16,7 +14,6 @@ interface DashboardProps {
 }
 
 export function OperatorDashboard({ data, onNavigate }: DashboardProps) {
-  const { t } = useTranslation();
   const role = Role.OPERATOR;
   const widgets = getAvailableWidgets(role);
   const widgetData = {
@@ -30,7 +27,6 @@ export function OperatorDashboard({ data, onNavigate }: DashboardProps) {
 
   return (
     <div className="operator-dashboard">
-      <h1 className="dashboard-title">{t('dashboard.title')}</h1>
       <WidgetGrid role={role} widgets={widgets} data={widgetData} />
     </div>
   );

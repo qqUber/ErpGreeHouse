@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Api } from '../../api';
 import { Role } from '../../types/roles';
 import { WidgetGrid } from '../WidgetGrid';
@@ -18,7 +17,6 @@ interface DashboardProps {
 }
 
 export function AdminDashboard({ data, onNavigate }: DashboardProps) {
-  const { t } = useTranslation();
   const [marketingAnalytics, setMarketingAnalytics] = useState<MarketingAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -51,7 +49,6 @@ export function AdminDashboard({ data, onNavigate }: DashboardProps) {
 
   return (
     <div className="admin-dashboard">
-      <h1 className="dashboard-title">{t('dashboard.title')}</h1>
       <WidgetGrid role={role} widgets={widgets} data={widgetData} />
     </div>
   );

@@ -766,7 +766,7 @@ function App() {
       <header className="header">
         <div className="brand">
           <h1 style={{ fontWeight: 800, fontSize: 'var(--font-size-xl)', margin: 0 }}>
-            {t('app.controlPanel')}
+            {t('app.title')}
           </h1>
         </div>
         <nav aria-label="Main navigation">
