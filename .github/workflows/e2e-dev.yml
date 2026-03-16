@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - dev
+      - dev-clean
 
 concurrency:
   group: e2e-dev
