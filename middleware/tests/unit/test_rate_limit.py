@@ -40,7 +40,9 @@ def test_client_ip_unknown_when_no_client() -> None:
     assert rate_limit._client_ip(request) == "unknown"
 
 
-def test_require_rate_limit_allows_under_limit_and_sets_expire_first_hit(mocker) -> None:
+def test_require_rate_limit_allows_under_limit_and_sets_expire_first_hit(
+    mocker,
+) -> None:
     mocker.patch("app.rate_limit.time.time", return_value=123.0)
     r = mocker.Mock()
     r.incr.return_value = 1
@@ -94,7 +96,9 @@ def test_require_bruteforce_guard_raises_when_locked(mocker) -> None:
 def test_require_bruteforce_guard_swallow_redis_errors(mocker) -> None:
     mocker.patch("app.rate_limit.get_redis", side_effect=RuntimeError("down"))
     request = _make_request()
-    rate_limit.require_bruteforce_guard(request, username="u", max_attempts=5, window_sec=60, lock_sec=300)
+    rate_limit.require_bruteforce_guard(
+        request, username="u", max_attempts=5, window_sec=60, lock_sec=300
+    )
 
 
 def test_register_bruteforce_failure_sets_lock_on_threshold(mocker) -> None:
@@ -103,7 +107,9 @@ def test_register_bruteforce_failure_sets_lock_on_threshold(mocker) -> None:
     mocker.patch("app.rate_limit.get_redis", return_value=r)
 
     request = _make_request(headers={"x-forwarded-for": "203.0.113.9"})
-    rate_limit.register_bruteforce_failure(request, username="u", max_attempts=5, window_sec=60, lock_sec=300)
+    rate_limit.register_bruteforce_failure(
+        request, username="u", max_attempts=5, window_sec=60, lock_sec=300
+    )
 
     r.set.assert_called_once_with("bf:lock:u:203.0.113.9", "1", ex=300)
 
@@ -111,4 +117,6 @@ def test_register_bruteforce_failure_sets_lock_on_threshold(mocker) -> None:
 def test_register_bruteforce_failure_swallow_redis_errors(mocker) -> None:
     mocker.patch("app.rate_limit.get_redis", side_effect=RuntimeError("down"))
     request = _make_request()
-    rate_limit.register_bruteforce_failure(request, username="u", max_attempts=5, window_sec=60, lock_sec=300)
+    rate_limit.register_bruteforce_failure(
+        request, username="u", max_attempts=5, window_sec=60, lock_sec=300
+    )

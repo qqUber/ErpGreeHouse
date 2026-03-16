@@ -15,7 +15,9 @@ def _client_ip(request: Request) -> str:
     return "unknown"
 
 
-def require_rate_limit(request: Request, *, scope: str, limit: int, window_sec: int) -> None:
+def require_rate_limit(
+    request: Request, *, scope: str, limit: int, window_sec: int
+) -> None:
     ip = _client_ip(request)
     key = f"rl:{scope}:ip:{ip}:{int(time.time() // window_sec)}"
 
