@@ -18,7 +18,7 @@ jobs:
       issues: write
     services:
       redis:
-        image: redis:7
+        image: redis:8.0-alpine
         ports:
           - 6379:6379
     env:
@@ -26,12 +26,19 @@ jobs:
       ENVIRONMENT: development
       PYTHONPATH: ${{ github.workspace }}/middleware
       NODE_OPTIONS: --max-old-space-size=4096
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      VK_ACCESS_TOKEN: ${{ secrets.VK_ACCESS_TOKEN }}
+      VK_GROUP_ID: ${{ secrets.VK_GROUP_ID }}
+      ERP_API_KEY: ${{ secrets.ERP_API_KEY }}
+      ERP_API_SECRET: ${{ secrets.ERP_API_SECRET }}
+      JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+      WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: admin-ui/package-lock.json
       - name: admin-ui build
@@ -41,9 +48,9 @@ jobs:
           npm run build
           tar -czf dist-dev-${GITHUB_SHA}.tar.gz -C dist .
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: '3.14'
           cache: pip
       - name: middleware deps
         working-directory: middleware
@@ -71,7 +78,7 @@ jobs:
           pytest -q \
             --cov=app.admin_auth_api \
             --cov=app.security \
-            --cov=app.rate_limit \
+            --cov=app.rate_limiter \
             --cov=app.request_context \
             --cov=app.runtime \
             --cov-report=term \
@@ -98,7 +105,7 @@ jobs:
           echo "- artifacts: admin-ui dist, middleware image, middleware reports" >> $GITHUB_STEP_SUMMARY
 
       - name: upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dev-${{ github.sha }}
           path: |
@@ -146,7 +153,7 @@ jobs:
 
       - name: upload debug artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dev-debug-${{ github.sha }}
           path: |
