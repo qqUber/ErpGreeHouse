@@ -11,7 +11,7 @@ test.describe('Language Support', () => {
     // Use correct data-testid locators matching the app
     const usernameInput = page.getByTestId('common_input_username_en');
     const passwordInput = page.getByTestId('common_input_password_en');
-    const loginButton = page.getByTestId('common_btn_password_login_en');
+    const loginButton = page.getByTestId('common_btn_login_en');
 
     // Verify all elements are visible with correct locators
     await expect(usernameInput).toBeVisible();
@@ -21,7 +21,7 @@ test.describe('Language Support', () => {
     // Verify localized content for English
     await expect(usernameInput).toHaveAttribute('placeholder', 'Username');
     await expect(passwordInput).toHaveAttribute('placeholder', 'Password');
-    await expect(loginButton).toContainText('By Password');
+    await expect(loginButton).toContainText('Sign In');
   });
 
   test('should translate login form to Russian', async ({ page }) => {
@@ -35,7 +35,7 @@ test.describe('Language Support', () => {
     // Verify correct locators still work
     const usernameInput = page.getByTestId('common_input_username_en');
     const passwordInput = page.getByTestId('common_input_password_en');
-    const loginButton = page.getByTestId('common_btn_password_login_en');
+    const loginButton = page.getByTestId('common_btn_login_en');
 
     await expect(usernameInput).toBeVisible();
     await expect(passwordInput).toBeVisible();
@@ -44,7 +44,7 @@ test.describe('Language Support', () => {
     // Verify localized content for Russian
     await expect(usernameInput).toHaveAttribute('placeholder', 'Логин');
     await expect(passwordInput).toHaveAttribute('placeholder', 'Пароль');
-    await expect(loginButton).toContainText('По паролю');
+    await expect(loginButton).toContainText('Войти');
   });
 
   test('should translate login form to Serbian', async ({ page }) => {
@@ -58,7 +58,7 @@ test.describe('Language Support', () => {
     // Verify correct locators still work
     const usernameInput = page.getByTestId('common_input_username_en');
     const passwordInput = page.getByTestId('common_input_password_en');
-    const loginButton = page.getByTestId('common_btn_password_login_en');
+    const loginButton = page.getByTestId('common_btn_login_en');
 
     await expect(usernameInput).toBeVisible();
     await expect(passwordInput).toBeVisible();
@@ -67,7 +67,7 @@ test.describe('Language Support', () => {
     // Verify localized content for Serbian
     await expect(usernameInput).toHaveAttribute('placeholder', 'Корисничко име');
     await expect(passwordInput).toHaveAttribute('placeholder', 'Лозинка');
-    await expect(loginButton).toContainText('Лозинком');
+    await expect(loginButton).toContainText('Пријава');
   });
 
   test('should maintain navigation in all languages', async ({ page }) => {
@@ -91,3 +91,4 @@ test.describe('Language Support', () => {
     await expect(page.locator('.language-switcher-button')).toBeVisible();
   });
 });
+

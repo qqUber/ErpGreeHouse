@@ -30,7 +30,7 @@ test.describe('Accessibility Tests', () => {
     await page.waitForLoadState('networkidle');
 
     // Click password login button to show form
-    await page.getByTestId('common_btn_password_login_en').click();
+    await page.getByTestId('common_btn_login_en').click();
     await page.waitForTimeout(1000);
 
     // Check login form inputs

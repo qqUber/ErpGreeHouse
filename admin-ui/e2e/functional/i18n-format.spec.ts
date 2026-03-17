@@ -459,7 +459,7 @@ test.describe('Mobile Responsiveness Tests', () => {
     // Verify login form is visible and properly styled
     await expect(page.getByTestId('common_input_username_en')).toBeVisible();
     await expect(page.getByTestId('common_input_password_en')).toBeVisible();
-    await expect(page.getByTestId('common_btn_password_login_en')).toBeVisible();
+    await expect(page.getByTestId('common_btn_login_en')).toBeVisible();
 
     // Verify inputs are accessible on mobile
     const loginInput = page.getByTestId('common_input_username_en');

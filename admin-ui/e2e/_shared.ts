@@ -4,16 +4,16 @@ import * as path from 'path';
 
 // Import i18n utilities
 import {
-  Auth,
-  Clients,
-  Common,
-  Dashboard,
-  Marketing,
-  Menu,
-  Products,
-  Sales,
-  setTestLanguage,
-  t,
+    Auth,
+    Clients,
+    Common,
+    Dashboard,
+    Marketing,
+    Menu,
+    Products,
+    Sales,
+    setTestLanguage,
+    t,
 } from './i18n-test';
 
 export { Auth, Clients, Common, Dashboard, Marketing, Menu, Products, Sales, t };
@@ -44,8 +44,8 @@ export const TestIds = {
 
   // Common buttons
   common: {
-    btnLogin: 'common_btn_password_login_en',
-    btnPasswordLogin: 'common_btn_password_login_en',
+    btnLogin: 'common_btn_login_en',
+    btnPasswordLogin: 'common_btn_login_en',
     btnKeyLogin: 'common_btn_key_login_en',
     btnRecovery: 'common_btn_recovery_en',
     btnApiStatus: 'common_btn_api_status_en',

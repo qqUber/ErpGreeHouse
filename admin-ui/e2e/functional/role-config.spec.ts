@@ -5,7 +5,7 @@ test.describe('Role Configuration', () => {
     await page.goto('/');
     await page.getByTestId('common_input_username_en').fill('admin');
     await page.getByTestId('common_input_password_en').fill('admin');
-    await page.getByTestId('common_btn_password_login_en').click();
+    await page.getByTestId('common_btn_login_en').click();
     await expect(page.getByTestId('admin_nav_dashboard')).toBeVisible({ timeout: 15000 });
     await page.waitForSelector('.overlay', { state: 'hidden', timeout: 60000 });
     await page.context().clearCookies();
@@ -18,7 +18,7 @@ test.describe('Role Configuration', () => {
 
     await page.getByTestId('common_input_username_en').fill('operator');
     await page.getByTestId('common_input_password_en').fill('operator');
-    await page.getByTestId('common_btn_password_login_en').click();
+    await page.getByTestId('common_btn_login_en').click();
     await expect(page.getByTestId('admin_nav_dashboard')).toBeVisible({ timeout: 15000 });
   });
 });

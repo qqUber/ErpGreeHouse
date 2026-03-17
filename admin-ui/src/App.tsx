@@ -2,17 +2,17 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsView } from './AnalyticsView';
 import {
-    AdminMe,
-    Api,
-    CustomerDetails,
-    CustomerListItem,
-    Dashboard,
-    getAdminSecret,
-    Integration,
-    IntegrationDelivery,
-    IntegrationTemplate,
-    RolePermissions,
-    setAdminSecret,
+  AdminMe,
+  Api,
+  CustomerDetails,
+  CustomerListItem,
+  Dashboard,
+  getAdminSecret,
+  Integration,
+  IntegrationDelivery,
+  IntegrationTemplate,
+  RolePermissions,
+  setAdminSecret,
 } from './api';
 import { ComplianceView } from './ComplianceView';
 import { CustomersWidget } from './components/dashboard/CustomersWidget';
@@ -114,11 +114,15 @@ function App() {
   const [publicStatus, setPublicStatus] = useState<PublicStatus | null>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [loginMode, setLoginMode] = useState<'password' | 'key' | 'recover'>('password');
-  const [username, setUsername] = useState('admin');
+  const [username, setUsername] = useState(() => {
+    if (typeof localStorage === 'undefined') return 'admin';
+    return localStorage.getItem('admin_login_username') || 'admin';
+  });
   const [password, setPassword] = useState('');
   const [recoverySecret, setRecoverySecret] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [adminKey, setAdminKey] = useState(getAdminSecret());
+  const [showAdvancedLogin, setShowAdvancedLogin] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
@@ -161,6 +165,11 @@ function App() {
       }
     }
   }, [authLoading, isAuthenticated, user]);
+
+  useEffect(() => {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem('admin_login_username', username);
+  }, [username]);
 
   const selected = useMemo(
     () => customers.find((c) => c.id === selectedId) || null,
@@ -917,143 +926,183 @@ function App() {
 
         {/* Show login form when not authenticated OR when auth is still loading */}
         {!authReady || (!user && authReady) ? (
-          <div className="grid">
-            <div className="card cardFull">
-              <div className="row">
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: 16 }}>{t('auth.login')}</div>
-                  <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
-                    {t('auth.accessSettingsDesc')}
-                  </div>
-                </div>
-                <div className="pill">
-                  {t('auth.apiStatus')}: {publicStatus?.api || t('auth.apiUnavailable')}
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-                <button
-                  className={`btn ${loginMode === 'password' ? 'btnPrimary' : ''}`}
-                  onClick={() => setLoginMode('password')}
-                  data-testid="common_btn_password_login_en"
-                >
-                  {t('auth.byPassword')}
-                </button>
-                <button
-                  className={`btn ${loginMode === 'key' ? 'btnPrimary' : ''}`}
-                  onClick={() => setLoginMode('key')}
-                  data-testid="common_btn_key_login_en"
-                >
-                  {t('auth.byKey')}
-                </button>
-                <button
-                  className={`btn ${loginMode === 'recover' ? 'btnPrimary' : ''}`}
-                  onClick={() => setLoginMode('recover')}
-                  data-testid="common_btn_recovery_en"
-                >
-                  {t('auth.recovery')}
-                </button>
-                <button
-                  className="btn"
-                  onClick={() => void loadPublicStatus()}
-                  data-testid="common_btn_api_status_en"
-                >
-                  {t('auth.apiStatus')}
-                </button>
+          <div
+            className="grid"
+            style={{ minHeight: 'calc(100vh - 180px)', alignItems: 'center', justifyItems: 'center' }}
+          >
+            <div
+              className="card"
+              style={{
+                width: '100%',
+                maxWidth: 380,
+                padding: 24,
+                borderRadius: 20,
+                boxShadow: 'var(--shadow-lg)',
+                display: 'grid',
+                gap: 16,
+              }}
+            >
+              <div style={{ display: 'grid', gap: 8, textAlign: 'center' }}>
+                <div style={{ fontWeight: 800, fontSize: 'var(--font-size-2xl)' }}>{t('app.title')}</div>
+                <div style={{ color: 'var(--muted)', fontSize: 'var(--font-size-sm)' }}>{t('auth.login')}</div>
               </div>
 
-              {loginMode === 'password' ? (
-                <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
-                  <div className="row">
-                    <div style={{ flex: 1 }}>
-                      <input
-                        className="input"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder={t('auth.loginPlaceholder')}
-                        autoComplete="off"
-                        spellCheck={false}
-                        data-testid="common_input_username_en"
-                      />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <input
-                          className="input"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          placeholder={t('auth.passwordPlaceholder')}
-                          type={showPassword ? 'text' : 'password'}
-                          autoComplete="off"
-                          spellCheck={false}
-                          data-testid="common_input_password_en"
-                        />
-                        <button
-                          className="btn"
-                          onClick={() => setShowPassword((v) => !v)}
-                          aria-label={t('forms.labels.showPassword')}
-                          type="button"
-                          data-testid="common_btn_toggle_password_en"
-                        >
-                          {showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
-                        </button>
-                      </div>
-                    </div>
-                    <button
-                      className="btn btnPrimary"
-                      onClick={() => void doLoginByPassword()}
-                      disabled={!username.trim() || !password}
-                      data-testid="common_btn_login_en"
-                    >
-                      {t('auth.loginButton')}
-                    </button>
-                  </div>
-                  <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
-                    {authStatus?.default_admin_present
-                      ? `${t('auth.defaultAdmin')}: ${authStatus.default_admin_username}`
-                      : t('auth.defaultAdminNotCreated')}
-                  </div>
-                </div>
-              ) : null}
-
-              {loginMode === 'key' ? (
-                <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
-                  <div style={{ flex: '1 1 320px' }}>
+              <div style={{ display: 'grid', gap: 12 }}>
+                <input
+                  className="input"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder={t('auth.loginPlaceholder')}
+                  autoComplete="username"
+                  spellCheck={false}
+                  data-testid="common_input_username_en"
+                />
+                <div style={{ display: 'grid', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
                     <input
                       className="input"
-                      value={adminKey}
-                      onChange={(e) => setAdminKey(e.target.value)}
-                      placeholder="x-admin-secret"
-                      autoComplete="off"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder={t('auth.passwordPlaceholder')}
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
                       spellCheck={false}
-                      data-testid="common_input_admin_key_en"
+                      data-testid="common_input_password_en"
                     />
+                    <button
+                      className="btn"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={t('forms.labels.showPassword')}
+                      type="button"
+                      data-testid="common_btn_toggle_password_en"
+                    >
+                      {showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                    </button>
                   </div>
                   <button
-                    className="btn btnPrimary"
-                    onClick={() => void doLoginByKey()}
-                    disabled={!adminKey.trim()}
-                    data-testid="common_btn_key_login_submit_en"
+                    type="button"
+                    onClick={() => {
+                      setLoginMode('recover');
+                      setShowAdvancedLogin(true);
+                    }}
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      color: 'var(--primary)',
+                      padding: 0,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: 'var(--font-size-sm)',
+                    }}
                   >
-                    {t('auth.loginButton')}
+                    {t('auth.resetPassword')}
                   </button>
                 </div>
-              ) : null}
+                <button
+                  className="btn btnPrimary"
+                  onClick={() => void doLoginByPassword()}
+                  disabled={!username.trim() || !password}
+                  data-testid="common_btn_login_en"
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  {t('auth.loginButton')}
+                </button>
+              </div>
 
-              {loginMode === 'recover' ? (
-                <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
-                  <div className="row">
-                    <div style={{ flex: 1 }}>
+              <div style={{ color: 'var(--muted)', fontSize: 12, textAlign: 'center' }}>
+                {authStatus?.default_admin_present
+                  ? `${t('auth.defaultAdmin')}: ${authStatus.default_admin_username}`
+                  : t('auth.defaultAdminNotCreated')}
+              </div>
+
+              <div style={{ display: 'grid', gap: 10 }}>
+                <button
+                  className={`btn ${showAdvancedLogin ? 'btnPrimary' : ''}`}
+                  type="button"
+                  onClick={() => setShowAdvancedLogin((v) => !v)}
+                  aria-expanded={showAdvancedLogin}
+                  aria-controls="advanced-login-panel"
+                  style={{ justifyContent: 'center' }}
+                >
+                  Advanced
+                </button>
+
+                <div
+                  id="advanced-login-panel"
+                  style={{
+                    display: 'grid',
+                    gap: 12,
+                    maxHeight: showAdvancedLogin ? 520 : 0,
+                    opacity: showAdvancedLogin ? 1 : 0,
+                    overflow: 'hidden',
+                    transition: 'max-height 200ms ease, opacity 200ms ease',
+                    border: showAdvancedLogin ? '1px solid var(--border)' : '1px solid transparent',
+                    borderRadius: 16,
+                    padding: showAdvancedLogin ? 14 : 0,
+                    background: showAdvancedLogin ? 'var(--neutral-50)' : 'transparent',
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button
+                      className={`btn ${loginMode === 'key' ? 'btnPrimary' : ''}`}
+                      onClick={() => setLoginMode('key')}
+                      data-testid="common_btn_key_login_en"
+                      type="button"
+                    >
+                      {t('auth.byKey')}
+                    </button>
+                    <button
+                      className={`btn ${loginMode === 'recover' ? 'btnPrimary' : ''}`}
+                      onClick={() => setLoginMode('recover')}
+                      data-testid="common_btn_recovery_en"
+                      type="button"
+                    >
+                      {t('auth.recovery')}
+                    </button>
+                    <button
+                      className="btn"
+                      onClick={() => void loadPublicStatus()}
+                      data-testid="common_btn_api_status_en"
+                      type="button"
+                    >
+                      {t('auth.apiStatus')}
+                    </button>
+                  </div>
+
+                  {loginMode === 'key' ? (
+                    <div style={{ display: 'grid', gap: 10 }}>
+                      <input
+                        className="input"
+                        value={adminKey}
+                        onChange={(e) => setAdminKey(e.target.value)}
+                        placeholder="x-admin-secret"
+                        autoComplete="off"
+                        spellCheck={false}
+                        data-testid="common_input_admin_key_en"
+                      />
+                      <button
+                        className="btn btnPrimary"
+                        onClick={() => void doLoginByKey()}
+                        disabled={!adminKey.trim()}
+                        data-testid="common_btn_key_login_submit_en"
+                        type="button"
+                      >
+                        {t('auth.loginButton')}
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {loginMode === 'recover' ? (
+                    <div style={{ display: 'grid', gap: 10 }}>
                       <input
                         className="input"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         placeholder={t('auth.loginPlaceholder')}
-                        autoComplete="off"
+                        autoComplete="username"
                         spellCheck={false}
                         data-testid="common_input_recover_username_en"
                       />
-                    </div>
-                    <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', gap: 8 }}>
                         <input
                           className="input"
@@ -1061,7 +1110,7 @@ function App() {
                           onChange={(e) => setNewPassword(e.target.value)}
                           placeholder={t('auth.newPasswordPlaceholder')}
                           type={showNewPassword ? 'text' : 'password'}
-                          autoComplete="off"
+                          autoComplete="new-password"
                           spellCheck={false}
                           data-testid="common_input_recover_new_password_en"
                         />
@@ -1075,10 +1124,6 @@ function App() {
                           {showNewPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                         </button>
                       </div>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div style={{ flex: 1 }}>
                       <input
                         className="input"
                         value={recoverySecret}
@@ -1089,21 +1134,29 @@ function App() {
                         spellCheck={false}
                         data-testid="common_input_recovery_secret_en"
                       />
+                      <button
+                        className="btn btnPrimary"
+                        onClick={() => void doRecoverPassword()}
+                        disabled={!username.trim() || newPassword.length < 8 || !recoverySecret}
+                        data-testid="common_btn_reset_password_en"
+                        type="button"
+                      >
+                        {t('auth.resetPassword')}
+                      </button>
                     </div>
-                    <button
-                      className="btn btnPrimary"
-                      onClick={() => void doRecoverPassword()}
-                      disabled={!username.trim() || newPassword.length < 8 || !recoverySecret}
-                      data-testid="common_btn_reset_password_en"
-                    >
-                      {t('auth.resetPassword')}
-                    </button>
+                  ) : null}
+
+                  <div
+                    className="pill"
+                    style={{ justifyContent: 'center', width: '100%', textAlign: 'center' }}
+                  >
+                    {t('auth.apiStatus')}: {publicStatus?.api || t('auth.apiUnavailable')}
                   </div>
                 </div>
-              ) : null}
+              </div>
 
               {mustChangePassword ? (
-                <div style={{ marginTop: 12, color: '#8b0000' }}>
+                <div style={{ color: '#8b0000', fontSize: 'var(--font-size-sm)', textAlign: 'center' }}>
                   {t('auth.requirePasswordChange')}
                 </div>
               ) : null}

@@ -17,7 +17,7 @@ export const TestIds = {
       adminKey: 'common_input_admin_key_en',
     },
     button: {
-      login: 'common_btn_password_login_en',
+      login: 'common_btn_login_en',
       togglePassword: 'common_btn_toggle_password_en',
       recovery: 'common_btn_recovery_en',
     },
