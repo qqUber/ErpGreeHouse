@@ -98,6 +98,9 @@ function App() {
   const [tab, setTab] = useState<Tab>('dashboard');
   const [dash, setDash] = useState<Dashboard | null>(null);
   const [customers, setCustomers] = useState<CustomerListItem[]>([]);
+  const [customerPage, setCustomerPage] = useState(1);
+  const [customerTotal, setCustomerTotal] = useState(0);
+  const [customerLimit] = useState(25);
   const [q, setQ] = useState('');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [details, setDetails] = useState<CustomerDetails | null>(null);
@@ -264,10 +267,12 @@ function App() {
     setDash(d);
   }
 
-  async function loadCustomers(query?: string) {
+  async function loadCustomers(query?: string, page: number = 1, limit: number = 25) {
     setError(null);
-    const res = await Api.customers(query);
+    const res = await Api.customers(query, page, limit);
     setCustomers(res.items);
+    setCustomerTotal(res.pagination.total);
+    setCustomerPage(page);
   }
 
   async function loadCustomer(id: number) {
@@ -320,7 +325,7 @@ function App() {
 
         // Load protected data since user is authenticated
         try {
-          await Promise.all([loadDashboard(), loadCustomers(), loadProducts()]);
+          await Promise.all([loadDashboard(), loadCustomers('', 1, customerLimit), loadProducts()]);
         } catch (dataError: any) {
           // Failed to load protected data, but user is authenticated
           console.warn('[Bootstrap] Failed to load some data:', dataError?.message);
@@ -770,6 +775,13 @@ function App() {
     if (tab !== safeTab) setTab(safeTab);
   }, [safeTab, tab, effectiveAuthReady]);
 
+  useEffect(() => {
+    if (!showProtectedPanels) return;
+    if (window.location.pathname === '/admin/login') {
+      window.history.replaceState(null, '', '/admin');
+    }
+  }, [showProtectedPanels]);
+
   return (
     <div className={`container app-shell mode-${viewport.mode} density-${viewport.density}`}>
       <header className="header">
@@ -925,7 +937,7 @@ function App() {
         ) : null}
 
         {/* Show login form when not authenticated OR when auth is still loading */}
-        {!authReady || (!user && authReady) ? (
+        {!effectiveAuthReady || !effectiveMe ? (
           <div
             className="grid"
             style={{ minHeight: 'calc(100vh - 180px)', alignItems: 'center', justifyItems: 'center' }}
@@ -1178,8 +1190,12 @@ function App() {
               select={(id) => setSelectedId(id)}
               selected={selected}
               details={details}
-              search={() => loadCustomers(q)}
-              refresh={() => loadCustomers()}
+              search={() => loadCustomers(q, customerPage, customerLimit)}
+              refresh={() => loadCustomers('', 1, customerLimit)}
+              page={customerPage}
+              total={customerTotal}
+              limit={customerLimit}
+              onPageChange={(newPage) => loadCustomers(q, newPage, customerLimit)}
             />
           </div>
         ) : null}
@@ -1551,6 +1567,10 @@ type CustomersViewProps = {
   details: CustomerDetails | null;
   search: () => Promise<void>;
   refresh: () => Promise<void>;
+  page: number;
+  total: number;
+  limit: number;
+  onPageChange: (page: number) => void;
 };
 
 function CustomersView({
@@ -1562,13 +1582,39 @@ function CustomersView({
   details,
   search,
   refresh,
+  page,
+  total,
+  limit,
+  onPageChange,
 }: CustomersViewProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  
+  const totalPages = Math.ceil(total / limit);
+  const hasNextPage = page < totalPages;
+  const hasPrevPage = page > 1;
 
   return (
-    <div className="grid">
-      <div className="card cardFull">
-        <div className="row">
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: '16px', 
+      height: '100%',
+      padding: '16px',
+      backgroundColor: '#f8fafc'
+    }}>
+      {/* Search Controls */}
+      <div style={{
+        backgroundColor: 'white',
+        border: '1px solid #e2e8f0',
+        borderRadius: '8px',
+        padding: '16px',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          gap: '12px',
+          alignItems: 'center'
+        }}>
           <input
             className="input"
             value={q}
@@ -1576,12 +1622,29 @@ function CustomersView({
             placeholder={t('customers.search')}
             autoComplete="off"
             data-testid="customers_search_input"
+            style={{ 
+              flex: 1,
+              padding: '12px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '6px',
+              fontSize: '14px'
+            }}
           />
           <button
             className="btn btnPrimary"
             onClick={() => void search()}
             type="button"
             data-testid="customers_search_button"
+            style={{
+              padding: '12px 20px',
+              backgroundColor: '#2563eb',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer'
+            }}
           >
             {t('common.search')}
           </button>
@@ -1590,78 +1653,472 @@ function CustomersView({
             onClick={() => void refresh()}
             type="button"
             data-testid="customers_clear_button"
+            style={{
+              padding: '12px 20px',
+              backgroundColor: 'white',
+              color: '#374151',
+              border: '1px solid #d1d5db',
+              borderRadius: '6px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer'
+            }}
           >
             {t('common.refresh')}
           </button>
         </div>
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: 10,
-        }}
-      >
-        <div className="card cardFull">
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>{t('customers.list')}</div>
-          <div style={{ display: 'grid', gap: 8 }}>
-            {customers.map((c) => (
+      {/* Main Content: List + Details */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '16px', 
+        flex: 1,
+        minHeight: '500px'
+      }}>
+        {/* Customer List - Left Side */}
+        <div style={{
+          flex: 1,
+          backgroundColor: 'white',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}>
+          {/* List Header */}
+          <div style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid #e2e8f0',
+            backgroundColor: '#f8fafc',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <h3 style={{ 
+              margin: 0, 
+              fontSize: '16px', 
+              fontWeight: '600',
+              color: '#1e293b'
+            }}>
+              {i18n.language === 'ru' ? 'Список клиентов' : 'Customer List'}
+            </h3>
+            <span style={{
+              fontSize: '12px',
+              color: '#64748b',
+              backgroundColor: '#e2e8f0',
+              padding: '4px 8px',
+              borderRadius: '12px'
+            }}>
+              {total} {i18n.language === 'ru' ? 'клиентов' : 'customers'}
+            </span>
+          </div>
+          
+          {/* Customer Items */}
+          <div style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '8px'
+          }}>
+            {customers.map((c) => {
+              // Skip customers without essential data
+              if (!c.full_name && !c.phone) {
+                return null;
+              }
+              
+              return (
               <button
                 key={c.id}
                 type="button"
-                className="btn"
                 onClick={() => select(c.id)}
+                data-testid={`customer_item_${c.id}`}
                 style={{
+                  display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'space-between',
-                  background: selected?.id === c.id ? 'var(--primary-light)' : undefined,
-                  borderColor: selected?.id === c.id ? 'var(--primary)' : undefined,
+                  padding: '16px',
+                  border: selected?.id === c.id ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  backgroundColor: selected?.id === c.id ? '#f0f9ff' : 'white',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  textAlign: 'left',
+                  width: '100%',
+                  marginBottom: '8px',
+                  boxShadow: selected?.id === c.id ? '0 0 0 3px rgba(37, 99, 235, 0.1)' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (selected?.id !== c.id) {
+                    e.currentTarget.style.borderColor = '#2563eb';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selected?.id !== c.id) {
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }
                 }}
               >
-                <span>{c.full_name || c.phone || `#${c.id}`}</span>
-                <span style={{ color: 'rgba(0,0,0,0.55)' }}>{c.balance_points}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  <div style={{ 
+                    fontWeight: '600', 
+                    fontSize: '14px', 
+                    color: '#1e293b' 
+                  }}>
+                    {c.full_name || `Клиент #${c.id}`}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>
+                    {c.phone || 'Телефон не указан'}
+                  </div>
+                  <div style={{ 
+                    fontSize: '11px', 
+                    color: '#94a3b8',
+                    fontFamily: 'monospace'
+                  }}>
+                    ID: {c.id}
+                  </div>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'flex-end', 
+                  gap: '4px' 
+                }}>
+                  <div style={{ 
+                    fontWeight: '700', 
+                    fontSize: '14px', 
+                    color: '#2563eb' 
+                  }}>
+                    {c.balance_points}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>
+                    ₽
+                  </div>
+                </div>
               </button>
-            ))}
+              );
+            })}
             {customers.length === 0 ? (
-              <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
-                {t('customers.noCustomers')}
+              <div style={{
+                textAlign: 'center',
+                padding: '40px',
+                color: '#64748b',
+                fontSize: '14px'
+              }}>
+                {i18n.language === 'ru' ? 'Клиенты не найдены' : 'No customers found'}
               </div>
             ) : null}
           </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{
+              padding: '16px 20px',
+              borderTop: '1px solid #e2e8f0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              backgroundColor: '#f8fafc'
+            }}>
+              <div style={{
+                fontSize: '12px',
+                color: '#64748b'
+              }}>
+                {i18n.language === 'ru' ? 'Страница' : 'Page'} {page} {i18n.language === 'ru' ? 'из' : 'of'} {totalPages} ({total} {i18n.language === 'ru' ? 'всего' : 'total'})
+              </div>
+              <div style={{
+                display: 'flex',
+                gap: '8px',
+                alignItems: 'center'
+              }}>
+                <button
+                  onClick={() => onPageChange(page - 1)}
+                  disabled={!hasPrevPage}
+                  style={{
+                    padding: '6px 12px',
+                    backgroundColor: hasPrevPage ? '#2563eb' : '#e2e8f0',
+                    color: hasPrevPage ? 'white' : '#94a3b8',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    cursor: hasPrevPage ? 'pointer' : 'not-allowed',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  ← {i18n.language === 'ru' ? 'Назад' : 'Previous'}
+                </button>
+                
+                <span style={{
+                  fontSize: '12px',
+                  color: '#374151',
+                  fontWeight: '500'
+                }}>
+                  {page}
+                </span>
+                
+                <button
+                  onClick={() => onPageChange(page + 1)}
+                  disabled={!hasNextPage}
+                  style={{
+                    padding: '6px 12px',
+                    backgroundColor: hasNextPage ? '#2563eb' : '#e2e8f0',
+                    color: hasNextPage ? 'white' : '#94a3b8',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    cursor: hasNextPage ? 'pointer' : 'not-allowed',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {i18n.language === 'ru' ? 'Вперед' : 'Next'} →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="card cardFull">
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>{t('customers.details')}</div>
-          {!details ? (
-            <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
-              {t('customers.selectCustomer')}
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gap: 10 }}>
-              <div>
-                <div>{details.customer.full_name || '—'}</div>
-                <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
-                  {details.customer.phone || '—'}
+        {/* Customer Details - Right Side */}
+        <div style={{
+          width: '400px',
+          backgroundColor: 'white',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}>
+          {details ? (
+            <>
+              {/* Details Header */}
+              <div style={{
+                padding: '16px 20px',
+                borderBottom: '1px solid #e2e8f0',
+                backgroundColor: '#f8fafc',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <h3 style={{ 
+                  margin: 0, 
+                  fontSize: '16px', 
+                  fontWeight: '600',
+                  color: '#1e293b'
+                }}>
+                  {i18n.language === 'ru' ? 'Детали клиента' : 'Customer Details'}
+                </h3>
+                <button 
+                  onClick={() => select(0)}
+                  data-testid="close_customer_details"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: '18px',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    borderRadius: '4px',
+                    color: '#64748b',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#e2e8f0';
+                    e.currentTarget.style.color = '#374151';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = '#64748b';
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+              
+              {/* Details Content */}
+              <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '20px'
+              }}>
+                {/* Customer Profile */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  padding: '16px',
+                  backgroundColor: '#f8fafc',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    backgroundColor: '#2563eb',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    fontWeight: '600'
+                  }}>
+                    {details.customer.full_name?.charAt(0) || '#'}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ 
+                      fontWeight: '600', 
+                      fontSize: '16px', 
+                      color: '#1e293b' 
+                    }}>
+                      {details.customer.full_name || '—'}
+                    </div>
+                    <div style={{ fontSize: '14px', color: '#64748b' }}>
+                      {details.customer.phone || '—'}
+                    </div>
+                    <div style={{ 
+                      fontSize: '12px', 
+                      color: '#94a3b8',
+                      fontFamily: 'monospace'
+                    }}>
+                      ID: {details.customer.id}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Balance Card */}
+                <div style={{
+                  padding: '16px',
+                  background: 'linear-gradient(135deg, #dbeafe, #2563eb)',
+                  color: 'white',
+                  borderRadius: '8px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '4px' }}>
+                    {i18n.language === 'ru' ? 'Баланс' : 'Balance'}
+                  </div>
+                  <div style={{ fontSize: '24px', fontWeight: '700' }}>
+                    {details.customer.balance_points} ₽
+                  </div>
+                </div>
+                
+                {/* QR Code Section */}
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ 
+                    fontSize: '12px', 
+                    fontWeight: '600', 
+                    color: '#374151',
+                    marginBottom: '12px'
+                  }}>
+                    QR Code
+                  </div>
+                  <div style={{
+                    padding: '20px',
+                    backgroundColor: '#f8fafc',
+                    border: '2px dashed #d1d5db',
+                    borderRadius: '8px'
+                  }}>
+                    <div style={{ 
+                      fontSize: '48px', 
+                      marginBottom: '8px',
+                      fontFamily: 'monospace',
+                      fontWeight: 'bold'
+                    }}>
+                      ▓▓▓▓▓▓▓▓
+                    </div>
+                    <div style={{ 
+                      fontSize: '11px', 
+                      color: '#64748b',
+                      fontFamily: 'monospace'
+                    }}>
+                      Customer ID: {details.customer.id}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Transactions */}
+                <div>
+                  <h4 style={{ 
+                    margin: '0 0 12px 0', 
+                    fontSize: '14px', 
+                    fontWeight: '600',
+                    color: '#1e293b'
+                  }}>
+                    {i18n.language === 'ru' ? 'Последние транзакции' : 'Recent Transactions'}
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {details.transactions.slice(0, 10).map((tx) => (
+                      <div key={tx.id} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '12px',
+                        backgroundColor: '#f8fafc',
+                        borderRadius: '6px'
+                      }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div style={{ 
+                            fontSize: '11px', 
+                            fontWeight: '600', 
+                            color: '#64748b' 
+                          }}>
+                            #{tx.id}
+                          </div>
+                          <div style={{ 
+                            fontSize: '11px', 
+                            color: '#94a3b8' 
+                          }}>
+                            {new Date(tx.created_at).toLocaleString()}
+                          </div>
+                        </div>
+                        <div style={{ 
+                          fontWeight: '600', 
+                          color: '#059669',
+                          fontSize: '14px'
+                        }}>
+                          {money(tx.total_amount)} ₽
+                        </div>
+                      </div>
+                    ))}
+                    {details.transactions.length === 0 ? (
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '20px',
+                        color: '#64748b',
+                        fontSize: '12px'
+                      }}>
+                        {i18n.language === 'ru' ? 'Нет транзакций' : 'No transactions'}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               </div>
-              <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.65)' }}>
-                {t('customers.balance')}: {details.customer.balance_points}
+            </>
+          ) : (
+            /* Empty State */
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              textAlign: 'center',
+              color: '#64748b',
+              padding: '40px'
+            }}>
+              <div style={{ 
+                fontSize: '64px', 
+                marginBottom: '16px', 
+                opacity: 0.5 
+              }}>
+                👤
               </div>
-              <div style={{ display: 'grid', gap: 6 }}>
-                {details.transactions.slice(0, 10).map((tx) => (
-                  <div key={tx.id} className="card cardCompact">
-                    <div style={{ fontWeight: 700 }}>#{tx.id}</div>
-                    <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)' }}>
-                      {new Date(tx.created_at).toLocaleString()}
-                    </div>
-                    <div style={{ fontSize: 13 }}>{money(tx.total_amount)} ₽</div>
-                  </div>
-                ))}
-                {details.transactions.length === 0 ? (
-                  <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
-                    {t('customers.noTransactions')}
-                  </div>
-                ) : null}
+              <div style={{ fontSize: '16px' }}>
+                {i18n.language === 'ru' ? 'Выберите клиента в списке' : 'Select customer from list'}
               </div>
             </div>
           )}
