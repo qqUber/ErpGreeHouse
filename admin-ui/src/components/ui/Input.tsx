@@ -24,16 +24,18 @@ export function Input({
       {label && (
         <label htmlFor={inputId} className="input-label">
           {label}
-          {props.required && <span className="input-required" aria-label="required">*</span>}
+          {props.required && (
+            <span className="input-required" aria-label="required">
+              *
+            </span>
+          )}
         </label>
       )}
       <input
         id={inputId}
         className={`input ${hasError ? 'input-error' : ''}`}
         aria-invalid={hasError}
-        aria-describedby={
-          error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined
-        }
+        aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
         data-testid="input-field"
         {...props}
       />

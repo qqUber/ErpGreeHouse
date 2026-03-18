@@ -116,15 +116,7 @@ export function DataTable<T>({
                   {column.header}
                   {column.sortable && (
                     <span className="data-table-sort-icon" aria-hidden="true">
-                      {sortColumn === column.key ? (
-                        sortDirection === 'asc' ? (
-                          '↑'
-                        ) : (
-                          '↓'
-                        )
-                      ) : (
-                        '↕'
-                      )}
+                      {sortColumn === column.key ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}
                     </span>
                   )}
                 </div>

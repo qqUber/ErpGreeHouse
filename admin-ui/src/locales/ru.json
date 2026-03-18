@@ -39,8 +39,6 @@
     "recovery": "Восстановление",
     "apiStatus": "Статус API",
     "apiUnavailable": "недоступен",
-    "defaultAdmin": "Дефолтный админ",
-    "defaultAdminNotCreated": "Дефолтный админ не создан. Проверьте ADMIN_BOOTSTRAP_DEFAULT.",
     "loginPlaceholder": "Логин",
     "passwordPlaceholder": "Пароль",
     "newPasswordPlaceholder": "Новый пароль",

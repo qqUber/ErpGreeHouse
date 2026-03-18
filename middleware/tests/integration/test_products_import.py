@@ -2,8 +2,9 @@ import importlib
 from pathlib import Path
 
 import pytest
-from app.auth import create_access_token
 from fastapi.testclient import TestClient
+
+from app.auth import create_access_token
 
 
 @pytest.fixture

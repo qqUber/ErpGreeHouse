@@ -31,7 +31,7 @@ export function SuccessMessage({
   useEffect(() => {
     if (autoHideDuration && onDismissRef.current) {
       let isMounted = true;
-      
+
       const timer = setTimeout(() => {
         if (isMounted) {
           setIsVisible(false);

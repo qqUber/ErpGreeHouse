@@ -7,7 +7,7 @@ interface NavigationProps {
 
 export function Navigation({ activeTab, onTabChange }: NavigationProps) {
   const { t } = useTranslation();
-  
+
   const tabs = [
     { id: 'dashboard', label: t('menu.dashboard'), testId: 'admin_nav_dashboard' },
     { id: 'customers', label: t('menu.clients'), testId: 'admin_nav_customers' },

@@ -12,7 +12,7 @@ type IntegrationsData = {
 export function IntegrationsWidget({ data }: { data?: any }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   // Use integrations_total from API
   const total = Number(data?.integrations_total ?? 0);
   const active = total; // Assume all integrations are active since API doesn't provide status

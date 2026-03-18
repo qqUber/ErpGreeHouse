@@ -16,7 +16,6 @@ from app.customer_identity import (
     get_or_generate_base_guid,
     resolve_or_create_customer,
 )
-from app.customer_identity import generate_unique_qr_token
 
 
 def _create_conn() -> sqlite3.Connection:

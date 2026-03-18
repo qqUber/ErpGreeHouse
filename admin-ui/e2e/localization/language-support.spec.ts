@@ -91,4 +91,3 @@ test.describe('Language Support', () => {
     await expect(page.locator('.language-switcher-button')).toBeVisible();
   });
 });
-

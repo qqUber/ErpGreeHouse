@@ -3,9 +3,11 @@ import { expect, test } from '@playwright/test';
 import { attachConsole, login, resetTestDatabase } from '../_shared';
 
 const runtimeEnv =
-  (globalThis as typeof globalThis & {
-    process?: { env?: Record<string, string | undefined> };
-  }).process?.env || {};
+  (
+    globalThis as typeof globalThis & {
+      process?: { env?: Record<string, string | undefined> };
+    }
+  ).process?.env || {};
 
 const TEST_ADMIN_SECRET = runtimeEnv.E2E_ADMIN_SECRET || 'test-secret-key';
 
@@ -29,7 +31,11 @@ function runId() {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-async function createLoyaltyCustomer(request: APIRequestContext, ownerToken: string, suffix: string) {
+async function createLoyaltyCustomer(
+  request: APIRequestContext,
+  ownerToken: string,
+  suffix: string
+) {
   const numericSuffix = suffix.replace(/\D/g, '').slice(-7).padStart(7, '0');
   const phone = `+7999${numericSuffix}`;
   const fullName = `Loyalty E2E ${suffix}`;
@@ -50,9 +56,12 @@ async function createLoyaltyCustomer(request: APIRequestContext, ownerToken: str
 }
 
 async function getCustomerByPhone(page: Page, phone: string) {
-  const response = await page.request.get(`/api/v1/test/customer_by_phone?phone=${encodeURIComponent(phone)}`, {
-    headers: { 'x-admin-secret': TEST_ADMIN_SECRET },
-  });
+  const response = await page.request.get(
+    `/api/v1/test/customer_by_phone?phone=${encodeURIComponent(phone)}`,
+    {
+      headers: { 'x-admin-secret': TEST_ADMIN_SECRET },
+    }
+  );
   expect(response.ok()).toBeTruthy();
   const payload = await response.json();
   expect(payload.customer).toBeTruthy();
@@ -74,7 +83,10 @@ test.describe('Green House Loyalty Demo - Virtual Card & QR Code', () => {
     }
   });
 
-  test('loyalty customer receives qr token and can be identified by qr', async ({ page, request }) => {
+  test('loyalty customer receives qr token and can be identified by qr', async ({
+    page,
+    request,
+  }) => {
     const ownerToken = await apiLogin(request, 'admin', 'admin');
     const suffix = runId();
     const customer = await createLoyaltyCustomer(request, ownerToken, suffix);
@@ -146,24 +158,33 @@ test.describe('Green House Loyalty Demo - Virtual Card & QR Code', () => {
       console.warn(`[Test] Seed failed but continuing analytics checks: ${seedError}`);
     }
 
-    const loyaltyChartResponse = await request.get('/api/v1/analytics/dashboard/loyalty?time_range=7d&interval=day', {
-      headers: authHeaders(ownerToken),
-    });
+    const loyaltyChartResponse = await request.get(
+      '/api/v1/analytics/dashboard/loyalty?time_range=7d&interval=day',
+      {
+        headers: authHeaders(ownerToken),
+      }
+    );
     expect(loyaltyChartResponse.ok()).toBeTruthy();
     const loyaltyChart = await loyaltyChartResponse.json();
     expect(Array.isArray(loyaltyChart.data)).toBeTruthy();
 
-    const loyaltyOverviewResponse = await request.get('/api/v1/analytics/reports/loyalty/overview?time_range=30d', {
-      headers: authHeaders(ownerToken),
-    });
+    const loyaltyOverviewResponse = await request.get(
+      '/api/v1/analytics/reports/loyalty/overview?time_range=30d',
+      {
+        headers: authHeaders(ownerToken),
+      }
+    );
     expect(loyaltyOverviewResponse.ok()).toBeTruthy();
     const overview = await loyaltyOverviewResponse.json();
     expect(overview.metrics).toBeTruthy();
     expect(Number(overview.metrics.points_earned ?? 0)).toBeGreaterThanOrEqual(0);
 
-    const loyaltyDetailedResponse = await request.get('/api/v1/analytics/reports/loyalty/detailed?time_range=30d', {
-      headers: authHeaders(ownerToken),
-    });
+    const loyaltyDetailedResponse = await request.get(
+      '/api/v1/analytics/reports/loyalty/detailed?time_range=30d',
+      {
+        headers: authHeaders(ownerToken),
+      }
+    );
     expect(loyaltyDetailedResponse.ok()).toBeTruthy();
     const detailed = await loyaltyDetailedResponse.json();
     expect(Array.isArray(detailed.customer_data)).toBeTruthy();

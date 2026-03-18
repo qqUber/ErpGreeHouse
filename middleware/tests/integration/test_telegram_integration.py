@@ -279,8 +279,9 @@ class TestTelegramWebhookIntegration:
 
     def test_webhook_endpoint_exists(self):
         """Verify the webhook endpoint is configured in the middleware."""
-        from app.main import app
         from fastapi.testclient import TestClient
+
+        from app.main import app
 
         client = TestClient(app)
         response = client.get("/health")
@@ -291,8 +292,9 @@ class TestTelegramWebhookIntegration:
         """Verify the set_webhook endpoint exists."""
         import os
 
-        from app.main import app
         from fastapi.testclient import TestClient
+
+        from app.main import app
 
         webhook_secret = os.getenv("WEBHOOK_SECRET", "test_secret")
 

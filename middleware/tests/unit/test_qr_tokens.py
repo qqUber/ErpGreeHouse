@@ -13,8 +13,10 @@ class TestQRTokenGeneration:
     def test_generate_unique_token_format(self):
         """Test QR token format - should be 8 numeric characters"""
         conn = sqlite3.connect(":memory:")
-        conn.execute("CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)")
-        
+        conn.execute(
+            "CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)"
+        )
+
         token = generate_unique_token(conn)
 
         assert len(token) == 8
@@ -23,8 +25,10 @@ class TestQRTokenGeneration:
 
     def test_generate_unique_token_uniqueness(self):
         conn = sqlite3.connect(":memory:")
-        conn.execute("CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)")
-        
+        conn.execute(
+            "CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)"
+        )
+
         tokens = [generate_unique_token(conn) for _ in range(10)]
         assert len(set(tokens)) == 10  # All should be unique
 
@@ -146,8 +150,10 @@ class TestQRTokenIntegration:
     def test_generate_unique_token_consistency(self):
         """Test QR token consistency - should always be 8 numeric characters"""
         conn = sqlite3.connect(":memory:")
-        conn.execute("CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)")
-        
+        conn.execute(
+            "CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)"
+        )
+
         tokens = [generate_unique_token(conn) for _ in range(20)]
 
         for token in tokens:
@@ -157,8 +163,10 @@ class TestQRTokenIntegration:
 
     def test_generate_unique_token_no_collisions_large_sample(self):
         conn = sqlite3.connect(":memory:")
-        conn.execute("CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)")
-        
+        conn.execute(
+            "CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)"
+        )
+
         tokens = [generate_unique_token(conn) for _ in range(1000)]
         uniqueness_ratio = len(set(tokens)) / len(tokens)
         assert uniqueness_ratio >= 0.99  # Should be almost unique

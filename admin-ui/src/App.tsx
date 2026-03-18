@@ -285,7 +285,7 @@ function App() {
     setError(null);
     const d = await Api.customer(id);
     setDetails(d);
-    
+
     // Generate QR code for the customer
     if (d.customer.qr_token) {
       try {
@@ -294,8 +294,8 @@ function App() {
           margin: 1,
           color: {
             dark: '#000000',
-            light: '#FFFFFF'
-          }
+            light: '#FFFFFF',
+          },
         });
         setQrCodeUrl(qrDataUrl);
       } catch (err) {
@@ -311,7 +311,7 @@ function App() {
       setShowSuggestions(false);
       return;
     }
-    
+
     try {
       const res = await Api.customers(query, 1, 5);
       setSearchSuggestions(res.items);
@@ -408,14 +408,14 @@ function App() {
 
   useEffect(() => {
     // Detect E2E mode at runtime using multiple signals
-    const isE2EMode = 
+    const isE2EMode =
       // Check if running in Playwright (sets navigator.webdriver)
       (navigator as any).webdriver === true ||
       // Check for e2e query parameter
       window.location.search.includes('e2e=true') ||
       // Check for test user agent
       navigator.userAgent.includes('Playwright');
-    
+
     if (isE2EMode) {
       console.log('[App] E2E mode detected - skipping visibility handler for password security');
       return;
@@ -793,7 +793,10 @@ function App() {
     if (perms.has('dashboard.read')) tabs.push('dashboard');
     if (perms.has('customer.list') || perms.has('customer.read')) tabs.push('customers');
     if (perms.has('pos.sale')) tabs.push('pos');
-    if (perms.has('integration.read') || (publicStatus?.debug_mode && (perms.has('pos.sale') || perms.has('integration.update'))))
+    if (
+      perms.has('integration.read') ||
+      (publicStatus?.debug_mode && (perms.has('pos.sale') || perms.has('integration.update')))
+    )
       tabs.push('integrations');
     if (perms.has('product.read')) tabs.push('products');
     // Settings is always available for password change, but content inside depends on permissions
@@ -976,7 +979,11 @@ function App() {
         {!effectiveAuthReady || !effectiveMe ? (
           <div
             className="grid"
-            style={{ minHeight: 'calc(100vh - 180px)', alignItems: 'center', justifyItems: 'center' }}
+            style={{
+              minHeight: 'calc(100vh - 180px)',
+              alignItems: 'center',
+              justifyItems: 'center',
+            }}
           >
             <div
               className="card"
@@ -991,8 +998,12 @@ function App() {
               }}
             >
               <div style={{ display: 'grid', gap: 8, textAlign: 'center' }}>
-                <div style={{ fontWeight: 800, fontSize: 'var(--font-size-2xl)' }}>{t('app.title')}</div>
-                <div style={{ color: 'var(--muted)', fontSize: 'var(--font-size-sm)' }}>{t('auth.login')}</div>
+                <div style={{ fontWeight: 800, fontSize: 'var(--font-size-2xl)' }}>
+                  {t('app.title')}
+                </div>
+                <div style={{ color: 'var(--muted)', fontSize: 'var(--font-size-sm)' }}>
+                  {t('auth.login')}
+                </div>
               </div>
 
               <div style={{ display: 'grid', gap: 12 }}>
@@ -1055,12 +1066,6 @@ function App() {
                 >
                   {t('auth.loginButton')}
                 </button>
-              </div>
-
-              <div style={{ color: 'var(--muted)', fontSize: 12, textAlign: 'center' }}>
-                {authStatus?.default_admin_present
-                  ? `${t('auth.defaultAdmin')}: ${authStatus.default_admin_username}`
-                  : t('auth.defaultAdminNotCreated')}
               </div>
 
               <div style={{ display: 'grid', gap: 10 }}>
@@ -1204,7 +1209,9 @@ function App() {
               </div>
 
               {mustChangePassword ? (
-                <div style={{ color: '#8b0000', fontSize: 'var(--font-size-sm)', textAlign: 'center' }}>
+                <div
+                  style={{ color: '#8b0000', fontSize: 'var(--font-size-sm)', textAlign: 'center' }}
+                >
                   {t('auth.requirePasswordChange')}
                 </div>
               ) : null}
@@ -1571,35 +1578,41 @@ function CustomersView({
   qrCodeUrl,
 }: CustomersViewProps) {
   const { t, i18n } = useTranslation();
-  
+
   const totalPages = Math.ceil(total / limit);
   const hasNextPage = page < totalPages;
   const hasPrevPage = page > 1;
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      gap: '16px', 
-      height: '100%',
-      padding: '16px',
-      backgroundColor: '#f8fafc'
-    }}>
-      {/* Search Controls */}
-      <div style={{
-        backgroundColor: 'white',
-        border: '1px solid #e2e8f0',
-        borderRadius: '8px',
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        height: '100%',
         padding: '16px',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-      }}>
-        <div style={{ 
-          display: 'flex', 
-          gap: '12px',
-          alignItems: 'center',
-          position: 'relative',
-          flex: 1
-        }}>
+        backgroundColor: '#f8fafc',
+      }}
+    >
+      {/* Search Controls */}
+      <div
+        style={{
+          backgroundColor: 'white',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px',
+          padding: '16px',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            gap: '12px',
+            alignItems: 'center',
+            position: 'relative',
+            flex: 1,
+          }}
+        >
           <input
             className="input"
             value={q}
@@ -1621,31 +1634,33 @@ function CustomersView({
             placeholder={t('customers.search')}
             autoComplete="off"
             data-testid="customers_search_input"
-            style={{ 
+            style={{
               flex: 1,
               padding: '12px 16px',
               border: '1px solid #d1d5db',
               borderRadius: '6px',
-              fontSize: '14px'
+              fontSize: '14px',
             }}
           />
-          
+
           {/* Search Suggestions */}
           {showSuggestions && searchSuggestions.length > 0 && (
-            <div style={{
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              right: 0,
-              backgroundColor: 'white',
-              border: '1px solid #d1d5db',
-              borderTop: 'none',
-              borderRadius: '0 0 6px 6px',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-              zIndex: 1000,
-              maxHeight: '200px',
-              overflowY: 'auto'
-            }}>
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                backgroundColor: 'white',
+                border: '1px solid #d1d5db',
+                borderTop: 'none',
+                borderRadius: '0 0 6px 6px',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                zIndex: 1000,
+                maxHeight: '200px',
+                overflowY: 'auto',
+              }}
+            >
               {searchSuggestions.map((customer) => (
                 <div
                   key={customer.id}
@@ -1657,7 +1672,7 @@ function CustomersView({
                     cursor: 'pointer',
                     borderBottom: '1px solid #f3f4f6',
                     fontSize: '14px',
-                    color: '#374151'
+                    color: '#374151',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = '#f8fafc';
@@ -1670,9 +1685,7 @@ function CustomersView({
                     {customer.full_name || `Клиент #${customer.id}`}
                   </div>
                   {customer.phone && (
-                    <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                      {customer.phone}
-                    </div>
+                    <div style={{ fontSize: '12px', color: '#6b7280' }}>{customer.phone}</div>
                   )}
                 </div>
               ))}
@@ -1691,7 +1704,7 @@ function CustomersView({
               borderRadius: '6px',
               fontSize: '14px',
               fontWeight: '500',
-              cursor: 'pointer'
+              cursor: 'pointer',
             }}
           >
             {t('common.search')}
@@ -1709,7 +1722,7 @@ function CustomersView({
               borderRadius: '6px',
               fontSize: '14px',
               fontWeight: '500',
-              cursor: 'pointer'
+              cursor: 'pointer',
             }}
           >
             {t('common.refresh')}
@@ -1718,171 +1731,201 @@ function CustomersView({
       </div>
 
       {/* Main Content: List + Details */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '16px', 
-        flex: 1,
-        minHeight: '500px'
-      }}>
-        {/* Customer List - Left Side */}
-        <div style={{
-          flex: 1,
-          backgroundColor: 'white',
-          border: '1px solid #e2e8f0',
-          borderRadius: '8px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+      <div
+        style={{
           display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden'
-        }}>
-          {/* List Header */}
-          <div style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid #e2e8f0',
-            backgroundColor: '#f8fafc',
+          gap: '16px',
+          flex: 1,
+          minHeight: '500px',
+        }}
+      >
+        {/* Customer List - Left Side */}
+        <div
+          style={{
+            flex: 1,
+            backgroundColor: 'white',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <h3 style={{ 
-              margin: 0, 
-              fontSize: '16px', 
-              fontWeight: '600',
-              color: '#1e293b'
-            }}>
+            flexDirection: 'column',
+            overflow: 'hidden',
+          }}
+        >
+          {/* List Header */}
+          <div
+            style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid #e2e8f0',
+              backgroundColor: '#f8fafc',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <h3
+              style={{
+                margin: 0,
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#1e293b',
+              }}
+            >
               {i18n.language === 'ru' ? 'Список клиентов' : 'Customer List'}
             </h3>
-            <span style={{
-              fontSize: '12px',
-              color: '#64748b',
-              backgroundColor: '#e2e8f0',
-              padding: '4px 8px',
-              borderRadius: '12px'
-            }}>
+            <span
+              style={{
+                fontSize: '12px',
+                color: '#64748b',
+                backgroundColor: '#e2e8f0',
+                padding: '4px 8px',
+                borderRadius: '12px',
+              }}
+            >
               {total} {i18n.language === 'ru' ? 'клиентов' : 'customers'}
             </span>
           </div>
-          
+
           {/* Customer Items */}
-          <div style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '8px'
-          }}>
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '8px',
+            }}
+          >
             {customers.map((c) => {
               // Skip customers without essential data
               if (!c.full_name && !c.phone) {
                 return null;
               }
-              
+
               return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => select(c.id)}
-                data-testid={`customer_item_${c.id}`}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '16px',
-                  border: selected?.id === c.id ? '2px solid #2563eb' : '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  backgroundColor: selected?.id === c.id ? '#f0f9ff' : 'white',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  textAlign: 'left',
-                  width: '100%',
-                  marginBottom: '8px',
-                  boxShadow: selected?.id === c.id ? '0 0 0 3px rgba(37, 99, 235, 0.1)' : 'none'
-                }}
-                onMouseEnter={(e) => {
-                  if (selected?.id !== c.id) {
-                    e.currentTarget.style.borderColor = '#2563eb';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selected?.id !== c.id) {
-                    e.currentTarget.style.borderColor = '#e2e8f0';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }
-                }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <div style={{ 
-                    fontWeight: '600', 
-                    fontSize: '14px', 
-                    color: '#1e293b' 
-                  }}>
-                    {c.full_name || `Клиент #${c.id}`}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>
-                    {c.phone || 'Телефон не указан'}
-                  </div>
-                  <div style={{ 
-                    fontSize: '11px', 
-                    color: '#94a3b8',
-                    fontFamily: 'monospace'
-                  }}>
-                    ID: {c.id}
-                  </div>
-                </div>
-                <div style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'flex-end', 
-                  gap: '4px' 
-                }}>
-                  <div style={{ 
-                    fontWeight: '700', 
-                    fontSize: '14px', 
-                    color: '#2563eb',
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => select(c.id)}
+                  data-testid={`customer_item_${c.id}`}
+                  style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '2px'
-                  }}>
-                    {c.balance_points} ₽
+                    justifyContent: 'space-between',
+                    padding: '16px',
+                    border: selected?.id === c.id ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    backgroundColor: selected?.id === c.id ? '#f0f9ff' : 'white',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'left',
+                    width: '100%',
+                    marginBottom: '8px',
+                    boxShadow: selected?.id === c.id ? '0 0 0 3px rgba(37, 99, 235, 0.1)' : 'none',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selected?.id !== c.id) {
+                      e.currentTarget.style.borderColor = '#2563eb';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selected?.id !== c.id) {
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                    <div
+                      style={{
+                        fontWeight: '600',
+                        fontSize: '14px',
+                        color: '#1e293b',
+                      }}
+                    >
+                      {c.full_name || `Клиент #${c.id}`}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>
+                      {c.phone || 'Телефон не указан'}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        color: '#94a3b8',
+                        fontFamily: 'monospace',
+                      }}
+                    >
+                      ID: {c.id}
+                    </div>
                   </div>
-                </div>
-              </button>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-end',
+                      gap: '4px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: '700',
+                        fontSize: '14px',
+                        color: '#2563eb',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '2px',
+                      }}
+                    >
+                      {c.balance_points} ₽
+                    </div>
+                  </div>
+                </button>
               );
             })}
             {customers.length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: '40px',
-                color: '#64748b',
-                fontSize: '14px'
-              }}>
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '40px',
+                  color: '#64748b',
+                  fontSize: '14px',
+                }}
+              >
                 {i18n.language === 'ru' ? 'Клиенты не найдены' : 'No customers found'}
               </div>
             ) : null}
           </div>
-          
+
           {/* Pagination */}
           {totalPages > 1 && (
-            <div style={{
-              padding: '16px 20px',
-              borderTop: '1px solid #e2e8f0',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              backgroundColor: '#f8fafc'
-            }}>
-              <div style={{
-                fontSize: '12px',
-                color: '#64748b'
-              }}>
-                {i18n.language === 'ru' ? 'Страница' : 'Page'} {page} {i18n.language === 'ru' ? 'из' : 'of'} {totalPages} ({total} {i18n.language === 'ru' ? 'всего' : 'total'})
-              </div>
-              <div style={{
+            <div
+              style={{
+                padding: '16px 20px',
+                borderTop: '1px solid #e2e8f0',
                 display: 'flex',
-                gap: '8px',
-                alignItems: 'center'
-              }}>
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                backgroundColor: '#f8fafc',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '12px',
+                  color: '#64748b',
+                }}
+              >
+                {i18n.language === 'ru' ? 'Страница' : 'Page'} {page}{' '}
+                {i18n.language === 'ru' ? 'из' : 'of'} {totalPages} ({total}{' '}
+                {i18n.language === 'ru' ? 'всего' : 'total'})
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '8px',
+                  alignItems: 'center',
+                }}
+              >
                 <button
                   onClick={() => onPageChange(page - 1)}
                   disabled={!hasPrevPage}
@@ -1894,20 +1937,22 @@ function CustomersView({
                     borderRadius: '6px',
                     fontSize: '12px',
                     cursor: hasPrevPage ? 'pointer' : 'not-allowed',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
                   }}
                 >
                   ← {i18n.language === 'ru' ? 'Назад' : 'Previous'}
                 </button>
-                
-                <span style={{
-                  fontSize: '12px',
-                  color: '#374151',
-                  fontWeight: '500'
-                }}>
+
+                <span
+                  style={{
+                    fontSize: '12px',
+                    color: '#374151',
+                    fontWeight: '500',
+                  }}
+                >
                   {page}
                 </span>
-                
+
                 <button
                   onClick={() => onPageChange(page + 1)}
                   disabled={!hasNextPage}
@@ -1919,7 +1964,7 @@ function CustomersView({
                     borderRadius: '6px',
                     fontSize: '12px',
                     cursor: hasNextPage ? 'pointer' : 'not-allowed',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
                   }}
                 >
                   {i18n.language === 'ru' ? 'Вперед' : 'Next'} →
@@ -1930,36 +1975,42 @@ function CustomersView({
         </div>
 
         {/* Customer Details - Right Side */}
-        <div style={{
-          width: '400px',
-          backgroundColor: 'white',
-          border: '1px solid #e2e8f0',
-          borderRadius: '8px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden'
-        }}>
+        <div
+          style={{
+            width: '400px',
+            backgroundColor: 'white',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+          }}
+        >
           {details ? (
             <>
               {/* Details Header */}
-              <div style={{
-                padding: '16px 20px',
-                borderBottom: '1px solid #e2e8f0',
-                backgroundColor: '#f8fafc',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <h3 style={{ 
-                  margin: 0, 
-                  fontSize: '16px', 
-                  fontWeight: '600',
-                  color: '#1e293b'
-                }}>
+              <div
+                style={{
+                  padding: '16px 20px',
+                  borderBottom: '1px solid #e2e8f0',
+                  backgroundColor: '#f8fafc',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                  }}
+                >
                   {i18n.language === 'ru' ? 'Детали клиента' : 'Customer Details'}
                 </h3>
-                <button 
+                <button
                   onClick={() => select(0)}
                   data-testid="close_customer_details"
                   style={{
@@ -1970,7 +2021,7 @@ function CustomersView({
                     padding: '4px',
                     borderRadius: '4px',
                     color: '#64748b',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = '#e2e8f0';
@@ -1984,68 +2035,80 @@ function CustomersView({
                   ✕
                 </button>
               </div>
-              
+
               {/* Details Content */}
-              <div style={{
-                flex: 1,
-                overflowY: 'auto',
-                padding: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '20px'
-              }}>
-                {/* Customer Profile */}
-                <div style={{
+              <div
+                style={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  padding: '20px',
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
-                  padding: '16px',
-                  backgroundColor: '#f8fafc',
-                  borderRadius: '8px'
-                }}>
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '50%',
-                    backgroundColor: '#2563eb',
-                    color: 'white',
+                  flexDirection: 'column',
+                  gap: '20px',
+                }}
+              >
+                {/* Customer Profile */}
+                <div
+                  style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '18px',
-                    fontWeight: '600'
-                  }}>
+                    gap: '16px',
+                    padding: '16px',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '8px',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '50%',
+                      backgroundColor: '#2563eb',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '18px',
+                      fontWeight: '600',
+                    }}
+                  >
                     {details.customer.full_name?.charAt(0) || '#'}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ 
-                      fontWeight: '600', 
-                      fontSize: '16px', 
-                      color: '#1e293b' 
-                    }}>
+                    <div
+                      style={{
+                        fontWeight: '600',
+                        fontSize: '16px',
+                        color: '#1e293b',
+                      }}
+                    >
                       {details.customer.full_name || '—'}
                     </div>
                     <div style={{ fontSize: '14px', color: '#64748b' }}>
                       {details.customer.phone || '—'}
                     </div>
-                    <div style={{ 
-                      fontSize: '12px', 
-                      color: '#94a3b8',
-                      fontFamily: 'monospace'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: '12px',
+                        color: '#94a3b8',
+                        fontFamily: 'monospace',
+                      }}
+                    >
                       ID: {details.customer.id}
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Balance Card */}
-                <div style={{
-                  padding: '16px',
-                  background: 'linear-gradient(135deg, #dbeafe, #2563eb)',
-                  color: 'white',
-                  borderRadius: '8px',
-                  textAlign: 'center'
-                }}>
+                <div
+                  style={{
+                    padding: '16px',
+                    background: 'linear-gradient(135deg, #dbeafe, #2563eb)',
+                    color: 'white',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                  }}
+                >
                   <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '4px' }}>
                     {i18n.language === 'ru' ? 'Баланс' : 'Balance'}
                   </div>
@@ -2053,107 +2116,128 @@ function CustomersView({
                     {details.customer.balance_points} ₽
                   </div>
                 </div>
-                
+
                 {/* QR Code Section */}
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ 
-                    fontSize: '12px', 
-                    fontWeight: '600', 
-                    color: '#374151',
-                    marginBottom: '12px'
-                  }}>
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '12px',
+                    }}
+                  >
                     QR Code
                   </div>
-                  <div style={{
-                    padding: '20px',
-                    backgroundColor: '#f8fafc',
-                    border: '2px dashed #d1d5db',
-                    borderRadius: '8px'
-                  }}>
+                  <div
+                    style={{
+                      padding: '20px',
+                      backgroundColor: '#f8fafc',
+                      border: '2px dashed #d1d5db',
+                      borderRadius: '8px',
+                    }}
+                  >
                     {qrCodeUrl ? (
-                      <img 
-                        src={qrCodeUrl} 
-                        alt="QR Code" 
+                      <img
+                        src={qrCodeUrl}
+                        alt="QR Code"
                         style={{
                           width: '200px',
                           height: '200px',
                           border: '4px solid white',
                           borderRadius: '8px',
-                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                         }}
                       />
                     ) : (
-                      <div style={{ 
-                        fontSize: '48px', 
-                        marginBottom: '8px',
-                        fontFamily: 'monospace',
-                        fontWeight: 'bold'
-                      }}>
+                      <div
+                        style={{
+                          fontSize: '48px',
+                          marginBottom: '8px',
+                          fontFamily: 'monospace',
+                          fontWeight: 'bold',
+                        }}
+                      >
                         ▓▓▓▓▓▓▓▓
                       </div>
                     )}
-                    <div style={{ 
-                      fontSize: '11px', 
-                      color: '#64748b',
-                      fontFamily: 'monospace',
-                      marginTop: '8px'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        color: '#64748b',
+                        fontFamily: 'monospace',
+                        marginTop: '8px',
+                      }}
+                    >
                       {details.customer.qr_token || `Customer ID: ${details.customer.id}`}
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Transactions */}
                 <div>
-                  <h4 style={{ 
-                    margin: '0 0 12px 0', 
-                    fontSize: '14px', 
-                    fontWeight: '600',
-                    color: '#1e293b'
-                  }}>
+                  <h4
+                    style={{
+                      margin: '0 0 12px 0',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#1e293b',
+                    }}
+                  >
                     {i18n.language === 'ru' ? 'Последние транзакции' : 'Recent Transactions'}
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {details.transactions.slice(0, 10).map((tx) => (
-                      <div key={tx.id} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '12px',
-                        backgroundColor: '#f8fafc',
-                        borderRadius: '6px'
-                      }}>
+                      <div
+                        key={tx.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '12px',
+                          backgroundColor: '#f8fafc',
+                          borderRadius: '6px',
+                        }}
+                      >
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <div style={{ 
-                            fontSize: '11px', 
-                            fontWeight: '600', 
-                            color: '#64748b' 
-                          }}>
+                          <div
+                            style={{
+                              fontSize: '11px',
+                              fontWeight: '600',
+                              color: '#64748b',
+                            }}
+                          >
                             #{tx.id}
                           </div>
-                          <div style={{ 
-                            fontSize: '11px', 
-                            color: '#94a3b8' 
-                          }}>
+                          <div
+                            style={{
+                              fontSize: '11px',
+                              color: '#94a3b8',
+                            }}
+                          >
                             {new Date(tx.created_at).toLocaleString()}
                           </div>
                         </div>
-                        <div style={{ 
-                          fontWeight: '600', 
-                          color: '#059669',
-                          fontSize: '14px'
-                        }}>
+                        <div
+                          style={{
+                            fontWeight: '600',
+                            color: '#059669',
+                            fontSize: '14px',
+                          }}
+                        >
                           {money(tx.total_amount)} ₽
                         </div>
                       </div>
                     ))}
                     {details.transactions.length === 0 ? (
-                      <div style={{
-                        textAlign: 'center',
-                        padding: '20px',
-                        color: '#64748b',
-                        fontSize: '12px'
-                      }}>
+                      <div
+                        style={{
+                          textAlign: 'center',
+                          padding: '20px',
+                          color: '#64748b',
+                          fontSize: '12px',
+                        }}
+                      >
                         {i18n.language === 'ru' ? 'Нет транзакций' : 'No transactions'}
                       </div>
                     ) : null}
@@ -2163,21 +2247,25 @@ function CustomersView({
             </>
           ) : (
             /* Empty State */
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              textAlign: 'center',
-              color: '#64748b',
-              padding: '40px'
-            }}>
-              <div style={{ 
-                fontSize: '64px', 
-                marginBottom: '16px', 
-                opacity: 0.5 
-              }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                textAlign: 'center',
+                color: '#64748b',
+                padding: '40px',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '64px',
+                  marginBottom: '16px',
+                  opacity: 0.5,
+                }}
+              >
                 👤
               </div>
               <div style={{ fontSize: '16px' }}>
@@ -2535,7 +2623,11 @@ function IntegrationsView({
                   </button>
                 </>
               ) : (
-                <button className="btn btnPrimary" onClick={() => void handleCreate()} type="button">
+                <button
+                  className="btn btnPrimary"
+                  onClick={() => void handleCreate()}
+                  type="button"
+                >
                   {t('common.create')}
                 </button>
               )}
@@ -2889,6 +2981,5 @@ function PermissionsTable() {
     </div>
   );
 }
-
 
 export default App;

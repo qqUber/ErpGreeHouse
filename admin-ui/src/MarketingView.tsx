@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Api,
-    baseUrl,
-    injectAuthHeaders,
-    MarketingCampaign,
-    MarketingSegment,
-    MarketingTrigger,
+  Api,
+  baseUrl,
+  injectAuthHeaders,
+  MarketingCampaign,
+  MarketingSegment,
+  MarketingTrigger,
 } from './api';
 import { AnalyticsCharts } from './components/AnalyticsCharts';
 import { formatCurrency } from './utils/translationHelpers';
@@ -536,9 +536,7 @@ function SegmentsManager({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-gray-500">
-                    Минимальная сумма покупки
-                  </label>
+                  <label className="block text-xs text-gray-500">Минимальная сумма покупки</label>
                   <input
                     className="input w-full"
                     type="number"
@@ -861,7 +859,9 @@ function TriggersManager({
                       onChange={(e) => setMinAmount(e.target.value)}
                       placeholder="5000"
                     />
-                    <span className="text-sm text-gray-600">{formatCurrency(0).replace('0', '').trim()}</span>
+                    <span className="text-sm text-gray-600">
+                      {formatCurrency(0).replace('0', '').trim()}
+                    </span>
                   </div>
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">Категория покупки</label>

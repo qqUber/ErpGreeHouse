@@ -37,10 +37,10 @@ describe('SuccessMessage', () => {
   it('calls onDismiss when dismiss button clicked', () => {
     const onDismiss = vi.fn();
     render(<SuccessMessage message="Success" onDismiss={onDismiss} />);
-    
+
     const dismissButton = screen.getByTestId('success-message-dismiss');
     fireEvent.click(dismissButton);
-    
+
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
@@ -52,15 +52,15 @@ describe('SuccessMessage', () => {
   it('auto-hides after specified duration', () => {
     vi.useFakeTimers();
     const onDismiss = vi.fn();
-    
+
     render(<SuccessMessage message="Success" onDismiss={onDismiss} autoHideDuration={3000} />);
-    
+
     expect(screen.getByTestId('success-message')).toBeInTheDocument();
-    
+
     vi.advanceTimersByTime(3000);
-    
+
     expect(onDismiss).toHaveBeenCalledTimes(1);
-    
+
     vi.useRealTimers();
   });
 

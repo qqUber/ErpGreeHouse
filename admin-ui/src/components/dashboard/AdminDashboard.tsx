@@ -22,10 +22,10 @@ export function AdminDashboard({ data, onNavigate }: DashboardProps) {
   const { user } = useAuth();
   const [marketingAnalytics, setMarketingAnalytics] = useState<MarketingAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   const role = (user?.role?.toLowerCase() || Role.ADMIN) as Role;
   const widgets = getAvailableWidgets(role);
-  
+
   useEffect(() => {
     const fetchMarketingAnalytics = async () => {
       try {
@@ -37,10 +37,10 @@ export function AdminDashboard({ data, onNavigate }: DashboardProps) {
         setLoading(false);
       }
     };
-    
+
     fetchMarketingAnalytics();
   }, []);
-  
+
   const widgetData = {
     ...data, // Spread all dashboard data directly
     analytics: marketingAnalytics, // Use real marketing analytics data

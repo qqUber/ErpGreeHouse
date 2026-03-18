@@ -38,6 +38,7 @@ _dispatcher: Dispatcher | None = None
 async def ensure_telegram_bot_menu(bot: Bot) -> None:
     """Set up Telegram bot menu commands based on configuration."""
     import logging
+
     from aiogram.types import BotCommand
 
     logger = logging.getLogger(__name__)

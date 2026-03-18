@@ -11,7 +11,6 @@ from .auth import check_roles, has_permission, require_integration_secret
 from .customer_identity import resolve_or_create_customer
 from .db import get_db
 from .identify import normalize_phone
-from .utils.currency import format_currency
 from .integration_events import dispatch_event
 from .loyalty import LoyaltyRules, calc_earned_points, clamp_redeem_points
 from .loyalty_profile import build_customer_loyalty_profile
@@ -19,6 +18,7 @@ from .pos_templates import list_integration_templates
 from .runtime import is_debug
 from .storage import get_redis
 from .trigger_engine import evaluate_and_queue_triggers
+from .utils.currency import format_currency
 from .worker import send_customer_message
 
 router = APIRouter(prefix="/api/v1/integrations")

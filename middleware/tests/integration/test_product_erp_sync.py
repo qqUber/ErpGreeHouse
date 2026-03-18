@@ -3,10 +3,11 @@ from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
+from fastapi.testclient import TestClient
+
 from app.auth import create_access_token
 from app.db import get_db
 from app.integrations.pos.erpnext_client import ERPClient
-from fastapi.testclient import TestClient
 from tests.mocks.erpnext import ERPNextMock
 
 

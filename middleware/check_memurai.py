@@ -1,7 +1,8 @@
 import socket
 import sys
 
-def check_redis(host='127.0.0.1', port=6379):
+
+def check_redis(host="127.0.0.1", port=6379):
     print(f"Connecting to Redis (Memurai) at {host}:{port}...")
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -19,6 +20,7 @@ def check_redis(host='127.0.0.1', port=6379):
     except Exception as e:
         print(f"FAILURE: Connection error: {e}")
         return False
+
 
 if __name__ == "__main__":
     if check_redis():

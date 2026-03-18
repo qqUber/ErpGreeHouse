@@ -39,8 +39,6 @@
     "recovery": "Recovery",
     "apiStatus": "API Status",
     "apiUnavailable": "unavailable",
-    "defaultAdmin": "Default admin",
-    "defaultAdminNotCreated": "Default admin not created. Check ADMIN_BOOTSTRAP_DEFAULT.",
     "loginPlaceholder": "Username",
     "passwordPlaceholder": "Password",
     "newPasswordPlaceholder": "New Password",

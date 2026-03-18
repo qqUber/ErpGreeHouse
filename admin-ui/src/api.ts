@@ -749,10 +749,12 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const Api = {
   publicStatus: (signal?: AbortSignal) =>
-    api<{ api: string; admin_auth_configured: boolean; debug_mode: boolean; erp_sync_enabled: boolean }>(
-      '/api/v1/public/status',
-      { method: 'GET', headers: {}, signal }
-    ),
+    api<{
+      api: string;
+      admin_auth_configured: boolean;
+      debug_mode: boolean;
+      erp_sync_enabled: boolean;
+    }>('/api/v1/public/status', { method: 'GET', headers: {}, signal }),
   me: (signal?: AbortSignal) =>
     api<AdminMe>('/api/v1/auth/me', { method: 'GET', headers: {}, signal }),
   authStatus: (signal?: AbortSignal) =>
@@ -994,7 +996,9 @@ export const Api = {
 
   // Marketing analytics for widget
   marketingAnalytics: () =>
-    api<import('./components/dashboard/AnalyticsWidget').MarketingAnalyticsData>('/api/v1/analytics/dashboard/marketing'),
+    api<import('./components/dashboard/AnalyticsWidget').MarketingAnalyticsData>(
+      '/api/v1/analytics/dashboard/marketing'
+    ),
 
   // Loyalty reports
   loyaltyReportOverview: (timeRange: string = '30d') =>

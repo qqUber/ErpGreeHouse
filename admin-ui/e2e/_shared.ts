@@ -4,16 +4,16 @@ import * as path from 'path';
 
 // Import i18n utilities
 import {
-    Auth,
-    Clients,
-    Common,
-    Dashboard,
-    Marketing,
-    Menu,
-    Products,
-    Sales,
-    setTestLanguage,
-    t,
+  Auth,
+  Clients,
+  Common,
+  Dashboard,
+  Marketing,
+  Menu,
+  Products,
+  Sales,
+  setTestLanguage,
+  t,
 } from './i18n-test';
 
 export { Auth, Clients, Common, Dashboard, Marketing, Menu, Products, Sales, t };
@@ -413,7 +413,7 @@ export function hasPermission(role: TestRole, feature: string): boolean {
 /**
  * Login helper with proper error handling and waiting
  * Uses credentials from TEST_CREDENTIALS (fetched from DB)
- * 
+ *
  * OPTIMIZED FOR HASH-BASED SPA (no URL navigation)
  * - App uses hash routing (#dashboard), not path routing
  * - Login shows/hides content, doesn't navigate URLs
@@ -448,11 +448,11 @@ export async function login(page: Page, role: TestRole = 'admin') {
 
   // Navigate to app root (hash-based SPA)
   await page.goto('/admin/', { waitUntil: 'domcontentloaded' });
-  
+
   // Wait for login form to be ready
-  await page.waitForSelector('[data-testid="common_input_username_en"]', { 
+  await page.waitForSelector('[data-testid="common_input_username_en"]', {
     state: 'visible',
-    timeout: 10000 
+    timeout: 10000,
   });
 
   console.log(`[Test] Login form ready, filling credentials`);
@@ -470,7 +470,7 @@ export async function login(page: Page, role: TestRole = 'admin') {
   console.log(`[Test] Waiting for dashboard to appear...`);
   await page.waitForSelector('[data-testid="admin_nav_dashboard"]', {
     state: 'visible',
-    timeout: 15000
+    timeout: 15000,
   });
 
   // Additional wait for dashboard content to stabilize
@@ -574,30 +574,34 @@ export function getViewTestId(page: Page, viewName: string) {
 /**
  * Wait for loading spinner to disappear
  * Gracefully handles cases where spinner never appears (fast responses)
- * 
+ *
  * Usage:
  *   await login(page, 'admin', 'admin');
  *   await waitForSpinner(page);
- * 
+ *
  * @param page - Playwright page instance
  * @param timeout - Maximum wait time in milliseconds (default: 15000)
  */
 export async function waitForSpinner(page: Page, timeout: number = 15000): Promise<void> {
   // Wait for spinner to appear first (with short timeout)
-  await page.waitForSelector('[data-testid="loading-spinner"]', { 
-    state: 'attached',
-    timeout: 2000 
-  }).catch(() => {
-    // Spinner never appeared - this is OK for fast API responses
-    console.log('[E2E] No spinner detected (fast response)');
-  });
-  
+  await page
+    .waitForSelector('[data-testid="loading-spinner"]', {
+      state: 'attached',
+      timeout: 2000,
+    })
+    .catch(() => {
+      // Spinner never appeared - this is OK for fast API responses
+      console.log('[E2E] No spinner detected (fast response)');
+    });
+
   // Then wait for it to disappear
-  await page.waitForSelector('[data-testid="loading-spinner"]', { 
-    state: 'hidden', 
-    timeout 
-  }).catch(() => {
-    // Spinner was never visible or already gone - this is OK
-    console.log('[E2E] Spinner already hidden or never shown');
-  });
+  await page
+    .waitForSelector('[data-testid="loading-spinner"]', {
+      state: 'hidden',
+      timeout,
+    })
+    .catch(() => {
+      // Spinner was never visible or already gone - this is OK
+      console.log('[E2E] Spinner already hidden or never shown');
+    });
 }

@@ -4,10 +4,11 @@ from unittest.mock import MagicMock, patch
 
 import jwt
 import pytest
+from fastapi.testclient import TestClient
+
 from app.auth import create_access_token, create_refresh_token, validate_access_token
 from app.config import get_settings
 from app.main import app
-from fastapi.testclient import TestClient
 
 # Constants for testing
 PROTECTED_ENDPOINTS = [

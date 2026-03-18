@@ -19,7 +19,6 @@ from .auth import (
 from .customer_identity import generate_unique_qr_token, resolve_or_create_customer
 from .db import get_db
 from .identify import normalize_name, normalize_phone
-from .utils.currency import format_currency
 from .integration_events import dispatch_event
 from .integrations.pos.erpnext_client import ERPClient
 from .loyalty import LoyaltyRules, calc_earned_points, clamp_redeem_points
@@ -27,6 +26,7 @@ from .pdfgen import ReceiptLine, write_simple_receipt_pdf
 from .runtime import is_debug
 from .storage import get_redis
 from .trigger_engine import evaluate_and_queue_triggers
+from .utils.currency import format_currency
 from .worker import send_customer_message
 
 router = APIRouter(prefix="/api/v1")

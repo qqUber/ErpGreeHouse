@@ -2,14 +2,18 @@ import { expect, test } from '../_shared';
 
 test('dev stack: admin can create sale from integrations simulator', async ({ page }) => {
   const runtimeEnv =
-    (globalThis as typeof globalThis & {
-      process?: { env?: Record<string, string | undefined> };
-    }).process?.env || {};
+    (
+      globalThis as typeof globalThis & {
+        process?: { env?: Record<string, string | undefined> };
+      }
+    ).process?.env || {};
   const baseUrl = runtimeEnv.E2E_BASE_URL || 'http://localhost:5173';
   const apiBaseUrl = runtimeEnv.E2E_API_BASE_URL || 'http://localhost:8000';
-  const loginResponse = await page.context().request.post(`${apiBaseUrl}/api/v1/public/auth/login`, {
-    data: { username: 'admin', password: 'admin' },
-  });
+  const loginResponse = await page
+    .context()
+    .request.post(`${apiBaseUrl}/api/v1/public/auth/login`, {
+      data: { username: 'admin', password: 'admin' },
+    });
 
   expect(loginResponse.ok()).toBeTruthy();
   const authData = await loginResponse.json();
@@ -21,9 +25,11 @@ test('dev stack: admin can create sale from integrations simulator', async ({ pa
     'Content-Type': 'application/json',
   };
 
-  const integrationsResponse = await page.context().request.get(`${apiBaseUrl}/api/v1/integrations`, {
-    headers: authHeaders,
-  });
+  const integrationsResponse = await page
+    .context()
+    .request.get(`${apiBaseUrl}/api/v1/integrations`, {
+      headers: authHeaders,
+    });
   expect(integrationsResponse.ok()).toBeTruthy();
   const integrationsData = await integrationsResponse.json();
   const posWebhook = (integrationsData.items || []).find(
@@ -31,26 +37,30 @@ test('dev stack: admin can create sale from integrations simulator', async ({ pa
   );
 
   if (!posWebhook) {
-    const createIntegrationResponse = await page.context().request.post(`${apiBaseUrl}/api/v1/integrations`, {
-      headers: authHeaders,
-      data: {
-        name: 'E2E POS Webhook',
-        kind: 'pos_webhook',
-        enabled: true,
-        config: {},
-      },
-    });
+    const createIntegrationResponse = await page
+      .context()
+      .request.post(`${apiBaseUrl}/api/v1/integrations`, {
+        headers: authHeaders,
+        data: {
+          name: 'E2E POS Webhook',
+          kind: 'pos_webhook',
+          enabled: true,
+          config: {},
+        },
+      });
     expect(createIntegrationResponse.ok()).toBeTruthy();
   }
 
   const uniquePhone = `+7999${Date.now().toString().slice(-7)}`;
-  const createCustomerResponse = await page.context().request.post(`${apiBaseUrl}/api/v1/customers`, {
-    headers: authHeaders,
-    data: {
-      full_name: 'Playwright Dev Sale',
-      phone: uniquePhone,
-    },
-  });
+  const createCustomerResponse = await page
+    .context()
+    .request.post(`${apiBaseUrl}/api/v1/customers`, {
+      headers: authHeaders,
+      data: {
+        full_name: 'Playwright Dev Sale',
+        phone: uniquePhone,
+      },
+    });
   expect(createCustomerResponse.ok()).toBeTruthy();
   const createdCustomer = await createCustomerResponse.json();
   expect(createdCustomer.id).toBeTruthy();
@@ -70,12 +80,11 @@ test('dev stack: admin can create sale from integrations simulator', async ({ pa
   const sale = await saleResponse.json();
   expect(Number(sale.transaction_id)).toBeGreaterThan(0);
 
-  const customerDetailsResponse = await page.context().request.get(
-    `${apiBaseUrl}/api/v1/customers/${createdCustomer.id}`,
-    {
+  const customerDetailsResponse = await page
+    .context()
+    .request.get(`${apiBaseUrl}/api/v1/customers/${createdCustomer.id}`, {
       headers: authHeaders,
-    }
-  );
+    });
   expect(customerDetailsResponse.ok()).toBeTruthy();
   const customerDetails = await customerDetailsResponse.json();
   expect(Array.isArray(customerDetails.transactions)).toBeTruthy();

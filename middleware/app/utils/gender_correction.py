@@ -5,8 +5,8 @@ Supports Russian, English, and Serbian names with gender-based surname correctio
 
 import json
 import os
-from typing import Dict, Optional, Tuple
 from functools import lru_cache
+from typing import Dict, Optional, Tuple
 
 
 class GenderDetector:

@@ -73,10 +73,10 @@ describe('Button', () => {
   it('calls onClick when clicked', () => {
     const onClick = vi.fn();
     renderWithI18n(<Button onClick={onClick}>Click me</Button>);
-    
+
     const button = screen.getByTestId('button-primary');
     fireEvent.click(button);
-    
+
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
@@ -95,11 +95,15 @@ describe('Button', () => {
 
   it('does not call onClick when loading', () => {
     const onClick = vi.fn();
-    renderWithI18n(<Button isLoading onClick={onClick}>Loading</Button>);
-    
+    renderWithI18n(
+      <Button isLoading onClick={onClick}>
+        Loading
+      </Button>
+    );
+
     const button = screen.getByTestId('button-primary');
     fireEvent.click(button);
-    
+
     expect(onClick).not.toHaveBeenCalled();
   });
 

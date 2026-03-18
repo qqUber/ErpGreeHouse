@@ -157,15 +157,13 @@ export function PerformanceWidget({ data }: PerformanceWidgetProps) {
       <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
         {(() => {
           const lastData = safeData.length > 0 ? safeData[safeData.length - 1] : null;
-          
+
           return (
             <>
               <StatCard
                 variant="primary"
                 value={
-                  lastData && Number.isFinite(lastData.transactions)
-                    ? lastData.transactions
-                    : 0
+                  lastData && Number.isFinite(lastData.transactions) ? lastData.transactions : 0
                 }
                 label={t('dashboardAdmin.transactions')}
               />
@@ -183,9 +181,7 @@ export function PerformanceWidget({ data }: PerformanceWidgetProps) {
               <StatCard
                 variant="info"
                 value={
-                  lastData && Number.isFinite(lastData.points_earned)
-                    ? lastData.points_earned
-                    : 0
+                  lastData && Number.isFinite(lastData.points_earned) ? lastData.points_earned : 0
                 }
                 label={t('dashboardAdmin.pointsEarned')}
               />

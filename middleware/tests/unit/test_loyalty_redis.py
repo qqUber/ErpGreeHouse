@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from app.loyalty import (
     LoyaltyRules,
     batch_update_scores,

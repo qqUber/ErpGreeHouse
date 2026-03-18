@@ -13,6 +13,8 @@ from unittest.mock import MagicMock, Mock, patch
 
 import jwt
 import pytest
+from fastapi import HTTPException
+
 from app.auth import (
     create_access_token,
     create_refresh_token,
@@ -22,7 +24,6 @@ from app.auth import (
 )
 from app.config import get_settings
 from app.security import constant_time_equals
-from fastapi import HTTPException
 
 
 class TestJWTTimingAttacks:

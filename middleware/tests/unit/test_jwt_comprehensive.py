@@ -11,6 +11,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import jwt
 import pytest
+from fastapi import HTTPException
 
 # Import JWT functions from auth module
 from app.auth import (
@@ -26,7 +27,6 @@ from app.auth import (
 )
 from app.config import get_settings
 from app.security import constant_time_equals
-from fastapi import HTTPException
 
 
 class TestJWTTokenCreation:

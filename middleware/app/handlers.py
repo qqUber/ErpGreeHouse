@@ -6,6 +6,7 @@ import random
 import re
 from typing import Any, Dict, Literal, Tuple
 
+import qrcode
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import (
@@ -20,8 +21,7 @@ from aiogram.types import (
     WebAppInfo,
 )
 from fastapi import HTTPException
-import qrcode
-from PIL import Image, ImageDraw, ImageFont, ImageEnhance
+from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 
 from .config import get_settings
 from .customer_identity import (
@@ -219,13 +219,11 @@ async def send_video_with_circle(
 
 
 # Import cleanup function from shared module for backward compatibility
-from .integrations.bots.shared.consent import (
-    cleanup_user_data as _shared_cleanup,
-    store_consent as _shared_store,
-    get_customer_consents as _shared_get,
-    update_consent as _shared_update,
-    CURRENT_POLICY_VERSION,
-)
+from .integrations.bots.shared.consent import CURRENT_POLICY_VERSION
+from .integrations.bots.shared.consent import cleanup_user_data as _shared_cleanup
+from .integrations.bots.shared.consent import get_customer_consents as _shared_get
+from .integrations.bots.shared.consent import store_consent as _shared_store
+from .integrations.bots.shared.consent import update_consent as _shared_update
 
 
 def _cleanup_user_data(telegram_id: int) -> None:

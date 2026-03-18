@@ -12,7 +12,7 @@ type MarketingData = {
 export function MarketingWidget({ data }: { data?: any }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   // Use marketing events data from API
   const marketingEvents = data?.recent_activity?.marketing_events || [];
   const activeCampaigns = marketingEvents.filter((e: any) => e.status === 'processed').length;
@@ -69,11 +69,7 @@ export function MarketingWidget({ data }: { data?: any }) {
           <span className="text-sm text-gray-500">{t('widgets.marketing.messagesSent')}</span>
           <span className="text-lg font-semibold">{messagesSent}</span>
         </div>
-        <StatCard
-          variant="success"
-          value="87%"
-          label={t('widgets.marketing.openRate')}
-        />
+        <StatCard variant="success" value="87%" label={t('widgets.marketing.openRate')} />
       </div>
     </Widget>
   );

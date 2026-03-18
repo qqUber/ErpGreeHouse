@@ -5,14 +5,20 @@ import { Widget } from '../Widget';
 
 type ProductsData = {
   top_products_today?: Array<{ code?: string; name?: string; quantity?: number; revenue?: number }>;
-  trending_products?: Array<{ code?: string; name?: string; growth_percent?: number; this_week?: number; last_week?: number }>;
+  trending_products?: Array<{
+    code?: string;
+    name?: string;
+    growth_percent?: number;
+    this_week?: number;
+    last_week?: number;
+  }>;
 };
 
 export function ProductsWidget({ data }: { data?: any }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedProductCode, setSelectedProductCode] = useState<string | null>(null);
-  
+
   // Use products_total from API since detailed product data is not available
   const total = Number(data?.products_total ?? 0);
   const trendingCount = 0; // No trending data in API
@@ -27,12 +33,22 @@ export function ProductsWidget({ data }: { data?: any }) {
       <div className="crm-kpi-grid">
         <StatCard variant="success" value={total} label={t('widgets.products.activeProducts')} />
         <StatCard variant="info" value={trendingCount} label={t('widgets.products.trendingNow')} />
-        <StatCard variant="warning" value={demandSignal} label={t('widgets.products.demandSignal')} />
+        <StatCard
+          variant="warning"
+          value={demandSignal}
+          label={t('widgets.products.demandSignal')}
+        />
       </div>
     </div>
   );
 
-  const renderProductRow = (product: { code?: string; name?: string; quantity?: number; revenue?: number; growth_percent?: number }) => (
+  const renderProductRow = (product: {
+    code?: string;
+    name?: string;
+    quantity?: number;
+    revenue?: number;
+    growth_percent?: number;
+  }) => (
     <button
       key={`${product.code ?? product.name}`}
       type="button"
@@ -41,17 +57,25 @@ export function ProductsWidget({ data }: { data?: any }) {
     >
       <div className="crm-product-main">
         <span className="crm-customer-id">{product.code ?? '--'}</span>
-        <span className="crm-customer-name">{product.name ?? t('widgets.products.unnamedProduct')}</span>
+        <span className="crm-customer-name">
+          {product.name ?? t('widgets.products.unnamedProduct')}
+        </span>
       </div>
       <div className="crm-customer-badges">
         {Number.isFinite(Number(product.quantity)) && (
-          <span className="crm-badge crm-badge-value">{t('widgets.products.quantity')} {Number(product.quantity ?? 0)}</span>
+          <span className="crm-badge crm-badge-value">
+            {t('widgets.products.quantity')} {Number(product.quantity ?? 0)}
+          </span>
         )}
         {Number.isFinite(Number(product.revenue)) && (
-          <span className="crm-badge crm-badge-good">{t('widgets.products.revenue')} {Number(product.revenue ?? 0).toLocaleString()}</span>
+          <span className="crm-badge crm-badge-good">
+            {t('widgets.products.revenue')} {Number(product.revenue ?? 0).toLocaleString()}
+          </span>
         )}
         {Number.isFinite(Number(product.growth_percent)) && (
-          <span className="crm-badge crm-badge-channel">{t('widgets.products.trend')} {Number(product.growth_percent ?? 0)}%</span>
+          <span className="crm-badge crm-badge-channel">
+            {t('widgets.products.trend')} {Number(product.growth_percent ?? 0)}%
+          </span>
         )}
       </div>
     </button>
@@ -71,18 +95,36 @@ export function ProductsWidget({ data }: { data?: any }) {
           </button>
         </div>
         <div className="crm-detail-grid">
-          <div><span>Total Products</span><strong>{total}</strong></div>
-          <div><span>Trending</span><strong>{trendingCount}</strong></div>
-          <div><span>Demand Signal</span><strong>{demandSignal}</strong></div>
-          <div><span>Low Stock Risk</span><strong>{lowStock > 0 ? 'Watchlist' : 'Healthy'}</strong></div>
+          <div>
+            <span>Total Products</span>
+            <strong>{total}</strong>
+          </div>
+          <div>
+            <span>Trending</span>
+            <strong>{trendingCount}</strong>
+          </div>
+          <div>
+            <span>Demand Signal</span>
+            <strong>{demandSignal}</strong>
+          </div>
+          <div>
+            <span>Low Stock Risk</span>
+            <strong>{lowStock > 0 ? 'Watchlist' : 'Healthy'}</strong>
+          </div>
         </div>
       </section>
       <section className="crm-collapsible-section">
         <h3 className="crm-section-title">Product Summary</h3>
         <div className="crm-inline-stats">
-          <span>Active products: <strong>{total}</strong></span>
-          <span>Trending: <strong>{trendingCount}</strong></span>
-          <span>Top seller: <strong>{topSelling}</strong></span>
+          <span>
+            Active products: <strong>{total}</strong>
+          </span>
+          <span>
+            Trending: <strong>{trendingCount}</strong>
+          </span>
+          <span>
+            Top seller: <strong>{topSelling}</strong>
+          </span>
         </div>
       </section>
     </div>
@@ -106,9 +148,15 @@ export function ProductsWidget({ data }: { data?: any }) {
     >
       <div className="crm-widget-body">
         <div className="crm-inline-stats">
-          <span>{t('widgets.products.topSelling')}: <strong>{topSelling}</strong></span>
-          <span>Trending: <strong>{newWeek}</strong></span>
-          <span>{t('widgets.products.lowStock')}: <strong>{lowStock}</strong></span>
+          <span>
+            {t('widgets.products.topSelling')}: <strong>{topSelling}</strong>
+          </span>
+          <span>
+            Trending: <strong>{newWeek}</strong>
+          </span>
+          <span>
+            {t('widgets.products.lowStock')}: <strong>{lowStock}</strong>
+          </span>
         </div>
         <div className="crm-list-preview">
           {/* No product preview available - showing empty state */}

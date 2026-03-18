@@ -6,6 +6,7 @@ import sys
 from typing import Any, Dict
 
 import httpx
+
 from app.config import get_settings
 
 # Setup logging

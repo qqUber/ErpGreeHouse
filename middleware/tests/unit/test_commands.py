@@ -5,6 +5,7 @@ Tests for shared commands module.
 from unittest.mock import Mock, patch
 
 import pytest
+
 from app.integrations.bots.shared.commands import (
     cmd_profile,
     cmd_revoke_consent,

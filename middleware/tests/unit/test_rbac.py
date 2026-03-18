@@ -14,6 +14,8 @@ from typing import Any, Dict
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
+from fastapi import HTTPException
+from fastapi.testclient import TestClient
 
 # Import the functions we need to test
 from app.auth import (
@@ -26,8 +28,6 @@ from app.auth import (
 )
 from app.config import get_settings
 from app.db import get_db, init_db
-from fastapi import HTTPException
-from fastapi.testclient import TestClient
 
 
 class TestOperatorAccessDenied:
@@ -349,8 +349,9 @@ class TestPasswordRecoveryInvalidToken:
         """
         from unittest.mock import Mock
 
-        from app.admin_auth_api import recover_password
         from fastapi import Request
+
+        from app.admin_auth_api import recover_password
 
         # Set up the recovery secret for testing
         with patch.dict(os.environ, {"ADMIN_RECOVERY_SECRET": "test_recovery_secret"}):
@@ -391,8 +392,9 @@ class TestPasswordRecoveryInvalidToken:
         """
         from unittest.mock import Mock
 
-        from app.admin_auth_api import recover_password
         from fastapi import Request
+
+        from app.admin_auth_api import recover_password
 
         # Set up the recovery secret for testing
         with patch.dict(os.environ, {"ADMIN_RECOVERY_SECRET": "test_recovery_secret"}):

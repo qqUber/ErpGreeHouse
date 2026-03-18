@@ -8,8 +8,8 @@ from dataclasses import dataclass
 from typing import Optional
 
 try:
-    from babel.numbers import format_currency as babel_format_currency
     from babel.core import UnknownLocaleError
+    from babel.numbers import format_currency as babel_format_currency
 
     BABEL_AVAILABLE = True
 except ImportError:

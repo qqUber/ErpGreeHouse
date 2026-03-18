@@ -67,11 +67,19 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
 const TELEGRAM_MENU_DEFINITIONS = [
   { id: 'balance_card', label: 'Баланс и карта', description: 'Баланс, QR и дополнительные медиа' },
   { id: 'menu_addresses', label: 'Меню и адреса', description: 'Меню, адреса и кнопка перехода' },
-  { id: 'open_coffee_shop', label: 'Открыть кофейню', description: 'Запуск приложения или каталога' },
+  {
+    id: 'open_coffee_shop',
+    label: 'Открыть кофейню',
+    description: 'Запуск приложения или каталога',
+  },
   { id: 'ask_question', label: 'Задать вопрос', description: 'Сообщение для связи с клиентом' },
   { id: 'leave_feedback', label: 'Оставить отзыв', description: 'Сообщение для сбора отзывов' },
   { id: 'vacancies', label: 'Вакансии', description: 'Текст и медиа про вакансии' },
-  { id: 'about_club', label: 'Что такое клуб Green House?', description: 'Описание клуба и преимуществ' },
+  {
+    id: 'about_club',
+    label: 'Что такое клуб Green House?',
+    description: 'Описание клуба и преимуществ',
+  },
 ] as const;
 
 function defaultTelegramMenuItems(): TelegramMenuItemConfig[] {
@@ -121,9 +129,7 @@ function mapTelegramMenuItems(
   });
 }
 
-function serializeTelegramMenuItems(
-  menuItems: TelegramMenuItemConfig[]
-): Array<{
+function serializeTelegramMenuItems(menuItems: TelegramMenuItemConfig[]): Array<{
   id: string;
   label: string;
   text?: string;
@@ -418,7 +424,12 @@ export function IntegrationSettings() {
     setTelegramMenuItems((current) =>
       current.map((item) =>
         item.id === itemId
-          ? { ...item, media_urls: item.media_urls.includes(url) ? item.media_urls : [...item.media_urls, url] }
+          ? {
+              ...item,
+              media_urls: item.media_urls.includes(url)
+                ? item.media_urls
+                : [...item.media_urls, url],
+            }
           : item
       )
     );
@@ -533,14 +544,19 @@ export function IntegrationSettings() {
     event.target.value = '';
   }
 
-  async function handleTelegramCityDrop(itemId: string, index: number, event: DragEvent<HTMLDivElement>) {
+  async function handleTelegramCityDrop(
+    itemId: string,
+    index: number,
+    event: DragEvent<HTMLDivElement>
+  ) {
     event.preventDefault();
     if (!event.dataTransfer.files?.length) return;
     await uploadTelegramCityFiles(itemId, index, event.dataTransfer.files);
   }
 
   const selectedTelegramMenuItem =
-    telegramMenuItems.find((item) => item.id === selectedTelegramMenuItemId) || telegramMenuItems[0];
+    telegramMenuItems.find((item) => item.id === selectedTelegramMenuItemId) ||
+    telegramMenuItems[0];
 
   return (
     <div className="grid">
@@ -616,7 +632,9 @@ export function IntegrationSettings() {
           </div>
 
           <div>
-            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Support Chat / Channel ID</div>
+            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+              Support Chat / Channel ID
+            </div>
             <input
               className="input"
               value={telegramSupportChatId}
@@ -676,7 +694,11 @@ export function IntegrationSettings() {
                         type="checkbox"
                         checked={selectedTelegramMenuItem.use_text}
                         onChange={(e) =>
-                          updateTelegramMenuItem(selectedTelegramMenuItem.id, 'use_text', e.target.checked)
+                          updateTelegramMenuItem(
+                            selectedTelegramMenuItem.id,
+                            'use_text',
+                            e.target.checked
+                          )
                         }
                       />
                       Текст
@@ -686,7 +708,11 @@ export function IntegrationSettings() {
                         type="checkbox"
                         checked={selectedTelegramMenuItem.use_media}
                         onChange={(e) =>
-                          updateTelegramMenuItem(selectedTelegramMenuItem.id, 'use_media', e.target.checked)
+                          updateTelegramMenuItem(
+                            selectedTelegramMenuItem.id,
+                            'use_media',
+                            e.target.checked
+                          )
                         }
                       />
                       Медиа
@@ -696,7 +722,11 @@ export function IntegrationSettings() {
                         type="checkbox"
                         checked={selectedTelegramMenuItem.use_button}
                         onChange={(e) =>
-                          updateTelegramMenuItem(selectedTelegramMenuItem.id, 'use_button', e.target.checked)
+                          updateTelegramMenuItem(
+                            selectedTelegramMenuItem.id,
+                            'use_button',
+                            e.target.checked
+                          )
                         }
                       />
                       Кнопка
@@ -706,7 +736,11 @@ export function IntegrationSettings() {
                         type="checkbox"
                         checked={selectedTelegramMenuItem.use_city_list}
                         onChange={(e) =>
-                          updateTelegramMenuItem(selectedTelegramMenuItem.id, 'use_city_list', e.target.checked)
+                          updateTelegramMenuItem(
+                            selectedTelegramMenuItem.id,
+                            'use_city_list',
+                            e.target.checked
+                          )
                         }
                       />
                       Список по городам
@@ -746,7 +780,11 @@ export function IntegrationSettings() {
                         className="input"
                         value={selectedTelegramMenuItem.text}
                         onChange={(e) =>
-                          updateTelegramMenuItem(selectedTelegramMenuItem.id, 'text', e.target.value)
+                          updateTelegramMenuItem(
+                            selectedTelegramMenuItem.id,
+                            'text',
+                            e.target.value
+                          )
                         }
                         placeholder="Текст сообщения. Можно использовать {balance}, {customer_name}, {qr_token}, {customer_id}"
                         rows={4}
@@ -773,14 +811,20 @@ export function IntegrationSettings() {
                           Перетащите файлы сюда или выберите их вручную
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <div
+                        style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}
+                      >
                         <input
                           id={`telegram-media-${selectedTelegramMenuItem.id}`}
                           type="file"
                           multiple
-                          onChange={(e) => void handleTelegramFileChange(selectedTelegramMenuItem.id, e)}
+                          onChange={(e) =>
+                            void handleTelegramFileChange(selectedTelegramMenuItem.id, e)
+                          }
                         />
-                        {getStatusBadge(telegramUploadStatus[selectedTelegramMenuItem.id] || 'idle')}
+                        {getStatusBadge(
+                          telegramUploadStatus[selectedTelegramMenuItem.id] || 'idle'
+                        )}
                       </div>
                       <div style={{ display: 'grid', gap: 6 }}>
                         {selectedTelegramMenuItem.media_urls.length ? (
@@ -797,19 +841,29 @@ export function IntegrationSettings() {
                                 padding: 8,
                               }}
                             >
-                              <div style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              <div
+                                style={{
+                                  fontSize: 12,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                }}
+                              >
                                 {mediaUrl}
                               </div>
                               <button
                                 className="btn"
-                                onClick={() => removeTelegramMedia(selectedTelegramMenuItem.id, mediaUrl)}
+                                onClick={() =>
+                                  removeTelegramMedia(selectedTelegramMenuItem.id, mediaUrl)
+                                }
                               >
                                 Удалить
                               </button>
                             </div>
                           ))
                         ) : (
-                          <div style={{ fontSize: 12, color: 'var(--muted)' }}>Медиа ещё не загружены</div>
+                          <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                            Медиа ещё не загружены
+                          </div>
                         )}
                       </div>
                     </div>
@@ -818,24 +872,36 @@ export function IntegrationSettings() {
                   {selectedTelegramMenuItem.use_button && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                       <div>
-                        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Текст кнопки</div>
+                        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                          Текст кнопки
+                        </div>
                         <input
                           className="input"
                           value={selectedTelegramMenuItem.button_text}
                           onChange={(e) =>
-                            updateTelegramMenuItem(selectedTelegramMenuItem.id, 'button_text', e.target.value)
+                            updateTelegramMenuItem(
+                              selectedTelegramMenuItem.id,
+                              'button_text',
+                              e.target.value
+                            )
                           }
                           placeholder="Открыть каталог"
                           style={{ width: '100%' }}
                         />
                       </div>
                       <div>
-                        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>URL кнопки</div>
+                        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                          URL кнопки
+                        </div>
                         <input
                           className="input"
                           value={selectedTelegramMenuItem.button_url}
                           onChange={(e) =>
-                            updateTelegramMenuItem(selectedTelegramMenuItem.id, 'button_url', e.target.value)
+                            updateTelegramMenuItem(
+                              selectedTelegramMenuItem.id,
+                              'button_url',
+                              e.target.value
+                            )
                           }
                           placeholder="https://..."
                           style={{ width: '100%' }}
@@ -846,9 +912,18 @@ export function IntegrationSettings() {
 
                   {selectedTelegramMenuItem.use_city_list && (
                     <div style={{ display: 'grid', gap: 10 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
                         <div style={{ fontSize: 12, fontWeight: 700 }}>Города</div>
-                        <button className="btn" onClick={() => addTelegramCityEntry(selectedTelegramMenuItem.id)}>
+                        <button
+                          className="btn"
+                          onClick={() => addTelegramCityEntry(selectedTelegramMenuItem.id)}
+                        >
                           Добавить город
                         </button>
                       </div>
@@ -866,7 +941,13 @@ export function IntegrationSettings() {
                                 gap: 8,
                               }}
                             >
-                              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  gap: 10,
+                                }}
+                              >
                                 <input
                                   className="input"
                                   value={entry.city}
@@ -883,7 +964,9 @@ export function IntegrationSettings() {
                                 />
                                 <button
                                   className="btn"
-                                  onClick={() => removeTelegramCityEntry(selectedTelegramMenuItem.id, index)}
+                                  onClick={() =>
+                                    removeTelegramCityEntry(selectedTelegramMenuItem.id, index)
+                                  }
                                 >
                                   Удалить
                                 </button>
@@ -905,7 +988,9 @@ export function IntegrationSettings() {
                               />
                               <div
                                 onDragOver={(e) => e.preventDefault()}
-                                onDrop={(e) => void handleTelegramCityDrop(selectedTelegramMenuItem.id, index, e)}
+                                onDrop={(e) =>
+                                  void handleTelegramCityDrop(selectedTelegramMenuItem.id, index, e)
+                                }
                                 style={{
                                   border: '1px dashed var(--border)',
                                   borderRadius: 8,
@@ -914,12 +999,23 @@ export function IntegrationSettings() {
                                   gap: 8,
                                 }}
                               >
-                                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    gap: 10,
+                                    alignItems: 'center',
+                                    flexWrap: 'wrap',
+                                  }}
+                                >
                                   <input
                                     type="file"
                                     multiple
                                     onChange={(e) =>
-                                      void handleTelegramCityFileChange(selectedTelegramMenuItem.id, index, e)
+                                      void handleTelegramCityFileChange(
+                                        selectedTelegramMenuItem.id,
+                                        index,
+                                        e
+                                      )
                                     }
                                   />
                                   {getStatusBadge(telegramUploadStatus[uploadKey] || 'idle')}
@@ -935,13 +1031,23 @@ export function IntegrationSettings() {
                                         gap: 10,
                                       }}
                                     >
-                                      <div style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      <div
+                                        style={{
+                                          fontSize: 12,
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                        }}
+                                      >
                                         {mediaUrl}
                                       </div>
                                       <button
                                         className="btn"
                                         onClick={() =>
-                                          removeTelegramCityMedia(selectedTelegramMenuItem.id, index, mediaUrl)
+                                          removeTelegramCityMedia(
+                                            selectedTelegramMenuItem.id,
+                                            index,
+                                            mediaUrl
+                                          )
                                         }
                                       >
                                         Удалить
@@ -949,10 +1055,14 @@ export function IntegrationSettings() {
                                     </div>
                                   ))
                                 ) : (
-                                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>Нет медиа для города</div>
+                                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                                    Нет медиа для города
+                                  </div>
                                 )}
                               </div>
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                              <div
+                                style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}
+                              >
                                 <input
                                   className="input"
                                   value={entry.button_text}

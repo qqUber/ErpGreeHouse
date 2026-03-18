@@ -4,9 +4,9 @@ Tests the CurrencyFormatter class with different locales and configurations.
 """
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from app.utils.currency import CurrencyFormatter, format_currency, CurrencyConfig
+from app.utils.currency import CurrencyConfig, CurrencyFormatter, format_currency
 
 
 class TestCurrencyFormatter(unittest.TestCase):

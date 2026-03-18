@@ -669,6 +669,7 @@ def process_telegram_update(payload: dict) -> dict:
 
     async def runner() -> dict:
         from aiogram.types import Update
+
         from app.integrations.bots.telegram_handler import create_bot, create_dispatcher
 
         bot = create_bot()

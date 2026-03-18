@@ -6,9 +6,9 @@ Tests the complete workflow from customer creation to display formatting.
 import unittest
 from unittest.mock import patch
 
+from app.identify import normalize_name
 from app.utils.currency import format_currency, get_currency_formatter
 from app.utils.gender_correction import suggest_name_correction
-from app.identify import normalize_name
 
 
 class TestCurrencyGenderIntegration(unittest.TestCase):

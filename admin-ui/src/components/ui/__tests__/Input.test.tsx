@@ -79,7 +79,7 @@ describe('Input', () => {
     renderWithI18n(<Input value="test" onChange={onChange} />);
     const input = screen.getByTestId('input-field') as HTMLInputElement;
     expect(input.value).toBe('test');
-    
+
     fireEvent.change(input, { target: { value: 'new value' } });
     expect(onChange).toHaveBeenCalled();
   });

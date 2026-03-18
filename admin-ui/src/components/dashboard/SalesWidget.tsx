@@ -16,7 +16,7 @@ type SalesData = {
 export function SalesWidget({ data }: { data?: any }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   // Use dashboard API fields
   const totalRevenue = Number(data?.sales_total ?? 0);
   const transactions = Number(data?.sales_count ?? 0);

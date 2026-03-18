@@ -10,6 +10,7 @@ Tests cover:
 """
 
 import pytest
+
 from app.loyalty import (
     LoyaltyRules,
     Tier,

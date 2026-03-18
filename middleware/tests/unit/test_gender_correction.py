@@ -4,7 +4,7 @@ Tests the GenderDetector class with different locales and name patterns.
 """
 
 import unittest
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
 from app.utils.gender_correction import (
     GenderDetector,

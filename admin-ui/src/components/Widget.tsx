@@ -39,7 +39,12 @@ export function Widget({
   const isExpanded = controlledIsExpanded ?? internalIsExpanded;
   const handleToggle = () => {
     const newState = !isExpanded;
-    console.log('Widget handleToggle:', { current: isExpanded, newState, hasOnExpand: !!onExpand, hasOnCollapse: !!onCollapse });
+    console.log('Widget handleToggle:', {
+      current: isExpanded,
+      newState,
+      hasOnExpand: !!onExpand,
+      hasOnCollapse: !!onCollapse,
+    });
     setInternalIsExpanded(newState);
     if (newState) {
       onExpand?.();
@@ -64,8 +69,21 @@ export function Widget({
             aria-label={isExpanded ? t('widgets.hideDetails') : t('widgets.showDetails')}
           >
             <span className="widget-toggle-label">{isExpanded ? 'Close' : 'Details'}</span>
-            <svg className={`arrow-icon ${isExpanded ? 'rotated' : ''}`} width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-              <path d="M6 2L10 6L6 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg
+              className={`arrow-icon ${isExpanded ? 'rotated' : ''}`}
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M6 2L10 6L6 10"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
         )}
@@ -81,7 +99,8 @@ export function Widget({
         </div>
       )}
 
-      {isExpanded && expandedContent &&
+      {isExpanded &&
+        expandedContent &&
         createPortal(
           <EZDrawer
             open={isExpanded}
@@ -109,8 +128,7 @@ export function Widget({
             </div>
           </EZDrawer>,
           document.body
-        )
-      }
+        )}
     </div>
   );
 }

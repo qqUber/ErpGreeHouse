@@ -3,13 +3,14 @@ Functional Docker-based QR Token System Tests
 No hardcoded data - uses dynamic generation and real Docker environment
 """
 
-import pytest
 import sqlite3
-import requests
 import time
 import uuid
-from typing import Dict, Any, Generator
 from contextlib import contextmanager
+from typing import Any, Dict, Generator
+
+import pytest
+import requests
 
 
 @pytest.fixture(scope="module")
@@ -63,10 +64,9 @@ class QRTokenFunctionalTest:
         conn.row_factory = sqlite3.Row
 
         # Initialize database schema
-        from app.db import init_db
-
         # Mock the database path for testing
         import app.db
+        from app.db import init_db
 
         original_path = app.db.get_db_path
         app.db.get_db_path = lambda: ":memory:"
@@ -111,10 +111,10 @@ class QRTokenFunctionalTest:
 
     def test_customer_lifecycle_functional(self, test_db):
         """Test complete customer lifecycle with dynamic data"""
-        from app.customer_identity import resolve_or_create_customer
-
         # Generate dynamic test data
         import secrets
+
+        from app.customer_identity import resolve_or_create_customer
 
         phone = f"+79{secrets.randbelow(10000000000):010d}"
         telegram_id = secrets.randbelow(1000000000)
@@ -177,8 +177,8 @@ class QRTokenFunctionalTest:
     def test_error_recovery_functional(self, test_db):
         """Test error recovery scenarios"""
         from app.customer_identity import (
-            resolve_or_create_customer,
             CustomerIdentityConflictError,
+            resolve_or_create_customer,
         )
 
         # Create first customer
@@ -200,8 +200,9 @@ class QRTokenFunctionalTest:
 
     def test_performance_functional(self, test_db):
         """Test performance with realistic data volumes"""
-        from app.customer_identity import generate_unique_qr_token
         import time
+
+        from app.customer_identity import generate_unique_qr_token
 
         # Test performance with 1000 tokens
         start_time = time.time()

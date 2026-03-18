@@ -1,9 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const runtimeEnv =
-  (globalThis as typeof globalThis & {
-    process?: { env?: Record<string, string | undefined> };
-  }).process?.env || {};
+  (
+    globalThis as typeof globalThis & {
+      process?: { env?: Record<string, string | undefined> };
+    }
+  ).process?.env || {};
 
 export default defineConfig({
   testDir: './e2e',

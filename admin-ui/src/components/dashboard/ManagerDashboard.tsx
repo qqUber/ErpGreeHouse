@@ -19,10 +19,10 @@ interface DashboardProps {
 export function ManagerDashboard({ data, onNavigate }: DashboardProps) {
   const [marketingAnalytics, setMarketingAnalytics] = useState<MarketingAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   const role = Role.MANAGER;
   const widgets = getAvailableWidgets(role);
-  
+
   useEffect(() => {
     const fetchMarketingAnalytics = async () => {
       try {
@@ -34,10 +34,10 @@ export function ManagerDashboard({ data, onNavigate }: DashboardProps) {
         setLoading(false);
       }
     };
-    
+
     fetchMarketingAnalytics();
   }, []);
-  
+
   const widgetData = {
     customers: data?.customers,
     products: data?.products,

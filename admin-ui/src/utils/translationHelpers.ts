@@ -12,7 +12,7 @@ function getCurrencyCode(): string {
   if (typeof window !== 'undefined' && (window as any).__CURRENCY_CODE__) {
     return (window as any).__CURRENCY_CODE__;
   }
-  
+
   // Fallback to RUB for development
   return 'RUB';
 }
@@ -22,10 +22,10 @@ function getCurrencyCode(): string {
  */
 function getCurrencySymbol(currencyCode: string): string {
   const currencySymbols: Record<string, string> = {
-    'RUB': '₽',
-    'USD': '$',
-    'EUR': '€',
-    'RSD': 'RSD',
+    RUB: '₽',
+    USD: '$',
+    EUR: '€',
+    RSD: 'RSD',
   };
   return currencySymbols[currencyCode] || currencyCode;
 }
@@ -37,15 +37,18 @@ function getCurrencySymbol(currencyCode: string): string {
  * @param options - Currency formatting options
  * @returns Formatted currency string
  */
-export function formatCurrency(amount: number, options?: {
-  currency?: string;
-  locale?: string;
-  symbolPosition?: 'before' | 'after';
-  decimalPlaces?: number;
-}): string {
+export function formatCurrency(
+  amount: number,
+  options?: {
+    currency?: string;
+    locale?: string;
+    symbolPosition?: 'before' | 'after';
+    decimalPlaces?: number;
+  }
+): string {
   // Use fixed currency from environment
   const currency = options?.currency || getCurrencyCode();
-  const language = options?.locale || (i18n?.language || 'en');
+  const language = options?.locale || i18n?.language || 'en';
   const decimalPlaces = options?.decimalPlaces ?? 0;
   const symbolPosition = options?.symbolPosition || 'after';
 

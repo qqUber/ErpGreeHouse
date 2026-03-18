@@ -49,23 +49,36 @@ export function AnalyticsWidget({ data }: { data?: MarketingAnalyticsData }) {
   const activeCampaigns = campaigns.active_campaigns || 3;
   const segments = customers.segments || {};
   const highValueCount = Number(segments.high_value || 0);
-  const highValueShare = totalCustomers > 0 ? Math.round((highValueCount / totalCustomers) * 100) : 0;
+  const highValueShare =
+    totalCustomers > 0 ? Math.round((highValueCount / totalCustomers) * 100) : 0;
 
   return (
     <Widget title={t('analytics.title')} compactable={false}>
       <div className="marketing-analytics-dashboard crm-analytics p-4">
         <div className="metrics-grid grid grid-cols-4 gap-3 mb-4">
           <div className="stat-card stat-card-success crm-kpi-tile">
-            <div className="stat-card-content"><div className="stat-card-value">{consentRate}%</div><div className="stat-card-label">{t('analytics.consentRate')}</div></div>
+            <div className="stat-card-content">
+              <div className="stat-card-value">{consentRate}%</div>
+              <div className="stat-card-label">{t('analytics.consentRate')}</div>
+            </div>
           </div>
           <div className="stat-card stat-card-primary crm-kpi-tile">
-            <div className="stat-card-content"><div className="stat-card-value">{reachableCoverage}%</div><div className="stat-card-label">Reachable coverage</div></div>
+            <div className="stat-card-content">
+              <div className="stat-card-value">{reachableCoverage}%</div>
+              <div className="stat-card-label">Reachable coverage</div>
+            </div>
           </div>
           <div className="stat-card stat-card-warning crm-kpi-tile">
-            <div className="stat-card-content"><div className="stat-card-value">{activeCampaigns}</div><div className="stat-card-label">{t('analytics.activeCampaigns')}</div></div>
+            <div className="stat-card-content">
+              <div className="stat-card-value">{activeCampaigns}</div>
+              <div className="stat-card-label">{t('analytics.activeCampaigns')}</div>
+            </div>
           </div>
           <div className="stat-card stat-card-info crm-kpi-tile">
-            <div className="stat-card-content"><div className="stat-card-value">{highValueShare}%</div><div className="stat-card-label">High-value share</div></div>
+            <div className="stat-card-content">
+              <div className="stat-card-value">{highValueShare}%</div>
+              <div className="stat-card-label">High-value share</div>
+            </div>
           </div>
         </div>
 
@@ -74,17 +87,33 @@ export function AnalyticsWidget({ data }: { data?: MarketingAnalyticsData }) {
           <div className="crm-coverage-grid">
             <div className="crm-coverage-row">
               <span>Telegram</span>
-              <div className="crm-progress-track"><div className="crm-progress-fill" style={{ width: `${totalCustomers > 0 ? Math.round((telegram / totalCustomers) * 100) : 0}%` }} /></div>
+              <div className="crm-progress-track">
+                <div
+                  className="crm-progress-fill"
+                  style={{
+                    width: `${totalCustomers > 0 ? Math.round((telegram / totalCustomers) * 100) : 0}%`,
+                  }}
+                />
+              </div>
               <strong>{telegram}</strong>
             </div>
             <div className="crm-coverage-row">
               <span>VK</span>
-              <div className="crm-progress-track"><div className="crm-progress-fill" style={{ width: `${totalCustomers > 0 ? Math.round((vk / totalCustomers) * 100) : 0}%` }} /></div>
+              <div className="crm-progress-track">
+                <div
+                  className="crm-progress-fill"
+                  style={{
+                    width: `${totalCustomers > 0 ? Math.round((vk / totalCustomers) * 100) : 0}%`,
+                  }}
+                />
+              </div>
               <strong>{vk}</strong>
             </div>
             <div className="crm-coverage-row">
               <span>Consented</span>
-              <div className="crm-progress-track"><div className="crm-progress-fill" style={{ width: `${consentRate}%` }} /></div>
+              <div className="crm-progress-track">
+                <div className="crm-progress-fill" style={{ width: `${consentRate}%` }} />
+              </div>
               <strong>{consented}</strong>
             </div>
           </div>
@@ -93,20 +122,36 @@ export function AnalyticsWidget({ data }: { data?: MarketingAnalyticsData }) {
         <section className="crm-collapsible-section">
           <h4 className="crm-section-title">Campaign activity</h4>
           <div className="crm-inline-stats">
-            <span>Active campaigns: <strong>{activeCampaigns}</strong></span>
-            <span>Upcoming: <strong>{Number(campaigns.upcoming_campaigns || 0)}</strong></span>
-            <span>Messages / 24h: <strong>{Number(campaigns.messages_sent_24h || 0)}</strong></span>
-            <span>Open rate: <strong>{Number(campaigns.open_rate || 0)}%</strong></span>
+            <span>
+              Active campaigns: <strong>{activeCampaigns}</strong>
+            </span>
+            <span>
+              Upcoming: <strong>{Number(campaigns.upcoming_campaigns || 0)}</strong>
+            </span>
+            <span>
+              Messages / 24h: <strong>{Number(campaigns.messages_sent_24h || 0)}</strong>
+            </span>
+            <span>
+              Open rate: <strong>{Number(campaigns.open_rate || 0)}%</strong>
+            </span>
           </div>
         </section>
 
         <section className="crm-collapsible-section">
           <h4 className="crm-section-title">Customer value segments</h4>
           <div className="crm-inline-stats">
-            <span>{t('analytics.highValue')}: <strong>{Number(segments.high_value || 0)}</strong></span>
-            <span>{t('analytics.active')}: <strong>{Number(segments.active || 0)}</strong></span>
-            <span>{t('analytics.new')}: <strong>{Number(segments.new_customers || 0)}</strong></span>
-            <span>{t('analytics.avgLTV')}: <strong>{avgLTV.toLocaleString()}</strong></span>
+            <span>
+              {t('analytics.highValue')}: <strong>{Number(segments.high_value || 0)}</strong>
+            </span>
+            <span>
+              {t('analytics.active')}: <strong>{Number(segments.active || 0)}</strong>
+            </span>
+            <span>
+              {t('analytics.new')}: <strong>{Number(segments.new_customers || 0)}</strong>
+            </span>
+            <span>
+              {t('analytics.avgLTV')}: <strong>{avgLTV.toLocaleString()}</strong>
+            </span>
           </div>
         </section>
       </div>

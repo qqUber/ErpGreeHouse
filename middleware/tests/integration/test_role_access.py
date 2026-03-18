@@ -19,8 +19,9 @@ from typing import Any, Generator
 
 import jwt
 import pytest
-from app.db import get_db
 from fastapi.testclient import TestClient
+
+from app.db import get_db
 
 # =============================================================================
 # Fixtures - Loading JSON Data from fixtures directory

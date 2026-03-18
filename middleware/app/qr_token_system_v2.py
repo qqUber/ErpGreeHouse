@@ -8,12 +8,12 @@ Fixes:
 4. Proper error handling and logging
 """
 
+import logging
 import secrets
 import sqlite3
 import uuid
-import logging
-from typing import Optional
 from contextlib import contextmanager
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 

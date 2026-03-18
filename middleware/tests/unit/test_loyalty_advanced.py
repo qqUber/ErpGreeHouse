@@ -1,4 +1,5 @@
 import pytest
+
 from app.loyalty import (
     LoyaltyRules,
     Tier,

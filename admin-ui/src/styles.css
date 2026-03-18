@@ -3361,8 +3361,8 @@ button:not([class*="button"]):disabled {
   transform: none;
 }
 
-input:not([class*="input"]), 
-select:not([class*="input"]), 
+input:not([class*="input"]),
+select:not([class*="input"]),
 textarea:not([class*="input"]) {
   width: 100%;
   padding: var(--spacing-sm);
@@ -3964,7 +3964,7 @@ textarea {
   .customers-main-content {
     grid-template-columns: 1fr !important;
   }
-  
+
   .customer-details-sidebar {
     position: fixed !important;
     top: 0 !important;

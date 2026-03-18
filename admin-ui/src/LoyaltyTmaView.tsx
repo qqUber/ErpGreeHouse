@@ -118,7 +118,8 @@ export function LoyaltyTmaView() {
                 ></div>
               </div>
               <p className="text-[10px] mt-2 opacity-70">
-                Нужно еще {formatCurrency(data.next_tier_spent - data.spent_amount)} покупок для повышения кэшбека
+                Нужно еще {formatCurrency(data.next_tier_spent - data.spent_amount)} покупок для
+                повышения кэшбека
               </p>
             </div>
           )}

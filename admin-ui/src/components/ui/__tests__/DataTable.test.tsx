@@ -84,9 +84,7 @@ describe('DataTable', () => {
   });
 
   it('shows empty state when no data', () => {
-    renderWithI18n(
-      <DataTable data={[]} columns={mockColumns} keyExtractor={(item) => item.id} />
-    );
+    renderWithI18n(<DataTable data={[]} columns={mockColumns} keyExtractor={(item) => item.id} />);
     expect(screen.getByTestId('data-table-empty')).toBeInTheDocument();
     expect(screen.getByText('No data available')).toBeInTheDocument();
   });
@@ -140,11 +138,11 @@ describe('DataTable', () => {
   });
 
   it('does not sort non-sortable columns', () => {
-    const columns: DataTableColumn<TestItem>[] = [
-      { key: 'name', header: 'Name', sortable: false },
-    ];
+    const columns: DataTableColumn<TestItem>[] = [{ key: 'name', header: 'Name', sortable: false }];
 
-    renderWithI18n(<DataTable data={mockData} columns={columns} keyExtractor={(item) => item.id} />);
+    renderWithI18n(
+      <DataTable data={mockData} columns={columns} keyExtractor={(item) => item.id} />
+    );
 
     const nameHeader = screen.getByTestId('data-table-header-name');
     fireEvent.click(nameHeader);
@@ -206,11 +204,7 @@ describe('DataTable', () => {
     const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     renderWithI18n(
-      <DataTable
-        data={mockData}
-        columns={mockColumns}
-        keyExtractor={() => null as any}
-      />
+      <DataTable data={mockData} columns={mockColumns} keyExtractor={() => null as any} />
     );
 
     expect(consoleWarnSpy).toHaveBeenCalled();

@@ -1,4 +1,5 @@
 import pytest
+
 from app.trigger_engine import _check_criteria
 
 

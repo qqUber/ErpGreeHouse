@@ -82,16 +82,26 @@ export function CustomersWidget({ data }: { data?: any }) {
       >
         <div className="crm-customer-main">
           <span className="crm-customer-id">#{id}</span>
-          <span className="crm-customer-name">{customer.name ?? t('widgets.customers.unknown')}</span>
+          <span className="crm-customer-name">
+            {customer.name ?? t('widgets.customers.unknown')}
+          </span>
         </div>
         <div className="crm-customer-badges">
-          {hasTelegram && <span className="crm-badge crm-badge-channel">{t('widgets.customers.telegram')}</span>}
-          {hasVk && <span className="crm-badge crm-badge-channel">{t('widgets.customers.vk')}</span>}
-          {!hasTelegram && !hasVk && <span className="crm-badge crm-badge-muted">{t('widgets.customers.noChannel')}</span>}
+          {hasTelegram && (
+            <span className="crm-badge crm-badge-channel">{t('widgets.customers.telegram')}</span>
+          )}
+          {hasVk && (
+            <span className="crm-badge crm-badge-channel">{t('widgets.customers.vk')}</span>
+          )}
+          {!hasTelegram && !hasVk && (
+            <span className="crm-badge crm-badge-muted">{t('widgets.customers.noChannel')}</span>
+          )}
           <span className={`crm-badge ${consent ? 'crm-badge-good' : 'crm-badge-warn'}`}>
             {consent ? t('widgets.customers.consent') : t('widgets.customers.noConsent')}
           </span>
-          <span className="crm-badge crm-badge-value">{t('widgets.customers.ltv')} {ltv.toLocaleString()}</span>
+          <span className="crm-badge crm-badge-value">
+            {t('widgets.customers.ltv')} {ltv.toLocaleString()}
+          </span>
         </div>
       </button>
     );
@@ -112,30 +122,77 @@ export function CustomersWidget({ data }: { data?: any }) {
             </button>
           </div>
           <div className="crm-detail-grid">
-            <div><span>ID</span><strong>#{selectedCustomer.id ?? '-'}</strong></div>
-            <div><span>Name</span><strong>{selectedCustomer.name ?? '-'}</strong></div>
-            <div><span>Phone</span><strong>{selectedCustomer.phone ?? '-'}</strong></div>
-            <div><span>Telegram</span><strong>{selectedCustomer.telegram_id ?? 'No'}</strong></div>
-            <div><span>VK</span><strong>{selectedCustomer.vk_id ?? 'No'}</strong></div>
-            <div><span>Consent</span><strong>{selectedCustomer.marketing_allowed !== false ? 'Allowed' : 'Denied'}</strong></div>
-            <div><span>Balance</span><strong>{Number(selectedCustomer.balance_points ?? 0).toLocaleString()}</strong></div>
-            <div><span>LTV</span><strong>{Number(selectedCustomer.ltv ?? selectedCustomer.total_spent ?? 0).toLocaleString()}</strong></div>
-            <div><span>Last purchase</span><strong>{selectedCustomer.last_purchase_date ?? '-'}</strong></div>
+            <div>
+              <span>ID</span>
+              <strong>#{selectedCustomer.id ?? '-'}</strong>
+            </div>
+            <div>
+              <span>Name</span>
+              <strong>{selectedCustomer.name ?? '-'}</strong>
+            </div>
+            <div>
+              <span>Phone</span>
+              <strong>{selectedCustomer.phone ?? '-'}</strong>
+            </div>
+            <div>
+              <span>Telegram</span>
+              <strong>{selectedCustomer.telegram_id ?? 'No'}</strong>
+            </div>
+            <div>
+              <span>VK</span>
+              <strong>{selectedCustomer.vk_id ?? 'No'}</strong>
+            </div>
+            <div>
+              <span>Consent</span>
+              <strong>{selectedCustomer.marketing_allowed !== false ? 'Allowed' : 'Denied'}</strong>
+            </div>
+            <div>
+              <span>Balance</span>
+              <strong>{Number(selectedCustomer.balance_points ?? 0).toLocaleString()}</strong>
+            </div>
+            <div>
+              <span>LTV</span>
+              <strong>
+                {Number(selectedCustomer.ltv ?? selectedCustomer.total_spent ?? 0).toLocaleString()}
+              </strong>
+            </div>
+            <div>
+              <span>Last purchase</span>
+              <strong>{selectedCustomer.last_purchase_date ?? '-'}</strong>
+            </div>
           </div>
         </section>
       ) : (
         <div className="crm-drawer-stack">
           <section className="crm-collapsible-section">
             <h3 className="crm-section-title">High value customers</h3>
-            <div className="crm-list">{highValue.length ? highValue.map(renderCustomerRow) : <p className="crm-empty-state">No high-value customers in payload.</p>}</div>
+            <div className="crm-list">
+              {highValue.length ? (
+                highValue.map(renderCustomerRow)
+              ) : (
+                <p className="crm-empty-state">No high-value customers in payload.</p>
+              )}
+            </div>
           </section>
           <section className="crm-collapsible-section">
             <h3 className="crm-section-title">Recently active customers</h3>
-            <div className="crm-list">{recentlyActive.length ? recentlyActive.map(renderCustomerRow) : <p className="crm-empty-state">No recent activity data.</p>}</div>
+            <div className="crm-list">
+              {recentlyActive.length ? (
+                recentlyActive.map(renderCustomerRow)
+              ) : (
+                <p className="crm-empty-state">No recent activity data.</p>
+              )}
+            </div>
           </section>
           <section className="crm-collapsible-section">
             <h3 className="crm-section-title">Consent gaps / unreachable</h3>
-            <div className="crm-list">{gaps.length ? gaps.map(renderCustomerRow) : <p className="crm-empty-state">No consent or reachability gaps.</p>}</div>
+            <div className="crm-list">
+              {gaps.length ? (
+                gaps.map(renderCustomerRow)
+              ) : (
+                <p className="crm-empty-state">No consent or reachability gaps.</p>
+              )}
+            </div>
           </section>
         </div>
       )}
@@ -160,13 +217,17 @@ export function CustomersWidget({ data }: { data?: any }) {
     >
       <div className="crm-widget-body">
         <div className="crm-inline-stats">
-          <span>{t('widgets.common.newThisWeek')}: <strong>{newWeek}</strong></span>
-          <span>Reachable: <strong>{derivedReachable.length}</strong></span>
-          <span>{t('analytics.consentRate')}: <strong>{consentRate}%</strong></span>
+          <span>
+            {t('widgets.common.newThisWeek')}: <strong>{newWeek}</strong>
+          </span>
+          <span>
+            Reachable: <strong>{derivedReachable.length}</strong>
+          </span>
+          <span>
+            {t('analytics.consentRate')}: <strong>{consentRate}%</strong>
+          </span>
         </div>
-        <div className="crm-list-preview">
-          {customers.slice(0, 3).map(renderCustomerRow)}
-        </div>
+        <div className="crm-list-preview">{customers.slice(0, 3).map(renderCustomerRow)}</div>
       </div>
     </Widget>
   );

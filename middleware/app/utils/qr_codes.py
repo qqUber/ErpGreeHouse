@@ -11,8 +11,8 @@ import sqlite3
 from typing import Optional
 
 import qrcode
-from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 from aiogram.types import BufferedInputFile
+from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 
 from ..config import get_settings
 
@@ -20,7 +20,7 @@ from ..config import get_settings
 def generate_unique_token(conn: sqlite3.Connection, max_attempts: int = 100) -> str:
     """
     Generate unique 8-digit numeric QR token for customers.
-    
+
     Format: 12345678 (no leading zeros for better scannability)
     Range: 10,000,000 to 99,999,999
     Ensures database uniqueness.
@@ -53,7 +53,7 @@ def generate_unique_token(conn: sqlite3.Connection, max_attempts: int = 100) -> 
 def make_qr_image(customer_id: int, qr_token: str) -> BufferedInputFile:
     """
     Generate professional QR code image with visual branding.
-    
+
     Creates a branded QR code image with:
     - Main QR code with the token
     - Mosaic background with blurred QR codes

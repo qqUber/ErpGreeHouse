@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from app.integrations_api import ReceiptCustomer, _find_or_create_customer
 
 

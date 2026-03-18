@@ -39,8 +39,6 @@
     "recovery": "Опоравак",
     "apiStatus": "API статус",
     "apiUnavailable": "није доступан",
-    "defaultAdmin": "Подразумевани админ",
-    "defaultAdminNotCreated": "Подразумевани админ није креиран. Проверите ADMIN_BOOTSTRAP_DEFAULT.",
     "loginPlaceholder": "Корисничко име",
     "passwordPlaceholder": "Лозинка",
     "newPasswordPlaceholder": "Нова лозинка",

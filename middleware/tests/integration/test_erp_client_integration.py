@@ -10,6 +10,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from app.integrations.pos.erpnext_client import ERPClient
 
 # Add app to path
@@ -220,6 +221,7 @@ async def test_erp_client_retry_logic(monkeypatch):
     """Test ERP client retry logic with HTTP mocks."""
     import httpx
     import respx
+
     from app.integrations.pos.erpnext_client import ERPClient
 
     # Create a real client but point it to a mock base URL

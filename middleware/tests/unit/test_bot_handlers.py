@@ -8,6 +8,7 @@ Full handler logic is tested via integration tests.
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from app import handlers
 from tests.mocks.telegram import TelegramMock
 

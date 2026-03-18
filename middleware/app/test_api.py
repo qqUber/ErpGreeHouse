@@ -309,8 +309,8 @@ def _generate_phone() -> str:
 
 def _generate_qr_token() -> str:
     """Generate QR token using GUID-based system for test data"""
-    import uuid
     import secrets
+    import uuid
 
     # Use deterministic GUID for reproducible tests
     base_guid = "550e8400-e29b-41d4-a716-446655440000"

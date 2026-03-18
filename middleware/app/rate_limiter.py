@@ -4,6 +4,7 @@ import time
 from typing import Optional
 
 import redis
+
 from app.config import get_settings
 
 settings = get_settings()

@@ -72,8 +72,8 @@ export function WidgetGrid({ role, widgets, onLayoutChange, data }: WidgetGridPr
             className="dashboard-grid-item"
             data-testid={`grid-widget-${widget.id}`}
           >
-            <WidgetComponent 
-              data={widgetData} 
+            <WidgetComponent
+              data={widgetData}
               expandedContent={widgetData?.expandedContent}
               compactContent={widgetData?.compactContent}
             />

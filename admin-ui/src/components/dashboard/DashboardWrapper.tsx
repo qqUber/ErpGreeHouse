@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import type {
-    CustomerData,
-    MarketingData,
-    OperationalData,
-    ProductData,
+  CustomerData,
+  MarketingData,
+  OperationalData,
+  ProductData,
 } from '../../hooks/useDashboard';
 import { useAuth } from '../../stores/auth';
 import { hasPermission, Permission, PermissionSet, Role } from '../../types/roles';

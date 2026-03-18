@@ -37,10 +37,10 @@ describe('ErrorMessage', () => {
   it('calls onDismiss when dismiss button clicked', () => {
     const onDismiss = vi.fn();
     render(<ErrorMessage message="Test error" onDismiss={onDismiss} />);
-    
+
     const dismissButton = screen.getByTestId('error-message-dismiss');
     fireEvent.click(dismissButton);
-    
+
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 

@@ -3,18 +3,18 @@ Simplified tests for improved QR token system.
 Focuses on core functionality without threading complications.
 """
 
-import pytest
 import sqlite3
 import uuid
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from app.customer_identity import (
+    CustomerIdentityConflictError,
     generate_unique_qr_token,
     get_or_generate_base_guid,
     resolve_or_create_customer,
-    CustomerIdentityConflictError,
 )
-from app.customer_identity import generate_unique_qr_token
 
 
 class TestImprovedQRTokenSystem:
@@ -208,8 +208,10 @@ class TestImprovedQRTokenSystem:
     def test_secure_token_generation(self):
         """Test that token generation uses unique numeric method."""
         conn = sqlite3.connect(":memory:")
-        conn.execute("CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)")
-        
+        conn.execute(
+            "CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)"
+        )
+
         token1 = generate_unique_qr_token(conn)
         token2 = generate_unique_qr_token(conn)
 
