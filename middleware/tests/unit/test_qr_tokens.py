@@ -14,8 +14,8 @@ class TestQRTokenGeneration:
         token = generate_qr_token()
 
         assert len(token) == 8
-        assert all(c in "0123456789ABCDEF" for c in token)
-        assert token.isalnum()
+        assert all(c in "0123456789" for c in token)  # Only digits now
+        assert token.isdigit()
 
     def test_generate_qr_token_uniqueness(self):
         tokens = [generate_qr_token() for _ in range(10)]
@@ -81,14 +81,16 @@ class TestQRTokenGeneration:
 
         token1 = generate_unique_qr_token(conn)
         assert len(token1) == 8
-        assert all(c in "0123456789ABCDEF" for c in token1)
+        assert all(c in "0123456789" for c in token1)  # Only digits now
+        assert token1.isdigit()
 
         conn.execute("INSERT INTO customers (qr_token) VALUES (?)", (token1,))
         token2 = generate_unique_qr_token(conn)
 
         assert token1 != token2
         assert len(token2) == 8
-        assert all(c in "0123456789ABCDEF" for c in token2)
+        assert all(c in "0123456789" for c in token2)  # Only digits now
+        assert token2.isdigit()
 
     def test_generate_unique_qr_token_empty_database(self):
         conn = sqlite3.connect(":memory:")
@@ -96,7 +98,8 @@ class TestQRTokenGeneration:
         token = generate_unique_qr_token(conn)
 
         assert len(token) == 8
-        assert all(c in "0123456789ABCDEF" for c in token)
+        assert all(c in "0123456789" for c in token)  # Only digits now
+        assert token.isdigit()
 
     def test_qr_token_incremental_pattern(self):
         conn = sqlite3.connect(":memory:")
@@ -138,8 +141,8 @@ class TestQRTokenIntegration:
 
         for token in tokens:
             assert len(token) == 8
-            assert all(c in "0123456789ABCDEF" for c in token)
-            assert token.isalnum()
+            assert all(c in "0123456789" for c in token)  # Only digits now
+            assert token.isdigit()
 
     def test_qr_token_no_collisions_large_sample(self):
         tokens = [generate_qr_token() for _ in range(1000)]

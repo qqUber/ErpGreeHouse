@@ -19,6 +19,7 @@ from .auth import (
 from .customer_identity import generate_unique_qr_token, resolve_or_create_customer
 from .db import get_db
 from .identify import normalize_name, normalize_phone
+from .utils.currency import format_currency
 from .integration_events import dispatch_event
 from .integrations.pos.erpnext_client import ERPClient
 from .loyalty import LoyaltyRules, calc_earned_points, clamp_redeem_points
@@ -1002,11 +1003,11 @@ def create_sale(
         lines = []
         for it in payload.items:
             lines.append(
-                ReceiptLine(text=f"{it.name} x{it.qty} = {it.price * it.qty} ₽")
+                ReceiptLine(text=f"{it.name} x{it.qty} = {format_currency(it.price * it.qty)}")
             )
-        lines.append(ReceiptLine(text=f"Сумма: {total} ₽"))
+        lines.append(ReceiptLine(text=f"Сумма: {format_currency(total)}"))
         lines.append(ReceiptLine(text=f"Списано: {bonus_used}"))
-        lines.append(ReceiptLine(text=f"К оплате: {payable} ₽"))
+        lines.append(ReceiptLine(text=f"К оплате: {format_currency(payable)}"))
         lines.append(ReceiptLine(text=f"Начислено: {bonus_earned}"))
         lines.append(ReceiptLine(text=f"Баланс до: {int(cust['balance_points'])}"))
         lines.append(
@@ -1058,7 +1059,7 @@ def create_sale(
         tg_id = cust["telegram_id"]
         if tg_id:
             msg_lines = [
-                f"Покупка: {total} ₽",
+                f"Покупка: {format_currency(total)}",
                 f"Списано: {bonus_used}",
                 f"Начислено: {bonus_earned}",
                 f"Баланс: {new_balance}",

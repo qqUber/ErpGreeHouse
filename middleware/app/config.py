@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass
 from functools import lru_cache
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
@@ -34,6 +35,24 @@ def detect_environment() -> str:
 
     # Default to production for safety
     return "production"
+
+
+def _normalize_url(value: str, *, prefer_https: bool = True) -> str:
+    raw = value.strip()
+    if not raw:
+        return ""
+
+    parsed = urlparse(raw)
+    if parsed.scheme and parsed.netloc:
+        return raw.rstrip("/")
+
+    scheme = "https"
+    if not prefer_https:
+        scheme = "http"
+    elif raw.startswith(("localhost", "127.0.0.1")):
+        scheme = "http"
+
+    return f"{scheme}://{raw.lstrip('/').rstrip('/')}"
 
 
 @dataclass
@@ -169,6 +188,8 @@ def get_settings() -> Settings:
         ).split(",")
         if path.strip()
     )
+    erp_api_base_url = _normalize_url(os.getenv("ERP_API_BASE_URL", ""))
+    base_web_url = _normalize_url(os.getenv("BASE_WEB_URL", ""))
 
     return Settings(
         environment=environment,
@@ -176,12 +197,12 @@ def get_settings() -> Settings:
         vk_access_token=os.getenv("VK_ACCESS_TOKEN", ""),
         vk_group_id=int(os.getenv("VK_GROUP_ID", "0") or "0"),
         vk_api_version=os.getenv("VK_API_VERSION", "5.131"),
-        erp_api_base_url=os.getenv("ERP_API_BASE_URL", ""),
+        erp_api_base_url=erp_api_base_url,
         erp_api_key=os.getenv("ERP_API_KEY", ""),
         erp_api_secret=os.getenv("ERP_API_SECRET", ""),
         redis_url=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
         webhook_secret=os.getenv("WEBHOOK_SECRET", ""),
-        base_web_url=os.getenv("BASE_WEB_URL", ""),
+        base_web_url=base_web_url,
         erp_mock_mode=os.getenv("ERP_MOCK_MODE", "false").lower()
         in ("1", "true", "yes"),
         # Rate limiting settings for password recovery

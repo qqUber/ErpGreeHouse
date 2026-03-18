@@ -11,6 +11,7 @@ from .auth import check_roles, has_permission, require_integration_secret
 from .customer_identity import resolve_or_create_customer
 from .db import get_db
 from .identify import normalize_phone
+from .utils.currency import format_currency
 from .integration_events import dispatch_event
 from .loyalty import LoyaltyRules, calc_earned_points, clamp_redeem_points
 from .loyalty_profile import build_customer_loyalty_profile
@@ -352,7 +353,7 @@ def ingest_pos_receipt(
         tg_id = cust["telegram_id"]
         if tg_id:
             send_customer_message.delay(
-                int(tg_id), f"Покупка: {int(total)} ₽\nБаланс: {new_balance}"
+                int(tg_id), f"Покупка: {format_currency(total)}\nБаланс: {new_balance}"
             )
 
         dispatch_event(

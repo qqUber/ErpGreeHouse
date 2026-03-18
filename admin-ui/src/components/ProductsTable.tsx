@@ -1,6 +1,6 @@
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Product } from '../api';
+import { formatCurrency } from '../utils/translationHelpers';
 import { Pagination } from './Pagination';
 
 interface ProductsTableProps {
@@ -95,7 +95,7 @@ export function ProductsTable({
                     <div className="text-gray-500">{product.kind}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-gray-900">{product.price} ₽</div>
+                    <div className="text-gray-900">{formatCurrency(product.price)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span

@@ -35,6 +35,7 @@ from .integrations.pos.erpnext_client import ERPClient
 from .loyalty_profile import build_customer_loyalty_profile
 from .menu import MENU, find_item
 from .storage import delete, get_json, get_redis, set_json
+from .utils.currency import format_currency
 
 logger = logging.getLogger(__name__)
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
@@ -1513,7 +1514,7 @@ async def cmd_add(message: Message) -> None:
     )
     set_json(_cart_key(message.from_user.id), cart, ex=3600)
     total = sum(x["price"] * x["qty"] for x in cart["items"])
-    await message.answer(f"Добавлено. Текущая сумма: {total} ₽")
+    await message.answer(f"Добавлено. Текущая сумма: {format_currency(total)}")
 
 
 @router.callback_query(F.data.startswith("addcb:"))
@@ -1529,7 +1530,7 @@ async def cb_add(cb: CallbackQuery) -> None:
     )
     set_json(_cart_key(cb.from_user.id), cart, ex=3600)
     total = sum(x["price"] * x["qty"] for x in cart["items"])
-    await cb.message.edit_text(f"Добавлено {item['name']}. Сумма: {total} ₽")
+    await cb.message.edit_text(f"Добавлено {item['name']}. Сумма: {format_currency(total)}")
     await cb.answer()
 
 
@@ -1569,7 +1570,7 @@ async def cmd_order(message: Message) -> None:
         resp = await client.create_order(data["name"], items, cart.get("bonus", 0))
         delete(_cart_key(message.from_user.id))
         await message.answer(
-            f"Заказ оформлен. Номер: {resp.get('order_id', 'N/A')}\nСумма к оплате: {resp['total']} ₽"
+            f"Заказ оформлен. Номер: {resp.get('order_id', 'N/A')}\nСумма к оплате: {format_currency(resp['total'])}"
         )
     except Exception as e:
         await message.answer(f"Ошибка оформления заказа: {e}")

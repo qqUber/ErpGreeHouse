@@ -2,6 +2,7 @@ import WebApp from '@twa-dev/sdk';
 import { useEffect, useState } from 'react';
 import QRCode from 'react-qr-code';
 import { api } from './api';
+import { formatCurrency } from './utils/translationHelpers';
 
 interface TmaCustomerData {
   first_name: string;
@@ -98,7 +99,7 @@ export function LoyaltyTmaView() {
             </div>
             <div className="text-right">
               <p className="text-xs font-bold uppercase tracking-widest opacity-70 mb-1">Бонусы</p>
-              <h3 className="text-2xl font-black">{data.balance} ₽</h3>
+              <h3 className="text-2xl font-black">{formatCurrency(data.balance)}</h3>
             </div>
           </div>
 
@@ -117,7 +118,7 @@ export function LoyaltyTmaView() {
                 ></div>
               </div>
               <p className="text-[10px] mt-2 opacity-70">
-                Нужно еще {data.next_tier_spent - data.spent_amount} ₽ покупок для повышения кэшбека
+                Нужно еще {formatCurrency(data.next_tier_spent - data.spent_amount)} покупок для повышения кэшбека
               </p>
             </div>
           )}

@@ -14,61 +14,32 @@ class CustomerIdentityConflictError(ValueError):
     pass
 
 
-def generate_unique_qr_token(conn: sqlite3.Connection, max_attempts: int = 10) -> str:
-    """Generate unique QR token using UUID-based system with overflow protection"""
-    import uuid
+def generate_unique_qr_token(conn: sqlite3.Connection, max_attempts: int = 100) -> str:
+    """Generate unique numeric QR token for better scannability and usability"""
+    import random
 
-    # Get or generate base GUID from system settings
-    base_guid = get_or_generate_base_guid(conn)
-
-    # Get current max customer ID for increment
-    try:
-        max_id_row = conn.execute("SELECT MAX(id) FROM customers").fetchone()
-        current_max_id = max_id_row[0] if max_id_row and max_id_row[0] else 0
-    except sqlite3.OperationalError as e:
-        if "no such table" in str(e):
-            # Table doesn't exist, start from 0
-            current_max_id = 0
-        else:
-            raise
-
-    # Generate token using UUID5 to avoid overflow issues
     for attempt in range(max_attempts):
+        # Generate 8-digit number (10,000,000 to 99,999,999)
+        # No leading zeros for better readability
+        qr_code_int = random.randint(10_000_000, 99_999_999)
+        qr_code = str(qr_code_int)
+
+        # Verify uniqueness in database
         try:
-            # Use UUID5 with namespace for deterministic but unique tokens
-            namespace = uuid.UUID(base_guid)
-            counter_value = current_max_id + attempt + 1
+            existing = conn.execute(
+                "SELECT id FROM customers WHERE qr_token=?", (qr_code,)
+            ).fetchone()
+            if not existing:
+                return qr_code
+        except sqlite3.OperationalError as e:
+            if "no such table" in str(e):
+                # Table doesn't exist, token is unique by default
+                return qr_code
+            else:
+                raise
 
-            # Generate deterministic UUID from namespace + counter
-            token_uuid = uuid.uuid5(namespace, str(counter_value))
-
-            # Take last 8 characters of hex representation
-            token = token_uuid.hex[-8:].upper()
-
-            # Verify uniqueness (should be unique by design)
-            try:
-                existing = conn.execute(
-                    "SELECT id FROM customers WHERE qr_token=?", (token,)
-                ).fetchone()
-                if not existing:
-                    return token
-                else:
-                    logger.warning(f"Token collision detected: {token}, retrying...")
-                    continue
-            except sqlite3.OperationalError as e:
-                if "no such table" in str(e):
-                    # Table doesn't exist, token is unique by default
-                    return token
-                else:
-                    raise
-
-        except Exception as e:
-            logger.warning(f"Token generation attempt {attempt + 1} failed: {e}")
-            continue
-
-    # Fallback to cryptographically secure random token
-    logger.warning("UUID-based generation failed, using secure random fallback")
-    return secrets.token_hex(4).upper()
+    # If we get here, something is wrong
+    raise ValueError(f"Failed to generate unique QR token after {max_attempts} attempts")
 
 
 def get_or_generate_base_guid(conn: sqlite3.Connection) -> str:
@@ -205,7 +176,8 @@ def resolve_or_create_customer(
 ) -> tuple[int, bool]:
     """Resolve or create customer with proper error handling to prevent race conditions."""
     normalized_phone = normalize_phone(phone or "") if phone else None
-    normalized_name = normalize_name(full_name or "") if full_name else None
+    name_result = normalize_name(full_name or "") if full_name else {"normalized": None}
+    normalized_name = name_result.get("normalized") if isinstance(name_result, dict) else name_result
     resolved_onboarding_status = onboarding_status or "registered"
 
     max_attempts = 10

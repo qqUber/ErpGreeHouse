@@ -8,22 +8,60 @@ import i18n from '../i18n';
  * Format a number as currency using the current language.
  *
  * @param amount - The amount to format
- * @param currency - Currency code (default: 'RUB')
+ * @param options - Currency formatting options
  * @returns Formatted currency string
  */
-export function formatCurrency(amount: number, currency = 'RUB'): string {
-  const language = i18n.language || 'en';
+export function formatCurrency(amount: number, options?: {
+  currency?: string;
+  locale?: string;
+  symbolPosition?: 'before' | 'after';
+  decimalPlaces?: number;
+}): string {
+  const language = options?.locale || i18n.language || 'en';
+  const currency = options?.currency || 'RUB';
+  const decimalPlaces = options?.decimalPlaces ?? 0;
+  const symbolPosition = options?.symbolPosition || 'after';
 
   try {
-    return new Intl.NumberFormat(language, {
+    // Use proper currency formatting with Intl.NumberFormat
+    const formatted = new Intl.NumberFormat(language, {
       style: 'currency',
       currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: decimalPlaces,
+      maximumFractionDigits: decimalPlaces,
     }).format(amount);
+
+    // For Russian locale with symbol after, adjust formatting
+    if (language.startsWith('ru') && symbolPosition === 'after') {
+      // Convert "1 000,00 ₽" to "1 000 ₽" for 0 decimal places
+      if (decimalPlaces === 0) {
+        return formatted.replace(',00', '');
+      }
+    }
+
+    return formatted;
   } catch {
-    // Fallback for unsupported currencies
-    return `${amount.toFixed(2)} ${currency}`;
+    // Fallback formatting for unsupported currencies/locales
+    const numberFormat = new Intl.NumberFormat(language, {
+      minimumFractionDigits: decimalPlaces,
+      maximumFractionDigits: decimalPlaces,
+    });
+    const formattedNumber = numberFormat.format(amount);
+    
+    // Currency symbol mapping
+    const currencySymbols: Record<string, string> = {
+      'RUB': '₽',
+      'USD': '$',
+      'EUR': '€',
+      'RSD': 'RSD',
+    };
+    const symbol = currencySymbols[currency] || currency;
+
+    if (symbolPosition === 'before') {
+      return `${symbol}${formattedNumber}`;
+    } else {
+      return `${formattedNumber} ${symbol}`;
+    }
   }
 }
 

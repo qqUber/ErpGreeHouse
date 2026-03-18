@@ -1,6 +1,6 @@
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { CustomerListItem } from '../api';
+import { formatCurrency } from '../utils/translationHelpers';
 import { Pagination } from './Pagination';
 
 interface CustomersTableProps {
@@ -88,7 +88,7 @@ export function CustomersTable({
                     <div className="text-gray-500">{customer.phone || '-'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-gray-500">{customer.balance_points} ₽</div>
+                    <div className="text-gray-500">{formatCurrency(customer.balance_points)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button

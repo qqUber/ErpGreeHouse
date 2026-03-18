@@ -1,6 +1,6 @@
+import * as QRCode from 'qrcode';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AnalyticsView } from './AnalyticsView';
 import {
   AdminMe,
   Api,
@@ -104,6 +104,9 @@ function App() {
   const [q, setQ] = useState('');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [details, setDetails] = useState<CustomerDetails | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [searchSuggestions, setSearchSuggestions] = useState<CustomerListItem[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [authFlow, setAuthFlow] = useState<AuthFlow | null>(null);
@@ -279,6 +282,41 @@ function App() {
     setError(null);
     const d = await Api.customer(id);
     setDetails(d);
+    
+    // Generate QR code for the customer
+    if (d.customer.qr_token) {
+      try {
+        const qrDataUrl = await QRCode.toDataURL(d.customer.qr_token, {
+          width: 200,
+          margin: 1,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        });
+        setQrCodeUrl(qrDataUrl);
+      } catch (err) {
+        console.error('Failed to generate QR code:', err);
+        setQrCodeUrl('');
+      }
+    }
+  }
+
+  async function searchCustomers(query: string) {
+    if (!query.trim()) {
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    
+    try {
+      const res = await Api.customers(query, 1, 5);
+      setSearchSuggestions(res.items);
+      setShowSuggestions(true);
+    } catch (err) {
+      console.error('Failed to search customers:', err);
+      setSearchSuggestions([]);
+    }
   }
 
   async function loadIntegrations() {
@@ -1196,6 +1234,15 @@ function App() {
               total={customerTotal}
               limit={customerLimit}
               onPageChange={(newPage) => loadCustomers(q, newPage, customerLimit)}
+              searchSuggestions={searchSuggestions}
+              showSuggestions={showSuggestions}
+              onSearchChange={searchCustomers}
+              onSuggestionSelect={(customer) => {
+                setSelectedId(customer.id);
+                setQ(customer.full_name || customer.phone || `Клиент #${customer.id}`);
+                setShowSuggestions(false);
+              }}
+              qrCodeUrl={qrCodeUrl}
             />
           </div>
         ) : null}
@@ -1510,7 +1557,7 @@ function DashboardView({ dash, reload, onNavigate }: DashboardViewProps) {
               <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
                 {t('dashboard.revenueToday')}
               </div>
-              <div style={{ fontWeight: 800, fontSize: 18 }}>{money(dash.sales_total)} ₽</div>
+              <div style={{ fontWeight: 800, fontSize: 18 }}>{formatCurrency(dash.sales_total)}</div>
             </div>
             <div className="card cardCompact">
               <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>{t('menu.clients')}</div>
@@ -1520,7 +1567,7 @@ function DashboardView({ dash, reload, onNavigate }: DashboardViewProps) {
               <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
                 {t('sales.bonusEarned')}
               </div>
-              <div style={{ fontWeight: 800, fontSize: 18 }}>{money(dash.bonus_earned)}</div>
+              <div style={{ fontWeight: 800, fontSize: 18 }}>{formatCurrency(dash.bonus_earned)}</div>
             </div>
           </div>
         ) : null}
@@ -1571,6 +1618,11 @@ type CustomersViewProps = {
   total: number;
   limit: number;
   onPageChange: (page: number) => void;
+  searchSuggestions: CustomerListItem[];
+  showSuggestions: boolean;
+  onSearchChange: (query: string) => void;
+  onSuggestionSelect: (customer: CustomerListItem) => void;
+  qrCodeUrl: string;
 };
 
 function CustomersView({
@@ -1586,6 +1638,11 @@ function CustomersView({
   total,
   limit,
   onPageChange,
+  searchSuggestions,
+  showSuggestions,
+  onSearchChange,
+  onSuggestionSelect,
+  qrCodeUrl,
 }: CustomersViewProps) {
   const { t, i18n } = useTranslation();
   
@@ -1613,12 +1670,28 @@ function CustomersView({
         <div style={{ 
           display: 'flex', 
           gap: '12px',
-          alignItems: 'center'
+          alignItems: 'center',
+          position: 'relative',
+          flex: 1
         }}>
           <input
             className="input"
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={(e) => {
+              setQ(e.target.value);
+              onSearchChange(e.target.value);
+            }}
+            onFocus={() => {
+              if (q.trim()) {
+                // Show suggestions will be handled by parent
+              }
+            }}
+            onBlur={() => {
+              // Delay hiding suggestions to allow click on suggestion
+              setTimeout(() => {
+                // Parent will handle hiding
+              }, 200);
+            }}
             placeholder={t('customers.search')}
             autoComplete="off"
             data-testid="customers_search_input"
@@ -1630,6 +1703,55 @@ function CustomersView({
               fontSize: '14px'
             }}
           />
+          
+          {/* Search Suggestions */}
+          {showSuggestions && searchSuggestions.length > 0 && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              backgroundColor: 'white',
+              border: '1px solid #d1d5db',
+              borderTop: 'none',
+              borderRadius: '0 0 6px 6px',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              zIndex: 1000,
+              maxHeight: '200px',
+              overflowY: 'auto'
+            }}>
+              {searchSuggestions.map((customer) => (
+                <div
+                  key={customer.id}
+                  onClick={() => {
+                    onSuggestionSelect(customer);
+                  }}
+                  style={{
+                    padding: '12px 16px',
+                    cursor: 'pointer',
+                    borderBottom: '1px solid #f3f4f6',
+                    fontSize: '14px',
+                    color: '#374151'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'white';
+                  }}
+                >
+                  <div style={{ fontWeight: '500' }}>
+                    {customer.full_name || `Клиент #${customer.id}`}
+                  </div>
+                  {customer.phone && (
+                    <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                      {customer.phone}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
           <button
             className="btn btnPrimary"
             onClick={() => void search()}
@@ -2022,20 +2144,35 @@ function CustomersView({
                     border: '2px dashed #d1d5db',
                     borderRadius: '8px'
                   }}>
-                    <div style={{ 
-                      fontSize: '48px', 
-                      marginBottom: '8px',
-                      fontFamily: 'monospace',
-                      fontWeight: 'bold'
-                    }}>
-                      ▓▓▓▓▓▓▓▓
-                    </div>
+                    {qrCodeUrl ? (
+                      <img 
+                        src={qrCodeUrl} 
+                        alt="QR Code" 
+                        style={{
+                          width: '200px',
+                          height: '200px',
+                          border: '4px solid white',
+                          borderRadius: '8px',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                        }}
+                      />
+                    ) : (
+                      <div style={{ 
+                        fontSize: '48px', 
+                        marginBottom: '8px',
+                        fontFamily: 'monospace',
+                        fontWeight: 'bold'
+                      }}>
+                        ▓▓▓▓▓▓▓▓
+                      </div>
+                    )}
                     <div style={{ 
                       fontSize: '11px', 
                       color: '#64748b',
-                      fontFamily: 'monospace'
+                      fontFamily: 'monospace',
+                      marginTop: '8px'
                     }}>
-                      Customer ID: {details.customer.id}
+                      {details.customer.qr_token || `Customer ID: ${details.customer.id}`}
                     </div>
                   </div>
                 </div>
