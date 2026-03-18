@@ -1521,7 +1521,7 @@ function App() {
 }
 
 type DashboardViewProps = {
-  dash: Dashboard | null;
+  dash: DashboardKPI | null;
   reload: () => Promise<void>;
   onNavigate: (tab: string, params?: Record<string, string | number>) => void;
 };

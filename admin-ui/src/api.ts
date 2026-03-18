@@ -1,4 +1,4 @@
-export type Dashboard = {
+export type DashboardKPI = {
   today: string;
   sales_count: number;
   sales_total: number;
@@ -805,7 +805,7 @@ export const Api = {
       signal,
     }),
 
-  dashboard: (signal?: AbortSignal) => api<Dashboard>('/api/v1/dashboard', { signal }),
+  dashboard: (signal?: AbortSignal) => api<DashboardKPI>('/api/v1/dashboard', { signal }),
   customers: (q?: string, page?: number, limit?: number, signal?: AbortSignal) => {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
