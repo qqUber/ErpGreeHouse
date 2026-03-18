@@ -16,4 +16,9 @@ def test_normalize_phone_invalid() -> None:
 
 
 def test_normalize_name() -> None:
-    assert normalize_name("  Иванов   Иван ") == "Иванов Иван"
+    result = normalize_name("  Иванов   Иван ")
+    assert isinstance(result, dict)
+    assert result.get("normalized") == "Иванов Иван"
+    assert result.get("detected_gender") == "unknown"
+    assert result.get("gender_warning") is None
+    assert result.get("suggestions") is None
