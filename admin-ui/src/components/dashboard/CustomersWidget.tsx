@@ -35,14 +35,14 @@ export function CustomersWidget({ data }: { data?: any }) {
   const vkReachable = Number(data?.vk_reachable ?? 0);
   const consentCount = Number(data?.marketing_consent ?? 0);
   const consentRate = total > 0 ? Math.round((consentCount / total) * 100) : 0;
-  const derivedReachable = customers.filter((c) => Boolean(c.telegram_id) || Boolean(c.vk_id));
-  const highValue = customers.filter((c) => Number(c.ltv ?? c.total_spent ?? 0) >= 15000);
+  const derivedReachable = customers.filter((c: any) => Boolean(c.telegram_id) || Boolean(c.vk_id));
+  const highValue = customers.filter((c: any) => Number(c.ltv ?? c.total_spent ?? 0) >= 15000);
   const recentlyActive = customers
     .slice()
-    .sort((a, b) => Number(b.transactions ?? 0) - Number(a.transactions ?? 0))
+    .sort((a: any, b: any) => Number(b.transactions ?? 0) - Number(a.transactions ?? 0))
     .slice(0, 5);
-  const gaps = customers.filter((c) => !c.marketing_allowed || (!c.telegram_id && !c.vk_id));
-  const selectedCustomer = customers.find((c) => c.id === selectedCustomerId) ?? null;
+  const gaps = customers.filter((c: any) => !c.marketing_allowed || (!c.telegram_id && !c.vk_id));
+  const selectedCustomer = customers.find((c: any) => c.id === selectedCustomerId) ?? null;
 
   const compactContent = (
     <div className="crm-widget-compact">
