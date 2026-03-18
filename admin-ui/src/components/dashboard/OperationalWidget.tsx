@@ -180,7 +180,7 @@ export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) =>
             Топ товаров
           </div>
           <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
-            {(data.top_products || []).slice(0, 5).map((product) => (
+            {(data.top_products || []).slice(0, 5).map((product: any) => (
               <div
                 key={product.code}
                 className="row"
@@ -266,7 +266,7 @@ export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) =>
             }}
           >
             <div className="grid grid-cols-12 gap-2" style={{ minWidth: 720 }}>
-              {data.hourly_breakdown.map((hourData) => (
+              {data.hourly_breakdown.map((hourData: any) => (
                 <div key={hourData.hour} style={{ textAlign: 'center' }}>
                   <div
                     style={{

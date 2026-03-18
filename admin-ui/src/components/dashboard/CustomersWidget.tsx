@@ -67,7 +67,7 @@ export function CustomersWidget({ data }: { data?: any }) {
     </div>
   );
 
-  const renderCustomerRow = (customer: NonNullable<typeof customers>[number]) => {
+  const renderCustomerRow = (customer: any) => {
     const id = Number(customer.id ?? 0);
     const hasTelegram = Boolean(customer.telegram_id);
     const hasVk = Boolean(customer.vk_id);
