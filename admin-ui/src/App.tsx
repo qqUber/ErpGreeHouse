@@ -1,6 +1,7 @@
 import * as QRCode from 'qrcode';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AnalyticsView } from './AnalyticsView';
 import {
   AdminMe,
   Api,
@@ -29,6 +30,7 @@ import { useDashboard } from './hooks/useDashboard';
 import { useViewportMode } from './hooks/useViewportMode';
 import { MarketingView } from './MarketingView';
 import { useAuth } from './stores/auth';
+import { formatCurrency } from './utils/translationHelpers';
 
 type Tab =
   | 'dashboard'
