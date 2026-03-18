@@ -16,21 +16,15 @@ import {
   setAdminSecret,
 } from './api';
 import { ComplianceView } from './ComplianceView';
-import { CustomersWidget } from './components/dashboard/CustomersWidget';
 import { DashboardWrapper } from './components/dashboard/DashboardWrapper';
-import { IntegrationsWidget } from './components/dashboard/IntegrationsWidget';
-import { MarketingWidget } from './components/dashboard/MarketingWidget';
 import { OperationalWidget } from './components/dashboard/OperationalWidget';
-import { ProductsWidget } from './components/dashboard/ProductsWidget';
 import { IntegrationSettings } from './components/IntegrationSettings';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ProductImport } from './components/ProductImport';
 import { ErrorMessage, LoadingSpinner, SuccessMessage, WarningMessage } from './components/ui';
-import { useDashboard } from './hooks/useDashboard';
 import { useViewportMode } from './hooks/useViewportMode';
 import { MarketingView } from './MarketingView';
 import { useAuth } from './stores/auth';
-import { formatCurrency } from './utils/translationHelpers';
 
 type Tab =
   | 'dashboard'
@@ -268,8 +262,15 @@ function App() {
 
   async function loadDashboard() {
     setError(null);
-    const d = await Api.dashboard();
-    setDash(d);
+    console.log('[App] loadDashboard() called');
+    try {
+      const d = await Api.dashboard();
+      console.log('[App] loadDashboard() success:', d);
+      setDash(d);
+    } catch (error) {
+      console.error('[App] loadDashboard() error:', error);
+      setDash(null);
+    }
   }
 
   async function loadCustomers(query?: string, page: number = 1, limit: number = 25) {
@@ -825,12 +826,7 @@ function App() {
   return (
     <div className={`container app-shell mode-${viewport.mode} density-${viewport.density}`}>
       <header className="header">
-        <div className="brand">
-          <h1 style={{ fontWeight: 800, fontSize: 'var(--font-size-xl)', margin: 0 }}>
-            {t('app.title')}
-          </h1>
-        </div>
-        <nav aria-label="Main navigation">
+        <nav aria-label="Main navigation" style={{ width: '100%' }}>
           <div className="tabs" role="tablist" aria-label="Main navigation">
             {allowedTabs.includes('dashboard') ? (
               <button
@@ -1525,84 +1521,12 @@ type DashboardViewProps = {
 
 function DashboardView({ dash, reload, onNavigate }: DashboardViewProps) {
   const { t } = useTranslation();
-  const { data, loading, error, refresh } = useDashboard();
-
-  async function handleReload() {
-    await Promise.allSettled([reload(), refresh()]);
-  }
 
   return (
     <div className="grid" data-testid="admin-dashboard">
-      <div className="card cardFull">
-        <div className="row">
-          <div style={{ fontWeight: 800 }} data-testid="admin-dashboard-title">
-            {t('dashboard.title')}
-          </div>
-          <button className="btn" onClick={() => void handleReload()} type="button">
-            {t('common.refresh')}
-          </button>
-        </div>
-        {dash ? (
-          <div
-            style={{
-              marginTop: 10,
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-              gap: 10,
-            }}
-          >
-            <div className="card cardCompact">
-              <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>{t('sales.title')}</div>
-              <div style={{ fontWeight: 800, fontSize: 18 }}>{dash.sales_count}</div>
-            </div>
-            <div className="card cardCompact">
-              <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
-                {t('dashboard.revenueToday')}
-              </div>
-              <div style={{ fontWeight: 800, fontSize: 18 }}>{formatCurrency(dash.sales_total)}</div>
-            </div>
-            <div className="card cardCompact">
-              <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>{t('menu.clients')}</div>
-              <div style={{ fontWeight: 800, fontSize: 18 }}>{dash.customers_total}</div>
-            </div>
-            <div className="card cardCompact">
-              <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
-                {t('sales.bonusEarned')}
-              </div>
-              <div style={{ fontWeight: 800, fontSize: 18 }}>{formatCurrency(dash.bonus_earned)}</div>
-            </div>
-          </div>
-        ) : null}
-        {loading ? (
-          <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.55)' }}>{t('common.loading')}</div>
-        ) : null}
-        {error ? <div style={{ marginTop: 10, color: '#8b0000' }}>{error}</div> : null}
-      </div>
+      <DashboardWrapper data={dash} onNavigate={onNavigate} />
 
-      <DashboardWrapper data={data} onNavigate={onNavigate} />
-
-      {data.operational ? <OperationalWidget data={data.operational} /> : null}
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: 10,
-        }}
-      >
-        <div data-testid="admin_widget_customers">
-          <CustomersWidget data={data.customers || undefined} />
-        </div>
-        <div data-testid="admin_widget_products">
-          <ProductsWidget data={data.products || undefined} />
-        </div>
-        <div data-testid="admin_widget_marketing">
-          <MarketingWidget data={data.marketing || undefined} />
-        </div>
-        <div data-testid="admin_widget_integrations">
-          <IntegrationsWidget data={data.integrations || undefined} />
-        </div>
-      </div>
+      {dash ? <OperationalWidget data={dash} /> : null}
     </div>
   );
 }
@@ -1915,12 +1839,12 @@ function CustomersView({
                   <div style={{ 
                     fontWeight: '700', 
                     fontSize: '14px', 
-                    color: '#2563eb' 
+                    color: '#2563eb',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '2px'
                   }}>
-                    {c.balance_points}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>
-                    ₽
+                    {c.balance_points} ₽
                   </div>
                 </div>
               </button>

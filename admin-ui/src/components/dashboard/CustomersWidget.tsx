@@ -21,18 +21,20 @@ type CustomersData = {
   }>;
 };
 
-export function CustomersWidget({ data }: { data?: CustomersData }) {
+export function CustomersWidget({ data }: { data?: any }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
 
-  const total = Number(data?.total_customers ?? 0);
+  console.log('CustomersWidget data:', data);
+
+  const total = Number(data?.customers_total ?? 0);
   const newWeek = Number(data?.new_customers?.this_week ?? 0);
   const customers = data?.top_customers ?? [];
-  const telegramReachable = customers.filter((c) => Boolean(c.telegram_id)).length;
-  const vkReachable = customers.filter((c) => Boolean(c.vk_id)).length;
-  const consentCount = customers.filter((c) => c.marketing_allowed !== false).length;
-  const consentRate = customers.length > 0 ? Math.round((consentCount / customers.length) * 100) : 0;
+  const telegramReachable = Number(data?.telegram_reachable ?? 0);
+  const vkReachable = Number(data?.vk_reachable ?? 0);
+  const consentCount = Number(data?.marketing_consent ?? 0);
+  const consentRate = total > 0 ? Math.round((consentCount / total) * 100) : 0;
   const derivedReachable = customers.filter((c) => Boolean(c.telegram_id) || Boolean(c.vk_id));
   const highValue = customers.filter((c) => Number(c.ltv ?? c.total_spent ?? 0) >= 15000);
   const recentlyActive = customers

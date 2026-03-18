@@ -13,32 +13,22 @@ type SalesData = {
   hourly_breakdown?: Array<{ hour?: number; transactions?: number; revenue?: number }>;
 };
 
-export function SalesWidget({ data }: { data?: SalesData }) {
+export function SalesWidget({ data }: { data?: any }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   
-  // NaN guards: ensure all numeric values are valid
-  const totalRevenue = Number.isFinite(data?.total_revenue) ? Number(data?.total_revenue) : 0;
-  const transactions = Number.isFinite(data?.total_transactions) ? Number(data?.total_transactions) : 0;
-  const avgCheck = Number.isFinite(data?.average_check) ? Number(data?.average_check) : 0;
+  // Use dashboard API fields
+  const totalRevenue = Number(data?.sales_total ?? 0);
+  const transactions = Number(data?.sales_count ?? 0);
+  const avgCheck = transactions > 0 ? totalRevenue / transactions : 0;
   const thisWeek = totalRevenue;
-  const peakHour = data?.peak_hour;
-  const peakHourTx = Number.isFinite(data?.peak_hour_transactions) ? Number(data?.peak_hour_transactions) : 0;
-  const topProducts = data?.top_products || [];
-  const topProductName = topProducts[0]?.name || '—';
-  const recentHourly = (data?.hourly_breakdown || []).slice(-6);
-  const firstHalfRevenue = recentHourly
-    .slice(0, Math.floor(recentHourly.length / 2))
-    .reduce((acc, h) => {
-      const rev = Number.isFinite(h?.revenue) ? Number(h.revenue) : 0;
-      return acc + rev;
-    }, 0);
-  const secondHalfRevenue = recentHourly
-    .slice(Math.floor(recentHourly.length / 2))
-    .reduce((acc, h) => {
-      const rev = Number.isFinite(h?.revenue) ? Number(h.revenue) : 0;
-      return acc + rev;
-    }, 0);
+  const peakHour = null; // No peak hour data in API
+  const peakHourTx = 0; // No peak hour data in API
+  const topProducts = []; // No top products data in API
+  const topProductName = '—';
+  // Simplify since no detailed hourly data available
+  const firstHalfRevenue = 0;
+  const secondHalfRevenue = 0;
   const growth =
     Number.isFinite(firstHalfRevenue) && firstHalfRevenue > 0
       ? Math.round(((secondHalfRevenue - firstHalfRevenue) / firstHalfRevenue) * 100)

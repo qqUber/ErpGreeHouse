@@ -9,20 +9,15 @@ type MarketingData = {
   upcoming_campaigns?: Array<any>;
 };
 
-export function MarketingWidget({ data }: { data?: MarketingData }) {
+export function MarketingWidget({ data }: { data?: any }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   
-  // NaN guards: ensure all numeric values are valid
-  const activeCampaigns = Number.isFinite(data?.active_campaigns) ? Number(data?.active_campaigns) : 0;
-  const newWeek = Number.isFinite(data?.upcoming_campaigns?.length) ? Number(data?.upcoming_campaigns?.length) : 0;
-  const messagesSent = Object.values(data?.trigger_stats_24h || {}).reduce(
-    (acc, n) => {
-      const num = Number(n || 0);
-      return acc + (Number.isFinite(num) ? num : 0);
-    },
-    0
-  );
+  // Use marketing events data from API
+  const marketingEvents = data?.recent_activity?.marketing_events || [];
+  const activeCampaigns = marketingEvents.filter((e: any) => e.status === 'processed').length;
+  const newWeek = marketingEvents.filter((e: any) => e.status === 'pending').length;
+  const messagesSent = marketingEvents.length; // Simple count
 
   const compactContent = (
     <StatCard

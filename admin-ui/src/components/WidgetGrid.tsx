@@ -21,14 +21,14 @@ export function WidgetGrid({ role, widgets, onLayoutChange, data }: WidgetGridPr
   const initialLayout = getLayout(role);
   const defaultLayout = widgets.map((widget, index) => ({
     i: widget.id,
-    x: (index * 3) % 12,
-    y: Math.floor((index * 3) / 12) * 3,
-    w: widget.id === 'analytics' ? 5 : 3,
-    h: widget.id === 'analytics' ? 4 : 3,
-    minW: widget.id === 'analytics' ? 4 : 2,
-    minH: widget.id === 'analytics' ? 4 : 3,
+    x: widget.id === 'analytics' ? 0 : (index * 3) % 12,
+    y: widget.id === 'analytics' ? 0 : Math.floor((index * 3) / 12) * 2 + 4, // Уменьшаю отступ
+    w: widget.id === 'analytics' ? 12 : 3,
+    h: widget.id === 'analytics' ? 3 : 2, // Уменьшаю высоту analytics с 6 до 3
+    minW: widget.id === 'analytics' ? 8 : 2,
+    minH: widget.id === 'analytics' ? 3 : 2, // Уменьшаю минимальную высоту analytics
     maxW: widget.id === 'analytics' ? 12 : 8,
-    maxH: 12,
+    maxH: widget.id === 'analytics' ? 6 : 12, // Уменьшаю максимальную высоту analytics
   }));
 
   const handleLayoutChange = (_layout: any[], allLayouts: Record<string, any[]>) => {
@@ -40,7 +40,6 @@ export function WidgetGrid({ role, widgets, onLayoutChange, data }: WidgetGridPr
       w: item.w,
       h: item.h,
       minW: item.minW,
-      minH: item.minH,
       maxW: item.maxW,
       maxH: item.maxH,
       widgetId: item.i,
@@ -65,14 +64,19 @@ export function WidgetGrid({ role, widgets, onLayoutChange, data }: WidgetGridPr
     >
       {widgets.map((widget) => {
         const WidgetComponent = widget.component;
-        const widgetData = data?.[widget.id];
+        // Analytics widget needs analytics data, others get full data
+        const widgetData = widget.id === 'analytics' ? data?.analytics : data;
         return (
           <div
             key={widget.id}
             className="dashboard-grid-item"
             data-testid={`grid-widget-${widget.id}`}
           >
-            <WidgetComponent data={widgetData} />
+            <WidgetComponent 
+              data={widgetData} 
+              expandedContent={widgetData?.expandedContent}
+              compactContent={widgetData?.compactContent}
+            />
           </div>
         );
       })}

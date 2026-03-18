@@ -8,27 +8,19 @@ type ProductsData = {
   trending_products?: Array<{ code?: string; name?: string; growth_percent?: number; this_week?: number; last_week?: number }>;
 };
 
-export function ProductsWidget({ data }: { data?: ProductsData }) {
+export function ProductsWidget({ data }: { data?: any }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedProductCode, setSelectedProductCode] = useState<string | null>(null);
   
-  // NaN guards: ensure all numeric values are valid
-  const topProducts = data?.top_products_today ?? [];
-  const trendingProducts = data?.trending_products ?? [];
-  const total = Number.isFinite(topProducts.length) ? Number(topProducts.length) : 0;
-  const trendingCount = (data?.trending_products || []).filter((p) => {
-    const growth = Number(p?.growth_percent || 0);
-    return Number.isFinite(growth) && growth > 0;
-  }).length;
-  const newWeek = Number.isFinite(trendingCount) ? trendingCount : 0;
-  const topSelling = topProducts[0]?.name || t('widgets.products.espresso');
-  const demandSignal = topProducts.reduce((acc, item) => acc + Number(item.quantity ?? 0), 0);
+  // Use products_total from API since detailed product data is not available
+  const total = Number(data?.products_total ?? 0);
+  const trendingCount = 0; // No trending data in API
+  const newWeek = trendingCount;
+  const topSelling = t('widgets.products.espresso'); // Default fallback
+  const demandSignal = 0; // No demand signal data in API
   const lowStock = Math.max(0, total - newWeek + 1);
-  const selectedProduct =
-    topProducts.find((p) => p.code === selectedProductCode) ??
-    trendingProducts.find((p) => p.code === selectedProductCode) ??
-    null;
+  const selectedProduct = null; // No product details available
 
   const compactContent = (
     <div className="crm-widget-compact">
@@ -67,47 +59,32 @@ export function ProductsWidget({ data }: { data?: ProductsData }) {
 
   const expandedContent = (
     <div className="crm-drawer-stack">
-      {selectedProduct ? (
-        <section className="crm-detail-card">
-          <div className="crm-detail-head">
-            <h3 className="crm-section-title">{t('widgets.products.productDetail')}</h3>
-            <button
-              type="button"
-              className="crm-inline-back"
-              onClick={() => setSelectedProductCode(null)}
-            >
-              {t('common.backToList')}
-            </button>
-          </div>
-          <div className="crm-detail-grid">
-            <div><span>Code</span><strong>{selectedProduct.code ?? '-'}</strong></div>
-            <div><span>Name</span><strong>{selectedProduct.name ?? '-'}</strong></div>
-            <div><span>Demand signal</span><strong>{Number((selectedProduct as any).quantity ?? (selectedProduct as any).this_week ?? 0)}</strong></div>
-            <div><span>Trend</span><strong>{Number((selectedProduct as any).growth_percent ?? 0)}%</strong></div>
-            <div><span>Revenue</span><strong>{Number((selectedProduct as any).revenue ?? 0).toLocaleString()}</strong></div>
-            <div><span>Customer context</span><strong>Most active among repeat buyers (fallback)</strong></div>
-            <div><span>Stock signal</span><strong>{lowStock > 0 ? 'Watchlist' : 'Healthy'}</strong></div>
-          </div>
-        </section>
-      ) : (
-        <>
-          <section className="crm-collapsible-section">
-            <h3 className="crm-section-title">Top sellers</h3>
-            <div className="crm-list">{topProducts.length ? topProducts.map(renderProductRow) : <p className="crm-empty-state">No top products in payload.</p>}</div>
-          </section>
-          <section className="crm-collapsible-section">
-            <h3 className="crm-section-title">Trending</h3>
-            <div className="crm-list">{trendingProducts.length ? trendingProducts.map(renderProductRow) : <p className="crm-empty-state">No trending products in payload.</p>}</div>
-          </section>
-          <section className="crm-collapsible-section">
-            <h3 className="crm-section-title">Low stock / risk</h3>
-            <div className="crm-inline-stats">
-              <span>Low stock risk: <strong>{lowStock}</strong></span>
-              <span>Top seller: <strong>{topSelling}</strong></span>
-            </div>
-          </section>
-        </>
-      )}
+      <section className="crm-detail-card">
+        <div className="crm-detail-head">
+          <h3 className="crm-section-title">Product Details</h3>
+          <button
+            type="button"
+            className="crm-inline-back"
+            onClick={() => setSelectedProductCode(null)}
+          >
+            Back to list
+          </button>
+        </div>
+        <div className="crm-detail-grid">
+          <div><span>Total Products</span><strong>{total}</strong></div>
+          <div><span>Trending</span><strong>{trendingCount}</strong></div>
+          <div><span>Demand Signal</span><strong>{demandSignal}</strong></div>
+          <div><span>Low Stock Risk</span><strong>{lowStock > 0 ? 'Watchlist' : 'Healthy'}</strong></div>
+        </div>
+      </section>
+      <section className="crm-collapsible-section">
+        <h3 className="crm-section-title">Product Summary</h3>
+        <div className="crm-inline-stats">
+          <span>Active products: <strong>{total}</strong></span>
+          <span>Trending: <strong>{trendingCount}</strong></span>
+          <span>Top seller: <strong>{topSelling}</strong></span>
+        </div>
+      </section>
     </div>
   );
 
@@ -134,7 +111,8 @@ export function ProductsWidget({ data }: { data?: ProductsData }) {
           <span>{t('widgets.products.lowStock')}: <strong>{lowStock}</strong></span>
         </div>
         <div className="crm-list-preview">
-          {topProducts.slice(0, 3).map(renderProductRow)}
+          {/* No product preview available - showing empty state */}
+          <div className="crm-empty-state">Product details not available</div>
         </div>
       </div>
     </Widget>

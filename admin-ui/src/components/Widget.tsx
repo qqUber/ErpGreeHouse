@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import EZDrawer from 'react-modern-drawer';
 import 'react-modern-drawer/dist/index.css';
@@ -38,6 +39,7 @@ export function Widget({
   const isExpanded = controlledIsExpanded ?? internalIsExpanded;
   const handleToggle = () => {
     const newState = !isExpanded;
+    console.log('Widget handleToggle:', { current: isExpanded, newState, hasOnExpand: !!onExpand, hasOnCollapse: !!onCollapse });
     setInternalIsExpanded(newState);
     if (newState) {
       onExpand?.();
@@ -79,33 +81,36 @@ export function Widget({
         </div>
       )}
 
-      {isExpanded && expandedContent && (
-        <EZDrawer
-          open={isExpanded}
-          onClose={() => handleToggle()}
-          direction="right"
-          size={drawerSize}
-          className="widget-drawer"
-          data-testid="widget-drawer"
-        >
-          <div className="drawer-content">
-            <div className="drawer-header">
-              <h2 className="drawer-title">
-                {drawerTitle ?? `${title} ${t('widgets.detailsSuffix')}`}
-              </h2>
-              <button
-                className="drawer-close"
-                onClick={handleToggle}
-                type="button"
-                aria-label={t('common.close')}
-              >
-                {t('common.back')}
-              </button>
+      {isExpanded && expandedContent &&
+        createPortal(
+          <EZDrawer
+            open={isExpanded}
+            onClose={() => handleToggle()}
+            direction="right"
+            size={drawerSize}
+            className="widget-drawer"
+            data-testid="widget-drawer"
+          >
+            <div className="drawer-content">
+              <div className="drawer-header">
+                <h2 className="drawer-title">
+                  {drawerTitle ?? `${title} ${t('widgets.detailsSuffix')}`}
+                </h2>
+                <button
+                  className="drawer-close"
+                  onClick={handleToggle}
+                  type="button"
+                  aria-label={t('common.close')}
+                >
+                  {t('common.back')}
+                </button>
+              </div>
+              {expandedContent}
             </div>
-            {expandedContent}
-          </div>
-        </EZDrawer>
-      )}
+          </EZDrawer>,
+          document.body
+        )
+      }
     </div>
   );
 }
