@@ -39,7 +39,9 @@ def generate_unique_qr_token(conn: sqlite3.Connection, max_attempts: int = 100) 
                 raise
 
     # If we get here, something is wrong
-    raise ValueError(f"Failed to generate unique QR token after {max_attempts} attempts")
+    raise ValueError(
+        f"Failed to generate unique QR token after {max_attempts} attempts"
+    )
 
 
 def get_or_generate_base_guid(conn: sqlite3.Connection) -> str:
@@ -177,7 +179,9 @@ def resolve_or_create_customer(
     """Resolve or create customer with proper error handling to prevent race conditions."""
     normalized_phone = normalize_phone(phone or "") if phone else None
     name_result = normalize_name(full_name or "") if full_name else {"normalized": None}
-    normalized_name = name_result.get("normalized") if isinstance(name_result, dict) else name_result
+    normalized_name = (
+        name_result.get("normalized") if isinstance(name_result, dict) else name_result
+    )
     resolved_onboarding_status = onboarding_status or "registered"
 
     max_attempts = 10

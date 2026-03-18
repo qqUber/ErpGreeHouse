@@ -1530,7 +1530,9 @@ async def cb_add(cb: CallbackQuery) -> None:
     )
     set_json(_cart_key(cb.from_user.id), cart, ex=3600)
     total = sum(x["price"] * x["qty"] for x in cart["items"])
-    await cb.message.edit_text(f"Добавлено {item['name']}. Сумма: {format_currency(total)}")
+    await cb.message.edit_text(
+        f"Добавлено {item['name']}. Сумма: {format_currency(total)}"
+    )
     await cb.answer()
 
 

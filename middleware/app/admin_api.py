@@ -1003,7 +1003,9 @@ def create_sale(
         lines = []
         for it in payload.items:
             lines.append(
-                ReceiptLine(text=f"{it.name} x{it.qty} = {format_currency(it.price * it.qty)}")
+                ReceiptLine(
+                    text=f"{it.name} x{it.qty} = {format_currency(it.price * it.qty)}"
+                )
             )
         lines.append(ReceiptLine(text=f"Сумма: {format_currency(total)}"))
         lines.append(ReceiptLine(text=f"Списано: {bonus_used}"))
