@@ -7,7 +7,7 @@ import {
   Api,
   CustomerDetails,
   CustomerListItem,
-  Dashboard,
+  DashboardKPI,
   getAdminSecret,
   Integration,
   IntegrationDelivery,
