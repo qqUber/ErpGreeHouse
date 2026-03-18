@@ -24,7 +24,7 @@ export function SalesWidget({ data }: { data?: any }) {
   const thisWeek = totalRevenue;
   const peakHour = null; // No peak hour data in API
   const peakHourTx = 0; // No peak hour data in API
-  const topProducts = []; // No top products data in API
+  const topProducts: any[] = []; // No top products data in API
   const topProductName = '—';
   // Simplify since no detailed hourly data available
   const firstHalfRevenue = 0;
@@ -72,7 +72,7 @@ export function SalesWidget({ data }: { data?: any }) {
           <div>
             <div className="text-sm text-gray-500">{t('widgets.sales.topItems')}</div>
             <div className="space-y-4">
-              {topProducts.slice(0, 3).map((p, idx) => (
+              {topProducts.slice(0, 3).map((p: any, idx: number) => (
                 <div
                   key={`${p.name || 'product'}-${idx}`}
                   className="flex justify-between items-center"

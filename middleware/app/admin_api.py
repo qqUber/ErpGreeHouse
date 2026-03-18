@@ -330,26 +330,32 @@ def dashboard(
             "FROM customers ORDER BY created_at DESC LIMIT 100"
         )
         all_customers = [dict(r) for r in cur_customers.fetchall()]
-        
+
         # Calculate customer metrics
         new_this_week = 0
         for c in all_customers:
-            if c['created_at']:
+            if c["created_at"]:
                 try:
-                    created_dt = datetime.fromisoformat(c['created_at'].replace('Z', '+00:00') if c['created_at'].endswith('Z') else c['created_at'])
+                    created_dt = datetime.fromisoformat(
+                        c["created_at"].replace("Z", "+00:00")
+                        if c["created_at"].endswith("Z")
+                        else c["created_at"]
+                    )
                     if (datetime.now(created_dt.tzinfo) - created_dt).days <= 7:
                         new_this_week += 1
                 except:
                     pass  # Skip invalid dates
-        
-        telegram_reachable = len([c for c in all_customers if c['telegram_id']])
-        vk_reachable = len([c for c in all_customers if c['vk_id']])
-        marketing_consent = len([c for c in all_customers if c['marketing_allowed'] == 1])
-        
+
+        telegram_reachable = len([c for c in all_customers if c["telegram_id"]])
+        vk_reachable = len([c for c in all_customers if c["vk_id"]])
+        marketing_consent = len(
+            [c for c in all_customers if c["marketing_allowed"] == 1]
+        )
+
         # Get products count
         cur_products = conn.execute("SELECT COUNT(*) as cnt FROM products")
         products_total = int(cur_products.fetchone()["cnt"])
-        
+
         # Get integrations count
         cur_integrations = conn.execute("SELECT COUNT(*) as cnt FROM integrations")
         integrations_total = int(cur_integrations.fetchone()["cnt"])
@@ -364,7 +370,7 @@ def dashboard(
             "new_customers": {"this_week": new_this_week},
             "top_customers": all_customers[:20],  # Top 20 customers
             "telegram_reachable": telegram_reachable,
-            "vk_reachable": vk_reachable, 
+            "vk_reachable": vk_reachable,
             "marketing_consent": marketing_consent,
             "products_total": products_total,
             "integrations_total": integrations_total,

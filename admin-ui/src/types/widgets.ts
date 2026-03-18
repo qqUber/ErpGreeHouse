@@ -1,4 +1,4 @@
-import { Permissions, Role } from './roles';
+import { Role } from './roles';
 
 export interface Widget {
   id: string;
@@ -19,6 +19,8 @@ export interface WidgetProps {
   gridProps?: any;
   compactable?: boolean;
   data?: any;
+  expandedContent?: React.ReactNode;
+  compactContent?: React.ReactNode;
 }
 
 export interface DashboardLayout {

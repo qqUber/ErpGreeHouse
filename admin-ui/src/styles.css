@@ -2890,8 +2890,11 @@ p {
   min-height: 0;
 }
 
-.widget-drawer {
+.widget-drawer,
+.EZDrawer {
   padding: var(--spacing-md);
+  z-index: 9999 !important;
+  position: fixed !important;
 }
 
 .drawer-content {

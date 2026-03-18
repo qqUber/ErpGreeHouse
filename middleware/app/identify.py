@@ -80,12 +80,5 @@ def normalize_name(raw: str, locale: str = "ru", check_gender: bool = True) -> d
     }
 
 
-# Legacy alias - use generate_unique_qr_token() from customer_identity instead
-def generate_qr_token() -> str:
-    """Generate cryptographically secure QR token
-    
-    DEPRECATED: Use generate_unique_qr_token() from customer_identity module
-    for customer QR codes to ensure database uniqueness.
-    """
-    import secrets
-    return secrets.token_hex(4).upper()
+# Legacy generate_qr_token() removed - use generate_unique_qr_token() from customer_identity
+# For QR token generation, import: from .customer_identity import generate_unique_qr_token

@@ -5,6 +5,32 @@
 import i18n from '../i18n';
 
 /**
+ * Get currency code from environment variables
+ */
+function getCurrencyCode(): string {
+  // Check for environment variable first (would be set during build)
+  if (typeof window !== 'undefined' && (window as any).__CURRENCY_CODE__) {
+    return (window as any).__CURRENCY_CODE__;
+  }
+  
+  // Fallback to RUB for development
+  return 'RUB';
+}
+
+/**
+ * Get currency symbol for the given currency code
+ */
+function getCurrencySymbol(currencyCode: string): string {
+  const currencySymbols: Record<string, string> = {
+    'RUB': '₽',
+    'USD': '$',
+    'EUR': '€',
+    'RSD': 'RSD',
+  };
+  return currencySymbols[currencyCode] || currencyCode;
+}
+
+/**
  * Format a number as currency using the current language.
  *
  * @param amount - The amount to format
@@ -17,8 +43,9 @@ export function formatCurrency(amount: number, options?: {
   symbolPosition?: 'before' | 'after';
   decimalPlaces?: number;
 }): string {
-  const language = options?.locale || i18n.language || 'en';
-  const currency = options?.currency || 'RUB';
+  // Use fixed currency from environment
+  const currency = options?.currency || getCurrencyCode();
+  const language = options?.locale || (i18n?.language || 'en');
   const decimalPlaces = options?.decimalPlaces ?? 0;
   const symbolPosition = options?.symbolPosition || 'after';
 
@@ -31,12 +58,12 @@ export function formatCurrency(amount: number, options?: {
       maximumFractionDigits: decimalPlaces,
     }).format(amount);
 
-    // For Russian locale with symbol after, adjust formatting
-    if (language.startsWith('ru') && symbolPosition === 'after') {
-      // Convert "1 000,00 ₽" to "1 000 ₽" for 0 decimal places
-      if (decimalPlaces === 0) {
-        return formatted.replace(',00', '');
-      }
+    // For RUB, ensure consistent formatting without locale-specific changes
+    if (currency === 'RUB' && decimalPlaces === 0) {
+      // Remove decimal places and ensure consistent symbol position
+      const symbol = getCurrencySymbol(currency);
+      const numberPart = formatted.replace(/[^\d\s]/g, '').trim();
+      return symbolPosition === 'before' ? `${symbol}${numberPart}` : `${numberPart} ${symbol}`;
     }
 
     return formatted;
@@ -47,15 +74,7 @@ export function formatCurrency(amount: number, options?: {
       maximumFractionDigits: decimalPlaces,
     });
     const formattedNumber = numberFormat.format(amount);
-    
-    // Currency symbol mapping
-    const currencySymbols: Record<string, string> = {
-      'RUB': '₽',
-      'USD': '$',
-      'EUR': '€',
-      'RSD': 'RSD',
-    };
-    const symbol = currencySymbols[currency] || currency;
+    const symbol = getCurrencySymbol(currency);
 
     if (symbolPosition === 'before') {
       return `${symbol}${formattedNumber}`;

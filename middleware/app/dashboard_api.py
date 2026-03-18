@@ -43,6 +43,9 @@ def get_operational_data(
     conn = db.connect()
 
     try:
+        # Debug: Log the date being queried
+        print(f"DEBUG: Querying operational data for date: {today}")
+        
         hourly_data = []
         for hour in range(8, 23):
             start_time = f"{today} {hour:02d}:00:00"
@@ -61,6 +64,13 @@ def get_operational_data(
                     "revenue": int(row["revenue"]),
                 }
             )
+            # Debug: Log hourly data
+            print(f"DEBUG: Hour {hour}: {row['cnt']} transactions, {row['revenue']} revenue")
+
+        # Debug: Check if transactions table exists and has data
+        cur = conn.execute("SELECT COUNT(*) as total FROM transactions WHERE date(created_at) = ?", (today,))
+        total_tx = cur.fetchone()
+        print(f"DEBUG: Total transactions for {today}: {total_tx['total']}")
 
         cur = conn.execute(
             """SELECT json_extract(value, '$.code') as code,
@@ -75,6 +85,11 @@ def get_operational_data(
                GROUP BY code ORDER BY total_qty DESC LIMIT 5""",
             (today,),
         )
+        rows = cur.fetchall()
+        print(f"DEBUG: Found {len(rows)} top products for {today}")
+        for row in rows:
+            print(f"DEBUG: Product {row['code']}: {row['total_qty']} qty, {row['total_revenue']} revenue")
+        
         top_products = [
             {
                 "code": row["code"],
@@ -82,7 +97,7 @@ def get_operational_data(
                 "quantity": int(row["total_qty"]),
                 "revenue": int(row["total_revenue"]),
             }
-            for row in cur.fetchall()
+            for row in rows
         ]
 
         cur = conn.execute(
@@ -97,6 +112,7 @@ def get_operational_data(
             (today,),
         )
         row = cur.fetchone()
+        print(f"DEBUG: Daily summary - {row['total_tx']} tx, {row['total_revenue']} revenue, {row['avg_check']} avg")
 
         peak_hour = (
             max(hourly_data, key=lambda x: x["transactions"]) if hourly_data else None
@@ -114,6 +130,7 @@ def get_operational_data(
             "peak_hour_transactions": peak_hour["transactions"] if peak_hour else 0,
         }
 
+        print(f"DEBUG: Final operational data: {len(top_products)} top products, {len(hourly_data)} hourly data points")
         _cache_set_json(cache_key, data, ttl_seconds=OPERATIONAL_CACHE_TTL)
         return data
     finally:

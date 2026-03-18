@@ -114,7 +114,7 @@ export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) =>
                   marginTop: 'var(--spacing-xs)',
                 }}
               >
-                {data.total_revenue.toFixed(2)} ₽
+                {(data.total_revenue || 0).toFixed(2)} ₽
               </div>
             </div>
             <div className="card cardCompact">
@@ -133,7 +133,7 @@ export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) =>
                   marginTop: 'var(--spacing-xs)',
                 }}
               >
-                {data.average_check.toFixed(2)} ₽
+                {(data.average_check || 0).toFixed(2)} ₽
               </div>
             </div>
           </div>
@@ -180,7 +180,7 @@ export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) =>
             Топ товаров
           </div>
           <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
-            {data.top_products.slice(0, 5).map((product) => (
+            {(data.top_products || []).slice(0, 5).map((product) => (
               <div
                 key={product.code}
                 className="row"
@@ -236,7 +236,7 @@ export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) =>
                       color: 'var(--muted)',
                     }}
                   >
-                    {product.revenue.toFixed(2)} ₽
+                    {(product.revenue || 0).toFixed(2)} ₽
                   </div>
                 </div>
               </div>
@@ -246,7 +246,7 @@ export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) =>
       </div>
 
       {/* Hourly Breakdown */}
-      {data.hourly_breakdown.length > 0 && (
+      {(data.hourly_breakdown || []).length > 0 && (
         <div style={{ marginTop: 'var(--spacing-xl)' }}>
           <div
             style={{

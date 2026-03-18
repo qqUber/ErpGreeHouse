@@ -14,7 +14,7 @@ from app.customer_identity import (
     resolve_or_create_customer,
     CustomerIdentityConflictError,
 )
-from app.identify import generate_qr_token
+from app.customer_identity import generate_unique_qr_token
 
 
 class TestImprovedQRTokenSystem:
@@ -206,19 +206,23 @@ class TestImprovedQRTokenSystem:
         assert row[2] == "Updated User"  # Updated name
 
     def test_secure_token_generation(self):
-        """Test that token generation uses cryptographically secure method."""
-        # Test the identify.py function
-        token1 = generate_qr_token()
-        token2 = generate_qr_token()
+        """Test that token generation uses unique numeric method."""
+        conn = sqlite3.connect(":memory:")
+        conn.execute("CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)")
+        
+        token1 = generate_unique_qr_token(conn)
+        token2 = generate_unique_qr_token(conn)
 
         # Should be different
         assert token1 != token2
+        # Should be numeric
+        assert token1.isdigit() and token2.isdigit()
 
         # Should be valid format
         assert len(token1) == 8
         assert len(token2) == 8
-        assert all(c in "0123456789ABCDEF" for c in token1)
-        assert all(c in "0123456789ABCDEF" for c in token2)
+        assert all(c in "0123456789" for c in token1)  # Numeric only
+        assert all(c in "0123456789" for c in token2)  # Numeric only
 
     def test_fallback_to_secure_random(self):
         """Test fallback to secure random when UUID5 fails."""

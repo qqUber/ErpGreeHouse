@@ -14,34 +14,8 @@ class CustomerIdentityConflictError(ValueError):
     pass
 
 
-def generate_unique_qr_token(conn: sqlite3.Connection, max_attempts: int = 100) -> str:
-    """Generate unique numeric QR token for better scannability and usability"""
-    import random
-
-    for attempt in range(max_attempts):
-        # Generate 8-digit number (10,000,000 to 99,999,999)
-        # No leading zeros for better readability
-        qr_code_int = random.randint(10_000_000, 99_999_999)
-        qr_code = str(qr_code_int)
-
-        # Verify uniqueness in database
-        try:
-            existing = conn.execute(
-                "SELECT id FROM customers WHERE qr_token=?", (qr_code,)
-            ).fetchone()
-            if not existing:
-                return qr_code
-        except sqlite3.OperationalError as e:
-            if "no such table" in str(e):
-                # Table doesn't exist, token is unique by default
-                return qr_code
-            else:
-                raise
-
-    # If we get here, something is wrong
-    raise ValueError(
-        f"Failed to generate unique QR token after {max_attempts} attempts"
-    )
+# Import from utils for unified QR token generation
+from .utils.qr_codes import generate_unique_token as generate_unique_qr_token
 
 
 def get_or_generate_base_guid(conn: sqlite3.Connection) -> str:

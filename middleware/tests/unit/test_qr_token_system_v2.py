@@ -16,7 +16,7 @@ from app.customer_identity import (
     get_or_generate_base_guid,
     resolve_or_create_customer,
 )
-from app.identify import generate_qr_token
+from app.customer_identity import generate_unique_qr_token
 
 
 def _create_conn() -> sqlite3.Connection:
@@ -226,14 +226,16 @@ class TestImprovedQRTokenSystem:
         assert row["full_name"] == "Updated User"
 
     def test_secure_token_generation(self):
-        token1 = generate_qr_token()
-        token2 = generate_qr_token()
+        conn = _create_conn()
+        token1 = generate_unique_qr_token(conn)
+        token2 = generate_unique_qr_token(conn)
 
         assert token1 != token2
         assert len(token1) == 8
+        assert token1.isdigit()  # Should be numeric
         assert len(token2) == 8
-        assert all(c in "0123456789ABCDEF" for c in token1)
-        assert all(c in "0123456789ABCDEF" for c in token2)
+        assert all(c in "0123456789" for c in token1)  # Numeric only
+        assert all(c in "0123456789" for c in token2)  # Numeric only
 
     def test_fallback_to_secure_random(self):
         conn = _create_conn()
@@ -242,7 +244,7 @@ class TestImprovedQRTokenSystem:
             token = generate_unique_qr_token(conn)
 
         assert len(token) == 8
-        assert all(c in "0123456789ABCDEF" for c in token)
+        assert all(c in "0123456789" for c in token)  # Numeric only
 
     def test_database_locked_handling(self):
         conn = _create_conn()

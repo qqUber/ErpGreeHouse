@@ -1,11 +1,9 @@
-import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dashboard } from '../../api';
 import type {
-  CustomerData,
-  MarketingData,
-  OperationalData,
-  ProductData,
+    CustomerData,
+    MarketingData,
+    OperationalData,
+    ProductData,
 } from '../../hooks/useDashboard';
 import { useAuth } from '../../stores/auth';
 import { hasPermission, Permission, PermissionSet, Role } from '../../types/roles';
@@ -20,6 +18,7 @@ interface DashboardWrapperProps {
     products?: ProductData | null;
     marketing?: MarketingData | null;
     integrations?: any;
+    dashboard?: any; // Добавляем dashboard данные
   } | null;
   onNavigate: (tab: string, params?: Record<string, string | number>) => void;
 }

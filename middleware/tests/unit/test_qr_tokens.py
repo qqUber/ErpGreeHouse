@@ -4,26 +4,29 @@ import sqlite3
 from unittest.mock import patch
 
 from app.customer_identity import generate_unique_qr_token, get_or_generate_base_guid
-from app.identify import generate_qr_token
+from app.utils.qr_codes import generate_unique_token
 
 
 class TestQRTokenGeneration:
     """Test QR token generation functionality."""
 
-    def test_generate_qr_token_format(self):
-        """Test legacy QR token format - should be 8 hex characters"""
-        token = generate_qr_token()
+    def test_generate_unique_token_format(self):
+        """Test QR token format - should be 8 numeric characters"""
+        conn = sqlite3.connect(":memory:")
+        conn.execute("CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)")
+        
+        token = generate_unique_token(conn)
 
         assert len(token) == 8
-        assert all(c in "0123456789ABCDEF" for c in token)  # Hex characters only
-        assert all(c.isalnum() for c in token)  # Alphanumeric check
-        # Check if token is uppercase (only meaningful if contains letters)
-        if any(c.isalpha() for c in token):
-            assert token.isupper()  # Should be uppercase if contains letters
+        assert token.isdigit()  # Should be numeric
+        assert 10_000_000 <= int(token) <= 99_999_999  # Valid range
 
-    def test_generate_qr_token_uniqueness(self):
-        tokens = [generate_qr_token() for _ in range(10)]
-        assert len(set(tokens)) >= 5
+    def test_generate_unique_token_uniqueness(self):
+        conn = sqlite3.connect(":memory:")
+        conn.execute("CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)")
+        
+        tokens = [generate_unique_token(conn) for _ in range(10)]
+        assert len(set(tokens)) == 10  # All should be unique
 
     @patch("uuid.uuid4")
     def test_get_or_generate_base_guid_new(self, mock_uuid):
@@ -140,27 +143,22 @@ class TestQRTokenGeneration:
 class TestQRTokenIntegration:
     """Integration tests for QR token system."""
 
-    def test_qr_token_consistency_across_calls(self):
-        """Test QR token consistency - should always be 8 hex characters"""
-        tokens = [generate_qr_token() for _ in range(20)]
+    def test_generate_unique_token_consistency(self):
+        """Test QR token consistency - should always be 8 numeric characters"""
+        conn = sqlite3.connect(":memory:")
+        conn.execute("CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)")
+        
+        tokens = [generate_unique_token(conn) for _ in range(20)]
 
         for token in tokens:
             assert len(token) == 8
-            assert all(c in "0123456789ABCDEF" for c in token)  # Hex characters only
-            assert all(c.isalnum() for c in token)  # Alphanumeric check
-            # Check if token is uppercase (only meaningful if contains letters)
-            if any(c.isalpha() for c in token):
-                assert token.isupper()  # Should be uppercase if contains letters
+            assert token.isdigit()  # Should be numeric
+            assert 10_000_000 <= int(token) <= 99_999_999  # Valid range
 
-    def test_qr_token_no_collisions_large_sample(self):
-        tokens = [generate_qr_token() for _ in range(1000)]
+    def test_generate_unique_token_no_collisions_large_sample(self):
+        conn = sqlite3.connect(":memory:")
+        conn.execute("CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)")
+        
+        tokens = [generate_unique_token(conn) for _ in range(1000)]
         uniqueness_ratio = len(set(tokens)) / len(tokens)
-        assert uniqueness_ratio >= 0.7
-
-    @patch("app.identify.secrets.token_hex", return_value="ABC12345")
-    def test_qr_token_deterministic_for_testing(self, mock_token_hex):
-        token1 = generate_qr_token()
-        token2 = generate_qr_token()
-
-        assert token1 == token2 == "ABC12345"
-        assert mock_token_hex.call_count == 2
+        assert uniqueness_ratio >= 0.99  # Should be almost unique
