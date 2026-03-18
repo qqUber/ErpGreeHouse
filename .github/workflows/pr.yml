@@ -18,7 +18,7 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - uses: actions/dependency-review-action@v4
 
   secret-scan:
@@ -27,7 +27,7 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: trufflesecurity/trufflehog@v3
@@ -43,7 +43,7 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - uses: github/codeql-action/init@v3
         with:
           languages: python,javascript-typescript
@@ -54,10 +54,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
+          python-version: '3.11'
           cache: pip
       - name: install pre-commit
         run: |
@@ -73,10 +73,10 @@ jobs:
     env:
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
           cache: npm
           cache-dependency-path: admin-ui/package-lock.json
       - name: install
@@ -92,7 +92,7 @@ jobs:
         working-directory: admin-ui
         run: npm run build
       - name: upload dist
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: admin-ui-dist
           path: admin-ui/dist
@@ -121,59 +121,43 @@ jobs:
       ADMIN_MARKETER_PASSWORD: manager
       CRM_DB_PATH: .local/crm.db
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v4
+      - name: ensure compose base .env exists
+        run: touch .env
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
+          python-version: '3.11'
           cache: pip
       - name: middleware deps
         working-directory: middleware
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
           cache: npm
           cache-dependency-path: admin-ui/package-lock.json
-      - name: admin-ui deps
-        working-directory: admin-ui
-        run: npm ci
-      - name: install browsers
-        working-directory: admin-ui
-        run: npx playwright install --with-deps chromium
       - name: e2e
-        working-directory: middleware
-        env:
-          E2E_BASE_URL: http://127.0.0.1:5173
         run: |
-          set -euo pipefail
-          mid_pid=""
-          ui_pid=""
-          cleanup() { kill ${ui_pid:-} ${mid_pid:-} 2>/dev/null || true; }
-          trap cleanup EXIT
-
-          python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 &
-          mid_pid=$!
-          for i in {1..30}; do
-            curl -fsS http://127.0.0.1:8000/health >/dev/null && break || true
-            sleep 1
-          done
-          curl -fsS http://127.0.0.1:8000/health >/dev/null
-
-          cd ../admin-ui
-          VITE_API_BASE_URL=http://127.0.0.1:8000 npm run dev -- --host 127.0.0.1 --port 5173 --strictPort &
-          ui_pid=$!
-          for i in {1..30}; do
-            curl -fsS http://127.0.0.1:5173/ >/dev/null && break || true
-            sleep 1
-          done
-          curl -fsS http://127.0.0.1:5173/ >/dev/null
-
-          npm run test:e2e
+          docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build e2e-runner
+          timeout 45s docker compose -f docker-compose.yml -f docker-compose.test.yml logs -f --tail=50 e2e-runner || true
+          CID="$(docker compose -f docker-compose.yml -f docker-compose.test.yml ps -aq e2e-runner | tail -n 1)"
+          if [ -z "$CID" ]; then
+            echo "E2E runner container ID not found"
+            docker compose -f docker-compose.yml -f docker-compose.test.yml logs e2e-runner
+            exit 1
+          fi
+          timeout 1800 bash -c "until [ \"\$(docker inspect -f '{{.State.Status}}' \"$CID\")\" = \"exited\" ]; do sleep 10; done" || \
+          { echo "E2E tests timed out"; docker compose -f docker-compose.yml -f docker-compose.test.yml logs e2e-runner; exit 1; }
+          [ "$(docker inspect -f '{{.State.ExitCode}}' "$CID")" = "0" ] || \
+          { echo "E2E tests failed"; docker compose -f docker-compose.yml -f docker-compose.test.yml logs e2e-runner; exit 1; }
+      - name: stop e2e stack
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
       - name: upload e2e artifacts
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: admin-ui-e2e
           path: |
@@ -195,10 +179,10 @@ jobs:
       ERP_MOCK_MODE: 'true'
       PYTHONPATH: ${{ github.workspace }}/middleware
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
+          python-version: '3.11'
           cache: pip
       - name: install deps
         working-directory: middleware
@@ -227,7 +211,7 @@ jobs:
             --cov-report=term \
             --cov-fail-under=80
       - name: upload reports
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: middleware-reports
           path: middleware/reports

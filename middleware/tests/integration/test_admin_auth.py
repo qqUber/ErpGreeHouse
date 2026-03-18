@@ -5,23 +5,45 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-
-@pytest.fixture
-def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
+def _build_client(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    bootstrap_default: bool = False,
+    bootstrap_demo_users: bool = False,
+    environment: str = "development",
+) -> TestClient:
     db_path = tmp_path / "crm_test.db"
     monkeypatch.setenv("CRM_DB_PATH", str(db_path))
+    monkeypatch.setenv("ENVIRONMENT", environment)
     monkeypatch.setenv("ADMIN_SECRET", "")
-    monkeypatch.setenv("ADMIN_BOOTSTRAP_DEFAULT", "true")
+    monkeypatch.setenv(
+        "ADMIN_BOOTSTRAP_DEFAULT", "true" if bootstrap_default else "false"
+    )
     monkeypatch.setenv("ADMIN_DEFAULT_USERNAME", "admin")
     monkeypatch.setenv("ADMIN_DEFAULT_PASSWORD", "ChangeMe123!")
-    monkeypatch.setenv("ADMIN_BOOTSTRAP_DEMO_USERS", "false")
+    monkeypatch.setenv(
+        "ADMIN_BOOTSTRAP_DEMO_USERS", "true" if bootstrap_demo_users else "false"
+    )
     monkeypatch.setenv("ADMIN_RECOVERY_SECRET", "RecoverMe123!")
     monkeypatch.setenv("CORS_ORIGINS", "http://localhost:5173")
 
+    from app.config import get_settings
     from app import main as main_module
 
+    get_settings.cache_clear()
     importlib.reload(main_module)
-    with TestClient(main_module.app) as c:
+    return TestClient(main_module.app)
+
+
+@pytest.fixture
+def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
+    with _build_client(
+        tmp_path,
+        monkeypatch,
+        bootstrap_default=True,
+        bootstrap_demo_users=False,
+    ) as c:
         yield c
 
 
@@ -78,20 +100,13 @@ def test_disabled_user_cannot_login(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     db_path = tmp_path / "crm_test.db"
-    monkeypatch.setenv("CRM_DB_PATH", str(db_path))
-    monkeypatch.setenv("ADMIN_SECRET", "")
-    monkeypatch.setenv("ADMIN_BOOTSTRAP_DEFAULT", "true")
-    monkeypatch.setenv("ADMIN_DEFAULT_USERNAME", "admin")
-    monkeypatch.setenv("ADMIN_DEFAULT_PASSWORD", "ChangeMe123!")
-    monkeypatch.setenv("ADMIN_BOOTSTRAP_DEMO_USERS", "false")
-    monkeypatch.setenv("ADMIN_RECOVERY_SECRET", "RecoverMe123!")
-    monkeypatch.setenv("CORS_ORIGINS", "http://localhost:5173")
 
-    from app import main as main_module
-
-    importlib.reload(main_module)
-
-    with TestClient(main_module.app) as c:
+    with _build_client(
+        tmp_path,
+        monkeypatch,
+        bootstrap_default=True,
+        bootstrap_demo_users=False,
+    ) as c:
         conn = sqlite3.connect(str(db_path))
         try:
             conn.execute("UPDATE admin_users SET disabled=1 WHERE username='admin'")
@@ -104,3 +119,56 @@ def test_disabled_user_cannot_login(
             json={"username": "admin", "password": "ChangeMe123!"},
         )
         assert r.status_code == 403
+
+
+def test_auth_status_does_not_create_default_admin_by_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    with _build_client(
+        tmp_path,
+        monkeypatch,
+        bootstrap_default=False,
+        bootstrap_demo_users=False,
+    ) as client:
+        status_response = client.get("/api/v1/public/auth/status")
+
+    assert status_response.status_code == 200
+    assert status_response.json()["bootstrap_enabled"] is False
+    assert status_response.json()["default_admin_present"] is False
+
+
+def test_login_does_not_bootstrap_accounts_on_request(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    with _build_client(
+        tmp_path,
+        monkeypatch,
+        bootstrap_default=False,
+        bootstrap_demo_users=False,
+    ) as client:
+        login_response = client.post(
+            "/api/v1/public/auth/login",
+            json={"username": "admin", "password": "ChangeMe123!"},
+        )
+        status_response = client.get("/api/v1/public/auth/status")
+
+    assert login_response.status_code == 401
+    assert status_response.status_code == 200
+    assert status_response.json()["default_admin_present"] is False
+
+
+def test_production_ignores_bootstrap_flags(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    with _build_client(
+        tmp_path,
+        monkeypatch,
+        bootstrap_default=True,
+        bootstrap_demo_users=True,
+        environment="production",
+    ) as client:
+        status_response = client.get("/api/v1/public/auth/status")
+
+    assert status_response.status_code == 200
+    assert status_response.json()["bootstrap_enabled"] is False
+    assert status_response.json()["default_admin_present"] is False

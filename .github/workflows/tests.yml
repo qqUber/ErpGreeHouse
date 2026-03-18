@@ -17,7 +17,7 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - name: Ensure compose base .env exists
         run: touch .env
       - name: Start services in detached mode (RULE COMPLIANT)
@@ -48,7 +48,7 @@ jobs:
         run: docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
 
       - name: Upload unit test report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: unit-test-report
@@ -87,7 +87,7 @@ jobs:
             shard: 2
             shards: 2
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - name: Ensure compose base .env exists
         run: touch .env
       
@@ -113,7 +113,7 @@ jobs:
           { echo "E2E tests failed"; docker compose -f docker-compose.yml -f docker-compose.test.yml logs e2e-runner; exit 1; }
 
       - name: Upload E2E test results
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: e2e-test-report-${{ matrix.project }}-${{ matrix.shard }}
@@ -131,7 +131,7 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - name: Ensure compose base .env exists
         run: touch .env
       - name: Start integration tests in detached mode
@@ -162,7 +162,7 @@ jobs:
         run: docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
 
       - name: Upload integration test report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: integration-test-report
@@ -176,11 +176,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
+          python-version: '3.11'
           cache: 'pip'
 
       - name: Install dependencies
@@ -205,7 +205,7 @@ jobs:
           safety check --json > reports/safety_report.json 2>&1 || true
 
       - name: Upload security reports
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: security-reports
@@ -219,12 +219,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
+          python-version: '3.11'
           cache: 'pip'
 
       - name: Install dependencies
@@ -265,11 +265,11 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: admin-ui/package-lock.json
 

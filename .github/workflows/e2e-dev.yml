@@ -29,17 +29,28 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - name: Ensure compose base .env exists
         run: touch .env
       - name: run e2e in docker compose
         env:
           E2E_ARGS: --project ${{ matrix.project }} --shard ${{ matrix.shard }}/${{ matrix.shards }}
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.test.yml up --build --exit-code-from e2e-runner e2e-runner
+          docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build e2e-runner
+          timeout 45s docker compose -f docker-compose.yml -f docker-compose.test.yml logs -f --tail=50 e2e-runner || true
+          CID="$(docker compose -f docker-compose.yml -f docker-compose.test.yml ps -aq e2e-runner | tail -n 1)"
+          if [ -z "$CID" ]; then
+            echo "E2E runner container ID not found"
+            docker compose -f docker-compose.yml -f docker-compose.test.yml logs e2e-runner
+            exit 1
+          fi
+          timeout 1800 bash -c "until [ \"\$(docker inspect -f '{{.State.Status}}' \"$CID\")\" = \"exited\" ]; do sleep 10; done" || \
+          { echo "E2E tests timed out"; docker compose -f docker-compose.yml -f docker-compose.test.yml logs e2e-runner; exit 1; }
+          [ "$(docker inspect -f '{{.State.ExitCode}}' "$CID")" = "0" ] || \
+          { echo "E2E tests failed"; docker compose -f docker-compose.yml -f docker-compose.test.yml logs e2e-runner; exit 1; }
       - name: upload e2e artifacts
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: e2e-${{ matrix.project }}-${{ matrix.shard }}of${{ matrix.shards }}
           path: |
@@ -83,12 +94,12 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
       - name: download all artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
       - name: merge allure results
@@ -103,7 +114,7 @@ jobs:
           npm ci
           npx allure generate ../merged/allure-results --clean -o ../merged/allure-report
       - name: upload allure report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: allure-report
           path: merged/allure-report
@@ -115,9 +126,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - name: download artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
       - name: prepare gh-pages content

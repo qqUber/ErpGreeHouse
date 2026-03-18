@@ -222,12 +222,20 @@ def _clear_jwt_cookies(response: Response) -> None:
     response.delete_cookie(_REFRESH_TOKEN_COOKIE, **cookie_opts)
 
 
-def _bootstrap_default_admin() -> None:
-    enabled = os.getenv("ADMIN_BOOTSTRAP_DEFAULT", "true").lower() in (
+def _is_bootstrap_allowed(env_var: str) -> bool:
+    settings = get_settings()
+    if settings.environment == "production":
+        return False
+
+    return os.getenv(env_var, "false").lower() in (
         "1",
         "true",
         "yes",
     )
+
+
+def _bootstrap_default_admin() -> None:
+    enabled = _is_bootstrap_allowed("ADMIN_BOOTSTRAP_DEFAULT")
     if not enabled:
         return
 
@@ -256,11 +264,7 @@ def _bootstrap_default_admin() -> None:
 
 
 def _bootstrap_demo_users() -> None:
-    enabled = os.getenv("ADMIN_BOOTSTRAP_DEMO_USERS", "true").lower() in (
-        "1",
-        "true",
-        "yes",
-    )
+    enabled = _is_bootstrap_allowed("ADMIN_BOOTSTRAP_DEMO_USERS")
     if not enabled:
         return
 
@@ -567,7 +571,6 @@ class LoginOut(BaseModel):
 
 @public_router.get("/status")
 def auth_status(request: Request) -> dict[str, Any]:
-    _bootstrap_default_admin()
     username = os.getenv("ADMIN_DEFAULT_USERNAME", "admin").strip() or "admin"
 
     db = get_db()
@@ -578,8 +581,7 @@ def auth_status(request: Request) -> dict[str, Any]:
             (username,),
         ).fetchone()
         return {
-            "bootstrap_enabled": os.getenv("ADMIN_BOOTSTRAP_DEFAULT", "true").lower()
-            in ("1", "true", "yes"),
+            "bootstrap_enabled": _is_bootstrap_allowed("ADMIN_BOOTSTRAP_DEFAULT"),
             "default_admin_present": bool(row),
             "default_admin_username": username,
             "must_change_password": (
@@ -592,8 +594,6 @@ def auth_status(request: Request) -> dict[str, Any]:
 
 @public_router.post("/login")
 def login(payload: LoginIn, response: Response, request: Request) -> LoginOut:
-    _bootstrap_default_admin()
-    _bootstrap_demo_users()
     db = get_db()
     conn = db.connect()
     try:
