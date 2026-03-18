@@ -1,30 +1,3 @@
-export type DashboardKPI = {
-  today: string;
-  sales_count: number;
-  sales_total: number;
-  bonus_earned: number;
-  bonus_used: number;
-  customers_total: number;
-  recent_activity: {
-    transactions: Array<{
-      id: number;
-      created_at: string;
-      total_amount: number;
-      bonus_earned: number;
-      bonus_used: number;
-      customer_id: number;
-      customer_name: string;
-      product_names: string;
-    }>;
-    marketing_events: Array<{
-      id: number;
-      created_at: string;
-      status: string;
-      trigger_name: string;
-    }>;
-  };
-};
-
 export type SalesStats = {
   stats: Array<{ day: string; cnt: number; total: number }>;
 };
@@ -805,7 +778,6 @@ export const Api = {
       signal,
     }),
 
-  dashboard: (signal?: AbortSignal) => api<DashboardKPI>('/api/v1/dashboard', { signal }),
   customers: (q?: string, page?: number, limit?: number, signal?: AbortSignal) => {
     const params = new URLSearchParams();
     if (q) params.set('q', q);

@@ -7,7 +7,6 @@ import {
   Api,
   CustomerDetails,
   CustomerListItem,
-  DashboardKPI,
   getAdminSecret,
   Integration,
   IntegrationDelivery,
@@ -17,7 +16,6 @@ import {
 } from './api';
 import { ComplianceView } from './ComplianceView';
 import { DashboardWrapper } from './components/dashboard/DashboardWrapper';
-import { OperationalWidget } from './components/dashboard/OperationalWidget';
 import { IntegrationSettings } from './components/IntegrationSettings';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ProductImport } from './components/ProductImport';
@@ -92,7 +90,14 @@ function App() {
   } = useAuth();
 
   const [tab, setTab] = useState<Tab>('dashboard');
-  const [dash, setDash] = useState<Dashboard | null>(null);
+
+  // Use new dashboard system
+  const {
+    data: dashboardData,
+    loading: dashboardLoading,
+    error: dashboardError,
+    refresh: refreshDashboard,
+  } = useDashboard();
   const [customers, setCustomers] = useState<CustomerListItem[]>([]);
   const [customerPage, setCustomerPage] = useState(1);
   const [customerTotal, setCustomerTotal] = useState(0);
@@ -260,19 +265,6 @@ function App() {
     }
   }
 
-  async function loadDashboard() {
-    setError(null);
-    console.log('[App] loadDashboard() called');
-    try {
-      const d = await Api.dashboard();
-      console.log('[App] loadDashboard() success:', d);
-      setDash(d);
-    } catch (error) {
-      console.error('[App] loadDashboard() error:', error);
-      setDash(null);
-    }
-  }
-
   async function loadCustomers(query?: string, page: number = 1, limit: number = 25) {
     setError(null);
     const res = await Api.customers(query, page, limit);
@@ -366,7 +358,11 @@ function App() {
 
         // Load protected data since user is authenticated
         try {
-          await Promise.all([loadDashboard(), loadCustomers('', 1, customerLimit), loadProducts()]);
+          await Promise.all([
+            refreshDashboard(),
+            loadCustomers('', 1, customerLimit),
+            loadProducts(),
+          ]);
         } catch (dataError: any) {
           // Failed to load protected data, but user is authenticated
           console.warn('[Bootstrap] Failed to load some data:', dataError?.message);
@@ -1221,7 +1217,7 @@ function App() {
 
         {showProtectedPanels && safeTab === 'dashboard' ? (
           <div id="dashboard-panel" role="tabpanel" aria-labelledby="dashboard-tab">
-            <DashboardView dash={dash} reload={() => loadDashboard()} onNavigate={navigateTo} />
+            <DashboardView data={dashboardData} reload={refreshDashboard} onNavigate={navigateTo} />
           </div>
         ) : null}
         {showProtectedPanels && safeTab === 'customers' ? (
@@ -1258,7 +1254,7 @@ function App() {
               products={products}
               reloadProducts={() => loadProducts()}
               onSaleDone={async (customerId: number) => {
-                await loadDashboard();
+                await refreshDashboard();
                 await loadCustomers();
                 setSelectedId(customerId);
                 setTab('customers');
@@ -1325,7 +1321,7 @@ function App() {
                     }}
                     createDevSale={async (customerQr) => {
                       const result = await Api.createDevSale(customerQr);
-                      await Promise.all([loadDashboard(), loadCustomers()]);
+                      await Promise.all([refreshDashboard(), loadCustomers()]);
                       setSelectedId(result.customer_id);
                       return result;
                     }}
@@ -1521,19 +1517,17 @@ function App() {
 }
 
 type DashboardViewProps = {
-  dash: DashboardKPI | null;
+  data: any; // Using any for now since we're transitioning from old system
   reload: () => Promise<void>;
   onNavigate: (tab: string, params?: Record<string, string | number>) => void;
 };
 
-function DashboardView({ dash, reload, onNavigate }: DashboardViewProps) {
+function DashboardView({ data, reload, onNavigate }: DashboardViewProps) {
   const { t } = useTranslation();
 
   return (
     <div className="grid" data-testid="admin-dashboard">
-      <DashboardWrapper data={dash} onNavigate={onNavigate} />
-
-      {dash ? <OperationalWidget data={dash} /> : null}
+      <DashboardWrapper data={data} onNavigate={onNavigate} />
     </div>
   );
 }
@@ -2720,17 +2714,16 @@ function ProductsView({
   create,
   setShowProductImport,
 }: ProductsViewProps) {
-  const { t } = useTranslation();
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
-  const [kind, setKind] = useState('drink');
+  const [kind, setKind] = useState('');
   const [price, setPrice] = useState('');
   const [active, setActive] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
-  async function handleCreate() {
+  const handleCreate = async () => {
+    setErr(null);
     try {
-      setErr(null);
       await create({
         code: code.trim(),
         name: name.trim(),
@@ -2744,7 +2737,7 @@ function ProductsView({
     } catch (e: any) {
       setErr(String(e?.message || e));
     }
-  }
+  };
 
   return (
     <div className="grid">
