@@ -7,14 +7,7 @@ import type { MarketingAnalyticsData } from './AnalyticsWidget';
 import { getAvailableWidgets } from './widgetRegistry';
 
 interface DashboardProps {
-  data?: {
-    operational?: any;
-    customers?: any;
-    products?: any;
-    marketing?: any;
-    integrations?: any;
-    dashboard?: any; // Добавляем dashboard данные с KPI
-  } | null;
+  data?: any; // Используем any чтобы избежать проблем с типизацией
   onNavigate?: (tab: string, params?: Record<string, string | number>) => void;
 }
 
