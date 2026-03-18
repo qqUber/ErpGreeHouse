@@ -27,7 +27,7 @@ from aiohttp import ClientSession, TCPConnector
 
 from ...config import get_settings
 from ...db import get_db
-from ...identify import generate_qr_token, normalize_name, normalize_phone
+from ...customer_identity import generate_unique_qr_token, normalize_name, normalize_phone
 from ...storage import get_redis
 
 # Import shared modules

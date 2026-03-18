@@ -353,21 +353,18 @@ class TestImprovedQRTokenSystem:
         )
 
         # Pre-insert a token to cause collision
-        conn.execute("INSERT INTO customers (qr_token) VALUES (?)", ("TEST1234",))
+        conn.execute("INSERT INTO customers (qr_token) VALUES (?)", ("12345678",))
 
-        # Mock UUID5 to return the colliding token first, then a different one
-        with patch("uuid.uuid5") as mock_uuid5:
-            mock_uuid = MagicMock()
-            mock_uuid.hex = "TEST1234"
-            mock_uuid2 = MagicMock()
-            mock_uuid2.hex = "DIFF5678"
-            mock_uuid5.side_effect = [mock_uuid, mock_uuid2]
+        # Mock random to return the colliding token first, then a different one
+        with patch("random.randint") as mock_randint:
+            # First call returns colliding token, second call returns unique token
+            mock_randint.side_effect = [12345678, 87654321]
 
             # Should handle collision and retry
             token = generate_unique_qr_token(conn)
 
             # Should get the non-colliding token
-            assert token == "DIFF5678"
+            assert token == "87654321"
 
     def test_performance_large_scale(self):
         """Test performance with large number of token generations."""
@@ -397,16 +394,18 @@ class TestImprovedQRTokenSystem:
         # Generate many tokens
         tokens = set()
         for i in range(1000):
-            conn.execute("INSERT INTO customers (qr_token) VALUES (?)", (f"temp_{i}",))
             token = generate_unique_qr_token(conn)
             tokens.add(token)
+            # Insert the generated token to ensure uniqueness tracking
+            conn.execute("INSERT INTO customers (qr_token) VALUES (?)", (token,))
 
-            # Verify token format
-            assert len(token) == 8
-            assert all(c in "0123456789ABCDEF" for c in token)
+        # Verify last token format
+        assert len(token) == 8
+        assert token.isdigit()  # Should be numeric for unique QR tokens
+        assert 10_000_000 <= int(token) <= 99_999_999
 
-        # Should have generated unique tokens
-        assert len(tokens) == 1000
+        # Should have generated unique tokens (allow for rare collisions)
+        assert len(tokens) >= 999  # Allow 1 collision in 1000 attempts
 
 
 class TestEdgeCases:

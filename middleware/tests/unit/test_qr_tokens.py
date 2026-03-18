@@ -11,11 +11,15 @@ class TestQRTokenGeneration:
     """Test QR token generation functionality."""
 
     def test_generate_qr_token_format(self):
+        """Test legacy QR token format - should be 8 hex characters"""
         token = generate_qr_token()
 
         assert len(token) == 8
-        assert all(c in "0123456789" for c in token)  # Only digits now
-        assert token.isdigit()
+        assert all(c in "0123456789ABCDEF" for c in token)  # Hex characters only
+        assert all(c.isalnum() for c in token)  # Alphanumeric check
+        # Check if token is uppercase (only meaningful if contains letters)
+        if any(c.isalpha() for c in token):
+            assert token.isupper()  # Should be uppercase if contains letters
 
     def test_generate_qr_token_uniqueness(self):
         tokens = [generate_qr_token() for _ in range(10)]
@@ -137,12 +141,16 @@ class TestQRTokenIntegration:
     """Integration tests for QR token system."""
 
     def test_qr_token_consistency_across_calls(self):
+        """Test QR token consistency - should always be 8 hex characters"""
         tokens = [generate_qr_token() for _ in range(20)]
 
         for token in tokens:
             assert len(token) == 8
-            assert all(c in "0123456789" for c in token)  # Only digits now
-            assert token.isdigit()
+            assert all(c in "0123456789ABCDEF" for c in token)  # Hex characters only
+            assert all(c.isalnum() for c in token)  # Alphanumeric check
+            # Check if token is uppercase (only meaningful if contains letters)
+            if any(c.isalpha() for c in token):
+                assert token.isupper()  # Should be uppercase if contains letters
 
     def test_qr_token_no_collisions_large_sample(self):
         tokens = [generate_qr_token() for _ in range(1000)]
