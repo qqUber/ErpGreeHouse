@@ -19,14 +19,19 @@ export function ProductsWidget({ data }: { data?: any }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedProductCode, setSelectedProductCode] = useState<string | null>(null);
 
-  // Use products_total from API since detailed product data is not available
-  const total = Number(data?.products_total ?? 0);
-  const trendingCount = 0; // No trending data in API
+  const total = Number(data?.totalProducts ?? 0);
+  const topProducts = data?.topProducts ?? [];
+  const trendingCount = Array.isArray(data?.categoryTrend) ? data.categoryTrend.length : 0;
   const newWeek = trendingCount;
-  const topSelling = t('widgets.products.espresso'); // Default fallback
-  const demandSignal = 0; // No demand signal data in API
+  const topSelling = data?.topProductName ?? topProducts[0]?.name ?? '—';
+  const demandSignal = topProducts.reduce(
+    (sum: number, product: any) => sum + Number(product.quantity ?? 0),
+    0
+  );
   const lowStock = Math.max(0, total - newWeek + 1);
-  const selectedProduct = null; // No product details available
+  const selectedProduct =
+    topProducts.find((product: any) => (product.code ?? product.name) === selectedProductCode) ??
+    null;
 
   const compactContent = (
     <div className="crm-widget-compact">
@@ -85,46 +90,69 @@ export function ProductsWidget({ data }: { data?: any }) {
     <div className="crm-drawer-stack">
       <section className="crm-detail-card">
         <div className="crm-detail-head">
-          <h3 className="crm-section-title">Product Details</h3>
-          <button
-            type="button"
-            className="crm-inline-back"
-            onClick={() => setSelectedProductCode(null)}
-          >
-            Back to list
-          </button>
+          <h3 className="crm-section-title">
+            {selectedProduct ? 'Product profile' : 'Product overview'}
+          </h3>
+          {selectedProduct ? (
+            <button
+              type="button"
+              className="crm-inline-back"
+              onClick={() => setSelectedProductCode(null)}
+            >
+              Back to list
+            </button>
+          ) : null}
         </div>
         <div className="crm-detail-grid">
-          <div>
-            <span>Total Products</span>
-            <strong>{total}</strong>
-          </div>
-          <div>
-            <span>Trending</span>
-            <strong>{trendingCount}</strong>
-          </div>
-          <div>
-            <span>Demand Signal</span>
-            <strong>{demandSignal}</strong>
-          </div>
-          <div>
-            <span>Low Stock Risk</span>
-            <strong>{lowStock > 0 ? 'Watchlist' : 'Healthy'}</strong>
-          </div>
+          {selectedProduct ? (
+            <>
+              <div>
+                <span>Code</span>
+                <strong>{selectedProduct.code ?? '—'}</strong>
+              </div>
+              <div>
+                <span>Name</span>
+                <strong>{selectedProduct.name ?? '—'}</strong>
+              </div>
+              <div>
+                <span>Quantity</span>
+                <strong>{Number(selectedProduct.quantity ?? 0)}</strong>
+              </div>
+              <div>
+                <span>Revenue</span>
+                <strong>{Number(selectedProduct.revenue ?? 0).toLocaleString()}</strong>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <span>Total Products</span>
+                <strong>{total}</strong>
+              </div>
+              <div>
+                <span>Trending</span>
+                <strong>{trendingCount}</strong>
+              </div>
+              <div>
+                <span>Demand Signal</span>
+                <strong>{demandSignal}</strong>
+              </div>
+              <div>
+                <span>Low Stock Risk</span>
+                <strong>{lowStock > 0 ? 'Watchlist' : 'Healthy'}</strong>
+              </div>
+            </>
+          )}
         </div>
       </section>
       <section className="crm-collapsible-section">
-        <h3 className="crm-section-title">Product Summary</h3>
-        <div className="crm-inline-stats">
-          <span>
-            Active products: <strong>{total}</strong>
-          </span>
-          <span>
-            Trending: <strong>{trendingCount}</strong>
-          </span>
-          <span>
-            Top seller: <strong>{topSelling}</strong>
-          </span>
+        <h3 className="crm-section-title">Top products</h3>
+        <div className="crm-list">
+          {topProducts.length ? (
+            topProducts.map(renderProductRow)
+          ) : (
+            <div className="crm-empty-state">No product details available</div>
+          )}
         </div>
       </section>
     </div>
@@ -159,8 +187,11 @@ export function ProductsWidget({ data }: { data?: any }) {
           </span>
         </div>
         <div className="crm-list-preview">
-          {/* No product preview available - showing empty state */}
-          <div className="crm-empty-state">Product details not available</div>
+          {topProducts.length ? (
+            topProducts.map(renderProductRow)
+          ) : (
+            <div className="crm-empty-state">No product details available</div>
+          )}
         </div>
       </div>
     </Widget>

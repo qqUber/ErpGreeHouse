@@ -30,6 +30,7 @@
     "ngrok:backend": "dotenv -e ../.env -- node scripts/ngrok/backend.mjs"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.5",
     "@ngrok/ngrok": "^1.5.1",
     "@twa-dev/sdk": "^8.0.2",
     "echarts": "^6.0.0",

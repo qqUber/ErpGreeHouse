@@ -13,12 +13,15 @@ export function IntegrationsWidget({ data }: { data?: any }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Use integrations_total from API
-  const total = Number(data?.integrations_total ?? 0);
-  const active = total; // Assume all integrations are active since API doesn't provide status
-  const pendingCount = 0; // No pending count in API
+  const integrations = data?.integrations ?? [];
+  const total = integrations.length;
+  const active = integrations.filter((integration: any) => integration.status === 'online').length;
+  const pendingCount = Number(data?.pendingCount ?? 0);
+  const lastDelivery = data?.recentDeliveries?.[0]?.created_at;
+  const lastSync = lastDelivery
+    ? new Date(lastDelivery).toLocaleString()
+    : t('widgets.integrations.twoMinutesAgo');
   const allConnected = pendingCount === 0;
-  const lastSync = t('widgets.integrations.twoMinutesAgo'); // Default fallback
 
   const compactContent = (
     <StatCard
@@ -29,25 +32,55 @@ export function IntegrationsWidget({ data }: { data?: any }) {
   );
 
   const expandedContent = (
-    <div>
-      <h3 className="text-lg font-semibold mb-4">{t('widgets.integrations.details')}</h3>
-      <div className="space-y-4">
-        <div className="flex items-center">
-          <div className="integration-status-indicator"></div>
-          <span>Telegram Bot</span>
+    <div className="crm-drawer-stack">
+      <section className="crm-detail-card">
+        <div className="crm-detail-grid">
+          <div>
+            <span>{t('widgets.integrations.totalIntegrations')}</span>
+            <strong>{total}</strong>
+          </div>
+          <div>
+            <span>{t('widgets.common.active')}</span>
+            <strong>{active}</strong>
+          </div>
+          <div>
+            <span>{t('widgets.common.pending', 'Pending')}</span>
+            <strong>{pendingCount}</strong>
+          </div>
+          <div>
+            <span>{t('widgets.integrations.lastSync')}</span>
+            <strong>{lastSync}</strong>
+          </div>
         </div>
-        <div className="flex items-center">
-          <div className="integration-status-indicator"></div>
-          <span>VKontakte</span>
+      </section>
+      <section className="crm-collapsible-section">
+        <h3 className="crm-section-title">Integration status</h3>
+        <div className="crm-list">
+          {integrations.length ? (
+            integrations.map((integration: any, index: number) => (
+              <div
+                key={`${integration.kind}-${integration.name}-${index}`}
+                className="crm-customer-row"
+              >
+                <div className="crm-customer-main">
+                  <span className="crm-customer-name">
+                    {integration.name || integration.kind || 'Integration'}
+                  </span>
+                </div>
+                <div className="crm-customer-badges">
+                  <span
+                    className={`crm-badge ${integration.status === 'online' ? 'crm-badge-good' : 'crm-badge-warn'}`}
+                  >
+                    {integration.status || 'unknown'}
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="crm-empty-state">No integrations configured.</div>
+          )}
         </div>
-        <div className="flex items-center">
-          <div className="integration-status-indicator"></div>
-          <span>ERPNext</span>
-        </div>
-      </div>
-      <div className="mt-4 text-sm text-gray-600">
-        Total integrations: {total} | Active: {active}
-      </div>
+      </section>
     </div>
   );
 

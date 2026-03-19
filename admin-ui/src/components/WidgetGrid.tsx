@@ -10,7 +10,14 @@ const ResponsiveGridLayout = WidthProvider(Responsive);
 
 interface WidgetGridProps {
   role: string;
-  widgets: Array<{ id: string; component: React.ComponentType<any>; compactable?: boolean }>;
+  widgets: Array<{
+    id: string;
+    component: React.ComponentType<any>;
+    compactable?: boolean;
+    defaultSize?: { w: number; h: number };
+    minSize?: { w: number; h: number };
+    maxSize?: { w: number; h: number };
+  }>;
   onLayoutChange?: (layout: WidgetPosition[]) => void;
   data?: Record<string, any>;
 }
@@ -21,14 +28,14 @@ export function WidgetGrid({ role, widgets, onLayoutChange, data }: WidgetGridPr
   const initialLayout = getLayout(role);
   const defaultLayout = widgets.map((widget, index) => ({
     i: widget.id,
-    x: widget.id === 'analytics' ? 0 : (index * 3) % 12,
-    y: widget.id === 'analytics' ? 0 : Math.floor((index * 3) / 12) * 2 + 4, // Уменьшаю отступ
-    w: widget.id === 'analytics' ? 12 : 3,
-    h: widget.id === 'analytics' ? 3 : 2, // Уменьшаю высоту analytics с 6 до 3
-    minW: widget.id === 'analytics' ? 8 : 2,
-    minH: widget.id === 'analytics' ? 3 : 2, // Уменьшаю минимальную высоту analytics
-    maxW: widget.id === 'analytics' ? 12 : 8,
-    maxH: widget.id === 'analytics' ? 6 : 12, // Уменьшаю максимальную высоту analytics
+    x: (index * 4) % 12,
+    y: Math.floor((index * 4) / 12) * 3,
+    w: widget.defaultSize?.w ?? 4,
+    h: widget.defaultSize?.h ?? 3,
+    minW: widget.minSize?.w ?? 2,
+    minH: widget.minSize?.h ?? 2,
+    maxW: widget.maxSize?.w ?? 8,
+    maxH: widget.maxSize?.h ?? 12,
   }));
 
   const handleLayoutChange = (_layout: any[], allLayouts: Record<string, any[]>) => {
@@ -60,12 +67,13 @@ export function WidgetGrid({ role, widgets, onLayoutChange, data }: WidgetGridPr
       containerPadding={viewport.mode === 'mobile' ? [0, 0] : [4, 4]}
       compactType="vertical"
       preventCollision={false}
+      draggableHandle=".widget-header"
+      draggableCancel=".widget-toggle-icon, .widget-toggle-icon *, button, input, textarea, select, option, a, [role='button']"
       onLayoutChange={handleLayoutChange}
     >
       {widgets.map((widget) => {
         const WidgetComponent = widget.component;
-        // Analytics widget needs analytics data, others get full data
-        const widgetData = widget.id === 'analytics' ? data?.analytics : data;
+        const widgetData = data?.[widget.id];
         return (
           <div
             key={widget.id}

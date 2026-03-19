@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+
 def _build_client(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

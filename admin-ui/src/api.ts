@@ -965,6 +965,10 @@ export const Api = {
     api<import('./hooks/useDashboard').ProductData>('/api/v1/dashboard/products'),
   dashboardIntegrations: () =>
     api<import('./hooks/useDashboard').IntegrationData>('/api/v1/dashboard/integrations'),
+  dashboardHome: () =>
+    api<import('./services/dashboard-analytics.service').DashboardHomeViewModel>(
+      '/api/v1/dashboard/home'
+    ),
 
   // Marketing analytics for widget
   marketingAnalytics: () =>

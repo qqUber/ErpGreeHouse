@@ -3,7 +3,7 @@ import { WidgetPosition } from '../types/widgets';
 
 export function useWidgetLayout() {
   const [layouts, setLayouts] = useState<Record<string, WidgetPosition[]>>({});
-  const layoutStorageKey = 'dashboardLayouts_v2';
+  const layoutStorageKey = 'dashboardLayouts_v3';
 
   useEffect(() => {
     const savedLayouts = localStorage.getItem(layoutStorageKey);

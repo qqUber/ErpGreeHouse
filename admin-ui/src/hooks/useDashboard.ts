@@ -66,6 +66,7 @@ export interface CustomerData {
 }
 
 export interface ProductData {
+  total_products?: number; // Add total products count
   top_products_today: Array<{
     code: string;
     name: string;
@@ -132,15 +133,31 @@ export const useDashboard = () => {
     setError(null);
 
     try {
-      const [operational, marketing, customers, products, integrations] = await Promise.all([
-        Api.dashboardOperational(),
-        Api.dashboardMarketing(),
-        Api.dashboardCustomers(),
-        Api.dashboardProducts(),
-        Api.dashboardIntegrations(),
-      ]);
+      const [operational, marketing, customers, products, integrations, productsList] =
+        await Promise.all([
+          Api.dashboardOperational(),
+          Api.dashboardMarketing(),
+          Api.dashboardCustomers(),
+          Api.dashboardProducts(),
+          Api.dashboardIntegrations(),
+          Api.products(), // Get products list to count total products
+        ]);
+
+      // Extract total products count from products list
+      const totalProducts = productsList?.pagination?.total || 0;
 
       setData({
+        operational,
+        marketing,
+        customers,
+        products: {
+          ...products,
+          total_products: totalProducts, // Add total products count
+        },
+        integrations,
+      });
+
+      console.log('useDashboard - Raw API data:', {
         operational,
         marketing,
         customers,

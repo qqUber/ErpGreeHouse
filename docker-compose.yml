@@ -27,6 +27,7 @@ services:
       - .env
     environment:
       - REDIS_URL=redis://redis:6379/0
+      - ADMIN_SECRET=${ADMIN_SECRET}
     volumes:
       - ./middleware:/app
     depends_on:

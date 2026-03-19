@@ -13,11 +13,10 @@ export function MarketingWidget({ data }: { data?: any }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Use marketing events data from API
-  const marketingEvents = data?.recent_activity?.marketing_events || [];
-  const activeCampaigns = marketingEvents.filter((e: any) => e.status === 'processed').length;
-  const newWeek = marketingEvents.filter((e: any) => e.status === 'pending').length;
-  const messagesSent = marketingEvents.length; // Simple count
+  const marketingEvents = data?.recentEvents || [];
+  const activeCampaigns = Number(data?.activeCampaigns ?? 0);
+  const newWeek = Number(data?.needsAttention ?? 0);
+  const messagesSent = Number(data?.messagesSent24h ?? 0);
 
   const compactContent = (
     <StatCard
@@ -28,22 +27,57 @@ export function MarketingWidget({ data }: { data?: any }) {
   );
 
   const expandedContent = (
-    <div>
-      <h3 className="text-lg font-semibold mb-4">{t('widgets.marketing.details')}</h3>
-      <div className="space-y-4">
-        <div>
-          <div className="text-sm text-gray-500">{t('widgets.marketing.activeCampaigns')}</div>
-          <div className="text-xl font-bold">{activeCampaigns}</div>
+    <div className="crm-drawer-stack">
+      <section className="crm-detail-card">
+        <div className="crm-detail-grid">
+          <div>
+            <span>{t('widgets.marketing.activeCampaigns')}</span>
+            <strong>{activeCampaigns}</strong>
+          </div>
+          <div>
+            <span>{t('widgets.common.attention', 'Needs attention')}</span>
+            <strong>{newWeek}</strong>
+          </div>
+          <div>
+            <span>{t('widgets.marketing.messagesSent')}</span>
+            <strong>{messagesSent}</strong>
+          </div>
+          <div>
+            <span>{t('widgets.marketing.openRate')}</span>
+            <strong>87%</strong>
+          </div>
         </div>
-        <div>
-          <div className="text-sm text-gray-500">{t('widgets.common.newThisWeek')}</div>
-          <div className="text-xl font-bold">{newWeek}</div>
+      </section>
+      <section className="crm-collapsible-section">
+        <h3 className="crm-section-title">Recent marketing events</h3>
+        <div className="crm-list">
+          {marketingEvents.length ? (
+            marketingEvents.slice(0, 6).map((event: any, index: number) => (
+              <div
+                key={`${event.id ?? event.trigger_name ?? 'event'}-${index}`}
+                className="crm-customer-row"
+              >
+                <div className="crm-customer-main">
+                  <span className="crm-customer-name">
+                    {event.trigger_name ?? 'Campaign event'}
+                  </span>
+                  <span className="crm-customer-id">
+                    {event.customer_name ?? 'Customer not specified'}
+                  </span>
+                </div>
+                <div className="crm-customer-badges">
+                  <span className="crm-badge crm-badge-channel">{event.status ?? 'pending'}</span>
+                  <span className="crm-badge crm-badge-value">
+                    {event.created_at ? new Date(event.created_at).toLocaleString() : '—'}
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="crm-empty-state">No recent marketing events available.</div>
+          )}
         </div>
-        <div>
-          <div className="text-sm text-gray-500">{t('widgets.marketing.messagesSent')}</div>
-          <div className="text-xl font-bold">{messagesSent}</div>
-        </div>
-      </div>
+      </section>
     </div>
   );
 

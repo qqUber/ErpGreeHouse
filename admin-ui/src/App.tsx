@@ -7,7 +7,6 @@ import {
   Api,
   CustomerDetails,
   CustomerListItem,
-  getAdminSecret,
   Integration,
   IntegrationDelivery,
   IntegrationTemplate,
@@ -17,11 +16,12 @@ import {
 import { ComplianceView } from './ComplianceView';
 import { DashboardWrapper } from './components/dashboard/DashboardWrapper';
 import { IntegrationSettings } from './components/IntegrationSettings';
-import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ProductImport } from './components/ProductImport';
-import { ErrorMessage, LoadingSpinner, SuccessMessage, WarningMessage } from './components/ui';
+import { ErrorMessage, SuccessMessage, WarningMessage } from './components/ui';
+import { useDashboardData } from './hooks/useDashboardData';
 import { useViewportMode } from './hooks/useViewportMode';
 import { MarketingView } from './MarketingView';
+import type { DashboardHomeViewModel } from './services/dashboard-analytics.service';
 import { useAuth } from './stores/auth';
 
 type Tab =
@@ -36,29 +36,13 @@ type Tab =
   | 'analytics';
 
 type PublicStatus = {
-  api: string;
   admin_auth_configured: boolean;
   debug_mode: boolean;
   erp_sync_enabled: boolean;
 };
 
-type AuthStatus = {
-  bootstrap_enabled: boolean;
-  default_admin_present: boolean;
-  default_admin_username: string;
-  must_change_password: boolean;
-};
-
 type NoticeLevel = 'ok' | 'warn' | 'err';
 type Notice = { level: NoticeLevel; message: string; visible: boolean };
-
-type AuthFlow = {
-  active: boolean;
-  step: number;
-  percent: number;
-  label: string;
-  steps: Array<{ label: string; done: boolean }>;
-};
 
 function money(n: number) {
   return new Intl.NumberFormat('ru-RU').format(n);
@@ -85,19 +69,9 @@ function App() {
     mustChangePassword: authMustChangePassword,
     login: authLogin,
     logout: authLogout,
-    setUser: setAuthUser,
-    validateToken,
   } = useAuth();
 
   const [tab, setTab] = useState<Tab>('dashboard');
-
-  // Use new dashboard system
-  const {
-    data: dashboardData,
-    loading: dashboardLoading,
-    error: dashboardError,
-    refresh: refreshDashboard,
-  } = useDashboard();
   const [customers, setCustomers] = useState<CustomerListItem[]>([]);
   const [customerPage, setCustomerPage] = useState(1);
   const [customerTotal, setCustomerTotal] = useState(0);
@@ -106,30 +80,21 @@ function App() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [details, setDetails] = useState<CustomerDetails | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const customerRequestRef = useRef(0);
   const [searchSuggestions, setSearchSuggestions] = useState<CustomerListItem[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
-  const [authFlow, setAuthFlow] = useState<AuthFlow | null>(null);
-  const authAbortRef = useRef<AbortController | null>(null);
-  const authWorkerRef = useRef<Worker | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
   const [showSettingsOld, setShowSettingsOld] = useState(false);
   const [showSettingsNew, setShowSettingsNew] = useState(false);
 
   const [publicStatus, setPublicStatus] = useState<PublicStatus | null>(null);
-  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
-  const [loginMode, setLoginMode] = useState<'password' | 'key' | 'recover'>('password');
   const [username, setUsername] = useState(() => {
     if (typeof localStorage === 'undefined') return 'admin';
     return localStorage.getItem('admin_login_username') || 'admin';
   });
   const [password, setPassword] = useState('');
-  const [recoverySecret, setRecoverySecret] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [adminKey, setAdminKey] = useState(getAdminSecret());
-  const [showAdvancedLogin, setShowAdvancedLogin] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
@@ -145,15 +110,13 @@ function App() {
     Array<{ id: number; code: string; name: string; kind: string; price: number; active: boolean }>
   >([]);
   const [showProductImport, setShowProductImport] = useState(false);
-  const [optimisticReady, setOptimisticReady] = useState(false); // Оптимистичный UI
 
   // Use auth context values
   const effectiveAuthReady = !authLoading && (isAuthenticated || authReady);
   const effectiveMe = user || me;
-  const effectiveMustChangePassword = authMustChangePassword || mustChangePassword;
 
   console.log(
-    `[App] Render. LoginMode=${loginMode} Username=${username} PasswordLen=${password.length} Notice=${notice ? JSON.stringify(notice) : 'null'} AuthLoading=${authLoading} IsAuth=${isAuthenticated}`
+    `[App] Render. Username=${username} PasswordLen=${password.length} Notice=${notice ? JSON.stringify(notice) : 'null'} AuthLoading=${authLoading} IsAuth=${isAuthenticated}`
   );
 
   // Session restoration: check auth context on mount
@@ -164,11 +127,9 @@ function App() {
         console.log('[App] Session restored from JWT cookies');
         setMe(user);
         setAuthReady(true);
-        setOptimisticReady(true);
       } else {
         console.log('[App] No valid session, showing login');
         setAuthReady(false);
-        setOptimisticReady(true);
       }
     }
   }, [authLoading, isAuthenticated, user]);
@@ -178,6 +139,27 @@ function App() {
     localStorage.setItem('admin_login_username', username);
   }, [username]);
 
+  useEffect(() => {
+    if (!selectedId || selectedId <= 0) {
+      setDetails(null);
+      setQrCodeUrl('');
+      return;
+    }
+
+    void loadCustomer(selectedId);
+  }, [selectedId]);
+
+  function handleSelectCustomer(id: number | null) {
+    if (!id || id <= 0) {
+      setSelectedId(null);
+      setDetails(null);
+      setQrCodeUrl('');
+      return;
+    }
+
+    setSelectedId(id);
+  }
+
   const selected = useMemo(
     () => customers.find((c) => c.id === selectedId) || null,
     [customers, selectedId]
@@ -186,9 +168,17 @@ function App() {
     () => integrations.find((i) => i.id === selectedIntegrationId) || null,
     [integrations, selectedIntegrationId]
   );
+
   const effectivePermissions = useMemo(
     () => new Set(effectiveMe?.permissions || []),
     [effectiveMe?.permissions]
+  );
+  const canReadDashboard = useMemo(
+    () =>
+      effectiveMe?.role === 'owner' ||
+      effectivePermissions.has('*') ||
+      effectivePermissions.has('dashboard.read'),
+    [effectiveMe?.role, effectivePermissions]
   );
   const canReadIntegrations = useMemo(
     () =>
@@ -206,6 +196,94 @@ function App() {
         effectivePermissions.has('integration.update')),
     [effectiveMe?.role, effectivePermissions, publicStatus?.debug_mode]
   );
+
+  const { data: dashboardData, refresh: refreshDashboard } = useDashboardData({
+    enabled: effectiveAuthReady && Boolean(effectiveMe) && canReadDashboard && tab === 'dashboard',
+    roleKey: effectiveMe?.role || 'anonymous',
+  });
+
+  const allowedTabs = useMemo<Tab[]>(() => {
+    if (!effectiveMe) {
+      return [];
+    }
+
+    const tabs: Tab[] = ['customers', 'products', 'pos', 'settings'];
+
+    if (canReadDashboard) {
+      tabs.unshift('dashboard');
+    }
+
+    if (canReadIntegrations) {
+      tabs.push('integrations');
+    }
+
+    if (
+      effectiveMe.role === 'owner' ||
+      effectivePermissions.has('*') ||
+      effectivePermissions.has('marketing.campaign')
+    ) {
+      tabs.push('marketing');
+    }
+
+    if (
+      effectiveMe.role === 'owner' ||
+      effectivePermissions.has('*') ||
+      effectivePermissions.has('analytics.read')
+    ) {
+      tabs.push('analytics');
+    }
+
+    if (
+      effectiveMe.role === 'owner' ||
+      effectivePermissions.has('*') ||
+      effectivePermissions.has('compliance.read')
+    ) {
+      tabs.push('compliance');
+    }
+
+    return tabs;
+  }, [effectiveMe, effectivePermissions, canReadDashboard, canReadIntegrations]);
+
+  const safeTab = useMemo<Tab>(() => {
+    return allowedTabs.includes(tab) ? tab : allowedTabs[0] || 'settings';
+  }, [allowedTabs, tab]);
+
+  const showProtectedPanels = effectiveAuthReady && Boolean(effectiveMe);
+  const showLoginScreen = !effectiveAuthReady || !effectiveMe;
+
+  async function doLoginByPassword() {
+    try {
+      setError(null);
+      await authLogin(username.trim(), password);
+      await bootstrap();
+    } catch (e: any) {
+      showNotice('err', String(e?.message || e));
+    }
+  }
+
+  async function doLogout() {
+    try {
+      await authLogout();
+      setAdminSecret('');
+      setAuthReady(false);
+      setMustChangePassword(false);
+      setMe(null);
+      setTab('dashboard');
+    } catch (e: any) {
+      showNotice('err', String(e?.message || e));
+    }
+  }
+
+  async function doChangePassword() {
+    try {
+      await Api.changePassword(oldPassword, settingsNewPassword);
+      setOldPassword('');
+      setSettingsNewPassword('');
+      showNotice('ok', t('auth.passwordChangeSuccess', 'Password updated'));
+    } catch (e: any) {
+      showNotice('err', String(e?.message || e));
+    }
+  }
 
   // Navigation function for deep linking
   function navigateTo(tabName: string, params?: Record<string, string | number>) {
@@ -234,34 +312,12 @@ function App() {
     window.setTimeout(() => setNotice((prev) => (prev ? { ...prev, visible: false } : prev)), 3500);
   }
 
-  function stopAuthFlow() {
-    console.log('[App] stopAuthFlow called');
-    authAbortRef.current?.abort();
-    authAbortRef.current = null;
-    authWorkerRef.current?.postMessage({ type: 'stop' });
-    authWorkerRef.current?.terminate();
-    authWorkerRef.current = null;
-    setAuthFlow(null);
-  }
-
   async function loadPublicStatus() {
     try {
       const s = await Api.publicStatus();
       setPublicStatus(s);
     } catch {
       setPublicStatus(null);
-    }
-  }
-
-  async function loadAuthStatus() {
-    try {
-      const s = await Api.authStatus();
-      setAuthStatus(s);
-      if (!username.trim() && s.default_admin_username) {
-        setUsername(s.default_admin_username);
-      }
-    } catch {
-      setAuthStatus(null);
     }
   }
 
@@ -275,7 +331,12 @@ function App() {
 
   async function loadCustomer(id: number) {
     setError(null);
+    const requestId = customerRequestRef.current + 1;
+    customerRequestRef.current = requestId;
     const d = await Api.customer(id);
+    if (customerRequestRef.current !== requestId) {
+      return;
+    }
     setDetails(d);
 
     // Generate QR code for the customer
@@ -289,11 +350,16 @@ function App() {
             light: '#FFFFFF',
           },
         });
+        if (customerRequestRef.current !== requestId) {
+          return;
+        }
         setQrCodeUrl(qrDataUrl);
       } catch (err) {
         console.error('Failed to generate QR code:', err);
         setQrCodeUrl('');
       }
+    } else {
+      setQrCodeUrl('');
     }
   }
 
@@ -346,46 +412,37 @@ function App() {
   async function bootstrap() {
     setError(null);
     try {
-      // First, load public status (no auth required)
-      await loadPublicStatus();
-      await loadAuthStatus();
-
-      // Check if user is authenticated from auth context
-      if (user) {
-        // Use the user data from auth context instead of making redundant Api.me() call
-        setMe(user);
-        console.log('[Bootstrap] Using user from auth context:', user.username);
-
-        // Load protected data since user is authenticated
-        try {
-          await Promise.all([
-            refreshDashboard(),
-            loadCustomers('', 1, customerLimit),
-            loadProducts(),
-          ]);
-        } catch (dataError: any) {
-          // Failed to load protected data, but user is authenticated
-          console.warn('[Bootstrap] Failed to load some data:', dataError?.message);
-        }
-      } else {
-        // Not authenticated - this is expected, user needs to login
-        console.log('[Bootstrap] Not authenticated');
+      if (!user) {
         setMe(null);
+        setAuthReady(false);
+        return;
+      }
+
+      await loadPublicStatus();
+
+      setMe(user);
+      console.log('[Bootstrap] Using user from auth context:', user.username);
+
+      try {
+        await Promise.all([
+          loadCustomers('', 1, customerLimit),
+          loadProducts(),
+          canReadDashboard ? refreshDashboard() : Promise.resolve(),
+        ]);
+      } catch (dataError: any) {
+        console.warn('[Bootstrap] Failed to load some data:', dataError?.message);
       }
 
       setAuthReady(true);
-      setOptimisticReady(true); // UI готов
     } catch (e: any) {
       const msg = String(e?.message || e);
       // Only show error for actual errors, not auth-related issues
       if (msg.includes('401') || msg.toLowerCase().includes('unauthorized')) {
         setAuthReady(false);
-        setOptimisticReady(false);
         return;
       }
       showNotice('err', msg);
       setAuthReady(false);
-      setOptimisticReady(false);
     }
   }
 
@@ -400,7 +457,74 @@ function App() {
     }
     console.log('[App] Auth loading complete, running bootstrap...');
     bootstrap();
-  }, [authLoading, user]);
+  }, [authLoading, user, canReadDashboard]);
+
+  useEffect(() => {
+    if (!showProtectedPanels) return;
+    if (selectedId != null) {
+      loadCustomer(selectedId).catch((e) => setError(String(e)));
+    }
+  }, [selectedId, showProtectedPanels]);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1);
+      if (!hash || !showProtectedPanels) return;
+
+      const [tabName, queryString] = hash.split('?');
+      const params = new URLSearchParams(queryString || '');
+      const tabMap: Record<string, Tab> = {
+        dashboard: 'dashboard',
+        customers: 'customers',
+        pos: 'pos',
+        integrations: 'integrations',
+        products: 'products',
+        settings: 'settings',
+        marketing: 'marketing',
+        analytics: 'analytics',
+        compliance: 'compliance',
+      };
+
+      const nextTab = tabMap[tabName];
+      if (nextTab && allowedTabs.includes(nextTab)) {
+        setTab(nextTab);
+      }
+
+      const customerId = params.get('customer');
+      if (customerId) {
+        const id = Number.parseInt(customerId, 10);
+        if (!Number.isNaN(id)) {
+          setSelectedId(id);
+        }
+      }
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [allowedTabs, showProtectedPanels]);
+
+  useEffect(() => {
+    if (!showProtectedPanels) return;
+    if (tab === 'integrations' && canReadIntegrations) {
+      Promise.all([loadIntegrations(), loadIntegrationTemplates()]).catch((e) =>
+        setError(String(e))
+      );
+    }
+  }, [tab, canReadIntegrations, showProtectedPanels]);
+
+  useEffect(() => {
+    if (!showProtectedPanels) return;
+    if (tab === 'integrations' && canReadIntegrations && selectedIntegrationId != null) {
+      loadDeliveries(selectedIntegrationId).catch((e) => setError(String(e)));
+    }
+  }, [selectedIntegrationId, tab, canReadIntegrations, showProtectedPanels]);
+
+  useEffect(() => {
+    if (tab === 'integrations' && !canReadIntegrations && integrationSubTab === 'settings') {
+      setIntegrationSubTab('webhooks');
+    }
+  }, [tab, canReadIntegrations, integrationSubTab]);
 
   useEffect(() => {
     // Detect E2E mode at runtime using multiple signals
@@ -420,8 +544,6 @@ function App() {
     const onVis = () => {
       if (document.hidden) {
         setPassword('');
-        setNewPassword('');
-        setRecoverySecret('');
         setOldPassword('');
         setSettingsNewPassword('');
       }
@@ -429,386 +551,6 @@ function App() {
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
-
-  useEffect(() => {
-    if (selectedId != null && authReady) {
-      loadCustomer(selectedId).catch((e) => setError(String(e)));
-    }
-  }, [selectedId, authReady]);
-
-  // Hash-based navigation handler
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.slice(1); // Remove leading '#'
-      if (!hash) return;
-
-      const [tabName, queryString] = hash.split('?');
-      const params = new URLSearchParams(queryString || '');
-
-      // Map hash to tab
-      const tabMap: Record<string, Tab> = {
-        dashboard: 'dashboard',
-        customers: 'customers',
-        pos: 'pos',
-        integrations: 'integrations',
-        products: 'products',
-        settings: 'settings',
-        marketing: 'marketing',
-      };
-
-      if (tabMap[tabName]) {
-        setTab(tabMap[tabName]);
-      }
-
-      // Handle query parameters
-      const customerId = params.get('customer');
-      if (customerId) {
-        const id = parseInt(customerId, 10);
-        if (!isNaN(id)) {
-          setSelectedId(id);
-        }
-      }
-
-      const orderId = params.get('order');
-      if (orderId) {
-        // For now, just show in notification - could navigate to order details
-        console.log('Order ID:', orderId);
-      }
-    };
-
-    // Handle initial hash
-    if (window.location.hash) {
-      handleHashChange();
-    }
-
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  useEffect(() => {
-    if (!authReady) return;
-    if (tab === 'integrations' && canReadIntegrations) {
-      Promise.all([loadIntegrations(), loadIntegrationTemplates()]).catch((e) =>
-        setError(String(e))
-      );
-    }
-  }, [tab, authReady, canReadIntegrations]);
-
-  useEffect(() => {
-    if (!authReady) return;
-    if (canReadIntegrations && selectedIntegrationId != null) {
-      loadDeliveries(selectedIntegrationId).catch((e) => setError(String(e)));
-    }
-  }, [selectedIntegrationId, authReady, canReadIntegrations]);
-
-  useEffect(() => {
-    if (tab === 'integrations' && !canReadIntegrations && integrationSubTab === 'settings') {
-      setIntegrationSubTab('webhooks');
-    }
-  }, [tab, canReadIntegrations, integrationSubTab]);
-
-  function startAuthFlowSteps(labels: string[]) {
-    stopAuthFlow();
-    const ctrl = new AbortController();
-    authAbortRef.current = ctrl;
-    const steps = labels.map((label) => ({ label, done: false }));
-    setAuthFlow({ active: true, step: 0, percent: 0, label: steps[0]?.label || '', steps });
-    const w = new Worker(new URL('./authWorker.ts', import.meta.url), { type: 'module' });
-    authWorkerRef.current = w;
-    w.onmessage = (e) => {
-      const m = e.data as any;
-      if (m?.type === 'progress') {
-        setAuthFlow((prev) =>
-          prev ? { ...prev, step: m.step, percent: m.percent, label: m.label } : prev
-        );
-      }
-    };
-    w.postMessage({ type: 'start', steps: labels.map((label) => ({ label })) });
-    return ctrl.signal;
-  }
-
-  function markAuthStepDone(stepIndex: number) {
-    authWorkerRef.current?.postMessage({ type: 'completeStep', step: stepIndex });
-    setAuthFlow((prev) => {
-      if (!prev) return prev;
-      const next = prev.steps.map((s, i) => (i === stepIndex ? { ...s, done: true } : s));
-      return { ...prev, steps: next };
-    });
-  }
-
-  function setAuthStep(stepIndex: number, label: string) {
-    authWorkerRef.current?.postMessage({ type: 'setStep', step: stepIndex, label });
-    setAuthFlow((prev) => (prev ? { ...prev, step: stepIndex, label } : prev));
-  }
-
-  async function doLoginByKey() {
-    setError(null);
-    try {
-      const signal = startAuthFlowSteps([
-        t('authFlow.connecting'),
-        t('authFlow.checkingKey'),
-        t('authFlow.creatingSession'),
-      ]);
-      setAuthStep(0, t('authFlow.connectingServer'));
-      await Api.publicStatus(signal);
-      markAuthStepDone(0);
-
-      setAuthStep(1, t('authFlow.checkingKey_'));
-      setMustChangePassword(false);
-      setAdminSecret(adminKey.trim());
-      markAuthStepDone(1);
-
-      setAuthStep(2, t('authFlow.creatingSession_'));
-      await bootstrap();
-      markAuthStepDone(2);
-      showNotice('ok', t('auth.loginSuccess'));
-      stopAuthFlow();
-    } catch (e: any) {
-      console.log(`[App] Login failed: ${e?.message || e}`);
-      if (
-        String(e?.name || '')
-          .toLowerCase()
-          .includes('abort')
-      ) {
-        showNotice('warn', t('auth.loginCancelled'));
-      } else {
-        showNotice('err', String(e?.message || e));
-      }
-      stopAuthFlow();
-    }
-  }
-
-  async function doLoginByPassword() {
-    console.log('[App] doLoginByPassword started');
-    console.log(
-      '[App] Current auth state before login - isAuthenticated:',
-      isAuthenticated,
-      'user:',
-      user
-    );
-    setError(null);
-    try {
-      const signal = startAuthFlowSteps([
-        t('authFlow.connecting'),
-        t('authFlow.checkingCredentials'),
-        t('authFlow.creatingSession'),
-      ]);
-      setAuthStep(0, t('authFlow.connectingServer'));
-      await Promise.all([Api.publicStatus(signal), Api.authStatus(signal)]);
-      markAuthStepDone(0);
-
-      setAuthStep(1, t('authFlow.verifyingCredentials'));
-      // Use auth context login which handles JWT cookies automatically
-      await authLogin(username.trim(), password);
-      console.log(
-        '[App] Auth login completed, checking auth state - isAuthenticated:',
-        isAuthenticated,
-        'user:',
-        user
-      );
-      setMustChangePassword(authMustChangePassword);
-      setPassword('');
-      // Note: JWT tokens are in httpOnly cookies, no need to setAdminSecret
-      markAuthStepDone(1);
-
-      setAuthStep(2, t('authFlow.creatingSession_'));
-      console.log('[App] Calling bootstrap with user:', user);
-      await bootstrap();
-      markAuthStepDone(2);
-      if (authMustChangePassword || mustChangePassword) {
-        setTab('settings');
-      }
-      showNotice('ok', t('auth.loginSuccess'));
-      stopAuthFlow();
-    } catch (e: any) {
-      console.error(`[App] Login failed (catch):`, e);
-      console.error(`[App] Login failed message:`, e.message);
-      if (
-        String(e?.name || '')
-          .toLowerCase()
-          .includes('abort')
-      ) {
-        showNotice('warn', t('auth.loginCancelled'));
-      } else {
-        showNotice('err', String(e?.message || e));
-      }
-      stopAuthFlow();
-    }
-  }
-
-  async function doRecoverPassword() {
-    setError(null);
-    try {
-      const signal = startAuthFlowSteps([
-        t('authFlow.connecting'),
-        t('authFlow.checkingData'),
-        t('authFlow.resettingPassword'),
-      ]);
-      setAuthStep(0, t('authFlow.connectingServer'));
-      await Promise.all([Api.publicStatus(signal), Api.authStatus(signal)]);
-      markAuthStepDone(0);
-
-      setAuthStep(1, t('authFlow.checkingData_'));
-      markAuthStepDone(1);
-
-      setAuthStep(2, t('authFlow.resettingPassword_'));
-      await Api.recoverPassword(username.trim(), newPassword, recoverySecret, signal);
-      markAuthStepDone(2);
-      setRecoverySecret('');
-      setNewPassword('');
-      setPassword('');
-      setLoginMode('password');
-      showNotice('ok', t('auth.passwordResetSuccess'));
-      stopAuthFlow();
-    } catch (e: any) {
-      if (
-        String(e?.name || '')
-          .toLowerCase()
-          .includes('abort')
-      ) {
-        showNotice('warn', t('auth.operationCancelled'));
-      } else {
-        showNotice('err', String(e?.message || e));
-      }
-      stopAuthFlow();
-    }
-  }
-
-  async function doChangePassword() {
-    setError(null);
-    try {
-      const signal = startAuthFlowSteps([
-        t('authFlow.checkingCredentials'),
-        t('authFlow.updatingPassword'),
-        t('authFlow.completing'),
-      ]);
-      setAuthStep(0, t('authFlow.verifyingCredentials'));
-      markAuthStepDone(0);
-
-      setAuthStep(1, t('authFlow.updatingPassword_'));
-      await Api.changePassword(oldPassword, settingsNewPassword, signal);
-      markAuthStepDone(1);
-
-      setAuthStep(2, t('authFlow.completing'));
-      setOldPassword('');
-      setSettingsNewPassword('');
-      setAdminSecret('');
-      setAdminKey('');
-      setAuthReady(false);
-      setMustChangePassword(false);
-      setTab('dashboard');
-      markAuthStepDone(2);
-      showNotice('ok', t('auth.passwordChanged'));
-      stopAuthFlow();
-    } catch (e: any) {
-      if (
-        String(e?.name || '')
-          .toLowerCase()
-          .includes('abort')
-      ) {
-        showNotice('warn', 'Операция отменена.');
-      } else {
-        showNotice('err', String(e?.message || e));
-      }
-      stopAuthFlow();
-    }
-  }
-
-  async function doLogout() {
-    setError(null);
-    try {
-      // Use auth context logout which clears JWT cookies automatically
-      await authLogout();
-    } catch {
-    } finally {
-      setAdminSecret('');
-      setAdminKey('');
-      setAuthReady(false);
-      setMustChangePassword(false);
-      setMe(null);
-      setTab('dashboard');
-      showNotice('ok', t('auth.loggedOut'));
-    }
-  }
-
-  const allowedTabs: Tab[] = useMemo(() => {
-    if (!effectiveAuthReady)
-      return [
-        'dashboard',
-        'customers',
-        'pos',
-        'integrations',
-        'products',
-        'settings',
-        'marketing',
-        'compliance',
-      ];
-    const effectiveUser = user || me;
-    // If authenticated but user data not yet loaded, show all tabs temporarily
-    // This prevents race condition where effectiveAuthReady=true but me is still null
-    if (!effectiveUser)
-      return [
-        'dashboard',
-        'customers',
-        'pos',
-        'integrations',
-        'products',
-        'settings',
-        'marketing',
-        'compliance',
-      ];
-    const role = String(effectiveUser?.role || '').toLowerCase();
-    if (role === 'owner')
-      return [
-        'dashboard',
-        'customers',
-        'pos',
-        'integrations',
-        'products',
-        'settings',
-        'marketing',
-        'compliance',
-      ];
-
-    const perms = new Set(effectiveUser?.permissions || []);
-    // If user has '*' permission, they see everything (though owner check above covers this usually)
-    if (perms.has('*'))
-      return [
-        'dashboard',
-        'customers',
-        'pos',
-        'integrations',
-        'products',
-        'settings',
-        'marketing',
-        'compliance',
-        'analytics',
-      ];
-
-    const tabs: Tab[] = [];
-    if (perms.has('dashboard.read')) tabs.push('dashboard');
-    if (perms.has('customer.list') || perms.has('customer.read')) tabs.push('customers');
-    if (perms.has('pos.sale')) tabs.push('pos');
-    if (
-      perms.has('integration.read') ||
-      (publicStatus?.debug_mode && (perms.has('pos.sale') || perms.has('integration.update')))
-    )
-      tabs.push('integrations');
-    if (perms.has('product.read')) tabs.push('products');
-    // Settings is always available for password change, but content inside depends on permissions
-    tabs.push('settings');
-    if (perms.has('marketing.campaign')) tabs.push('marketing');
-    if (perms.has('customer.delete') || perms.has('customer.read')) tabs.push('compliance');
-    if (perms.has('dashboard.read')) tabs.push('analytics');
-
-    return tabs;
-  }, [effectiveAuthReady, user, me?.role, me?.permissions, publicStatus?.debug_mode]);
-
-  const safeTab: Tab = useMemo(() => {
-    if (!effectiveAuthReady) return tab;
-    return allowedTabs.includes(tab) ? tab : allowedTabs[0] || 'dashboard';
-  }, [tab, effectiveAuthReady, allowedTabs]);
-  const showProtectedPanels = optimisticReady && !!effectiveMe;
 
   useEffect(() => {
     if (!effectiveAuthReady) return;
@@ -824,142 +566,221 @@ function App() {
 
   return (
     <div className={`container app-shell mode-${viewport.mode} density-${viewport.density}`}>
-      <header className="header">
-        <nav aria-label="Main navigation" style={{ width: '100%' }}>
-          <div className="tabs" role="tablist" aria-label="Main navigation">
-            {allowedTabs.includes('dashboard') ? (
+      {!showLoginScreen ? (
+        <header className="header">
+          <nav aria-label="Main navigation" style={{ width: '100%' }}>
+            <div className="tabs" role="tablist" aria-label="Main navigation">
+              {allowedTabs.includes('dashboard') ? (
+                <button
+                  id="dashboard-tab"
+                  className={`tab ${safeTab === 'dashboard' ? 'tabActive' : ''}`}
+                  onClick={() => setTab('dashboard')}
+                  role="tab"
+                  aria-selected={safeTab === 'dashboard'}
+                  aria-controls={showProtectedPanels ? 'dashboard-panel' : undefined}
+                  data-testid="admin_nav_dashboard"
+                >
+                  {t('menu.dashboard')}
+                </button>
+              ) : null}
+              {allowedTabs.includes('customers') ? (
+                <button
+                  id="customers-tab"
+                  className={`tab ${safeTab === 'customers' ? 'tabActive' : ''}`}
+                  onClick={() => setTab('customers')}
+                  role="tab"
+                  aria-selected={safeTab === 'customers'}
+                  aria-controls={showProtectedPanels ? 'customers-panel' : undefined}
+                  data-testid="admin_nav_customers"
+                >
+                  {t('menu.clients')}
+                </button>
+              ) : null}
+              {allowedTabs.includes('pos') ? (
+                <button
+                  id="pos-tab"
+                  className={`tab ${safeTab === 'pos' ? 'tabActive' : ''}`}
+                  onClick={() => setTab('pos')}
+                  role="tab"
+                  aria-selected={safeTab === 'pos'}
+                  aria-controls={showProtectedPanels ? 'pos-panel' : undefined}
+                  data-testid="admin_nav_pos"
+                >
+                  {t('sales.title')}
+                </button>
+              ) : null}
+              {allowedTabs.includes('integrations') ? (
+                <button
+                  id="integrations-tab"
+                  className={`tab ${safeTab === 'integrations' ? 'tabActive' : ''}`}
+                  onClick={() => setTab('integrations')}
+                  role="tab"
+                  aria-selected={safeTab === 'integrations'}
+                  aria-controls={showProtectedPanels ? 'integrations-panel' : undefined}
+                  data-testid="admin_nav_integrations"
+                >
+                  {t('menu.integrations')}
+                </button>
+              ) : null}
+              {allowedTabs.includes('products') ? (
+                <button
+                  id="products-tab"
+                  className={`tab ${safeTab === 'products' ? 'tabActive' : ''}`}
+                  onClick={() => setTab('products')}
+                  role="tab"
+                  aria-selected={safeTab === 'products'}
+                  aria-controls={showProtectedPanels ? 'products-panel' : undefined}
+                  data-testid="admin_nav_products"
+                >
+                  {t('menu.products')}
+                </button>
+              ) : null}
+              {allowedTabs.includes('settings') ? (
+                <button
+                  id="settings-tab"
+                  className={`tab ${safeTab === 'settings' ? 'tabActive' : ''}`}
+                  onClick={() => setTab('settings')}
+                  role="tab"
+                  aria-selected={safeTab === 'settings'}
+                  aria-controls={showProtectedPanels ? 'settings-panel' : undefined}
+                  data-testid="admin_nav_settings"
+                >
+                  {t('menu.settings')}
+                </button>
+              ) : null}
+              {allowedTabs.includes('marketing') ? (
+                <button
+                  id="marketing-tab"
+                  className={`tab ${safeTab === 'marketing' ? 'tabActive' : ''}`}
+                  onClick={() => setTab('marketing')}
+                  role="tab"
+                  aria-selected={safeTab === 'marketing'}
+                  aria-controls={showProtectedPanels ? 'marketing-panel' : undefined}
+                  data-testid="admin_nav_marketing"
+                >
+                  {t('menu.marketing')}
+                </button>
+              ) : null}
+              {allowedTabs.includes('compliance') ? (
+                <button
+                  id="compliance-tab"
+                  className={`tab ${safeTab === 'compliance' ? 'tabActive' : ''}`}
+                  onClick={() => setTab('compliance')}
+                  role="tab"
+                  aria-selected={safeTab === 'compliance'}
+                  aria-controls={showProtectedPanels ? 'compliance-panel' : undefined}
+                  data-testid="admin_nav_compliance"
+                >
+                  {t('menu.compliance')}
+                </button>
+              ) : null}
+              {allowedTabs.includes('analytics') ? (
+                <button
+                  id="analytics-tab"
+                  className={`tab ${safeTab === 'analytics' ? 'tabActive' : ''}`}
+                  onClick={() => setTab('analytics')}
+                  role="tab"
+                  aria-selected={safeTab === 'analytics'}
+                  aria-controls={showProtectedPanels ? 'analytics-panel' : undefined}
+                  data-testid="admin_nav_analytics"
+                >
+                  {t('menu.analytics')}
+                </button>
+              ) : null}
+            </div>
+          </nav>
+          {authReady ? (
+            <div className="pill">
+              {t('common.role')}: {roleLabel(me?.role || '')}
+            </div>
+          ) : null}
+        </header>
+      ) : null}
+      {/* Show login form when not authenticated OR when auth is still loading */}
+      {showLoginScreen ? (
+        <div
+          className="grid"
+          style={{
+            minHeight: 'calc(100vh - 140px)',
+            display: 'grid',
+            alignItems: 'center',
+            justifyItems: 'center',
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              width: '100%',
+              maxWidth: 380,
+              padding: 24,
+              borderRadius: 20,
+              boxShadow: 'var(--shadow-lg)',
+              display: 'grid',
+              gap: 16,
+            }}
+          >
+            <div style={{ display: 'grid', gap: 8, textAlign: 'center' }}>
+              <div style={{ fontWeight: 800, fontSize: 'var(--font-size-2xl)' }}>
+                {t('app.title')}
+              </div>
+              <div style={{ color: 'var(--muted)', fontSize: 'var(--font-size-sm)' }}>
+                {t('auth.login')}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gap: 12 }}>
+              <input
+                className="input"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder={t('auth.loginPlaceholder')}
+                autoComplete="username"
+                spellCheck={false}
+                data-testid="common_input_username_en"
+              />
+              <div style={{ display: 'grid', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    className="input"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={t('auth.passwordPlaceholder')}
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    spellCheck={false}
+                    data-testid="common_input_password_en"
+                  />
+                  <button
+                    className="btn"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={t('forms.labels.showPassword')}
+                    type="button"
+                    data-testid="common_btn_toggle_password_en"
+                  >
+                    {showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                  </button>
+                </div>
+              </div>
               <button
-                id="dashboard-tab"
-                className={`tab ${safeTab === 'dashboard' ? 'tabActive' : ''}`}
-                onClick={() => setTab('dashboard')}
-                role="tab"
-                aria-selected={safeTab === 'dashboard'}
-                aria-controls={showProtectedPanels ? 'dashboard-panel' : undefined}
-                data-testid="admin_nav_dashboard"
+                className="btn btnPrimary"
+                onClick={() => void doLoginByPassword()}
+                disabled={!username.trim() || !password}
+                data-testid="common_btn_login_en"
+                style={{ width: '100%', justifyContent: 'center' }}
               >
-                {t('menu.dashboard')}
+                {t('auth.loginButton')}
               </button>
-            ) : null}
-            {allowedTabs.includes('customers') ? (
-              <button
-                id="customers-tab"
-                className={`tab ${safeTab === 'customers' ? 'tabActive' : ''}`}
-                onClick={() => setTab('customers')}
-                role="tab"
-                aria-selected={safeTab === 'customers'}
-                aria-controls={showProtectedPanels ? 'customers-panel' : undefined}
-                data-testid="admin_nav_customers"
-              >
-                {t('menu.clients')}
-              </button>
-            ) : null}
-            {allowedTabs.includes('pos') ? (
-              <button
-                id="pos-tab"
-                className={`tab ${safeTab === 'pos' ? 'tabActive' : ''}`}
-                onClick={() => setTab('pos')}
-                role="tab"
-                aria-selected={safeTab === 'pos'}
-                aria-controls={showProtectedPanels ? 'pos-panel' : undefined}
-                data-testid="admin_nav_pos"
-              >
-                {t('sales.title')}
-              </button>
-            ) : null}
-            {allowedTabs.includes('integrations') ? (
-              <button
-                id="integrations-tab"
-                className={`tab ${safeTab === 'integrations' ? 'tabActive' : ''}`}
-                onClick={() => setTab('integrations')}
-                role="tab"
-                aria-selected={safeTab === 'integrations'}
-                aria-controls={showProtectedPanels ? 'integrations-panel' : undefined}
-                data-testid="admin_nav_integrations"
-              >
-                {t('menu.integrations')}
-              </button>
-            ) : null}
-            {allowedTabs.includes('products') ? (
-              <button
-                id="products-tab"
-                className={`tab ${safeTab === 'products' ? 'tabActive' : ''}`}
-                onClick={() => setTab('products')}
-                role="tab"
-                aria-selected={safeTab === 'products'}
-                aria-controls={showProtectedPanels ? 'products-panel' : undefined}
-                data-testid="admin_nav_products"
-              >
-                {t('menu.products')}
-              </button>
-            ) : null}
-            {allowedTabs.includes('settings') ? (
-              <button
-                id="settings-tab"
-                className={`tab ${safeTab === 'settings' ? 'tabActive' : ''}`}
-                onClick={() => setTab('settings')}
-                role="tab"
-                aria-selected={safeTab === 'settings'}
-                aria-controls={showProtectedPanels ? 'settings-panel' : undefined}
-                data-testid="admin_nav_settings"
-              >
-                {t('menu.settings')}
-              </button>
-            ) : null}
-            {allowedTabs.includes('marketing') ? (
-              <button
-                id="marketing-tab"
-                className={`tab ${safeTab === 'marketing' ? 'tabActive' : ''}`}
-                onClick={() => setTab('marketing')}
-                role="tab"
-                aria-selected={safeTab === 'marketing'}
-                aria-controls={showProtectedPanels ? 'marketing-panel' : undefined}
-                data-testid="admin_nav_marketing"
-              >
-                {t('menu.marketing')}
-              </button>
-            ) : null}
-            {allowedTabs.includes('compliance') ? (
-              <button
-                id="compliance-tab"
-                className={`tab ${safeTab === 'compliance' ? 'tabActive' : ''}`}
-                onClick={() => setTab('compliance')}
-                role="tab"
-                aria-selected={safeTab === 'compliance'}
-                aria-controls={showProtectedPanels ? 'compliance-panel' : undefined}
-                data-testid="admin_nav_compliance"
-              >
-                {t('menu.compliance')}
-              </button>
-            ) : null}
-            {allowedTabs.includes('analytics') ? (
-              <button
-                id="analytics-tab"
-                className={`tab ${safeTab === 'analytics' ? 'tabActive' : ''}`}
-                onClick={() => setTab('analytics')}
-                role="tab"
-                aria-selected={safeTab === 'analytics'}
-                aria-controls={showProtectedPanels ? 'analytics-panel' : undefined}
-                data-testid="admin_nav_analytics"
-              >
-                {t('menu.analytics')}
-              </button>
-            ) : null}
+            </div>
           </div>
-        </nav>
-        {authReady ? (
-          <div className="pill">
-            {t('common.role')}: {roleLabel(me?.role || '')}
-          </div>
-        ) : null}
-        <LanguageSwitcher />
-      </header>
+        </div>
+      ) : null}
 
       <main
         aria-label="Main content"
         data-viewport-mode={viewport.mode}
         data-viewport-density={viewport.density}
       >
-        {notice && notice.visible ? (
+        {!showLoginScreen && notice?.visible ? (
           <div className="grid">
             {notice.level === 'ok' ? (
               <SuccessMessage message={notice.message} />
@@ -968,250 +789,6 @@ function App() {
             ) : (
               <ErrorMessage message={notice.message} />
             )}
-          </div>
-        ) : null}
-
-        {/* Show login form when not authenticated OR when auth is still loading */}
-        {!effectiveAuthReady || !effectiveMe ? (
-          <div
-            className="grid"
-            style={{
-              minHeight: 'calc(100vh - 180px)',
-              alignItems: 'center',
-              justifyItems: 'center',
-            }}
-          >
-            <div
-              className="card"
-              style={{
-                width: '100%',
-                maxWidth: 380,
-                padding: 24,
-                borderRadius: 20,
-                boxShadow: 'var(--shadow-lg)',
-                display: 'grid',
-                gap: 16,
-              }}
-            >
-              <div style={{ display: 'grid', gap: 8, textAlign: 'center' }}>
-                <div style={{ fontWeight: 800, fontSize: 'var(--font-size-2xl)' }}>
-                  {t('app.title')}
-                </div>
-                <div style={{ color: 'var(--muted)', fontSize: 'var(--font-size-sm)' }}>
-                  {t('auth.login')}
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gap: 12 }}>
-                <input
-                  className="input"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder={t('auth.loginPlaceholder')}
-                  autoComplete="username"
-                  spellCheck={false}
-                  data-testid="common_input_username_en"
-                />
-                <div style={{ display: 'grid', gap: 8 }}>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      className="input"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder={t('auth.passwordPlaceholder')}
-                      type={showPassword ? 'text' : 'password'}
-                      autoComplete="current-password"
-                      spellCheck={false}
-                      data-testid="common_input_password_en"
-                    />
-                    <button
-                      className="btn"
-                      onClick={() => setShowPassword((v) => !v)}
-                      aria-label={t('forms.labels.showPassword')}
-                      type="button"
-                      data-testid="common_btn_toggle_password_en"
-                    >
-                      {showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLoginMode('recover');
-                      setShowAdvancedLogin(true);
-                    }}
-                    style={{
-                      border: 'none',
-                      background: 'transparent',
-                      color: 'var(--primary)',
-                      padding: 0,
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      fontSize: 'var(--font-size-sm)',
-                    }}
-                  >
-                    {t('auth.resetPassword')}
-                  </button>
-                </div>
-                <button
-                  className="btn btnPrimary"
-                  onClick={() => void doLoginByPassword()}
-                  disabled={!username.trim() || !password}
-                  data-testid="common_btn_login_en"
-                  style={{ width: '100%', justifyContent: 'center' }}
-                >
-                  {t('auth.loginButton')}
-                </button>
-              </div>
-
-              <div style={{ display: 'grid', gap: 10 }}>
-                <button
-                  className={`btn ${showAdvancedLogin ? 'btnPrimary' : ''}`}
-                  type="button"
-                  onClick={() => setShowAdvancedLogin((v) => !v)}
-                  aria-expanded={showAdvancedLogin}
-                  aria-controls="advanced-login-panel"
-                  style={{ justifyContent: 'center' }}
-                >
-                  Advanced
-                </button>
-
-                <div
-                  id="advanced-login-panel"
-                  style={{
-                    display: 'grid',
-                    gap: 12,
-                    maxHeight: showAdvancedLogin ? 520 : 0,
-                    opacity: showAdvancedLogin ? 1 : 0,
-                    overflow: 'hidden',
-                    transition: 'max-height 200ms ease, opacity 200ms ease',
-                    border: showAdvancedLogin ? '1px solid var(--border)' : '1px solid transparent',
-                    borderRadius: 16,
-                    padding: showAdvancedLogin ? 14 : 0,
-                    background: showAdvancedLogin ? 'var(--neutral-50)' : 'transparent',
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button
-                      className={`btn ${loginMode === 'key' ? 'btnPrimary' : ''}`}
-                      onClick={() => setLoginMode('key')}
-                      data-testid="common_btn_key_login_en"
-                      type="button"
-                    >
-                      {t('auth.byKey')}
-                    </button>
-                    <button
-                      className={`btn ${loginMode === 'recover' ? 'btnPrimary' : ''}`}
-                      onClick={() => setLoginMode('recover')}
-                      data-testid="common_btn_recovery_en"
-                      type="button"
-                    >
-                      {t('auth.recovery')}
-                    </button>
-                    <button
-                      className="btn"
-                      onClick={() => void loadPublicStatus()}
-                      data-testid="common_btn_api_status_en"
-                      type="button"
-                    >
-                      {t('auth.apiStatus')}
-                    </button>
-                  </div>
-
-                  {loginMode === 'key' ? (
-                    <div style={{ display: 'grid', gap: 10 }}>
-                      <input
-                        className="input"
-                        value={adminKey}
-                        onChange={(e) => setAdminKey(e.target.value)}
-                        placeholder="x-admin-secret"
-                        autoComplete="off"
-                        spellCheck={false}
-                        data-testid="common_input_admin_key_en"
-                      />
-                      <button
-                        className="btn btnPrimary"
-                        onClick={() => void doLoginByKey()}
-                        disabled={!adminKey.trim()}
-                        data-testid="common_btn_key_login_submit_en"
-                        type="button"
-                      >
-                        {t('auth.loginButton')}
-                      </button>
-                    </div>
-                  ) : null}
-
-                  {loginMode === 'recover' ? (
-                    <div style={{ display: 'grid', gap: 10 }}>
-                      <input
-                        className="input"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder={t('auth.loginPlaceholder')}
-                        autoComplete="username"
-                        spellCheck={false}
-                        data-testid="common_input_recover_username_en"
-                      />
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <input
-                          className="input"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder={t('auth.newPasswordPlaceholder')}
-                          type={showNewPassword ? 'text' : 'password'}
-                          autoComplete="new-password"
-                          spellCheck={false}
-                          data-testid="common_input_recover_new_password_en"
-                        />
-                        <button
-                          className="btn"
-                          onClick={() => setShowNewPassword((v) => !v)}
-                          aria-label={t('forms.labels.showPassword')}
-                          type="button"
-                          data-testid="common_btn_toggle_new_password_en"
-                        >
-                          {showNewPassword ? t('auth.hidePassword') : t('auth.showPassword')}
-                        </button>
-                      </div>
-                      <input
-                        className="input"
-                        value={recoverySecret}
-                        onChange={(e) => setRecoverySecret(e.target.value)}
-                        placeholder={t('auth.recoveryCode')}
-                        type="password"
-                        autoComplete="off"
-                        spellCheck={false}
-                        data-testid="common_input_recovery_secret_en"
-                      />
-                      <button
-                        className="btn btnPrimary"
-                        onClick={() => void doRecoverPassword()}
-                        disabled={!username.trim() || newPassword.length < 8 || !recoverySecret}
-                        data-testid="common_btn_reset_password_en"
-                        type="button"
-                      >
-                        {t('auth.resetPassword')}
-                      </button>
-                    </div>
-                  ) : null}
-
-                  <div
-                    className="pill"
-                    style={{ justifyContent: 'center', width: '100%', textAlign: 'center' }}
-                  >
-                    {t('auth.apiStatus')}: {publicStatus?.api || t('auth.apiUnavailable')}
-                  </div>
-                </div>
-              </div>
-
-              {mustChangePassword ? (
-                <div
-                  style={{ color: '#8b0000', fontSize: 'var(--font-size-sm)', textAlign: 'center' }}
-                >
-                  {t('auth.requirePasswordChange')}
-                </div>
-              ) : null}
-            </div>
           </div>
         ) : null}
 
@@ -1226,7 +803,7 @@ function App() {
               q={q}
               setQ={setQ}
               customers={customers}
-              select={(id) => setSelectedId(id)}
+              select={handleSelectCustomer}
               selected={selected}
               details={details}
               search={() => loadCustomers(q, customerPage, customerLimit)}
@@ -1239,7 +816,7 @@ function App() {
               showSuggestions={showSuggestions}
               onSearchChange={searchCustomers}
               onSuggestionSelect={(customer) => {
-                setSelectedId(customer.id);
+                handleSelectCustomer(customer.id);
                 setQ(customer.full_name || customer.phone || `Клиент #${customer.id}`);
                 setShowSuggestions(false);
               }}
@@ -1254,9 +831,11 @@ function App() {
               products={products}
               reloadProducts={() => loadProducts()}
               onSaleDone={async (customerId: number) => {
-                await refreshDashboard();
+                if (canReadDashboard) {
+                  await refreshDashboard();
+                }
                 await loadCustomers();
-                setSelectedId(customerId);
+                handleSelectCustomer(customerId);
                 setTab('customers');
               }}
             />
@@ -1321,8 +900,11 @@ function App() {
                     }}
                     createDevSale={async (customerQr) => {
                       const result = await Api.createDevSale(customerQr);
-                      await Promise.all([refreshDashboard(), loadCustomers()]);
-                      setSelectedId(result.customer_id);
+                      await Promise.all([
+                        canReadDashboard ? refreshDashboard() : Promise.resolve(),
+                        loadCustomers(),
+                      ]);
+                      handleSelectCustomer(result.customer_id);
                       return result;
                     }}
                   />
@@ -1456,57 +1038,6 @@ function App() {
             <AnalyticsView />
           </div>
         ) : null}
-
-        {authFlow?.active ? (
-          <div className="overlay" role="dialog" aria-modal="true">
-            <div className="overlayPanel">
-              <div className="row">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <LoadingSpinner size="sm" />
-                  <div style={{ fontWeight: 800 }}>{t('authFlow.authorization')}</div>
-                </div>
-                <button className="btn" onClick={() => stopAuthFlow()} type="button">
-                  {t('authFlow.cancel')}
-                </button>
-              </div>
-              <div style={{ marginTop: 10, color: 'rgba(0,0,0,0.65)', fontSize: 13 }}>
-                {authFlow.label}
-              </div>
-              <div style={{ marginTop: 10 }} className="progress" aria-label="progress">
-                <div
-                  className="progressFill"
-                  style={{ width: `${Math.max(0, Math.min(100, authFlow.percent))}%` }}
-                />
-              </div>
-              <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(0,0,0,0.55)' }}>
-                {Math.max(0, Math.min(100, authFlow.percent))}%
-              </div>
-              <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
-                {authFlow.steps.map((s, idx) => (
-                  <div
-                    key={idx}
-                    className="row"
-                    style={{ fontSize: 12, color: 'rgba(0,0,0,0.65)' }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span className={`pill ${s.done ? 'pillGood' : 'pillWarn'}`}>
-                        {s.done ? t('authFlow.done') : '...'}
-                      </span>
-                      <span>{s.label}</span>
-                    </div>
-                    <span>
-                      {s.done
-                        ? '100%'
-                        : idx === authFlow.step
-                          ? `${Math.max(0, Math.min(100, authFlow.percent))}%`
-                          : '0%'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : null}
       </main>
       <footer role="contentinfo" className="footerVersion">
         v{__APP_VERSION__}
@@ -1517,7 +1048,7 @@ function App() {
 }
 
 type DashboardViewProps = {
-  data: any; // Using any for now since we're transitioning from old system
+  data: DashboardHomeViewModel | null;
   reload: () => Promise<void>;
   onNavigate: (tab: string, params?: Record<string, string | number>) => void;
 };
@@ -1576,15 +1107,18 @@ function CustomersView({
   const totalPages = Math.ceil(total / limit);
   const hasNextPage = page < totalPages;
   const hasPrevPage = page > 1;
+  const customerName = details?.customer.full_name || selected?.full_name || '—';
+  const customerPhone = details?.customer.phone || selected?.phone || '—';
+  const customerBalance = Number(details?.customer.balance_points ?? selected?.balance_points ?? 0);
 
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px',
+        gap: '20px',
         height: '100%',
-        padding: '16px',
+        padding: '20px',
         backgroundColor: '#f8fafc',
       }}
     >
@@ -1605,6 +1139,7 @@ function CustomersView({
             alignItems: 'center',
             position: 'relative',
             flex: 1,
+            flexWrap: 'wrap',
           }}
         >
           <input
@@ -1727,20 +1262,22 @@ function CustomersView({
       {/* Main Content: List + Details */}
       <div
         style={{
-          display: 'flex',
-          gap: '16px',
+          display: 'grid',
+          gridTemplateColumns: 'minmax(360px, 420px) minmax(0, 1fr)',
+          gap: '20px',
           flex: 1,
           minHeight: '500px',
+          alignItems: 'stretch',
         }}
       >
         {/* Customer List - Left Side */}
         <div
           style={{
-            flex: 1,
+            minWidth: 0,
             backgroundColor: 'white',
             border: '1px solid #e2e8f0',
-            borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            borderRadius: '12px',
+            boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -1802,7 +1339,7 @@ function CustomersView({
                   data-testid={`customer_item_${c.id}`}
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     justifyContent: 'space-between',
                     padding: '16px',
                     border: selected?.id === c.id ? '2px solid #2563eb' : '1px solid #e2e8f0',
@@ -1814,6 +1351,7 @@ function CustomersView({
                     width: '100%',
                     marginBottom: '8px',
                     boxShadow: selected?.id === c.id ? '0 0 0 3px rgba(37, 99, 235, 0.1)' : 'none',
+                    gap: '12px',
                   }}
                   onMouseEnter={(e) => {
                     if (selected?.id !== c.id) {
@@ -1971,11 +1509,11 @@ function CustomersView({
         {/* Customer Details - Right Side */}
         <div
           style={{
-            width: '400px',
+            minWidth: 0,
             backgroundColor: 'white',
             border: '1px solid #e2e8f0',
-            borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            borderRadius: '12px',
+            boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -2049,7 +1587,7 @@ function CustomersView({
                     gap: '16px',
                     padding: '16px',
                     backgroundColor: '#f8fafc',
-                    borderRadius: '8px',
+                    borderRadius: '12px',
                   }}
                 >
                   <div
@@ -2107,7 +1645,60 @@ function CustomersView({
                     {i18n.language === 'ru' ? 'Баланс' : 'Balance'}
                   </div>
                   <div style={{ fontSize: '24px', fontWeight: '700' }}>
-                    {details.customer.balance_points} ₽
+                    {customerBalance.toLocaleString()} ₽
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                    gap: '12px',
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: '14px 16px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '12px',
+                    }}
+                  >
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>
+                      {i18n.language === 'ru' ? 'Покупок' : 'Transactions'}
+                    </div>
+                    <div style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>
+                      {details.transactions.length}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      padding: '14px 16px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '12px',
+                    }}
+                  >
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>
+                      {i18n.language === 'ru' ? 'QR токен' : 'QR Token'}
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>
+                      {details.customer.qr_token ? 'Available' : '—'}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      padding: '14px 16px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '12px',
+                    }}
+                  >
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>
+                      {i18n.language === 'ru' ? 'Последняя активность' : 'Last activity'}
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>
+                      {details.transactions[0]?.created_at
+                        ? new Date(details.transactions[0].created_at).toLocaleDateString()
+                        : '—'}
+                    </div>
                   </div>
                 </div>
 
@@ -2714,6 +2305,7 @@ function ProductsView({
   create,
   setShowProductImport,
 }: ProductsViewProps) {
+  const { t } = useTranslation();
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [kind, setKind] = useState('');

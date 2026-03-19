@@ -1,8 +1,9 @@
 import { Role } from '../../types/roles';
 import { Widget } from '../../types/widgets';
-import { AnalyticsWidget } from './AnalyticsWidget';
+import { AttentionRequiredWidget } from './AttentionRequiredWidget';
 import { CustomersWidget } from './CustomersWidget';
 import { IntegrationsWidget } from './IntegrationsWidget';
+import { LoyaltyHealthWidget } from './LoyaltyHealthWidget';
 import { MarketingWidget } from './MarketingWidget';
 import { ProductsWidget } from './ProductsWidget';
 import { SalesWidget } from './SalesWidget';
@@ -13,27 +14,27 @@ export const widgets: Widget[] = [
     id: 'customers',
     name: 'Customers',
     component: CustomersWidget,
-    defaultSize: { w: 3, h: 3 },
+    defaultSize: { w: 4, h: 3 },
     minSize: { w: 2, h: 3 },
     maxSize: { w: 8, h: 12 },
     compactable: true,
-    roles: [Role.ADMIN, Role.MANAGER],
+    roles: [Role.ADMIN, Role.MANAGER, Role.OPERATOR],
   },
   {
     id: 'products',
     name: 'Products',
     component: ProductsWidget,
-    defaultSize: { w: 3, h: 3 },
+    defaultSize: { w: 4, h: 3 },
     minSize: { w: 2, h: 3 },
     maxSize: { w: 8, h: 12 },
     compactable: true,
-    roles: [Role.ADMIN, Role.MANAGER],
+    roles: [Role.ADMIN, Role.MANAGER, Role.OPERATOR],
   },
   {
     id: 'sales',
     name: 'Sales',
     component: SalesWidget,
-    defaultSize: { w: 3, h: 3 },
+    defaultSize: { w: 4, h: 3 },
     minSize: { w: 2, h: 3 },
     maxSize: { w: 8, h: 12 },
     compactable: true,
@@ -43,7 +44,7 @@ export const widgets: Widget[] = [
     id: 'integrations',
     name: 'Integrations',
     component: IntegrationsWidget,
-    defaultSize: { w: 3, h: 3 },
+    defaultSize: { w: 4, h: 3 },
     minSize: { w: 2, h: 3 },
     maxSize: { w: 8, h: 12 },
     compactable: true,
@@ -53,20 +54,30 @@ export const widgets: Widget[] = [
     id: 'marketing',
     name: 'Marketing',
     component: MarketingWidget,
-    defaultSize: { w: 3, h: 3 },
+    defaultSize: { w: 4, h: 3 },
     minSize: { w: 2, h: 3 },
     maxSize: { w: 8, h: 12 },
     compactable: true,
     roles: [Role.ADMIN, Role.MANAGER],
   },
   {
-    id: 'analytics',
-    name: 'Analytics',
-    component: AnalyticsWidget,
-    defaultSize: { w: 5, h: 4 },
-    minSize: { w: 4, h: 4 },
+    id: 'loyalty',
+    name: 'Loyalty',
+    component: LoyaltyHealthWidget,
+    defaultSize: { w: 4, h: 3 },
+    minSize: { w: 4, h: 3 },
     maxSize: { w: 12, h: 12 },
-    compactable: false,
+    compactable: true,
+    roles: [Role.ADMIN, Role.MANAGER],
+  },
+  {
+    id: 'attention',
+    name: 'Attention',
+    component: AttentionRequiredWidget,
+    defaultSize: { w: 4, h: 3 },
+    minSize: { w: 4, h: 3 },
+    maxSize: { w: 12, h: 12 },
+    compactable: true,
     roles: [Role.ADMIN, Role.MANAGER],
   },
 ];

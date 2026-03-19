@@ -1,10 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type {
-  CustomerData,
-  MarketingData,
-  OperationalData,
-  ProductData,
-} from '../../hooks/useDashboard';
+import type { DashboardHomeViewModel } from '../../services/dashboard-analytics.service';
 import { useAuth } from '../../stores/auth';
 import { hasPermission, Permission, PermissionSet, Role } from '../../types/roles';
 import { AdminDashboard } from './AdminDashboard';
@@ -12,14 +7,7 @@ import { ManagerDashboard } from './ManagerDashboard';
 import { OperatorDashboard } from './OperatorDashboard';
 
 interface DashboardWrapperProps {
-  data?: {
-    operational?: OperationalData | null;
-    customers?: CustomerData | null;
-    products?: ProductData | null;
-    marketing?: MarketingData | null;
-    integrations?: any;
-    dashboard?: any; // Добавляем dashboard данные
-  } | null;
+  data?: DashboardHomeViewModel | null;
   onNavigate: (tab: string, params?: Record<string, string | number>) => void;
 }
 

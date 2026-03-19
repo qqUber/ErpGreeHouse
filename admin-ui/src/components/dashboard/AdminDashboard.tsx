@@ -1,49 +1,12 @@
-import { useEffect, useState } from 'react';
-import { Api } from '../../api';
-import { useAuth } from '../../stores/auth';
+import type { DashboardHomeViewModel } from '../../services/dashboard-analytics.service';
 import { Role } from '../../types/roles';
-import { WidgetGrid } from '../WidgetGrid';
-import type { MarketingAnalyticsData } from './AnalyticsWidget';
-import { getAvailableWidgets } from './widgetRegistry';
+import { BaseDashboard } from './BaseDashboard';
 
 interface DashboardProps {
-  data?: any; // Используем any чтобы избежать проблем с типизацией
+  data?: DashboardHomeViewModel | null;
   onNavigate?: (tab: string, params?: Record<string, string | number>) => void;
 }
 
-export function AdminDashboard({ data, onNavigate }: DashboardProps) {
-  const { user } = useAuth();
-  const [marketingAnalytics, setMarketingAnalytics] = useState<MarketingAnalyticsData | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const role = (user?.role?.toLowerCase() || Role.ADMIN) as Role;
-  const widgets = getAvailableWidgets(role);
-
-  useEffect(() => {
-    const fetchMarketingAnalytics = async () => {
-      try {
-        const analytics = await Api.marketingAnalytics();
-        setMarketingAnalytics(analytics);
-      } catch (error) {
-        console.error('Failed to fetch marketing analytics:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMarketingAnalytics();
-  }, []);
-
-  const widgetData = {
-    ...data, // Spread all dashboard data directly
-    analytics: marketingAnalytics, // Use real marketing analytics data
-  };
-
-  console.log('AdminDashboard widgetData:', widgetData);
-
-  return (
-    <div className="admin-dashboard">
-      <WidgetGrid role={role} widgets={widgets} data={widgetData} />
-    </div>
-  );
+export function AdminDashboard({ data }: DashboardProps) {
+  return <BaseDashboard data={data ?? null} role={Role.ADMIN} />;
 }

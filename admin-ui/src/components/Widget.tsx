@@ -39,12 +39,6 @@ export function Widget({
   const isExpanded = controlledIsExpanded ?? internalIsExpanded;
   const handleToggle = () => {
     const newState = !isExpanded;
-    console.log('Widget handleToggle:', {
-      current: isExpanded,
-      newState,
-      hasOnExpand: !!onExpand,
-      hasOnCollapse: !!onCollapse,
-    });
     setInternalIsExpanded(newState);
     if (newState) {
       onExpand?.();
@@ -89,15 +83,17 @@ export function Widget({
         )}
       </div>
 
-      {compactContent && !isExpanded ? (
+      {compactContent ? (
         <div className="widget-compact" data-testid="widget-compact-content">
           {compactContent}
         </div>
-      ) : (
+      ) : null}
+
+      {children ? (
         <div className="widget-expanded" data-testid="widget-expanded-content">
           {children}
         </div>
-      )}
+      ) : null}
 
       {isExpanded &&
         expandedContent &&

@@ -26,14 +26,13 @@ export function CustomersWidget({ data }: { data?: any }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
 
-  console.log('CustomersWidget data:', data);
-
-  const total = Number(data?.customers_total ?? 0);
-  const newWeek = Number(data?.new_customers?.this_week ?? 0);
-  const customers = data?.top_customers ?? [];
-  const telegramReachable = Number(data?.telegram_reachable ?? 0);
-  const vkReachable = Number(data?.vk_reachable ?? 0);
-  const consentCount = Number(data?.marketing_consent ?? 0);
+  const total = Number(data?.totalCustomers ?? 0);
+  const newWeek = Number(data?.newCustomers ?? 0);
+  const customers = data?.topCustomers ?? [];
+  const reachableCustomers = Number(data?.reachableCustomers ?? 0);
+  const telegramReachable = customers.filter((c: any) => Boolean(c.telegram_id)).length;
+  const vkReachable = customers.filter((c: any) => Boolean(c.vk_id)).length;
+  const consentCount = Math.round((Number(data?.consentRate ?? 0) / 100) * total);
   const consentRate = total > 0 ? Math.round((consentCount / total) * 100) : 0;
   const derivedReachable = customers.filter((c: any) => Boolean(c.telegram_id) || Boolean(c.vk_id));
   const highValue = customers.filter((c: any) => Number(c.ltv ?? c.total_spent ?? 0) >= 15000);
@@ -221,7 +220,7 @@ export function CustomersWidget({ data }: { data?: any }) {
             {t('widgets.common.newThisWeek')}: <strong>{newWeek}</strong>
           </span>
           <span>
-            Reachable: <strong>{derivedReachable.length}</strong>
+            Reachable: <strong>{reachableCustomers || derivedReachable.length}</strong>
           </span>
           <span>
             {t('analytics.consentRate')}: <strong>{consentRate}%</strong>

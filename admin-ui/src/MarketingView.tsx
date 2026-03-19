@@ -8,12 +8,11 @@ import {
   MarketingSegment,
   MarketingTrigger,
 } from './api';
-import { AnalyticsCharts } from './components/AnalyticsCharts';
 import { formatCurrency } from './utils/translationHelpers';
 
 export function MarketingView() {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<'campaigns' | 'segments' | 'triggers' | 'analytics'>('campaigns');
+  const [tab, setTab] = useState<'campaigns' | 'segments' | 'triggers'>('campaigns');
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
   const [segments, setSegments] = useState<MarketingSegment[]>([]);
   const [triggers, setTriggers] = useState<MarketingTrigger[]>([]);
@@ -88,12 +87,6 @@ export function MarketingView() {
         >
           {t('marketing.triggers')}
         </button>
-        <button
-          className={`pb-2 px-1 ${tab === 'analytics' ? 'border-b-2 border-blue-600 font-medium text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-          onClick={() => setTab('analytics')}
-        >
-          {t('marketing.analytics')}
-        </button>
       </div>
 
       {loading && <div className="text-gray-500">{t('marketing.loading')}</div>}
@@ -109,8 +102,6 @@ export function MarketingView() {
       {!loading && tab === 'triggers' && (
         <TriggersManager triggers={triggers} onUpdate={loadData} />
       )}
-
-      {!loading && tab === 'analytics' && <AnalyticsCharts />}
     </div>
   );
 }

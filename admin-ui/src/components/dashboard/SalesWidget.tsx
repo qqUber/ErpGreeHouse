@@ -17,16 +17,14 @@ export function SalesWidget({ data }: { data?: any }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Use dashboard API fields
-  const totalRevenue = Number(data?.sales_total ?? 0);
-  const transactions = Number(data?.sales_count ?? 0);
-  const avgCheck = transactions > 0 ? totalRevenue / transactions : 0;
+  const totalRevenue = Number(data?.revenue ?? 0);
+  const transactions = Number(data?.transactions ?? 0);
+  const avgCheck = Number(data?.avgCheck ?? 0);
   const thisWeek = totalRevenue;
-  const peakHour = null; // No peak hour data in API
-  const peakHourTx = 0; // No peak hour data in API
-  const topProducts: any[] = []; // No top products data in API
-  const topProductName = '—';
-  // Simplify since no detailed hourly data available
+  const peakHour = data?.peakHour ?? null;
+  const peakHourTx = Number(data?.peakHourTransactions ?? 0);
+  const topProducts: any[] = data?.topProducts ?? [];
+  const topProductName = topProducts[0]?.name ?? '—';
   const firstHalfRevenue = 0;
   const secondHalfRevenue = 0;
   const growth =
