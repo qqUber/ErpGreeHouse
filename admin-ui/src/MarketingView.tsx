@@ -1,69 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Api,
   baseUrl,
   injectAuthHeaders,
   MarketingCampaign,
+  MarketingCampaignPreview,
   MarketingSegment,
   MarketingTrigger,
 } from './api';
+import { useMarketingData } from './hooks/useMarketingData';
+import { marketingService } from './services/marketing.service';
 import { formatCurrency } from './utils/translationHelpers';
 
 export function MarketingView() {
   const { t } = useTranslation();
   const [tab, setTab] = useState<'campaigns' | 'segments' | 'triggers'>('campaigns');
-  const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
-  const [segments, setSegments] = useState<MarketingSegment[]>([]);
-  const [triggers, setTriggers] = useState<MarketingTrigger[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  async function loadData() {
-    setLoading(true);
-    try {
-      const [campaignsResponse, segmentsResponse, triggersResponse] = await Promise.all([
-        Api.marketingCampaigns(),
-        Api.marketingSegments(),
-        Api.marketingTriggers(),
-      ]);
-
-      const campaignsData = Array.isArray((campaignsResponse as any)?.items)
-        ? (campaignsResponse as any).items
-        : Array.isArray(campaignsResponse)
-          ? campaignsResponse
-          : [];
-
-      const segmentsData = Array.isArray((segmentsResponse as any)?.items)
-        ? (segmentsResponse as any).items
-        : Array.isArray(segmentsResponse)
-          ? segmentsResponse
-          : [];
-
-      const triggersData = Array.isArray((triggersResponse as any)?.items)
-        ? (triggersResponse as any).items
-        : Array.isArray(triggersResponse)
-          ? triggersResponse
-          : [];
-
-      setCampaigns(campaignsData as MarketingCampaign[]);
-      setSegments(segmentsData as MarketingSegment[]);
-      setTriggers(triggersData as MarketingTrigger[]);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { campaigns, segments, triggers, loading, error, refresh } = useMarketingData();
 
   return (
     <div className="grid gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t('marketing.title')}</h1>
-        <button onClick={loadData} className="text-sm text-blue-600 hover:underline">
+        <button onClick={() => void refresh()} className="text-sm text-blue-600 hover:underline">
           {t('marketing.refresh')}
         </button>
       </div>
@@ -89,19 +48,17 @@ export function MarketingView() {
         </button>
       </div>
 
+      {error ? <div className="text-sm text-red-600">{error}</div> : null}
+
       {loading && <div className="text-gray-500">{t('marketing.loading')}</div>}
 
       {!loading && tab === 'campaigns' && (
-        <CampaignsManager campaigns={campaigns} segments={segments} onUpdate={loadData} />
+        <CampaignsManager campaigns={campaigns} segments={segments} onUpdate={refresh} />
       )}
 
-      {!loading && tab === 'segments' && (
-        <SegmentsManager segments={segments} onUpdate={loadData} />
-      )}
+      {!loading && tab === 'segments' && <SegmentsManager segments={segments} onUpdate={refresh} />}
 
-      {!loading && tab === 'triggers' && (
-        <TriggersManager triggers={triggers} onUpdate={loadData} />
-      )}
+      {!loading && tab === 'triggers' && <TriggersManager triggers={triggers} onUpdate={refresh} />}
     </div>
   );
 }
@@ -113,7 +70,7 @@ function CampaignsManager({
 }: {
   campaigns: MarketingCampaign[];
   segments: MarketingSegment[];
-  onUpdate: () => void;
+  onUpdate: () => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [isCreating, setIsCreating] = useState(false);
@@ -124,7 +81,39 @@ function CampaignsManager({
   const [newCaption, setNewCaption] = useState('');
   const [newSegmentId, setNewSegmentId] = useState<number | ''>('');
   const [newType, setNewType] = useState('telegram');
+  const [newBudgetLimit, setNewBudgetLimit] = useState('');
   const [error, setError] = useState('');
+  const [preview, setPreview] = useState<MarketingCampaignPreview | null>(null);
+  const [busyId, setBusyId] = useState<number | null>(null);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+
+  function resetForm() {
+    setIsCreating(false);
+    setNewName('');
+    setNewContent('');
+    setNewContentType('text');
+    setNewMediaUrls('');
+    setNewCaption('');
+    setNewSegmentId('');
+    setNewType('telegram');
+    setNewBudgetLimit('');
+    setPreview(null);
+    setError('');
+  }
+
+  function buildCampaignPayload() {
+    return {
+      name: newName,
+      content: newContent,
+      content_type: newContentType,
+      media_urls: newMediaUrls || undefined,
+      caption: newCaption || undefined,
+      segment_id: newSegmentId === '' ? null : Number(newSegmentId),
+      type: newType,
+      scheduled_at: undefined,
+      budget_limit: newBudgetLimit.trim() ? Number(newBudgetLimit) : null,
+    };
+  }
 
   async function handleCreate() {
     if (!newName || !newContent || !newSegmentId) {
@@ -146,36 +135,97 @@ function CampaignsManager({
       }
     }
     try {
-      await Api.createMarketingCampaign({
-        name: newName,
-        content: newContent,
-        content_type: newContentType,
-        media_urls: newMediaUrls || undefined,
-        caption: newCaption || undefined,
-        segment_id: Number(newSegmentId),
-        type: newType,
-        scheduled_at: undefined, // Immediate for now
-      });
-      setIsCreating(false);
-      setNewName('');
-      setNewContent('');
-      setNewContentType('text');
-      setNewMediaUrls('');
-      setNewCaption('');
-      setNewSegmentId('');
-      onUpdate();
+      await marketingService.createCampaign(buildCampaignPayload());
+      resetForm();
+      await onUpdate();
     } catch (e) {
       setError(String(e));
+    }
+  }
+
+  async function handlePreview() {
+    if (!newName || !newContent || !newSegmentId) {
+      setError(t('marketing.fillAllFields') || 'Fill all required fields');
+      return;
+    }
+    try {
+      setIsPreviewing(true);
+      setError('');
+      const response = await marketingService.previewCampaign(buildCampaignPayload());
+      setPreview(response);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setIsPreviewing(false);
     }
   }
 
   async function handleSend(id: number) {
     if (!confirm(t('marketing.confirmSend') || 'Send campaign now?')) return;
     try {
-      await Api.sendMarketingCampaign(id);
-      onUpdate();
+      setBusyId(id);
+      await marketingService.sendCampaign(id);
+      await onUpdate();
     } catch (e) {
       alert(String(e));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handlePause(id: number) {
+    try {
+      setBusyId(id);
+      await marketingService.pauseCampaign(id);
+      await onUpdate();
+    } catch (e) {
+      alert(String(e));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleResume(id: number) {
+    try {
+      setBusyId(id);
+      await marketingService.resumeCampaign(id);
+      await onUpdate();
+    } catch (e) {
+      alert(String(e));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleCancel(id: number) {
+    if (!confirm('Cancel this campaign?')) return;
+    try {
+      setBusyId(id);
+      await marketingService.cancelCampaign(id);
+      await onUpdate();
+    } catch (e) {
+      alert(String(e));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleBudgetUpdate(id: number, currentValue?: number | null) {
+    const nextValue = prompt('Set budget limit for this campaign', currentValue?.toString() ?? '');
+    if (nextValue === null) return;
+    const normalized = nextValue.trim() ? Number(nextValue) : null;
+    if (normalized !== null && Number.isNaN(normalized)) {
+      alert('Budget must be a number');
+      return;
+    }
+    try {
+      setBusyId(id);
+      await marketingService.updateCampaignBudget(id, normalized);
+      await onUpdate();
+    } catch (e) {
+      alert(String(e));
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -207,6 +257,18 @@ function CampaignsManager({
               <option value="sms">SMS</option>
               <option value="push">Push</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Лимит бюджета</label>
+            <input
+              className="input w-full"
+              type="number"
+              min="0"
+              value={newBudgetLimit}
+              onChange={(e) => setNewBudgetLimit(e.target.value)}
+              placeholder="Например: 250"
+            />
           </div>
 
           <div>
@@ -284,9 +346,38 @@ function CampaignsManager({
             />
           </div>
 
+          {preview ? (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 grid gap-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-sm">Preview</h4>
+                <span className="text-xs text-gray-500">
+                  Estimated recipients: {preview.estimated_recipients}
+                </span>
+              </div>
+              <div className="grid gap-2">
+                {preview.rendered_messages.length ? (
+                  preview.rendered_messages.map((item) => (
+                    <div
+                      key={item.customer_id}
+                      className="rounded-lg bg-white border border-gray-200 p-3"
+                    >
+                      <div className="text-xs text-gray-500 mb-1">{item.customer_name}</div>
+                      <div className="text-sm whitespace-pre-wrap">{item.message}</div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-gray-500">No preview recipients available</div>
+                )}
+              </div>
+            </div>
+          ) : null}
+
           <div className="flex gap-2 justify-end">
-            <button className="btn btn-secondary" onClick={() => setIsCreating(false)}>
+            <button className="btn btn-secondary" onClick={resetForm}>
               Отмена
+            </button>
+            <button className="btn btn-outline" onClick={handlePreview} disabled={isPreviewing}>
+              {isPreviewing ? 'Просмотр...' : 'Preview'}
             </button>
             <button className="btn btn-primary" onClick={handleCreate}>
               Создать
@@ -307,6 +398,7 @@ function CampaignsManager({
               <th className="p-2">Название</th>
               <th className="p-2">Тип</th>
               <th className="p-2">Статус</th>
+              <th className="p-2">Бюджет</th>
               <th className="p-2">Создана</th>
               <th className="p-2">Действия</th>
             </tr>
@@ -322,33 +414,76 @@ function CampaignsManager({
                 <td className="p-2">
                   <span
                     className={`px-2 py-0.5 rounded text-xs ${
-                      c.status === 'sent'
+                      c.status === 'completed'
                         ? 'bg-green-100 text-green-700'
-                        : c.status === 'scheduled'
+                        : c.status === 'scheduled' || c.status === 'active'
                           ? 'bg-blue-100 text-blue-700'
-                          : 'bg-yellow-100 text-yellow-700'
+                          : c.status === 'paused'
+                            ? 'bg-orange-100 text-orange-700'
+                            : 'bg-yellow-100 text-yellow-700'
                     }`}
                   >
                     {c.status}
                   </span>
                 </td>
+                <td className="p-2 text-xs text-gray-600">
+                  {c.budget_limit != null ? `${c.budget_spent ?? 0} / ${c.budget_limit}` : '—'}
+                </td>
                 <td className="p-2 text-gray-500">{new Date(c.created_at).toLocaleDateString()}</td>
                 <td className="p-2">
-                  {c.status === 'draft' && (
+                  <div className="flex flex-wrap gap-3 text-xs">
+                    {(c.status === 'draft' ||
+                      c.status === 'scheduled' ||
+                      c.status === 'paused') && (
+                      <button
+                        className="text-blue-600 hover:underline"
+                        onClick={() => handleSend(c.id)}
+                        disabled={busyId === c.id}
+                      >
+                        Send
+                      </button>
+                    )}
+                    {(c.status === 'scheduled' || c.status === 'active') && (
+                      <button
+                        className="text-orange-600 hover:underline"
+                        onClick={() => handlePause(c.id)}
+                        disabled={busyId === c.id}
+                      >
+                        Pause
+                      </button>
+                    )}
+                    {c.status === 'paused' && (
+                      <button
+                        className="text-emerald-600 hover:underline"
+                        onClick={() => handleResume(c.id)}
+                        disabled={busyId === c.id}
+                      >
+                        Resume
+                      </button>
+                    )}
+                    {['draft', 'scheduled', 'active', 'paused'].includes(c.status) && (
+                      <button
+                        className="text-red-600 hover:underline"
+                        onClick={() => handleCancel(c.id)}
+                        disabled={busyId === c.id}
+                      >
+                        Cancel
+                      </button>
+                    )}
                     <button
-                      className="text-blue-600 hover:underline"
-                      onClick={() => handleSend(c.id)}
+                      className="text-gray-700 hover:underline"
+                      onClick={() => handleBudgetUpdate(c.id, c.budget_limit)}
+                      disabled={busyId === c.id}
                     >
-                      Отправить
+                      Budget
                     </button>
-                  )}
-                  {c.status === 'sent' && <span className="text-gray-400">Отправлено</span>}
+                  </div>
                 </td>
               </tr>
             ))}
             {campaigns.length === 0 && (
               <tr>
-                <td colSpan={6} className="p-4 text-center text-gray-500">
+                <td colSpan={7} className="p-4 text-center text-gray-500">
                   Нет кампаний
                 </td>
               </tr>
@@ -365,7 +500,7 @@ function SegmentsManager({
   onUpdate,
 }: {
   segments: MarketingSegment[];
-  onUpdate: () => void;
+  onUpdate: () => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [isCreating, setIsCreating] = useState(false);
@@ -720,7 +855,7 @@ function TriggersManager({
   onUpdate,
 }: {
   triggers: MarketingTrigger[];
-  onUpdate: () => void;
+  onUpdate: () => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [isCreating, setIsCreating] = useState(false);

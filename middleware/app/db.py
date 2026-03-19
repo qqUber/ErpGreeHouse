@@ -150,6 +150,46 @@ class DB:
             )
         except sqlite3.OperationalError:
             pass
+        try:
+            conn.execute(
+                "ALTER TABLE marketing_campaigns ADD COLUMN budget_limit INTEGER"
+            )
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute(
+                "ALTER TABLE marketing_campaigns ADD COLUMN budget_spent INTEGER NOT NULL DEFAULT 0"
+            )
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute(
+                "ALTER TABLE marketing_campaigns ADD COLUMN audience_count INTEGER NOT NULL DEFAULT 0"
+            )
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE marketing_campaigns ADD COLUMN started_at TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE marketing_campaigns ADD COLUMN paused_at TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE marketing_campaigns ADD COLUMN completed_at TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE marketing_campaigns ADD COLUMN cancelled_at TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute(
+                "ALTER TABLE marketing_campaigns ADD COLUMN updated_at TEXT NOT NULL DEFAULT (datetime('now'))"
+            )
+        except sqlite3.OperationalError:
+            pass
         conn.commit()
 
         # Migration for vk_id column
@@ -261,6 +301,8 @@ def init_db() -> None:
                 consent_text TEXT NOT NULL,
                 consent_type TEXT DEFAULT 'data_processing',
                 accepted_at TEXT NOT NULL DEFAULT (datetime('now')),
+                effective_date TEXT,
+                ip_address TEXT,
                 FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE SET NULL
             );
 
@@ -273,12 +315,14 @@ def init_db() -> None:
                 items_json TEXT NOT NULL,
                 receipt_pdf_path TEXT,
                 external_erp_ref TEXT,
+                pos_receipt_id TEXT,
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE
             );
 
             CREATE INDEX IF NOT EXISTS idx_transactions_customer_id ON transactions(customer_id);
             CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON transactions(created_at);
+            CREATE INDEX IF NOT EXISTS idx_transactions_pos_receipt_id ON transactions(pos_receipt_id);
 
             CREATE TABLE IF NOT EXISTS sync_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -385,11 +429,22 @@ def init_db() -> None:
                 segment_id INTEGER,
                 type TEXT NOT NULL,
                 content TEXT NOT NULL,
+                content_type TEXT DEFAULT 'text',
+                media_urls TEXT,
+                caption TEXT,
                 status TEXT DEFAULT 'draft',
                 scheduled_at TEXT,
                 sent_at TEXT,
+                budget_limit INTEGER,
+                budget_spent INTEGER NOT NULL DEFAULT 0,
+                audience_count INTEGER NOT NULL DEFAULT 0,
+                started_at TEXT,
+                paused_at TEXT,
+                completed_at TEXT,
+                cancelled_at TEXT,
                 stats_json TEXT,
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now')),
                 FOREIGN KEY(segment_id) REFERENCES marketing_segments(id)
             );
 
@@ -398,6 +453,7 @@ def init_db() -> None:
                 campaign_id INTEGER,
                 user_id INTEGER,
                 event_type TEXT NOT NULL,
+                event_data TEXT,
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 FOREIGN KEY(campaign_id) REFERENCES marketing_campaigns(id)
             );

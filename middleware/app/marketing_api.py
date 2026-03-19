@@ -1,13 +1,12 @@
-import json
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Body, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from .admin_auth_api import require_jwt_auth
 from .auth import check_permission
 from .db import get_db
-from .worker import celery_app
+from .marketing_service import CampaignCreatePayload, MarketingCampaignService
 
 router = APIRouter(prefix="/api/v1/marketing")
 
@@ -43,64 +42,6 @@ def get_customers_with_consent(
         conn.close()
 
 
-def _build_segment_query(criteria: dict[str, Any]) -> tuple[str, list[Any]]:
-    query = """
-        SELECT
-            id,
-            telegram_id,
-            vk_id,
-            phone,
-            full_name,
-            marketing_allowed,
-            balance_points,
-            city,
-            gender,
-            purchase_frequency,
-            last_purchase_date
-        FROM customers
-        WHERE marketing_allowed = 1 AND (telegram_id IS NOT NULL OR vk_id IS NOT NULL)
-    """
-    params: list[Any] = []
-    conditions: list[str] = []
-
-    if criteria.get("min_balance") is not None:
-        conditions.append("balance_points >= ?")
-        params.append(int(criteria["min_balance"]))
-
-    if criteria.get("days_since_visit") is not None:
-        conditions.append(
-            "(last_purchase_date IS NOT NULL AND julianday('now') - julianday(last_purchase_date) >= ?)"
-        )
-        params.append(int(criteria["days_since_visit"]))
-
-    if criteria.get("min_purchase_amount") is not None:
-        conditions.append("""
-            EXISTS (
-                SELECT 1 FROM transactions
-                WHERE customer_id = customers.id
-                AND total_amount >= ?
-            )
-            """)
-        params.append(int(criteria["min_purchase_amount"]))
-
-    if criteria.get("purchase_frequency") is not None:
-        conditions.append("purchase_frequency >= ?")
-        params.append(int(criteria["purchase_frequency"]))
-
-    if criteria.get("city"):
-        conditions.append("LOWER(city) = LOWER(?)")
-        params.append(str(criteria["city"]))
-
-    if criteria.get("gender"):
-        conditions.append("gender = ?")
-        params.append(str(criteria["gender"]))
-
-    if conditions:
-        query += " AND " + " AND ".join(conditions)
-
-    return query, params
-
-
 class SegmentCreate(BaseModel):
     name: str
     criteria: dict[str, Any]
@@ -108,13 +49,18 @@ class SegmentCreate(BaseModel):
 
 class CampaignCreate(BaseModel):
     name: str
-    segment_id: int
+    segment_id: Optional[int] = None
     type: str
     content: str
     content_type: str = "text"
     media_urls: Optional[str] = None
     caption: Optional[str] = None
     scheduled_at: Optional[str] = None
+    budget_limit: Optional[int] = None
+
+
+class CampaignBudgetUpdate(BaseModel):
+    budget_limit: Optional[int] = None
 
 
 class TriggerCreate(BaseModel):
@@ -128,17 +74,27 @@ class TriggerCreate(BaseModel):
     caption: Optional[str] = None
 
 
+def _to_campaign_payload(campaign: CampaignCreate) -> CampaignCreatePayload:
+    return CampaignCreatePayload(
+        name=campaign.name,
+        segment_id=campaign.segment_id,
+        type=campaign.type,
+        content=campaign.content,
+        content_type=campaign.content_type,
+        media_urls=campaign.media_urls,
+        caption=campaign.caption,
+        scheduled_at=campaign.scheduled_at,
+        budget_limit=campaign.budget_limit,
+    )
+
+
 @router.get("/segments")
 def list_segments(
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ):
     check_permission(auth_result, "marketing.users")
-    db = get_db()
-    conn = db.connect()
-    rows = conn.execute(
-        "SELECT * FROM marketing_segments ORDER BY created_at DESC"
-    ).fetchall()
-    return [dict(r) for r in rows]
+    service = MarketingCampaignService()
+    return service.list_segments()
 
 
 @router.post("/segments")
@@ -147,14 +103,8 @@ def create_segment(
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ):
     check_permission(auth_result, "marketing.users")
-    db = get_db()
-    conn = db.connect()
-    cursor = conn.execute(
-        "INSERT INTO marketing_segments (name, criteria_json) VALUES (?, ?)",
-        (segment.name, json.dumps(segment.criteria)),
-    )
-    conn.commit()
-    return {"id": cursor.lastrowid, "name": segment.name}
+    service = MarketingCampaignService()
+    return service.create_segment(segment.name, segment.criteria)
 
 
 @router.get("/segments/{id}/preview")
@@ -166,47 +116,8 @@ def preview_segment(
     offset: int = 0,
 ):
     check_permission(auth_result, "marketing.users")
-    db = get_db()
-    conn = db.connect()
-
-    try:
-        # Get segment criteria
-        cur = conn.execute(
-            "SELECT criteria_json FROM marketing_segments WHERE id = ?", (id,)
-        )
-        segment = cur.fetchone()
-
-        if not segment:
-            raise HTTPException(status_code=404, detail="Segment not found")
-
-        criteria = json.loads(segment["criteria_json"])
-
-        query, params = _build_segment_query(criteria)
-        query += " LIMIT ? OFFSET ?"
-        params.extend([limit, offset])
-
-        cur = conn.execute(query, params)
-        customers = [dict(row) for row in cur.fetchall()]
-
-        # Get total count for pagination  # noqa: B608 - safe, uses same parameterized query
-        count_query = (
-            "SELECT COUNT(*) as total FROM ("
-            + query.replace(" LIMIT ? OFFSET ?", "")
-            + ")"
-        )
-        count_params = params[:-2]  # Remove limit and offset
-        cur_count = conn.execute(count_query, count_params)
-        total = cur_count.fetchone()["total"]
-
-        return {
-            "customers": customers,
-            "total": total,
-            "limit": limit,
-            "offset": offset,
-        }
-
-    finally:
-        conn.close()
+    service = MarketingCampaignService()
+    return service.preview_segment(id, limit=limit, offset=offset)
 
 
 @router.post("/segments/{id}/refresh")
@@ -216,13 +127,8 @@ def refresh_segment(
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ):
     check_permission(auth_result, "marketing.users")
-    db = get_db()
-    conn = db.connect()
-
-    try:
-        return {"status": "success", "message": "Segment refreshed"}
-    finally:
-        conn.close()
+    service = MarketingCampaignService()
+    return service.refresh_segment(id)
 
 
 @router.delete("/segments/{id}")
@@ -232,15 +138,8 @@ def delete_segment(
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ):
     check_permission(auth_result, "marketing.users")
-    db = get_db()
-    conn = db.connect()
-
-    try:
-        conn.execute("DELETE FROM marketing_segments WHERE id = ?", (id,))
-        conn.commit()
-        return {"status": "success", "message": "Segment deleted"}
-    finally:
-        conn.close()
+    service = MarketingCampaignService()
+    return service.delete_segment(id)
 
 
 @router.get("/campaigns")
@@ -248,12 +147,8 @@ def list_campaigns(
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ):
     check_permission(auth_result, "marketing.campaigns")
-    db = get_db()
-    conn = db.connect()
-    rows = conn.execute(
-        "SELECT * FROM marketing_campaigns ORDER BY created_at DESC"
-    ).fetchall()
-    return [dict(r) for r in rows]
+    service = MarketingCampaignService()
+    return {"items": service.list_campaigns()}
 
 
 @router.post("/campaigns")
@@ -262,30 +157,19 @@ def create_campaign(
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ):
     check_permission(auth_result, "marketing.campaigns")
-    db = get_db()
-    conn = db.connect()
-    cursor = conn.execute(
-        """
-        INSERT INTO marketing_campaigns (name, segment_id, type, content, content_type, media_urls, caption, scheduled_at, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            campaign.name,
-            campaign.segment_id,
-            campaign.type,
-            campaign.content,
-            campaign.content_type,
-            campaign.media_urls,
-            campaign.caption,
-            campaign.scheduled_at,
-            "scheduled" if campaign.scheduled_at else "draft",
-        ),
-    )
-    conn.commit()
-    return {
-        "id": cursor.lastrowid,
-        "status": "scheduled" if campaign.scheduled_at else "draft",
-    }
+    service = MarketingCampaignService()
+    created = service.create_campaign(_to_campaign_payload(campaign))
+    return {"id": created["id"], "status": created["status"], "campaign": created}
+
+
+@router.post("/campaigns/preview")
+def preview_campaign(
+    campaign: CampaignCreate,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+):
+    check_permission(auth_result, "marketing.campaigns")
+    service = MarketingCampaignService()
+    return service.preview_campaign(_to_campaign_payload(campaign))
 
 
 @router.post("/campaigns/{id}/send")
@@ -293,151 +177,50 @@ def send_campaign(
     id: int,
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ):
-    """
-    Send campaign to all customers in the segment.
-    Only sends to customers who have given marketing consent (marketing_allowed = 1).
-    """
     check_permission(auth_result, "marketing.campaigns")
-    db = get_db()
-    conn = db.connect()
+    service = MarketingCampaignService()
+    return service.send_campaign(id)
 
-    try:
-        # Get campaign details
-        cur = conn.execute("SELECT * FROM marketing_campaigns WHERE id = ?", (id,))
-        campaign = cur.fetchone()
 
-        if not campaign:
-            raise HTTPException(status_code=404, detail="Campaign not found")
+@router.put("/campaigns/{id}/pause")
+def pause_campaign(
+    id: int,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+):
+    check_permission(auth_result, "marketing.campaigns")
+    service = MarketingCampaignService()
+    return {"campaign": service.pause_campaign(id)}
 
-        criteria: dict[str, Any] = {}
-        if campaign["segment_id"]:
-            segment_row = conn.execute(
-                "SELECT criteria_json FROM marketing_segments WHERE id=?",
-                (campaign["segment_id"],),
-            ).fetchone()
-            if segment_row and segment_row["criteria_json"]:
-                criteria = json.loads(segment_row["criteria_json"])
 
-        segment_query, segment_params = _build_segment_query(criteria)
-        customers = [
-            dict(row) for row in conn.execute(segment_query, segment_params).fetchall()
-        ]
-        consented_count = len(customers)
+@router.put("/campaigns/{id}/resume")
+def resume_campaign(
+    id: int,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+):
+    check_permission(auth_result, "marketing.campaigns")
+    service = MarketingCampaignService()
+    return {"campaign": service.resume_campaign(id)}
 
-        # Update campaign status
-        conn.execute(
-            "UPDATE marketing_campaigns SET status = 'sent', sent_at = datetime('now') WHERE id = ?",
-            (id,),
-        )
-        conn.commit()
 
-        # Queue messages for delivery based on content type
-        for customer in customers:
-            if customer["telegram_id"]:
-                if campaign.get("content_type") == "photo" and campaign.get(
-                    "media_urls"
-                ):
-                    # Send photo message
-                    celery_app.send_task(
-                        "app.worker.send_photo_message",
-                        kwargs={
-                            "chat_id": customer["telegram_id"],
-                            "photo_path": campaign["media_urls"],
-                            "caption": campaign.get("caption", campaign["content"]),
-                            "campaign_id": id,
-                            "customer_id": customer["id"],
-                        },
-                    )
-                elif campaign.get("content_type") == "video" and campaign.get(
-                    "media_urls"
-                ):
-                    # Send video message
-                    celery_app.send_task(
-                        "app.worker.send_video_message",
-                        kwargs={
-                            "chat_id": customer["telegram_id"],
-                            "video_path": campaign["media_urls"],
-                            "caption": campaign.get("caption", campaign["content"]),
-                            "campaign_id": id,
-                            "customer_id": customer["id"],
-                        },
-                    )
-                elif campaign.get("content_type") == "document" and campaign.get(
-                    "media_urls"
-                ):
-                    # Send document message
-                    celery_app.send_task(
-                        "app.worker.send_document_message",
-                        kwargs={
-                            "chat_id": customer["telegram_id"],
-                            "document_path": campaign["media_urls"],
-                            "caption": campaign.get("caption", campaign["content"]),
-                            "campaign_id": id,
-                            "customer_id": customer["id"],
-                        },
-                    )
-                elif campaign.get("content_type") == "media_group" and campaign.get(
-                    "media_urls"
-                ):
-                    # Send media group (album)
-                    import json
+@router.put("/campaigns/{id}/cancel")
+def cancel_campaign(
+    id: int,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+):
+    check_permission(auth_result, "marketing.campaigns")
+    service = MarketingCampaignService()
+    return {"campaign": service.cancel_campaign(id)}
 
-                    media_items = json.loads(campaign["media_urls"])
-                    celery_app.send_task(
-                        "app.worker.send_media_group_message",
-                        kwargs={
-                            "chat_id": customer["telegram_id"],
-                            "media_items": media_items,
-                            "campaign_id": id,
-                            "customer_id": customer["id"],
-                        },
-                    )
-                else:
-                    # Default to text message
-                    celery_app.send_task(
-                        "app.worker.send_customer_message",
-                        kwargs={
-                            "chat_id": customer["telegram_id"],
-                            "text": campaign["content"],
-                            "campaign_id": id,
-                            "customer_id": customer["id"],
-                        },
-                    )
 
-            if customer["vk_id"]:
-                # Send VK message
-                if campaign.get("content_type") == "photo" and campaign.get(
-                    "media_urls"
-                ):
-                    celery_app.send_task(
-                        "app.worker.send_vk_photo_message",
-                        kwargs={
-                            "user_id": customer["vk_id"],
-                            "photo_path": campaign["media_urls"],
-                            "caption": campaign.get("caption", campaign["content"]),
-                            "campaign_id": id,
-                            "customer_id": customer["id"],
-                        },
-                    )
-                else:
-                    # Default to text message
-                    celery_app.send_task(
-                        "app.worker.send_vk_message",
-                        kwargs={
-                            "user_id": customer["vk_id"],
-                            "text": campaign["content"],
-                            "campaign_id": id,
-                            "customer_id": customer["id"],
-                        },
-                    )
-
-        return {
-            "status": "sending",
-            "recipients": consented_count,
-            "note": "Only customers with marketing consent (152-ФЗ) were included",
-        }
-    finally:
-        conn.close()
+@router.put("/campaigns/{id}/budget")
+def update_campaign_budget(
+    id: int,
+    payload: CampaignBudgetUpdate,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+):
+    check_permission(auth_result, "marketing.campaigns")
+    service = MarketingCampaignService()
+    return {"campaign": service.update_budget(id, payload.budget_limit)}
 
 
 @router.get("/triggers")
@@ -446,12 +229,8 @@ def list_triggers(
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ):
     check_permission(auth_result, "marketing.campaigns")
-    db = get_db()
-    conn = db.connect()
-    rows = conn.execute(
-        "SELECT * FROM marketing_triggers ORDER BY created_at DESC"
-    ).fetchall()
-    return [dict(r) for r in rows]
+    service = MarketingCampaignService()
+    return service.list_triggers()
 
 
 @router.get("/rate-limit/status")
@@ -489,26 +268,17 @@ def create_trigger(
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ):
     check_permission(auth_result, "marketing.campaigns")
-    db = get_db()
-    conn = db.connect()
-    cursor = conn.execute(
-        """
-        INSERT INTO marketing_triggers (name, event_source, criteria_json, delay_hours, message_text, media_type, media_url, caption)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            trigger.name,
-            trigger.event_source,
-            json.dumps(trigger.criteria),
-            trigger.delay_hours,
-            trigger.message_text,
-            trigger.media_type,
-            trigger.media_url,
-            trigger.caption,
-        ),
+    service = MarketingCampaignService()
+    return service.create_trigger(
+        name=trigger.name,
+        event_source=trigger.event_source,
+        criteria=trigger.criteria,
+        delay_hours=trigger.delay_hours,
+        message_text=trigger.message_text,
+        media_type=trigger.media_type,
+        media_url=trigger.media_url,
+        caption=trigger.caption,
     )
-    conn.commit()
-    return {"id": cursor.lastrowid, "status": "active"}
 
 
 @router.get("/analytics/campaign/{id}")
@@ -518,48 +288,8 @@ def get_campaign_analytics(
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ):
     check_permission(auth_result, "marketing.campaigns")
-    db = get_db()
-    conn = db.connect()
-    try:
-        # Get campaign performance metrics
-        cur = conn.execute(
-            """
-            SELECT
-                COUNT(CASE WHEN event_type = 'sent' THEN 1 END) as sent,
-                COUNT(CASE WHEN event_type = 'delivered' THEN 1 END) as delivered,
-                COUNT(CASE WHEN event_type = 'opened' THEN 1 END) as opened,
-                COUNT(CASE WHEN event_type = 'clicked' THEN 1 END) as clicked
-            FROM marketing_events
-            WHERE campaign_id = ?
-        """,
-            (id,),
-        )
-        metrics = cur.fetchone()
-
-        # Get channel breakdown
-        cur = conn.execute(
-            """
-            SELECT
-                json_extract(event_data, '$.channel') as channel,
-                COUNT(CASE WHEN event_type = 'sent' THEN 1 END) as sent,
-                COUNT(CASE WHEN event_type = 'delivered' THEN 1 END) as delivered,
-                COUNT(CASE WHEN event_type = 'opened' THEN 1 END) as opened,
-                COUNT(CASE WHEN event_type = 'clicked' THEN 1 END) as clicked
-            FROM marketing_events
-            WHERE campaign_id = ?
-            GROUP BY json_extract(event_data, '$.channel')
-        """,
-            (id,),
-        )
-        channel_breakdown = [dict(row) for row in cur.fetchall()]
-
-        return {
-            "id": id,
-            "metrics": dict(metrics),
-            "channel_breakdown": channel_breakdown,
-        }
-    finally:
-        conn.close()
+    service = MarketingCampaignService()
+    return service.get_campaign_analytics(id)
 
 
 @router.get("/analytics/events")
@@ -568,20 +298,5 @@ def get_events_breakdown(
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ):
     check_permission(auth_result, "marketing.campaigns")
-    db = get_db()
-    conn = db.connect()
-    try:
-        cur = conn.execute("""
-            SELECT
-                event_type,
-                COUNT(*) as count,
-                json_extract(event_data, '$.channel') as channel
-            FROM marketing_events
-            GROUP BY event_type, json_extract(event_data, '$.channel')
-            ORDER BY event_type
-        """)
-        events = [dict(row) for row in cur.fetchall()]
-
-        return {"events": events}
-    finally:
-        conn.close()
+    service = MarketingCampaignService()
+    return service.get_events_breakdown()

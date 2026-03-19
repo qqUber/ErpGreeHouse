@@ -246,6 +246,16 @@ export type MarketingSegment = {
   created_at: string;
 };
 
+export type MarketingCampaignPreview = {
+  audience_preview: Array<Record<string, any>>;
+  rendered_messages: Array<{
+    customer_id: number;
+    customer_name: string;
+    message: string;
+  }>;
+  estimated_recipients: number;
+};
+
 export type MarketingCampaign = {
   id: number;
   name: string;
@@ -258,8 +268,16 @@ export type MarketingCampaign = {
   status: string;
   scheduled_at: string | null;
   sent_at: string | null;
+  budget_limit?: number | null;
+  budget_spent?: number;
+  audience_count?: number;
+  started_at?: string | null;
+  paused_at?: string | null;
+  completed_at?: string | null;
+  cancelled_at?: string | null;
   stats: Record<string, any> | null;
   created_at: string;
+  updated_at?: string;
 };
 
 export type MarketingTrigger = {
@@ -632,7 +650,7 @@ export function baseUrl() {
 const TOKEN_STORAGE_KEY = 'admin_session_token';
 let _adminSecret = '';
 
-// Восстанавливаем токен из localStorage при загрузке страницы
+// ╨Т╨╛╤Б╤Б╤В╨░╨╜╨░╨▓╨╗╨╕╨▓╨░╨╡╨╝ ╤В╨╛╨║╨╡╨╜ ╨╕╨╖ localStorage ╨┐╤А╨╕ ╨╖╨░╨│╤А╤Г╨╖╨║╨╡ ╤Б╤В╤А╨░╨╜╨╕╤Ж╤Л
 const cachedToken =
   typeof localStorage !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null;
 if (cachedToken) {
@@ -646,7 +664,7 @@ export function getAdminSecret() {
 
 export function setAdminSecret(v: string) {
   _adminSecret = String(v || '');
-  // Сохраняем токен в localStorage для сохранения сессии
+  // ╨б╨╛╤Е╤А╨░╨╜╤П╨╡╨╝ ╤В╨╛╨║╨╡╨╜ ╨▓ localStorage ╨┤╨╗╤П ╤Б╨╛╤Е╤А╨░╨╜╨╡╨╜╨╕╤П ╤Б╨╡╤Б╤Б╨╕╨╕
   if (typeof localStorage !== 'undefined') {
     if (v) {
       localStorage.setItem(TOKEN_STORAGE_KEY, v);
@@ -904,13 +922,52 @@ export const Api = {
     media_urls?: string;
     caption?: string;
     scheduled_at?: string;
+    budget_limit?: number | null;
   }) =>
-    api<{ id: number }>('/api/v1/marketing/campaigns', {
+    api<{ id: number; status: string; campaign: MarketingCampaign }>(
+      '/api/v1/marketing/campaigns',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    ),
+  previewMarketingCampaign: (payload: {
+    name: string;
+    segment_id: number | null;
+    type: string;
+    content: string;
+    content_type?: string;
+    media_urls?: string;
+    caption?: string;
+    scheduled_at?: string;
+    budget_limit?: number | null;
+  }) =>
+    api<MarketingCampaignPreview>('/api/v1/marketing/campaigns/preview', {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
   sendMarketingCampaign: (id: number) =>
-    api<{ success: boolean }>(`/api/v1/marketing/campaigns/${id}/send`, { method: 'POST' }),
+    api<{ status: string; recipients: number; note: string; campaign: MarketingCampaign }>(
+      `/api/v1/marketing/campaigns/${id}/send`,
+      { method: 'POST' }
+    ),
+  pauseMarketingCampaign: (id: number) =>
+    api<{ campaign: MarketingCampaign }>(`/api/v1/marketing/campaigns/${id}/pause`, {
+      method: 'PUT',
+    }),
+  resumeMarketingCampaign: (id: number) =>
+    api<{ campaign: MarketingCampaign }>(`/api/v1/marketing/campaigns/${id}/resume`, {
+      method: 'PUT',
+    }),
+  cancelMarketingCampaign: (id: number) =>
+    api<{ campaign: MarketingCampaign }>(`/api/v1/marketing/campaigns/${id}/cancel`, {
+      method: 'PUT',
+    }),
+  updateMarketingCampaignBudget: (id: number, budget_limit: number | null) =>
+    api<{ campaign: MarketingCampaign }>(`/api/v1/marketing/campaigns/${id}/budget`, {
+      method: 'PUT',
+      body: JSON.stringify({ budget_limit }),
+    }),
 
   marketingTriggers: () => api<{ items: MarketingTrigger[] }>('/api/v1/marketing/triggers'),
   createMarketingTrigger: (payload: {
