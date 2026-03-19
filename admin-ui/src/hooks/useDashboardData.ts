@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { dashboardAnalyticsService } from '../services/dashboard-analytics.service';
 
 interface UseDashboardDataOptions {
@@ -10,6 +10,7 @@ export function useDashboardData({
   enabled = true,
   roleKey = 'anonymous',
 }: UseDashboardDataOptions = {}) {
+  const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: ['dashboard-home', roleKey],
     queryFn: () => dashboardAnalyticsService.getHomeDashboard(),
@@ -23,6 +24,9 @@ export function useDashboardData({
     error: query.error instanceof Error ? query.error.message : null,
     refresh: async () => {
       await query.refetch();
+    },
+    invalidate: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['dashboard-home', roleKey] });
     },
   };
 }

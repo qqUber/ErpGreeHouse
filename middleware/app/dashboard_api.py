@@ -33,7 +33,7 @@ def get_operational_data(
     check_permission(auth_result, "dashboard.read")
 
     today = datetime.now().strftime("%Y-%m-%d")
-    cache_key = f"dashboard:operational:{today}"
+    cache_key = f"crm:cache:dashboard:operational:{today}"
 
     cached = _cache_get_json(cache_key)
     if isinstance(cached, dict):
@@ -51,7 +51,7 @@ def get_marketing_data(
     """Get marketing analytics for dashboard."""
     check_permission(auth_result, "dashboard.read")
 
-    cache_key = "dashboard:marketing:overview"
+    cache_key = "crm:cache:dashboard:marketing:overview"
     cached = _cache_get_json(cache_key)
     if isinstance(cached, dict):
         return cached
@@ -68,7 +68,7 @@ def get_customer_insights(
     """Get customer insights for dashboard."""
     check_permission(auth_result, "dashboard.read")
 
-    cache_key = "dashboard:customers:insights"
+    cache_key = "crm:cache:dashboard:customers:insights"
     cached = _cache_get_json(cache_key)
     if isinstance(cached, dict):
         return cached
@@ -85,7 +85,7 @@ def get_product_analytics(
     """Get product analytics for dashboard."""
     check_permission(auth_result, "dashboard.read")
 
-    cache_key = "dashboard:products:analytics"
+    cache_key = "crm:cache:dashboard:products:analytics"
     cached = _cache_get_json(cache_key)
     if isinstance(cached, dict):
         return cached
@@ -102,7 +102,7 @@ def get_integration_health(
     """Get integration health status for dashboard."""
     check_permission(auth_result, "dashboard.read")
 
-    cache_key = "dashboard:integrations:health"
+    cache_key = "crm:cache:dashboard:integrations:health"
     cached = _cache_get_json(cache_key)
     if isinstance(cached, dict):
         return cached
@@ -120,7 +120,7 @@ def get_home_dashboard_data(
     check_permission(auth_result, "dashboard.read")
 
     role = str(auth_result.get("role") or "unknown").lower()
-    cache_key = f"dashboard:home:v1:{role}"
+    cache_key = f"crm:cache:dashboard:home:v1:{role}"
     cached = _cache_get_json(cache_key)
     if isinstance(cached, dict):
         return cached

@@ -121,6 +121,7 @@
     "CHOKIDAR_USEPOLLING": "1",
     "WATCHPACK_POLLING": "true"
   },
+  "terminal.integrated.shellIntegration.enabled": true,
   "python.defaultInterpreterPath": "C:\\Users\\vuser\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
   "python.terminal.activateEnvironment": true,
   "python.analysis.extraPaths": [

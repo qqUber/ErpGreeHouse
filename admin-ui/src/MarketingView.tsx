@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Api,
-  baseUrl,
-  injectAuthHeaders,
-  MarketingCampaign,
-  MarketingCampaignPreview,
-  MarketingSegment,
-  MarketingTrigger,
+    Api,
+    baseUrl,
+    injectAuthHeaders,
+    MarketingCampaign,
+    MarketingCampaignPreview,
+    MarketingSegment,
+    MarketingTrigger,
 } from './api';
 import { useMarketingData } from './hooks/useMarketingData';
 import { marketingService } from './services/marketing.service';
@@ -163,11 +163,12 @@ function CampaignsManager({
   async function handleSend(id: number) {
     if (!confirm(t('marketing.confirmSend') || 'Send campaign now?')) return;
     try {
+      setError('');
       setBusyId(id);
       await marketingService.sendCampaign(id);
       await onUpdate();
     } catch (e) {
-      alert(String(e));
+      setError(String(e));
     } finally {
       setBusyId(null);
     }
@@ -175,11 +176,12 @@ function CampaignsManager({
 
   async function handlePause(id: number) {
     try {
+      setError('');
       setBusyId(id);
       await marketingService.pauseCampaign(id);
       await onUpdate();
     } catch (e) {
-      alert(String(e));
+      setError(String(e));
     } finally {
       setBusyId(null);
     }
@@ -187,11 +189,12 @@ function CampaignsManager({
 
   async function handleResume(id: number) {
     try {
+      setError('');
       setBusyId(id);
       await marketingService.resumeCampaign(id);
       await onUpdate();
     } catch (e) {
-      alert(String(e));
+      setError(String(e));
     } finally {
       setBusyId(null);
     }
@@ -200,11 +203,12 @@ function CampaignsManager({
   async function handleCancel(id: number) {
     if (!confirm('Cancel this campaign?')) return;
     try {
+      setError('');
       setBusyId(id);
       await marketingService.cancelCampaign(id);
       await onUpdate();
     } catch (e) {
-      alert(String(e));
+      setError(String(e));
     } finally {
       setBusyId(null);
     }
@@ -215,15 +219,16 @@ function CampaignsManager({
     if (nextValue === null) return;
     const normalized = nextValue.trim() ? Number(nextValue) : null;
     if (normalized !== null && Number.isNaN(normalized)) {
-      alert('Budget must be a number');
+      setError('Budget must be a number');
       return;
     }
     try {
+      setError('');
       setBusyId(id);
       await marketingService.updateCampaignBudget(id, normalized);
       await onUpdate();
     } catch (e) {
-      alert(String(e));
+      setError(String(e));
     } finally {
       setBusyId(null);
     }
@@ -602,7 +607,7 @@ function SegmentsManager({
       setAgeMin('');
       setAgeMax('');
       setPreview([]);
-      onUpdate();
+      await onUpdate();
     } catch (e) {
       setError(String(e));
     }
@@ -820,14 +825,10 @@ function SegmentsManager({
                     className="text-blue-600 hover:underline text-xs"
                     onClick={async () => {
                       try {
-                        await fetch(`${baseUrl()}/api/v1/marketing/segments/${s.id}/refresh`, {
-                          method: 'POST',
-                          headers: injectAuthHeaders(),
-                          credentials: 'include',
-                        });
-                        onUpdate();
+                        await Api.refreshMarketingSegment(s.id);
+                        await onUpdate();
                       } catch (e) {
-                        console.error(e);
+                        setError(String(e));
                       }
                     }}
                   >
@@ -909,7 +910,7 @@ function TriggersManager({
       setNewMediaType('');
       setNewMediaUrl('');
       setNewCaption('');
-      onUpdate();
+      await onUpdate();
     } catch (e) {
       setError(String(e));
     }

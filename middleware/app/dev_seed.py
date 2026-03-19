@@ -18,9 +18,9 @@ def should_auto_seed(settings: Settings) -> bool:
         return _is_true(explicit)
 
     if _is_true(os.getenv("E2E_TEST_MODE")) or _is_true(os.getenv("TEST_MODE")):
-        return True
+        return False
 
-    return settings.environment in ("development", "testing")
+    return settings.environment == "development"
 
 
 def _count(conn: Any, table: str) -> int:

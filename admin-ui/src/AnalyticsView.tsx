@@ -1,12 +1,12 @@
 import ReactECharts from 'echarts-for-react';
 import { useEffect, useState } from 'react';
 import {
-  Api,
-  ChartData,
-  CustomerSegmentation,
-  DashboardOverview,
-  LoyaltyDetailedReport,
-  LoyaltyReportOverview,
+    Api,
+    ChartData,
+    CustomerSegmentation,
+    DashboardOverview,
+    LoyaltyDetailedReport,
+    LoyaltyReportOverview,
 } from './api';
 
 export function AnalyticsView() {
@@ -20,6 +20,7 @@ export function AnalyticsView() {
   const [segmentation, setSegmentation] = useState<CustomerSegmentation | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     loadAnalyticsData();
@@ -64,6 +65,7 @@ export function AnalyticsView() {
 
   async function handleExport(type: string) {
     try {
+      setExportError(null);
       let response: Response;
       let filename: string;
 
@@ -95,7 +97,7 @@ export function AnalyticsView() {
       document.body.removeChild(a);
     } catch (e) {
       console.error('Export failed:', e);
-      alert('Не удалось экспортировать данные');
+      setExportError('Не удалось экспортировать данные');
     }
   }
 
@@ -171,6 +173,8 @@ export function AnalyticsView() {
           </button>
         </div>
       </div>
+
+      {exportError ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{exportError}</div> : null}
 
       {/* Key Metrics Overview */}
       {overview && (

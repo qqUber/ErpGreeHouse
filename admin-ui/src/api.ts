@@ -190,6 +190,27 @@ export type DevCreateSaleResult = {
   debug_mode: boolean;
 };
 
+export type SaleItem = {
+  code: string;
+  name: string;
+  price: number;
+  qty: number;
+};
+
+export type CreateSaleRequest = {
+  customer_id: number;
+  items: SaleItem[];
+  requested_bonus?: number;
+};
+
+export type CreateSaleResponse = {
+  accepted?: boolean;
+  transaction_id: number;
+  customer_id: number;
+  bonus_used?: number;
+  bonus_earned?: number;
+};
+
 export type Product = {
   id: number;
   code: string;
@@ -828,8 +849,8 @@ export const Api = {
       method: 'POST',
       body: JSON.stringify({ name }),
     }),
-  createSale: (payload: any) =>
-    api<any>('/api/v1/pos/sale', { method: 'POST', body: JSON.stringify(payload) }),
+  createSale: (payload: CreateSaleRequest) =>
+    api<CreateSaleResponse>('/api/v1/pos/sale', { method: 'POST', body: JSON.stringify(payload) }),
   receiptUrl: (txId: number) => `${baseUrl()}/api/v1/transactions/${txId}/receipt`,
 
   integrations: () => api<Integration[]>('/api/v1/integrations', { method: 'GET', headers: {} }),
@@ -907,10 +928,14 @@ export const Api = {
       body: JSON.stringify({ role, permission, is_allowed }),
     }),
   marketingSegments: () => api<{ items: MarketingSegment[] }>('/api/v1/marketing/segments'),
-  createMarketingSegment: (payload: { name: string; criteria: any }) =>
+  createMarketingSegment: (payload: { name: string; criteria: Record<string, unknown> }) =>
     api<{ id: number }>('/api/v1/marketing/segments', {
       method: 'POST',
       body: JSON.stringify(payload),
+    }),
+  refreshMarketingSegment: (id: number) =>
+    api<{ status: string; message: string }>(`/api/v1/marketing/segments/${id}/refresh`, {
+      method: 'POST',
     }),
   marketingCampaigns: () => api<{ items: MarketingCampaign[] }>('/api/v1/marketing/campaigns'),
   createMarketingCampaign: (payload: {

@@ -116,7 +116,7 @@ def _warm_dashboard_cache() -> None:
     """Pre-warm dashboard cache with today's data"""
     try:
         today = datetime.now().strftime("%Y-%m-%d")
-        cache_key = f"crm:cache:dashboard:{today}"
+        cache_key = f"crm:cache:dashboard:operational:{today}"
         # Check if already cached
         if _cache_get_json(cache_key):
             return
@@ -286,7 +286,7 @@ def dashboard(
 ) -> dict[str, Any]:
     check_permission(auth_result, "dashboard.read")
     today = datetime.now().strftime("%Y-%m-%d")
-    cache_key = f"crm:cache:dashboard:{today}"
+    cache_key = f"crm:cache:dashboard:operational:{today}"
     cached = _cache_get_json(cache_key)
     if isinstance(cached, dict):
         return cached

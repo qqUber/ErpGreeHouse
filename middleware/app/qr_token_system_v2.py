@@ -37,7 +37,7 @@ def database_transaction(conn: sqlite3.Connection):
 
 def generate_secure_token() -> str:
     """Generate cryptographically secure random token."""
-    return secrets.token_hex(TOKEN_LENGTH // 2).upper()
+    return f"{secrets.randbelow(90_000_000) + 10_000_000:08d}"
 
 
 def get_or_generate_base_guid_safe(conn: sqlite3.Connection) -> str:
@@ -89,8 +89,8 @@ def generate_unique_qr_token_safe(conn: sqlite3.Connection) -> str:
             # Generate deterministic UUID from namespace + counter
             token_uuid = uuid.uuid5(namespace, str(counter_value))
 
-            # Take last 8 characters of hex representation
-            token = token_uuid.hex[-TOKEN_LENGTH:].upper()
+            # Convert UUID-derived entropy into an 8-digit numeric token.
+            token = f"{(token_uuid.int % 90_000_000) + 10_000_000:08d}"
 
             # Verify uniqueness
             existing = conn.execute(

@@ -99,7 +99,7 @@ def get_dashboard_overview(
     ),
 ):
     """Get real-time dashboard overview with key metrics"""
-    cache_key = f"analytics:dashboard:overview:{time_range}"
+    cache_key = f"crm:cache:analytics:dashboard:overview:{time_range}"
     cached = _cache_get_json(cache_key)
     if cached:
         return cached
@@ -234,7 +234,7 @@ def get_dashboard_overview(
 @router.get("/analytics/dashboard/marketing", dependencies=[Depends(require_jwt_auth)])
 def get_marketing_analytics():
     """Get marketing analytics data for dashboard widget"""
-    cache_key = "analytics:dashboard:marketing"
+    cache_key = "crm:cache:analytics:dashboard:marketing"
     cached = _cache_get_json(cache_key)
     if cached:
         return cached
@@ -376,7 +376,7 @@ def get_sales_chart(
     interval: str = Query(default="day", description="Interval: day, week, month"),
 ):
     """Get sales chart data for dashboard"""
-    cache_key = f"analytics:dashboard:sales:{time_range}:{interval}"
+    cache_key = f"crm:cache:analytics:dashboard:sales:{time_range}:{interval}"
     cached = _cache_get_json(cache_key)
     if cached:
         return cached
@@ -490,7 +490,7 @@ def get_customer_chart(
     interval: str = Query(default="day", description="Interval: day, week, month"),
 ):
     """Get customer chart data for dashboard"""
-    cache_key = f"analytics:dashboard:customers:{time_range}:{interval}"
+    cache_key = f"crm:cache:analytics:dashboard:customers:{time_range}:{interval}"
     cached = _cache_get_json(cache_key)
     if cached:
         return cached
@@ -609,7 +609,7 @@ def get_loyalty_chart(
     interval: str = Query(default="day", description="Interval: day, week, month"),
 ):
     """Get loyalty program chart data for dashboard"""
-    cache_key = f"analytics:dashboard:loyalty:{time_range}:{interval}"
+    cache_key = f"crm:cache:analytics:dashboard:loyalty:{time_range}:{interval}"
     cached = _cache_get_json(cache_key)
     if cached:
         return cached
@@ -722,7 +722,7 @@ def get_loyalty_report_overview(
     time_range: str = Query(default="30d", description="Time range: 7d, 30d, 90d, 1y"),
 ):
     """Get loyalty program performance report overview"""
-    cache_key = f"analytics:reports:loyalty:overview:{time_range}"
+    cache_key = f"crm:cache:analytics:reports:loyalty:overview:{time_range}"
     cached = _cache_get_json(cache_key)
     if cached:
         return cached
@@ -852,7 +852,7 @@ def get_loyalty_detailed_report(
     time_range: str = Query(default="30d", description="Time range: 7d, 30d, 90d, 1y"),
 ):
     """Get detailed loyalty program performance report"""
-    cache_key = f"analytics:reports:loyalty:detailed:{time_range}"
+    cache_key = f"crm:cache:analytics:reports:loyalty:detailed:{time_range}"
     cached = _cache_get_json(cache_key)
     if cached:
         return cached
@@ -1182,7 +1182,7 @@ def export_customers_report_csv(
 )
 def get_customer_segmentation():
     """Get customer segmentation analysis"""
-    cache_key = "analytics:customers:segmentation"
+    cache_key = "crm:cache:analytics:customers:segmentation"
     cached = _cache_get_json(cache_key)
     if cached:
         return cached

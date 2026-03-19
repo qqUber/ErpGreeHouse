@@ -238,7 +238,8 @@ class DashboardAnalyticsService:
                       SUM(CASE WHEN telegram_id IS NOT NULL THEN 1 ELSE 0 END) as telegram_customers,
                       SUM(CASE WHEN vk_id IS NOT NULL THEN 1 ELSE 0 END) as vk_customers,
                       AVG(COALESCE(ltv, 0)) as avg_ltv,
-                      AVG(COALESCE(balance_points, 0)) as avg_balance
+                      AVG(COALESCE(balance_points, 0)) as avg_balance,
+                      AVG(COALESCE(purchase_frequency, 0)) as avg_purchase_frequency
                FROM customers""",
             (today, week_ago, month_ago),
         ).fetchone()
@@ -340,17 +341,7 @@ class DashboardAnalyticsService:
             "newCustomersTimeline": timeline,
             "birthdaysThisWeek": [],
             "loyaltyTiers": loyalty_tiers,
-            "purchaseFrequency": (
-                round(
-                    sum(
-                        int(customer["transactions"] or 0) for customer in top_customers
-                    )
-                    / len(top_customers),
-                    1,
-                )
-                if top_customers
-                else 0
-            ),
+            "purchaseFrequency": round(float(counts["avg_purchase_frequency"] or 0), 1),
             "priorityActions": [
                 {
                     "id": "consent-gap",

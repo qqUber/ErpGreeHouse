@@ -3,15 +3,16 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsView } from './AnalyticsView';
 import {
-  AdminMe,
-  Api,
-  CustomerDetails,
-  CustomerListItem,
-  Integration,
-  IntegrationDelivery,
-  IntegrationTemplate,
-  RolePermissions,
-  setAdminSecret,
+    AdminMe,
+    Api,
+    CreateSaleRequest,
+    CustomerDetails,
+    CustomerListItem,
+    Integration,
+    IntegrationDelivery,
+    IntegrationTemplate,
+    RolePermissions,
+    setAdminSecret,
 } from './api';
 import { ComplianceView } from './ComplianceView';
 import { DashboardWrapper } from './components/dashboard/DashboardWrapper';
@@ -197,7 +198,11 @@ function App() {
     [effectiveMe?.role, effectivePermissions, publicStatus?.debug_mode]
   );
 
-  const { data: dashboardData, refresh: refreshDashboard } = useDashboardData({
+  const {
+    data: dashboardData,
+    refresh: refreshDashboard,
+    invalidate: invalidateDashboard,
+  } = useDashboardData({
     enabled: effectiveAuthReady && Boolean(effectiveMe) && canReadDashboard && tab === 'dashboard',
     roleKey: effectiveMe?.role || 'anonymous',
   });
@@ -832,7 +837,7 @@ function App() {
               reloadProducts={() => loadProducts()}
               onSaleDone={async (customerId: number) => {
                 if (canReadDashboard) {
-                  await refreshDashboard();
+                  await invalidateDashboard();
                 }
                 await loadCustomers();
                 handleSelectCustomer(customerId);
@@ -901,7 +906,7 @@ function App() {
                     createDevSale={async (customerQr) => {
                       const result = await Api.createDevSale(customerQr);
                       await Promise.all([
-                        canReadDashboard ? refreshDashboard() : Promise.resolve(),
+                        canReadDashboard ? invalidateDashboard() : Promise.resolve(),
                         loadCustomers(),
                       ]);
                       handleSelectCustomer(result.customer_id);
@@ -1890,11 +1895,23 @@ function PosView({ refreshCustomers, products, reloadProducts, onSaleDone }: Pos
   const [err, setErr] = useState<string | null>(null);
 
   async function submitSale() {
-    const parsedCustomerId = Number(customerId);
-    const parsedQty = Number(qty);
+    const parsedCustomerId = Number(customerId.trim());
+    const parsedQty = Number(qty.trim());
     const product = products.find((p) => String(p.id) === selectedProductId);
 
-    if (!parsedCustomerId || !product || !parsedQty || parsedQty < 1) {
+    if (!Number.isInteger(parsedCustomerId) || parsedCustomerId < 1) {
+      setErr('Customer ID must be a positive integer');
+      return;
+    }
+    if (!product) {
+      setErr('Select a product');
+      return;
+    }
+    if (!product.active) {
+      setErr('Selected product is inactive');
+      return;
+    }
+    if (!Number.isInteger(parsedQty) || parsedQty < 1) {
       setErr('Invalid sale data');
       return;
     }
@@ -1903,12 +1920,13 @@ function PosView({ refreshCustomers, products, reloadProducts, onSaleDone }: Pos
     setErr(null);
     setNotice(null);
     try {
-      await Api.createSale({
+      const saleRequest: CreateSaleRequest = {
         customer_id: parsedCustomerId,
         items: [
           { code: product.code, name: product.name, price: Number(product.price), qty: parsedQty },
         ],
-      });
+      };
+      await Api.createSale(saleRequest);
       setNotice('Sale created successfully');
       await Promise.allSettled([refreshCustomers(), onSaleDone(parsedCustomerId)]);
       setQty('1');

@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { Api } from '../api';
 
+interface FeedbackMessage {
+  kind: 'success' | 'error';
+  message: string;
+}
+
 export function ProfileDeletion({
   customerId,
   onDeleted,
@@ -10,21 +15,26 @@ export function ProfileDeletion({
 }) {
   const [loading, setLoading] = useState(false);
   const [confirmText, setConfirmText] = useState('');
+  const [feedback, setFeedback] = useState<FeedbackMessage | null>(null);
 
   async function handleDelete() {
     if (confirmText !== 'УДАЛИТЬ') {
-      alert('Пожалуйста, введите "УДАЛИТЬ" для подтверждения');
+      setFeedback({
+        kind: 'error',
+        message: 'Пожалуйста, введите "УДАЛИТЬ" для подтверждения',
+      });
       return;
     }
 
     setLoading(true);
+    setFeedback(null);
     try {
       await Api.deleteCustomer(customerId);
-      alert('Профиль пользователя успешно удален');
+      setFeedback({ kind: 'success', message: 'Профиль пользователя успешно удален' });
       onDeleted();
     } catch (e) {
       console.error(e);
-      alert('Ошибка при удалении профиля пользователя');
+      setFeedback({ kind: 'error', message: 'Ошибка при удалении профиля пользователя' });
     } finally {
       setLoading(false);
     }
@@ -48,6 +58,18 @@ export function ProfileDeletion({
           placeholder="Введите УДАЛИТЬ"
         />
       </div>
+
+      {feedback ? (
+        <div
+          className={`mb-4 rounded-md px-3 py-2 text-sm ${
+            feedback.kind === 'success'
+              ? 'bg-green-50 text-green-700 border border-green-200'
+              : 'bg-red-50 text-red-700 border border-red-200'
+          }`}
+        >
+          {feedback.message}
+        </div>
+      ) : null}
 
       <button
         onClick={handleDelete}

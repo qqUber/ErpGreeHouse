@@ -19,7 +19,6 @@ import json
 import os
 import random
 import sqlite3
-import string
 
 # Import from existing db module to ensure consistent paths
 import sys
@@ -29,6 +28,7 @@ from typing import Any
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from app.db import DB, get_db, get_db_path
+from app.utils.qr_codes import generate_unique_token
 
 # Realistic Russian names (ФИО)
 RUSSIAN_FIRST_NAMES_MALE = [
@@ -407,10 +407,9 @@ def generate_birthday() -> str:
     return birthday.strftime("%Y-%m-%d")
 
 
-def generate_qr_token() -> str:
-    """Generate unique QR token."""
-    random_str = "".join(random.choices(string.ascii_letters + string.digits, k=32))
-    return hashlib.sha256(random_str.encode()).hexdigest()[:32]
+def generate_qr_token(conn: sqlite3.Connection) -> str:
+    """Generate unique numeric QR token."""
+    return generate_unique_token(conn)
 
 
 def generate_transaction_items(products: list) -> list:
@@ -624,7 +623,7 @@ def seed_customers(conn: sqlite3.Connection, num_customers: int = 75) -> list:
             (
                 phone,
                 full_name,
-                generate_qr_token(),
+                generate_qr_token(conn),
                 birthday,
                 marketing_allowed,
                 data_processing_allowed,

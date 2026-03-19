@@ -348,6 +348,7 @@ def ingest_pos_receipt(
         tx_id = int(cur2.lastrowid)  # type: ignore[arg-type]
 
         _cache_del_prefix("crm:cache:dashboard:")
+        _cache_del_prefix("crm:cache:analytics:")
         _cache_del_prefix("crm:cache:customers:")
 
         tg_id = cust["telegram_id"]
