@@ -24,6 +24,7 @@ from .integrations.bots.telegram_handler import (
     get_stored_telegram_token,
 )
 from .integrations.bots.vk_handler import validate_vk_token
+from .handlers import _get_telegram_integration_config
 
 router = APIRouter(prefix="/api/v1/admin/integrations")
 
@@ -421,6 +422,35 @@ async def setup_vk_webhook(
         "secret": secret,
         "note": "VK uses Callback API. Use the URL above in your group settings.",
     }
+
+
+@router.get("/telegram/menu")
+def get_telegram_menu_config(
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Get Telegram menu configuration from database"""
+    check_roles(auth_result, roles=("owner", "marketer"))
+    
+    try:
+        config = _get_telegram_integration_config()
+        menu_items = config.get("menu_items", [])
+        
+        # Ensure menu_items is a list
+        if not isinstance(menu_items, list):
+            menu_items = []
+        
+        return {
+            "menu_items": menu_items,
+            "support_chat_id": config.get("support_chat_id"),
+            "base_web_url": get_settings().base_web_url,
+        }
+    except Exception as e:
+        # Return empty config on error
+        return {
+            "menu_items": [],
+            "support_chat_id": None,
+            "base_web_url": get_settings().base_web_url,
+        }
 
 
 # --- Combined Status ---

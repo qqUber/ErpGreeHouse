@@ -1091,6 +1091,10 @@ export const Api = {
     api<{ enabled: boolean; configured: boolean; bot_token_set: boolean; config: any }>(
       '/api/v1/admin/integrations/telegram/status'
     ),
+  getTelegramMenuConfig: () =>
+    api<{ menu_items: any[]; support_chat_id: string | null; base_web_url: string }>(
+      '/api/v1/admin/integrations/telegram/menu'
+    ),
   validateTelegramToken: (bot_token: string, enabled: boolean) =>
     api<{
       valid: boolean;

@@ -216,8 +216,8 @@ def get_default_permissions(role: str) -> set[str]:
 
 
 def has_permission(role: str, permission: str) -> bool:
-    # Owner always has access
-    if role == "owner":
+    # Owner and admin always have access (superuser roles)
+    if role in ("owner", "admin"):
         return True
 
     db = get_db()

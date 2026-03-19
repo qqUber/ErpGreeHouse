@@ -3,16 +3,16 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsView } from './AnalyticsView';
 import {
-    AdminMe,
-    Api,
-    CreateSaleRequest,
-    CustomerDetails,
-    CustomerListItem,
-    Integration,
-    IntegrationDelivery,
-    IntegrationTemplate,
-    RolePermissions,
-    setAdminSecret,
+  AdminMe,
+  Api,
+  CreateSaleRequest,
+  CustomerDetails,
+  CustomerListItem,
+  Integration,
+  IntegrationDelivery,
+  IntegrationTemplate,
+  RolePermissions,
+  setAdminSecret,
 } from './api';
 import { ComplianceView } from './ComplianceView';
 import { DashboardWrapper } from './components/dashboard/DashboardWrapper';
@@ -76,7 +76,7 @@ function App() {
   const [customers, setCustomers] = useState<CustomerListItem[]>([]);
   const [customerPage, setCustomerPage] = useState(1);
   const [customerTotal, setCustomerTotal] = useState(0);
-  const [customerLimit] = useState(25);
+  const [customerLimit] = useState(15);
   const [q, setQ] = useState('');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [details, setDetails] = useState<CustomerDetails | null>(null);
@@ -326,9 +326,48 @@ function App() {
     }
   }
 
-  async function loadCustomers(query?: string, page: number = 1, limit: number = 25) {
+  async function loadCustomers(query?: string, page: number = 1, limit: number = 15) {
     setError(null);
-    const res = await Api.customers(query, page, limit);
+    
+    // Enhanced search parsing
+    let enhancedQuery = query || '';
+    
+    if (enhancedQuery) {
+      // Handle numeric ID search (pure numbers)
+      if (/^\d+$/.test(enhancedQuery.trim())) {
+        enhancedQuery = `id:${enhancedQuery.trim()}`;
+      }
+      // Handle QR code search (8 digits)
+      else if (/^\d{8}$/.test(enhancedQuery.trim())) {
+        enhancedQuery = `qr:${enhancedQuery.trim()}`;
+      }
+      // Handle range operators like >5000<1000, >5000, <2000, !=10
+      else if (/^([><=!])(\d+)(<(\d+))?$/.test(enhancedQuery.trim())) {
+        const match = enhancedQuery.trim().match(/^([><=!])(\d+)(<(\d+))?$/);
+        if (match) {
+          const [, operator, value1, , value2] = match;
+          if (operator === '>' && value2) {
+            enhancedQuery = `balance:${value1}-${value2}`;
+          } else if (operator === '>') {
+            enhancedQuery = `balance>${value1}`;
+          } else if (operator === '<') {
+            enhancedQuery = `balance<${value1}`;
+          } else if (operator === '!' || operator === '!=') {
+            enhancedQuery = `balance!${value1}`;
+          }
+        }
+      }
+      // Handle phone numbers
+      else if (/^[\d\s\-\+\(\)]+$/.test(enhancedQuery.trim())) {
+        enhancedQuery = `phone:${enhancedQuery.trim()}`;
+      }
+      // Default to name search for text
+      else {
+        enhancedQuery = `name:${enhancedQuery.trim()}`;
+      }
+    }
+    
+    const res = await Api.customers(enhancedQuery, page, limit);
     setCustomers(res.items);
     setCustomerTotal(res.pagination.total);
     setCustomerPage(page);
@@ -695,8 +734,11 @@ function App() {
             </div>
           </nav>
           {authReady ? (
-            <div className="pill">
-              {t('common.role')}: {roleLabel(me?.role || '')}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <LanguageSwitcher />
+              <div className="pill" style={{ whiteSpace: 'nowrap', minWidth: 'fit-content' }}>
+                {t('common.role')}: {roleLabel(me?.role || '')}
+              </div>
             </div>
           ) : null}
         </header>
@@ -1013,9 +1055,6 @@ function App() {
                     >
                       {t('auth.changePassword')}
                     </button>
-                  </div>
-                  <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 12 }}>
-                    {t('auth.recoveryInstructions')}
                   </div>
                 </div>
               </div>

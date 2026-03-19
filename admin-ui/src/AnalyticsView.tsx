@@ -87,7 +87,15 @@ export function AnalyticsView() {
       }
 
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      
+      // Ensure proper UTF-8 encoding for Excel compatibility
+      const text = await blob.text();
+      const bom = '\uFEFF'; // UTF-8 BOM
+      const utf8Blob = new Blob([bom + text], { 
+        type: 'text/csv;charset=utf-8' 
+      });
+      
+      const url = window.URL.createObjectURL(utf8Blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = filename;
@@ -146,31 +154,56 @@ export function AnalyticsView() {
             <option value="90d">90 дней</option>
             <option value="1y">1 год</option>
           </select>
-          <button
-            onClick={() => handleExport('loyalty')}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-          >
-            Экспорт лояльности
-          </button>
-          <button
-            onClick={() => handleExport('sales')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Экспорт продаж
-          </button>
-          <button
-            onClick={() => handleExport('customers')}
-            className="btn btnPrimary"
-            style={{
-              background: 'var(--primary)',
-              color: 'white',
-              borderColor: 'rgba(59, 130, 246, 0.3)',
-              fontSize: 13,
-              padding: '8px 16px',
-            }}
-          >
-            Экспорт клиентов
-          </button>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            <button
+              onClick={() => handleExport('loyalty')}
+              className="btn"
+              style={{
+                background: '#10b981',
+                color: 'white',
+                border: 'none',
+                padding: '8px 12px',
+                fontSize: '12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Экспорт лояльности
+            </button>
+            <button
+              onClick={() => handleExport('sales')}
+              className="btn"
+              style={{
+                background: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                padding: '8px 12px',
+                fontSize: '12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Экспорт продаж
+            </button>
+            <button
+              onClick={() => handleExport('customers')}
+              className="btn btnPrimary"
+              style={{
+                background: 'var(--primary)',
+                color: 'white',
+                border: 'none',
+                fontSize: '12px',
+                padding: '8px 12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Экспорт клиентов
+            </button>
+          </div>
         </div>
       </div>
 
@@ -378,9 +411,9 @@ export function AnalyticsView() {
 
       {/* Customer Segmentation */}
       {segmentation && (
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-lg shadow" style={{ maxHeight: '400px', overflow: 'auto' }}>
           <h3 className="text-lg font-semibold mb-4">Сегментация клиентов</h3>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4" style={{ minWidth: '600px' }}>
             {Object.entries(segmentation.segments).map(([segment, data]) => (
               <div key={segment} className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-sm font-medium text-gray-600 capitalize">

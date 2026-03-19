@@ -668,10 +668,66 @@ def list_customers(
         args = []
 
         if q:
-            qs = normalize_name(q)
-            qp = normalize_phone(q)
-            where.append("(full_name LIKE ? OR phone LIKE ?)")
-            args.extend([f"%{qs}%", f"%{qp}%"])
+            # Enhanced search parsing for prefixed queries
+            if q.startswith('id:'):
+                # Exact ID search
+                id_value = q[3:].strip()
+                if id_value.isdigit():
+                    where.append("id = ?")
+                    args.append(int(id_value))
+            elif q.startswith('qr:'):
+                # QR code search (8 digits)
+                qr_value = q[3:].strip()
+                if qr_value.isdigit() and len(qr_value) == 8:
+                    where.append("qr_token = ?")
+                    args.append(qr_value)
+            elif q.startswith('phone:'):
+                # Phone search
+                phone_value = q[6:].strip()
+                qp = normalize_phone(phone_value)
+                where.append("phone LIKE ?")
+                args.append(f"%{qp}%")
+            elif q.startswith('name:'):
+                # Name search
+                name_value = q[5:].strip()
+                qs = normalize_name(name_value)
+                where.append("full_name LIKE ?")
+                args.append(f"%{qs}%")
+            elif q.startswith('balance>'):
+                # Balance greater than
+                balance_value = q[8:].strip()
+                if balance_value.isdigit():
+                    where.append("balance_points > ?")
+                    args.append(int(balance_value))
+            elif q.startswith('balance<'):
+                # Balance less than
+                balance_value = q[8:].strip()
+                if balance_value.isdigit():
+                    where.append("balance_points < ?")
+                    args.append(int(balance_value))
+            elif q.startswith('balance!'):
+                # Balance not equal
+                balance_value = q[8:].strip()
+                if balance_value.isdigit():
+                    where.append("balance_points != ?")
+                    args.append(int(balance_value))
+            elif q.startswith('balance:'):
+                # Balance range (1000-2000)
+                range_value = q[8:].strip()
+                if '-' in range_value:
+                    min_val, max_val = range_value.split('-', 1)
+                    if min_val.isdigit() and max_val.isdigit():
+                        where.append("balance_points >= ? AND balance_points <= ?")
+                        args.extend([int(min_val), int(max_val)])
+                elif range_value.isdigit():
+                    where.append("balance_points = ?")
+                    args.append(int(range_value))
+            else:
+                # Legacy search - search in name and phone
+                qs = normalize_name(q)
+                qp = normalize_phone(q)
+                where.append("(full_name LIKE ? OR phone LIKE ?)")
+                args.extend([f"%{qs}%", f"%{qp}%"])
 
         if min_balance is not None:
             where.append("balance_points >= ?")

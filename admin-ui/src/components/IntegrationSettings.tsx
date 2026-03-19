@@ -82,7 +82,8 @@ const TELEGRAM_MENU_DEFINITIONS = [
   },
 ] as const;
 
-function defaultTelegramMenuItems(): TelegramMenuItemConfig[] {
+// Fallback function for when database doesn't have menu items
+function getDefaultTelegramMenuItems(): TelegramMenuItemConfig[] {
   return TELEGRAM_MENU_DEFINITIONS.map((definition) => ({
     id: definition.id,
     label: definition.label,
@@ -99,34 +100,40 @@ function defaultTelegramMenuItems(): TelegramMenuItemConfig[] {
   }));
 }
 
+// Dynamic function that uses database items with fallback to defaults
 function mapTelegramMenuItems(
   menuItems?: TelegramStatus['config']['menu_items']
 ): TelegramMenuItemConfig[] {
-  return TELEGRAM_MENU_DEFINITIONS.map((definition) => {
-    const source = menuItems?.find((item) => item.id === definition.id);
-    return {
-      id: definition.id,
-      label: definition.label,
-      text: source?.text || '',
-      media_urls: Array.isArray(source?.media_urls) ? source.media_urls.filter(Boolean) : [],
-      button_text: source?.button_text || '',
-      button_url: source?.button_url || '',
-      use_text: source?.use_text ?? definition.id !== 'open_coffee_shop',
-      use_media: source?.use_media ?? false,
-      use_button: source?.use_button ?? definition.id === 'menu_addresses',
-      use_city_list: source?.use_city_list ?? definition.id === 'menu_addresses',
-      use_support_forward: source?.use_support_forward ?? definition.id === 'ask_question',
-      city_entries: Array.isArray(source?.city_entries)
-        ? source.city_entries.map((entry) => ({
+  // If no menu items from database, use defaults
+  if (!menuItems || !Array.isArray(menuItems) || menuItems.length === 0) {
+    return getDefaultTelegramMenuItems();
+  }
+
+  // Map database items to config format
+  return menuItems.map((item) => ({
+    id: item.id || 'unknown',
+    label: item.label || item.id || 'Unknown',
+    text: item.text || '',
+    media_urls: Array.isArray(item.media_urls) ? item.media_urls.filter(Boolean) : [],
+    button_text: item.button_text || '',
+    button_url: item.button_url || '',
+    use_text: item.use_text ?? true,
+    use_media: item.use_media ?? false,
+    use_button: item.use_button ?? false,
+    use_city_list: item.use_city_list ?? false,
+    use_support_forward: item.use_support_forward ?? false,
+    city_entries: Array.isArray(item.city_entries)
+      ? item.city_entries
+          .filter((entry) => entry.city)
+          .map((entry) => ({
             city: entry.city || '',
             text: entry.text || '',
             media_urls: Array.isArray(entry.media_urls) ? entry.media_urls.filter(Boolean) : [],
             button_text: entry.button_text || '',
             button_url: entry.button_url || '',
           }))
-        : [],
-    };
-  });
+      : [],
+  }));
 }
 
 function serializeTelegramMenuItems(menuItems: TelegramMenuItemConfig[]): Array<{
@@ -186,7 +193,7 @@ export function IntegrationSettings() {
   const [telegramValidationResult, setTelegramValidationResult] = useState<any>(null);
   const [telegramSaveStatus, setTelegramSaveStatus] = useState<Status>('idle');
   const [telegramMenuItems, setTelegramMenuItems] = useState<TelegramMenuItemConfig[]>(
-    defaultTelegramMenuItems()
+    getDefaultTelegramMenuItems()
   );
   const [telegramUploadStatus, setTelegramUploadStatus] = useState<Record<string, Status>>({});
   const [telegramSupportChatId, setTelegramSupportChatId] = useState('');
