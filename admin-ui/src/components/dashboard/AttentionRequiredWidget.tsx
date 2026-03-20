@@ -23,7 +23,7 @@ export function AttentionRequiredWidget({ data }: { data?: AttentionRequiredData
     <div className="crm-widget-compact">
       <div className="crm-kpi-grid">
         <div className="crm-kpi-card crm-kpi-card-danger">
-          <span className="crm-kpi-label">{t('widgets.common.attention', 'Attention')}</span>
+          <span className="crm-kpi-label">{t('widgets.attentionRequired.attention', 'Attention')}</span>
           <span className="crm-kpi-value">{priority ? priority.value : 0}</span>
         </div>
       </div>
@@ -57,8 +57,8 @@ export function AttentionRequiredWidget({ data }: { data?: AttentionRequiredData
 
   return (
     <Widget
-      title={t('widgets.common.attention', 'Attention Required')}
-      drawerTitle="Priority actions"
+      title={t('widgets.attentionRequired.title', 'Attention Required')}
+      drawerTitle={t('widgets.attentionRequired.title', 'Priority actions')}
       compactContent={compactContent}
       expandedContent={expandedContent}
     >

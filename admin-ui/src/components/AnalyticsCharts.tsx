@@ -7,6 +7,7 @@ interface AnalyticsChartsProps {
 }
 
 export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
+  const { t } = useTranslation();
   const [salesData, setSalesData] = useState<SalesByDay['sales_by_day']>([]);
   const [topProducts, setTopProducts] = useState<TopProduct['top_products']>([]);
   const [categoryData, setCategoryData] = useState<CategoryDistribution['category_distribution']>(
@@ -33,7 +34,7 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
       setCategoryData(categories.category_distribution);
     } catch (e) {
       console.error('Failed to load analytics:', e);
-      setError('Не удалось загрузить аналитику');
+      setError(t('analytics.collecting'));
     } finally {
       setLoading(false);
     }
@@ -42,7 +43,7 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-gray-500">Загрузка аналитики...</div>
+        <div className="text-gray-500">{t('common.loading')}</div>
       </div>
     );
   }
@@ -52,7 +53,7 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
       <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
         <div className="text-red-600">{error}</div>
         <button onClick={loadAnalyticsData} className="mt-2 text-sm text-red-700 underline">
-          Повторить
+          {t('common.refresh')}
         </button>
       </div>
     );
@@ -69,10 +70,10 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
             marginBottom: 'var(--spacing-md)',
           }}
         >
-          Динамика продаж
+          {t('analytics.salesDynamics')}
         </h3>
         <ReactECharts
-          option={getSalesLineOption(salesData)}
+          option={getSalesLineOption(salesData, t)}
           style={{ height: '300px' }}
           opts={{ renderer: 'svg' }}
         />
@@ -88,10 +89,10 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
               marginBottom: 'var(--spacing-md)',
             }}
           >
-            Топ товаров
+            {t('dashboardManager.topProducts')}
           </h3>
           <ReactECharts
-            option={getTopProductsOption(topProducts)}
+            option={getTopProductsOption(topProducts, t)}
             style={{ height: '300px' }}
             opts={{ renderer: 'svg' }}
           />
@@ -106,10 +107,10 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
               marginBottom: 'var(--spacing-md)',
             }}
           >
-            Распределение по категориям
+            {t('analytics.customerDynamics')}
           </h3>
           <ReactECharts
-            option={getCategoryPieOption(categoryData)}
+            option={getCategoryPieOption(categoryData, t)}
             style={{ height: '300px' }}
             opts={{ renderer: 'svg' }}
           />
@@ -119,7 +120,7 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
   );
 }
 
-function getSalesLineOption(data: SalesByDay['sales_by_day']) {
+function getSalesLineOption(data: SalesByDay['sales_by_day'], t: any) {
   const dates = data.map((d) => d.date);
   const amounts = data.map((d) => d.total_amount / 100); // Convert from cents
   const transactions = data.map((d) => d.transactions_count);
@@ -132,7 +133,7 @@ function getSalesLineOption(data: SalesByDay['sales_by_day']) {
       textStyle: { color: '#374151' },
     },
     legend: {
-      data: ['Выручка', 'Транзакции'],
+      data: [t('analytics.revenue'), t('analytics.transactions')],
       bottom: 0,
     },
     grid: {
@@ -153,14 +154,14 @@ function getSalesLineOption(data: SalesByDay['sales_by_day']) {
     yAxis: [
       {
         type: 'value',
-        name: 'Выручка (₽)',
+        name: t('analytics.revenue') + ' (₽)',
         axisLabel: {
           formatter: (value: number) => `${(value / 1000).toFixed(0)}к`,
         },
       },
       {
         type: 'value',
-        name: 'Транзакции',
+        name: t('analytics.transactions'),
         axisLabel: {
           formatter: (value: number) => `${value}`,
         },
@@ -168,7 +169,7 @@ function getSalesLineOption(data: SalesByDay['sales_by_day']) {
     ],
     series: [
       {
-        name: 'Выручка',
+        name: t('analytics.revenue'),
         type: 'line',
         smooth: true,
         data: amounts,
@@ -188,7 +189,7 @@ function getSalesLineOption(data: SalesByDay['sales_by_day']) {
         },
       },
       {
-        name: 'Транзакции',
+        name: t('analytics.transactions'),
         type: 'line',
         yAxisIndex: 1,
         smooth: true,
@@ -199,7 +200,7 @@ function getSalesLineOption(data: SalesByDay['sales_by_day']) {
   };
 }
 
-function getTopProductsOption(data: TopProduct['top_products']) {
+function getTopProductsOption(data: TopProduct['top_products'], t: any) {
   const reversedData = [...data].reverse();
   const names = reversedData.map((d) =>
     d.name.length > 15 ? d.name.substring(0, 15) + '...' : d.name
@@ -216,7 +217,7 @@ function getTopProductsOption(data: TopProduct['top_products']) {
       formatter: (params: any) => {
         const item = data[data.length - 1 - params[0].dataIndex];
         if (item) {
-          return `<b>${item.name}</b><br/>Выручка: ${(item.revenue / 100).toFixed(2)} ₽<br/>Продано: ${item.qty} шт.`;
+          return `<b>${item.name}</b><br/>${t('analytics.revenue')}: ${(item.revenue / 100).toFixed(2)} ₽<br/>${t('products.quantity')}: ${item.qty} шт.`;
         }
         return '';
       },
@@ -272,7 +273,7 @@ function getTopProductsOption(data: TopProduct['top_products']) {
   };
 }
 
-function getCategoryPieOption(data: CategoryDistribution['category_distribution']) {
+function getCategoryPieOption(data: CategoryDistribution['category_distribution'], t: any) {
   const colors = [
     '#3b82f6',
     '#10b981',
@@ -295,7 +296,7 @@ function getCategoryPieOption(data: CategoryDistribution['category_distribution'
       formatter: (params: any) => {
         const item = data[params.dataIndex];
         if (item) {
-          return `<b>${item.name}</b><br/>Выручка: ${(item.revenue / 100).toFixed(2)} ₽<br/>Доля: ${params.percent}%`;
+          return `<b>${item.name}</b><br/>${t('analytics.revenue')}: ${(item.revenue / 100).toFixed(2)} ₽<br/>${t('table.amount')}: ${params.percent}%`;
         }
         return '';
       },
@@ -308,7 +309,7 @@ function getCategoryPieOption(data: CategoryDistribution['category_distribution'
     },
     series: [
       {
-        name: 'Категории',
+        name: t('products.title'),
         type: 'pie',
         radius: ['40%', '70%'],
         center: ['40%', '50%'],

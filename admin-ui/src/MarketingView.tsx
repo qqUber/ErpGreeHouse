@@ -238,16 +238,16 @@ function CampaignsManager({
     <div className="grid gap-6">
       {isCreating ? (
         <div className="card p-4 grid gap-4 max-w-lg">
-          <h3 className="font-bold">Новая кампания</h3>
+          <h3 className="font-bold">{t('marketing.createCampaign')}</h3>
           {error && <div className="text-red-600 text-sm">{error}</div>}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Название</label>
+            <label className="block text-sm font-medium text-gray-700">{t('marketing.campaignName')}</label>
             <input
               className="input w-full"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="Например: Скидки к 8 марта"
+              placeholder={t('marketing.campaignNamePlaceholder')}
             />
           </div>
 

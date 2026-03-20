@@ -1,0 +1,17 @@
+{
+  "receipt_id": "test-001",
+  "customer_id": 2,
+  "customer": {
+    "qr_token": "seed-001-1434"
+  },
+  "items": [
+    {
+      "code": "AMR-001",
+      "name": "Americano",
+      "price": 200,
+      "qty": 1
+    }
+  ],
+  "total_amount": 200,
+  "bonus_earned": 20
+}

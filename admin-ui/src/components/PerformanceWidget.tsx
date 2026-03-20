@@ -59,7 +59,7 @@ export function PerformanceWidget({ data }: PerformanceWidgetProps) {
         textStyle: { color: '#374151' },
       },
       legend: {
-        data: ['Транзакции', 'Выручка', 'Начислено баллов', 'Использовано баллов'],
+        data: [t('analytics.transactions'), t('analytics.revenue'), t('analytics.pointsEarned'), t('analytics.pointsRedeemed')],
         bottom: 0,
       },
       grid: {
@@ -80,24 +80,24 @@ export function PerformanceWidget({ data }: PerformanceWidgetProps) {
       yAxis: [
         {
           type: 'value',
-          name: 'Количество',
+          name: t('analytics.quantity'),
           position: 'left',
         },
         {
           type: 'value',
-          name: 'Выручка (₽)',
+          name: t('analytics.revenue') + ' (₽)',
           position: 'right',
         },
         {
           type: 'value',
-          name: 'Баллы',
+          name: t('analytics.points'),
           position: 'right',
           offset: 80,
         },
       ],
       series: [
         {
-          name: 'Транзакции',
+          name: t('analytics.transactions'),
           type: 'line',
           smooth: true,
           data: transactions,
@@ -105,7 +105,7 @@ export function PerformanceWidget({ data }: PerformanceWidgetProps) {
           yAxisIndex: 0,
         },
         {
-          name: 'Выручка',
+          name: t('analytics.revenue'),
           type: 'line',
           smooth: true,
           data: revenue,
@@ -113,19 +113,19 @@ export function PerformanceWidget({ data }: PerformanceWidgetProps) {
           yAxisIndex: 1,
         },
         {
-          name: 'Начислено баллов',
+          name: t('analytics.pointsEarned'),
           type: 'line',
           smooth: true,
           data: pointsEarned,
-          itemStyle: { color: '#8b5cf6' },
+          itemStyle: { color: '#f59e0b' },
           yAxisIndex: 2,
         },
         {
-          name: 'Использовано баллов',
+          name: t('analytics.pointsRedeemed'),
           type: 'line',
           smooth: true,
           data: pointsRedeemed,
-          itemStyle: { color: '#f59e0b' },
+          itemStyle: { color: '#ef4444' },
           yAxisIndex: 2,
         },
       ],

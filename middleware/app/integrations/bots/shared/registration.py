@@ -10,7 +10,7 @@ The platform-specific adapters (VK, Telegram) handle the actual message sending
 while this module handles the state management and business logic.
 """
 
-from typing import Dict, Literal, Optional, Tuple
+from typing import Any, Dict, Literal, Optional, Tuple
 
 from ....customer_identity import get_customer_row, resolve_or_create_customer
 from ....db import get_db

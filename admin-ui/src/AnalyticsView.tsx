@@ -10,6 +10,7 @@ import {
 } from './api';
 
 export function AnalyticsView() {
+  const { t } = useTranslation();
   const [timeRange, setTimeRange] = useState<string>('7d');
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [salesChart, setSalesChart] = useState<ChartData | null>(null);
@@ -105,7 +106,7 @@ export function AnalyticsView() {
       document.body.removeChild(a);
     } catch (e) {
       console.error('Export failed:', e);
-      setExportError('Не удалось экспортировать данные');
+      setExportError(t('common.error'));
     }
   }
 
@@ -113,7 +114,7 @@ export function AnalyticsView() {
   if (loading && !overview && !salesChart) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-gray-500">Загрузка аналитики...</div>
+        <div className="text-gray-500">{t('analytics.collecting')}</div>
       </div>
     );
   }
@@ -128,7 +129,7 @@ export function AnalyticsView() {
           className="mt-2 text-sm text-red-700 underline"
           data-testid="analytics_retry_button"
         >
-          Повторить
+          {t('common.refresh')}
         </button>
       </div>
     );
@@ -139,8 +140,8 @@ export function AnalyticsView() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Аналитика и Отчеты</h1>
-          <p className="text-gray-600 mt-1">Ключевые метрики и отчеты по системе</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('analytics.dashboardTitle')}</h1>
+          <p className="text-gray-600 mt-1">{t('analytics.dashboardDesc')}</p>
         </div>
         <div className="flex space-x-4">
           <select
@@ -148,34 +149,22 @@ export function AnalyticsView() {
             onChange={(e) => setTimeRange(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="24h">24 часа</option>
-            <option value="7d">7 дней</option>
-            <option value="30d">30 дней</option>
-            <option value="90d">90 дней</option>
-            <option value="1y">1 год</option>
+            <option value="24h">{t('analytics.timeFilter.24hours')}</option>
+            <option value="7d">{t('analytics.timeFilter.7days')}</option>
+            <option value="30d">{t('analytics.timeFilter.30days')}</option>
+            <option value="90d">{t('analytics.timeFilter.90days')}</option>
+            <option value="1y">{t('analytics.timeFilter.1year')}</option>
           </select>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             <button
               onClick={() => handleExport('loyalty')}
-              className="btn"
-              style={{
-                background: '#10b981',
-                color: 'white',
-                border: 'none',
-                padding: '8px 12px',
-                fontSize: '12px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              Экспорт лояльности
+              {t('analytics.exportLoyalty')}
             </button>
             <button
               onClick={() => handleExport('sales')}
-              className="btn"
-              style={{
-                background: '#3b82f6',
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                 color: 'white',
                 border: 'none',
                 padding: '8px 12px',
@@ -231,7 +220,7 @@ export function AnalyticsView() {
               </div>
               <div style={{ marginLeft: 16 }}>
                 <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>
-                  Общее число клиентов
+                  {t('analytics.totalCustomers')}
                 </p>
                 <p style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>
                   {overview.metrics.total_customers}
@@ -509,7 +498,7 @@ function getSegmentDisplayName(segment: string): string {
     new: 'Новые',
     active: 'Активные',
     at_risk: 'Риск',
-    churned: 'От流失',
+    churned: 'Отток',
     vip: 'VIP',
   };
   return displayNames[segment] || segment;

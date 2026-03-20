@@ -3,20 +3,21 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsView } from './AnalyticsView';
 import {
-  AdminMe,
-  Api,
-  CreateSaleRequest,
-  CustomerDetails,
-  CustomerListItem,
-  Integration,
-  IntegrationDelivery,
-  IntegrationTemplate,
-  RolePermissions,
-  setAdminSecret,
+    AdminMe,
+    Api,
+    CreateSaleRequest,
+    CustomerDetails,
+    CustomerListItem,
+    Integration,
+    IntegrationDelivery,
+    IntegrationTemplate,
+    RolePermissions,
+    setAdminSecret,
 } from './api';
 import { ComplianceView } from './ComplianceView';
 import { DashboardWrapper } from './components/dashboard/DashboardWrapper';
 import { IntegrationSettings } from './components/IntegrationSettings';
+import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ProductImport } from './components/ProductImport';
 import { ErrorMessage, SuccessMessage, WarningMessage } from './components/ui';
 import { useDashboardData } from './hooks/useDashboardData';
@@ -2579,10 +2580,10 @@ function PermissionsTable() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', padding: 8 }}>Permission</th>
+              <th style={{ textAlign: 'left', padding: 8 }}>{t('settings.permission')}</th>
               {roles.map((r) => (
                 <th key={r.role} style={{ textAlign: 'center', padding: 8 }}>
-                  {r.role}
+                  {t(`roles.${r.role}`)}
                 </th>
               ))}
             </tr>
@@ -2590,7 +2591,9 @@ function PermissionsTable() {
           <tbody>
             {allPermissions.map((permission) => (
               <tr key={permission}>
-                <td style={{ padding: 8, borderTop: '1px solid var(--border)' }}>{permission}</td>
+                <td style={{ padding: 8, borderTop: '1px solid var(--border)' }}>
+                  {t(`settings.permissionNames.${permission}`, permission)}
+                </td>
                 {roles.map((r) => {
                   const state =
                     r.permissions.find((p) => p.permission === permission)?.is_allowed ?? false;

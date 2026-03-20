@@ -34,19 +34,19 @@ export function LoyaltyHealthWidget({ data }: { data?: LoyaltyHealthData }) {
   const expandedContent = (
     <div className="crm-drawer-stack">
       <section className="crm-collapsible-section">
-        <h3 className="crm-section-title">Loyalty health</h3>
+        <h3 className="crm-section-title">{t('widgets.loyaltyHealth.title', 'Loyalty Health')}</h3>
         <div className="crm-inline-stats">
           <span>
-            Points earned: <strong>{pointsEarned}</strong>
+            {t('widgets.loyaltyHealth.earned', 'Points earned')}: <strong>{pointsEarned}</strong>
           </span>
           <span>
-            Points redeemed: <strong>{pointsRedeemed}</strong>
+            {t('widgets.loyaltyHealth.redeemed', 'Points redeemed')}: <strong>{pointsRedeemed}</strong>
           </span>
           <span>
-            Redemption rate: <strong>{redemptionRate}%</strong>
+            {t('widgets.loyaltyHealth.redemptionRate', 'Redemption rate')}: <strong>{redemptionRate}%</strong>
           </span>
           <span>
-            Avg order value: <strong>{avgOrderValue.toLocaleString()}</strong>
+            {t('widgets.loyaltyHealth.avgOrder', 'Avg order value')}: <strong>{avgOrderValue.toLocaleString()}</strong>
           </span>
         </div>
       </section>
@@ -63,10 +63,10 @@ export function LoyaltyHealthWidget({ data }: { data?: LoyaltyHealthData }) {
       <div className="crm-widget-body">
         <div className="crm-inline-stats">
           <span>
-            Redemption: <strong>{redemptionRate}%</strong>
+            {t('widgets.loyaltyHealth.redemptionRate', 'Redemption')}: <strong>{redemptionRate}%</strong>
           </span>
           <span>
-            Avg order: <strong>{avgOrderValue.toLocaleString()}</strong>
+            {t('widgets.loyaltyHealth.avgOrder', 'Avg order')}: <strong>{avgOrderValue.toLocaleString()}</strong>
           </span>
         </div>
       </div>

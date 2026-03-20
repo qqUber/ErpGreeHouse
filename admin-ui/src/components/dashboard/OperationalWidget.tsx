@@ -30,6 +30,7 @@ interface OperationalWidgetProps {
 }
 
 export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) => {
+  const { t } = useTranslation();
   return (
     <div
       className="card cardFull"
@@ -105,7 +106,7 @@ export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) =>
                   color: 'var(--muted)',
                 }}
               >
-                Сумма продаж
+                {t('analytics.revenue')}
               </div>
               <div
                 style={{
@@ -124,7 +125,7 @@ export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) =>
                   color: 'var(--muted)',
                 }}
               >
-                Средний чек
+                {t('analytics.averageCheck')}
               </div>
               <div
                 style={{
@@ -256,7 +257,7 @@ export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) =>
               marginBottom: 'var(--spacing-sm)',
             }}
           >
-            Продажи по часам
+            {t('analytics.salesByHour')}
           </div>
           <div
             className="card cardCompact"
