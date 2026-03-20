@@ -605,7 +605,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `ADMIN_SECRET` | Admin API secret | dev-admin-secret |
-| `E2E_ADMIN_SECRET` | E2E test secret | test-secret-key |
+| `ADMIN_SECRET` | E2E test secret | test-secret-key |
 | `ADMIN_BOOTSTRAP_DEFAULT` | Bootstrap default admin user | true |
 | `ADMIN_DEFAULT_USERNAME` | Default admin username | admin |
 | `ADMIN_DEFAULT_PASSWORD` | Default admin password | admin |

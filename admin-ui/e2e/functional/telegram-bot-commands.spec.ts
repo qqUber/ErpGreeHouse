@@ -14,7 +14,7 @@
 import { expect, test } from '@playwright/test';
 
 const API_BASE = process.env.E2E_API_BASE_URL || process.env.API_BASE || 'http://backend:8000';
-const ADMIN_SECRET = process.env.E2E_ADMIN_SECRET || process.env.ADMIN_SECRET || 'test-secret-key';
+const ADMIN_SECRET = process.env.ADMIN_SECRET || process.env.ADMIN_SECRET || 'test-secret-key';
 
 test.describe('Telegram Bot Commands - 152-ФЗ Compliance', () => {
   test.describe('Marketing Consent API', () => {

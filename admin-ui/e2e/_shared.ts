@@ -4,16 +4,16 @@ import * as path from 'path';
 
 // Import i18n utilities
 import {
-  Auth,
-  Clients,
-  Common,
-  Dashboard,
-  Marketing,
-  Menu,
-  Products,
-  Sales,
-  setTestLanguage,
-  t,
+    Auth,
+    Clients,
+    Common,
+    Dashboard,
+    Marketing,
+    Menu,
+    Products,
+    Sales,
+    setTestLanguage,
+    t,
 } from './i18n-test';
 
 export { Auth, Clients, Common, Dashboard, Marketing, Menu, Products, Sales, t };
@@ -196,7 +196,7 @@ export async function initTestCredentials(page: Page) {
   try {
     const response = await page.request.get('/api/v1/test/credentials', {
       headers: {
-        'x-admin-secret': process.env.E2E_ADMIN_SECRET || 'test-secret-key',
+        'x-admin-secret': process.env.ADMIN_SECRET || 'test-secret-key',
       },
     });
 
@@ -517,7 +517,7 @@ export async function resetTestDatabase(page: Page) {
   try {
     const response = await page.request.post('/api/v1/test/reset', {
       headers: {
-        'x-admin-secret': process.env.E2E_ADMIN_SECRET || 'test-secret-key',
+        'x-admin-secret': process.env.ADMIN_SECRET || 'test-secret-key',
       },
     });
 

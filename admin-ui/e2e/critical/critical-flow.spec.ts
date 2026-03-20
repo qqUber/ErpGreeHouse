@@ -12,7 +12,7 @@ import { attachConsole, expect, login, maybePause, retryBackoff, test } from '..
  */
 
 const consoleFlush = new Map<string, () => Promise<void>>();
-const TEST_ADMIN_SECRET = process.env.E2E_ADMIN_SECRET || 'test-secret-key';
+const TEST_ADMIN_SECRET = process.env.ADMIN_SECRET || 'test-secret-key';
 
 test.beforeEach(async ({ page }, testInfo) => {
   consoleFlush.set(testInfo.testId, attachConsole(page, testInfo));

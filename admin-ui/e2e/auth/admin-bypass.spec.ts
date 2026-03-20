@@ -13,7 +13,7 @@ import { expect, test } from '@playwright/test';
  */
 
 test.describe('Admin Secret Bypass Authentication', () => {
-  const adminSecret = process.env.E2E_ADMIN_SECRET || 'test-secret-key';
+  const adminSecret = process.env.ADMIN_SECRET || 'test-secret-key';
 
   test('should allow access with valid x-admin-secret header (API)', async ({ request }) => {
     // Test direct API access with x-admin-secret header

@@ -12,7 +12,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const API_BASE = process.env.E2E_API_BASE_URL || 'http://localhost:8000';
-const ADMIN_SECRET = process.env.E2E_ADMIN_SECRET || 'test-secret-key';
+const ADMIN_SECRET = process.env.ADMIN_SECRET || 'test-secret-key';
 
 export default async function globalSetup(config: FullConfig) {
   console.log('🔧 Setting up test environment...');

@@ -9,7 +9,7 @@ const runtimeEnv =
     }
   ).process?.env || {};
 
-const TEST_ADMIN_SECRET = runtimeEnv.E2E_ADMIN_SECRET || 'test-secret-key';
+const TEST_ADMIN_SECRET = runtimeEnv.ADMIN_SECRET || 'test-secret-key';
 
 function authHeaders(_token: string) {
   return {

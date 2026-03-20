@@ -133,7 +133,7 @@ environment:
   CRM_DB_PATH: test_telegram_crm.db
   JWT_SECRET_KEY: test-jwt-secret-key-ci
   E2E_TEST_MODE: "true"
-  E2E_ADMIN_SECRET: test-secret-key
+  ADMIN_SECRET: test-secret-key
   TELEGRAM_BOT_TOKEN: test_token_123456789:AABBccDDeeFFggHHiiJJkkLLmmNNooP
   TELEGRAM_CHANNEL_ID: "-100123456789"
 ```
@@ -206,7 +206,7 @@ e2e-runner:
     E2E_BASE_URL: http://frontend-e2e:5173
     E2E_API_BASE_URL: http://backend-e2e:8000
     E2E_TEST_MODE: "true"
-    E2E_ADMIN_SECRET: test-secret-key
+    ADMIN_SECRET: test-secret-key
     E2E_ARGS: ${E2E_ARGS:-}
   command: >
     sh -c "npm ci &&

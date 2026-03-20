@@ -20,7 +20,7 @@ services:
       CRM_DB_PATH: /app/data/test_telegram_crm.db
       JWT_SECRET_KEY: test-jwt-secret-key-ci-2026-secure-random-entropy-32b
       E2E_TEST_MODE: "true"
-      E2E_ADMIN_SECRET: test-secret-key
+      ADMIN_SECRET: test-secret-key
       TELEGRAM_BOT_TOKEN: test_token_123456789:AABBccDDeeFFggHHiiJJkkLLmmNNooP
       TELEGRAM_CHANNEL_ID: "-100123456789"
     volumes:
@@ -54,7 +54,7 @@ services:
       CRM_DB_PATH: /app/data/test_telegram_crm.db
       JWT_SECRET_KEY: test-jwt-secret-key-ci-2026-secure-random-entropy-32b
       E2E_TEST_MODE: "true"
-      E2E_ADMIN_SECRET: test-secret-key
+      ADMIN_SECRET: test-secret-key
       TELEGRAM_BOT_TOKEN: test_token_123456789:AABBccDDeeFFggHHiiJJkkLLmmNNooP
       TELEGRAM_CHANNEL_ID: "-100123456789"
     volumes:
@@ -86,7 +86,7 @@ services:
       JWT_SECRET_KEY: test-jwt-secret-key-ci-2026-secure-random-entropy-32b
       ADMIN_SECRET: test-secret-key
       E2E_TEST_MODE: "true"
-      E2E_ADMIN_SECRET: test-secret-key
+      ADMIN_SECRET: test-secret-key
       CORS_ORIGINS: http://frontend-e2e:5173,http://localhost:5173,http://localhost:3000
       RATE_LIMIT_REQUESTS: "100000"
       RATE_LIMIT_WINDOW_SECONDS: "60"
@@ -148,7 +148,7 @@ services:
       E2E_BASE_URL: http://frontend-e2e:5173
       E2E_API_BASE_URL: http://backend-e2e:8000
       E2E_TEST_MODE: "true"
-      E2E_ADMIN_SECRET: test-secret-key
+      ADMIN_SECRET: test-secret-key
       E2E_ARGS: ${E2E_ARGS:-}
     volumes:
       - ./admin-ui:/app
