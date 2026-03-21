@@ -84,7 +84,6 @@ services:
       DATABASE_URL: sqlite:///app/data/test_telegram_crm.db
       CRM_DB_PATH: /app/data/test_telegram_crm.db
       JWT_SECRET_KEY: test-jwt-secret-key-ci-2026-secure-random-entropy-32b
-      ADMIN_SECRET: test-secret-key
       E2E_TEST_MODE: "true"
       ADMIN_SECRET: test-secret-key
       CORS_ORIGINS: http://frontend-e2e:5173,http://localhost:5173,http://localhost:3000
