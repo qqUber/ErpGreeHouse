@@ -1,5 +1,6 @@
 import ReactECharts from 'echarts-for-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Api, CategoryDistribution, SalesByDay, TopProduct } from '../api';
 
 interface AnalyticsChartsProps {

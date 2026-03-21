@@ -64,13 +64,11 @@ from .debug_api import router as debug_router
 from .dev_seed import ensure_seed_data, should_auto_seed
 from .erp_scheduler import start_erp_sync_scheduler
 from .integration_settings_api import router as integration_settings_router
-from .integrations.bots.telegram_handler import create_bot, ensure_telegram_bot_menu
-from .integrations.bots.vk_handler import (
-    create_vk_bot,
-    process_vk_webhook_event,
-    set_vk_config,
-    validate_vk_token,
-)
+from .integrations.bots.telegram_handler import (create_bot,
+                                                 ensure_telegram_bot_menu)
+from .integrations.bots.vk_handler import (create_vk_bot,
+                                           process_vk_webhook_event,
+                                           set_vk_config, validate_vk_token)
 from .integrations.webhooks import router as erp_webhook_router
 from .integrations_api import public_router as integrations_public_router
 from .integrations_api import router as integrations_router

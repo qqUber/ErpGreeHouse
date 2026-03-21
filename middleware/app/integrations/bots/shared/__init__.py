@@ -15,25 +15,15 @@ Modules:
 
 from .base import BaseBotAdapter
 from .commands import cmd_revoke_consent, cmd_start, cmd_subscribe
-from .consent import (
-    CURRENT_POLICY_VERSION,
-    cleanup_user_data,
-    find_customer_by_platform,
-    get_customer_consents,
-    get_customer_id,
-    store_consent,
-    update_consent,
-)
-from .keyboards import (
-    CONSENT_BUTTONS,
-    MARKETING_BUTTONS,
-    format_telegram_keyboard,
-    format_vk_keyboard,
-    get_consent_buttons,
-    get_marketing_buttons,
-)
+from .consent import (CURRENT_POLICY_VERSION, cleanup_user_data,
+                      find_customer_by_platform, get_customer_consents,
+                      get_customer_id, store_consent, update_consent)
+from .keyboards import (CONSENT_BUTTONS, MARKETING_BUTTONS,
+                        format_telegram_keyboard, format_vk_keyboard,
+                        get_consent_buttons, get_marketing_buttons)
 from .keys import cart_key, consent_key, registration_key
-from .registration import RegistrationFlow, get_consent_text, get_marketing_consent_text
+from .registration import (RegistrationFlow, get_consent_text,
+                           get_marketing_consent_text)
 
 __all__ = [
     # Keys

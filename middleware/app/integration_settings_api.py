@@ -16,15 +16,13 @@ from .admin_auth_api import require_jwt_auth
 from .auth import check_roles
 from .config import get_settings
 from .db import get_db
-from .integrations.bots.telegram_handler import (
-    create_bot,
-    create_bot_with_token,
-    ensure_telegram_bot_menu,
-    get_configured_telegram_token,
-    get_stored_telegram_token,
-)
-from .integrations.bots.vk_handler import validate_vk_token
 from .handlers import _get_telegram_integration_config
+from .integrations.bots.telegram_handler import (create_bot,
+                                                 create_bot_with_token,
+                                                 ensure_telegram_bot_menu,
+                                                 get_configured_telegram_token,
+                                                 get_stored_telegram_token)
+from .integrations.bots.vk_handler import validate_vk_token
 
 router = APIRouter(prefix="/api/v1/admin/integrations")
 
@@ -430,15 +428,15 @@ def get_telegram_menu_config(
 ) -> dict[str, Any]:
     """Get Telegram menu configuration from database"""
     check_roles(auth_result, roles=("owner", "marketer"))
-    
+
     try:
         config = _get_telegram_integration_config()
         menu_items = config.get("menu_items", [])
-        
+
         # Ensure menu_items is a list
         if not isinstance(menu_items, list):
             menu_items = []
-        
+
         return {
             "menu_items": menu_items,
             "support_chat_id": config.get("support_chat_id"),

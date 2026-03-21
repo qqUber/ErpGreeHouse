@@ -9,26 +9,16 @@ from typing import Any, Dict, Literal, Tuple
 import qrcode
 from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.types import (
-    BufferedInputFile,
-    CallbackQuery,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    KeyboardButton,
-    Message,
-    ReplyKeyboardMarkup,
-    ReplyKeyboardRemove,
-    WebAppInfo,
-)
+from aiogram.types import (BufferedInputFile, CallbackQuery,
+                           InlineKeyboardButton, InlineKeyboardMarkup,
+                           KeyboardButton, Message, ReplyKeyboardMarkup,
+                           ReplyKeyboardRemove, WebAppInfo)
 from fastapi import HTTPException
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 
 from .config import get_settings
-from .customer_identity import (
-    CustomerIdentityConflictError,
-    get_customer_row,
-    resolve_or_create_customer,
-)
+from .customer_identity import (CustomerIdentityConflictError,
+                                get_customer_row, resolve_or_create_customer)
 from .db import get_db
 from .identify import normalize_name, normalize_phone
 from .integrations.pos.erpnext_client import ERPClient
@@ -220,8 +210,10 @@ async def send_video_with_circle(
 
 # Import cleanup function from shared module for backward compatibility
 from .integrations.bots.shared.consent import CURRENT_POLICY_VERSION
-from .integrations.bots.shared.consent import cleanup_user_data as _shared_cleanup
-from .integrations.bots.shared.consent import get_customer_consents as _shared_get
+from .integrations.bots.shared.consent import \
+    cleanup_user_data as _shared_cleanup
+from .integrations.bots.shared.consent import \
+    get_customer_consents as _shared_get
 from .integrations.bots.shared.consent import store_consent as _shared_store
 from .integrations.bots.shared.consent import update_consent as _shared_update
 

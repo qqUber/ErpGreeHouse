@@ -5,18 +5,16 @@ import os
 from datetime import datetime
 from typing import Any, Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, Request
+from fastapi import (APIRouter, BackgroundTasks, Depends, Header,
+                     HTTPException, Query, Request)
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from .admin_auth_api import require_jwt_auth
-from .auth import (
-    ALL_PERMISSIONS,
-    check_permission,
-    check_roles,
-    get_default_permissions,
-)
-from .customer_identity import generate_unique_qr_token, resolve_or_create_customer
+from .auth import (ALL_PERMISSIONS, check_permission, check_roles,
+                   get_default_permissions)
+from .customer_identity import (generate_unique_qr_token,
+                                resolve_or_create_customer)
 from .db import get_db
 from .identify import normalize_name, normalize_phone
 from .integration_events import dispatch_event
@@ -655,9 +653,15 @@ def list_customers_simple(
 
     # Use existing list_customers but extract items only
     paginated_result = list_customers(
-        q=q, min_balance=min_balance, max_balance=max_balance, has_orders=has_orders,
-        created_after=created_after, created_before=created_before, page=1, limit=limit,
-        auth_result=auth_result
+        q=q,
+        min_balance=min_balance,
+        max_balance=max_balance,
+        has_orders=has_orders,
+        created_after=created_after,
+        created_before=created_before,
+        page=1,
+        limit=limit,
+        auth_result=auth_result,
     )
     return paginated_result.get("items", [])
 
@@ -690,19 +694,19 @@ def _list_customers_internal(
 
         if q:
             # Enhanced search parsing for prefixed queries
-            if q.startswith('id:'):
+            if q.startswith("id:"):
                 # Exact ID search
                 id_value = q[3:].strip()
                 if id_value.isdigit():
                     where.append("id = ?")
                     args.append(int(id_value))
-            elif q.startswith('qr:'):
+            elif q.startswith("qr:"):
                 # QR code search (8 digits)
                 qr_value = q[3:].strip()
                 if qr_value.isdigit() and len(qr_value) == 8:
                     where.append("qr_token = ?")
                     args.append(qr_value)
-            elif q.startswith('phone:'):
+            elif q.startswith("phone:"):
                 # Phone search
                 phone_value = q[6:].strip()
                 qp = normalize_phone(phone_value)
@@ -792,13 +796,37 @@ def list_customers(
 
     # Check if this is a TestSprite simple request (no pagination params in URL)
     # Return list directly for TestSprite compatibility
-    if request and "page" not in request.query_params and "limit" not in request.query_params:
+    if (
+        request
+        and "page" not in request.query_params
+        and "limit" not in request.query_params
+    ):
         # Return simple list for TestSprite - call internal logic directly
-        result = _list_customers_internal(q, min_balance, max_balance, has_orders, created_after, created_before, 1, 50, auth_result)
+        result = _list_customers_internal(
+            q,
+            min_balance,
+            max_balance,
+            has_orders,
+            created_after,
+            created_before,
+            1,
+            50,
+            auth_result,
+        )
         return result.get("items", [])
 
     # Use internal implementation for paginated requests
-    return _list_customers_internal(q, min_balance, max_balance, has_orders, created_after, created_before, page, limit, auth_result)
+    return _list_customers_internal(
+        q,
+        min_balance,
+        max_balance,
+        has_orders,
+        created_after,
+        created_before,
+        page,
+        limit,
+        auth_result,
+    )
 
 
 @router.get("/compliance/consents")
@@ -961,11 +989,14 @@ def create_customer(
         conn.commit()
         cid = cur.lastrowid
         _cache_del_prefix("crm:cache:customers:")
-        
+
         # Return full customer object for TestSprite compatibility
-        cur = conn.execute("SELECT id, phone, full_name, telegram_id, qr_token, balance_points, birthday, gender, email, city, onboarding_status, created_at FROM customers WHERE id=?", (cid,))
+        cur = conn.execute(
+            "SELECT id, phone, full_name, telegram_id, qr_token, balance_points, birthday, gender, email, city, onboarding_status, created_at FROM customers WHERE id=?",
+            (cid,),
+        )
         customer = cur.fetchone()
-        
+
         return {
             "id": customer["id"],
             "phone": customer["phone"],
@@ -978,7 +1009,7 @@ def create_customer(
             "email": customer["email"],
             "city": customer["city"],
             "onboarding_status": customer["onboarding_status"],
-            "created_at": customer["created_at"]
+            "created_at": customer["created_at"],
         }
     finally:
         conn.close()

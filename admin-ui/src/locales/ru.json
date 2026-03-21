@@ -393,9 +393,6 @@
       "analytics.export": "Экспорт аналитики"
     }
   },
-  "compliance": {
-    "title": "Комплаенс"
-  },
   "analytics": {
     "title": "Аналитика",
     "collecting": "Аналитика собирается...",
@@ -789,25 +786,6 @@
       "cancelled": "Отменена"
     }
   },
-  "table": {
-    "actions": "Действия",
-    "noResults": "Ничего не найдено",
-    "showing": "Показано с {{start}} по {{end}} из {{total}}",
-    "rowsPerPage": "Строк на странице",
-    "id": "ID",
-    "phone": "Телефон",
-    "fullName": "ФИО",
-    "balance": "Баланс",
-    "name": "Название",
-    "code": "Код",
-    "kind": "Тип",
-    "price": "Цена",
-    "status": "Статус",
-    "date": "Дата",
-    "amount": "Сумма",
-    "description": "Описание",
-    "category": "Категория"
-  },
   "compliance": {
     "title": "Комплаенс",
     "consents": "Согласия",
@@ -821,10 +799,5 @@
     "noConsentRecords": "Нет записей о согласиях",
     "userIdPlaceholder": "ID пользователя",
     "deleteProfile": "Удалить профиль"
-  },
-  "roles": {
-    "operator": "Оператор",
-    "manager": "Менеджер",
-    "marketer": "Маркетолог"
   }
 }
