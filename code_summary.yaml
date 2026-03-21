@@ -1,0 +1,251 @@
+version: "2"
+type: frontend
+tech_stack:
+  - React 18
+  - TypeScript
+  - Vite
+  - Playwright
+  - TailwindCSS
+  - FastAPI (backend)
+  - SQLite (database)
+  - Redis (caching)
+  - Docker
+features:
+  - name: Admin Dashboard
+    description: Main dashboard with widgets and analytics
+    files:
+      - admin-ui/src/App.tsx
+      - admin-ui/src/components/dashboard/
+    endpoints:
+      - method: GET
+        path: /api/v1/dashboard/analytics
+        description: Get dashboard analytics data
+        auth_required: true
+        response_schema:
+          "200": AnalyticsData
+      - method: GET
+        path: /api/v1/dashboard/widgets
+        description: Get widget configurations
+        auth_required: true
+        response_schema:
+          "200": WidgetConfig[]
+    depends_on:
+      - Authentication
+      - Analytics Service
+
+  - name: Customer Management
+    description: CRUD operations for customer accounts
+    files:
+      - admin-ui/src/components/CustomersTable.tsx
+      - admin-ui/src/components/CustomersWidget.tsx
+    endpoints:
+      - method: GET
+        path: /api/v1/customers
+        description: List all customers
+        auth_required: true
+        response_schema:
+          "200": Customer[]
+      - method: POST
+        path: /api/v1/customers
+        description: Create new customer
+        auth_required: true
+        request_schema:
+          body:
+            full_name: string
+            phone: string
+            notes: string
+        response_schema:
+          "200": Customer
+          "400": ValidationError
+      - method: PUT
+        path: /api/v1/customers/{id}
+        description: Update customer
+        auth_required: true
+        request_schema:
+          body:
+            full_name: string
+            phone: string
+            notes: string
+        response_schema:
+          "200": Customer
+          "404": NotFound
+    depends_on:
+      - Authentication
+
+  - name: Product Management
+    description: Product catalog and inventory management
+    files:
+      - admin-ui/src/components/ProductsTable.tsx
+      - admin-ui/src/components/ProductsWidget.tsx
+    endpoints:
+      - method: GET
+        path: /api/v1/products
+        description: List all products
+        auth_required: true
+        response_schema:
+          "200": Product[]
+      - method: POST
+        path: /api/v1/products
+        description: Create new product
+        auth_required: true
+        request_schema:
+          body:
+            name: string
+            price: number
+            description: string
+        response_schema:
+          "200": Product
+          "400": ValidationError
+    depends_on:
+      - Authentication
+
+  - name: Authentication System
+    description: JWT-based authentication with role-based access
+    files:
+      - admin-ui/src/components/LoginPage.tsx
+      - admin-ui/src/stores/auth.tsx
+      - middleware/app/admin_auth_api.py
+    endpoints:
+      - method: POST
+        path: /api/v1/public/auth/login
+        description: User login
+        auth_required: false
+        request_schema:
+          body:
+            username: string
+            password: string
+        response_schema:
+          "200": LoginResponse
+          "401": InvalidCredentials
+      - method: POST
+        path: /api/v1/auth/refresh
+        description: Refresh access token
+        auth_required: true
+        response_schema:
+          "200": TokenResponse
+          "401": InvalidToken
+    depends_on: []
+
+  - name: Analytics & Reporting
+    description: Business analytics and reporting features
+    files:
+      - admin-ui/src/AnalyticsView.tsx
+      - admin-ui/src/components/AnalyticsCharts.tsx
+      - middleware/app/analytics_api.py
+    endpoints:
+      - method: GET
+        path: /api/v1/analytics/summary
+        description: Get analytics summary
+        auth_required: true
+        response_schema:
+          "200": AnalyticsSummary
+      - method: GET
+        path: /api/v1/analytics/export
+        description: Export analytics data
+        auth_required: true
+        response_schema:
+          "200": FileDownload
+    depends_on:
+      - Authentication
+      - Database
+
+  - name: Loyalty System
+    description: Customer loyalty program with QR codes
+    files:
+      - admin-ui/src/LoyaltyTmaView.tsx
+      - middleware/app/loyalty.py
+      - middleware/app/qr_token_system_v2.py
+    endpoints:
+      - method: GET
+        path: /api/v1/loyalty/profile/{customer_id}
+        description: Get customer loyalty profile
+        auth_required: true
+        response_schema:
+          "200": LoyaltyProfile
+          "404": NotFound
+      - method: POST
+        path: /api/v1/loyalty/qr-token
+        description: Generate QR token for customer
+        auth_required: true
+        request_schema:
+          body:
+            customer_id: string
+        response_schema:
+          "200": QRTokenResponse
+          "404": NotFound
+    depends_on:
+      - Authentication
+      - Customer Management
+
+  - name: Marketing Integration
+    description: Marketing campaigns and consent management
+    files:
+      - admin-ui/src/MarketingView.tsx
+      - middleware/app/marketing_api.py
+      - middleware/app/marketing_service.py
+    endpoints:
+      - method: GET
+        path: /api/v1/marketing/campaigns
+        description: List marketing campaigns
+        auth_required: true
+        response_schema:
+          "200": Campaign[]
+      - method: POST
+        path: /api/v1/marketing/consent
+        description: Update marketing consent
+        auth_required: true
+        request_schema:
+          body:
+            customer_id: string
+            consent_given: boolean
+        response_schema:
+          "200": ConsentResponse
+          "404": NotFound
+    depends_on:
+      - Authentication
+      - Customer Management
+
+  - name: POS Integration
+    description: Point of Sale system integration
+    files:
+      - admin-ui/src/components/CustomersTable.tsx
+      - middleware/app/pos_templates.py
+    endpoints:
+      - method: POST
+        path: /api/v1/pos/sale
+        description: Create new sale
+        auth_required: true
+        request_schema:
+          body:
+            customer_id: string
+            items: SaleItem[]
+            total: number
+        response_schema:
+          "200": SaleResponse
+          "400": ValidationError
+      - method: GET
+        path: /api/v1/pos/receipts
+        description: Get sale receipts
+        auth_required: true
+        response_schema:
+          "200": Receipt[]
+    depends_on:
+      - Authentication
+      - Product Management
+
+known_limitations:
+  - issue: E2E tests require Docker environment
+    location: admin-ui/e2e/
+    impact: Cannot run tests locally without Docker
+  - issue: Limited error handling in analytics export
+    location: middleware/app/analytics_api.py
+    impact: Large exports may timeout or fail silently
+  - issue: QR token generation depends on customer ID sequence
+    location: middleware/app/qr_token_system_v2.py
+    impact: Potential token collisions in high-concurrency scenarios
+  - issue: No input validation on some API endpoints
+    location: middleware/app/
+    impact: Invalid data may be accepted without proper validation
+  - issue: Frontend locale handling is hardcoded to English for E2E
+    location: admin-ui/e2e/_shared.ts
+    impact: Limited internationalization testing coverage

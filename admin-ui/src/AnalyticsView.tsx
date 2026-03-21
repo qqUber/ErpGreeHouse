@@ -1,5 +1,6 @@
 import ReactECharts from 'echarts-for-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Api,
     ChartData,
@@ -138,59 +139,63 @@ export function AnalyticsView() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col space-y-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t('analytics.dashboardTitle')}</h1>
           <p className="text-gray-600 mt-1">{t('analytics.dashboardDesc')}</p>
         </div>
-        <div className="flex space-x-4">
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="24h">{t('analytics.timeFilter.24hours')}</option>
-            <option value="7d">{t('analytics.timeFilter.7days')}</option>
-            <option value="30d">{t('analytics.timeFilter.30days')}</option>
-            <option value="90d">{t('analytics.timeFilter.90days')}</option>
-            <option value="1y">{t('analytics.timeFilter.1year')}</option>
-          </select>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        
+        {/* Time Range Selector */}
+        <div className="flex items-center space-x-4">
+          <label className="text-sm font-medium text-gray-700 whitespace-nowrap">{t('analytics.timeRange')}:</label>
+          <div className="flex items-center space-x-2">
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm min-w-40"
+            >
+              <option value="24h">{t('analytics.timeFilter.24hours')}</option>
+              <option value="7d">{t('analytics.timeFilter.7days')}</option>
+              <option value="30d">{t('analytics.timeFilter.30days')}</option>
+              <option value="90d">{t('analytics.timeFilter.90days')}</option>
+              <option value="1y">{t('analytics.timeFilter.1year')}</option>
+            </select>
+            <button
+              onClick={() => {
+                // Add custom date range picker functionality
+                const today = new Date();
+                const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                console.log('Custom date range:', lastWeek.toISOString(), today.toISOString());
+              }}
+              className="px-3 py-2 border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              title="Выбрать произвольный период"
+            >
+              📅
+            </button>
+          </div>
+        </div>
+
+        {/* Export Buttons */}
+        <div className="flex items-center space-x-3">
+          <span className="text-sm font-medium text-gray-700">{t('analytics.export')}:</span>
+          <div className="flex space-x-2">
             <button
               onClick={() => handleExport('loyalty')}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
             >
               {t('analytics.exportLoyalty')}
             </button>
             <button
               onClick={() => handleExport('sales')}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                color: 'white',
-                border: 'none',
-                padding: '8px 12px',
-                fontSize: '12px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              }}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm font-medium"
             >
-              Экспорт продаж
+              {t('analytics.exportSales')}
             </button>
             <button
               onClick={() => handleExport('customers')}
-              className="btn btnPrimary"
-              style={{
-                background: 'var(--primary)',
-                color: 'white',
-                border: 'none',
-                fontSize: '12px',
-                padding: '8px 12px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              }}
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-medium"
             >
-              Экспорт клиентов
+              {t('analytics.exportCustomers')}
             </button>
           </div>
         </div>

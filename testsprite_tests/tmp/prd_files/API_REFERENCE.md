@@ -304,18 +304,9 @@ curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username": "admin", "password": "admin"}'
 
-# Response:
-{
-  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
-  "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
-  "token_type": "bearer",
-  "expires_in": 3600,
-  "must_change_password": false
-}
-
 # Access protected endpoint
 curl -X GET http://localhost:8000/api/v1/products \
-  -H "Authorization: Bearer <access_token>"
+  -H "Authorization: Bearer <token>"
 ```
 
 ### Using HTTPie
@@ -328,22 +319,9 @@ http GET localhost:8000/health
 http POST localhost:8000/api/v1/auth/login \
   username=admin password=admin
 
-# Response:
-{
-  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
-  "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
-  "token_type": "bearer",
-  "expires_in": 3600,
-  "must_change_password": false
-}
-
 # List products
 http GET localhost:8000/api/v1/products \
-  Authorization:"Bearer <access_token>"
-
-# Refresh token
-http POST localhost:8000/api/v1/auth/refresh \
-  Authorization:"Bearer <refresh_token>"
+  Authorization:"Bearer <token>"
 ```
 
 ---

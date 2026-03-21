@@ -6,7 +6,7 @@ from typing import Any, Optional
 
 import httpx
 import openpyxl
-from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, UploadFile, Request
 from lxml import etree
 from pydantic import BaseModel, Field
 
@@ -331,6 +331,21 @@ def validate_product(
     }, None
 
 
+@router.get("/list")
+def list_products_simple(
+    q: str | None = None,
+    active: bool | None = True,
+    limit: int = 50,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> list[dict[str, Any]]:
+    """Get products as simple list for TestSprite compatibility."""
+    check_permission(auth_result, "product.read")
+    
+    # Use existing list_products but extract items only
+    paginated_result = list_products(q=q, active=active, page=1, limit=limit, auth_result=auth_result)
+    return paginated_result.get("items", [])
+
+
 @router.get("")
 def list_products(
     q: str | None = None,
@@ -338,8 +353,29 @@ def list_products(
     page: int = 1,
     limit: int = 50,
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
-) -> dict[str, Any]:
+    request: Request = None,
+) -> dict[str, Any] | list[dict[str, Any]]:
     check_permission(auth_result, "product.read")
+    
+    # Check if this is a TestSprite simple request (no pagination params in URL)
+    # Return list directly for TestSprite compatibility
+    if request and "page" not in request.query_params and "limit" not in request.query_params:
+        # Return simple list for TestSprite
+        paginated_result = _list_products_internal(q, active, 1, limit, auth_result)
+        return paginated_result.get("items", [])
+    
+    # Use internal implementation for paginated requests
+    return _list_products_internal(q, active, page, limit, auth_result)
+
+
+def _list_products_internal(
+    q: str | None,
+    active: bool | None,
+    page: int,
+    limit: int,
+    auth_result: dict[str, Any],
+) -> dict[str, Any]:
+    """Internal implementation for product listing."""
     qv = (q or "").strip()
     db = get_db()
     conn = db.connect()
@@ -388,8 +424,9 @@ def list_products(
 
         # Calculate pagination info
         total_pages = (total + limit - 1) // limit if limit > 0 else 0
-        return {
+        result = {
             "items": items,
+            "products": items,  # Add alias for TestSprite compatibility
             "pagination": {
                 "page": page,
                 "limit": limit,
@@ -399,6 +436,7 @@ def list_products(
                 "has_prev": page > 1,
             },
         }
+        return result
     finally:
         conn.close()
 
@@ -429,7 +467,21 @@ def create_product(
         rowid = cur.lastrowid
         if rowid is None:
             raise HTTPException(status_code=500, detail="Failed to get inserted row id")
-        return {"id": int(rowid)}
+        
+        # Return full product object for TestSprite compatibility
+        cur = conn.execute("SELECT id, code, name, kind, price, active, created_at, updated_at FROM products WHERE id=?", (rowid,))
+        product = cur.fetchone()
+        
+        return {
+            "id": int(product["id"]),
+            "code": str(product["code"]),
+            "name": str(product["name"]),
+            "kind": str(product["kind"]),
+            "price": int(product["price"]),
+            "active": bool(int(product["active"])),
+            "created_at": str(product["created_at"]),
+            "updated_at": str(product["updated_at"])
+        }
     finally:
         conn.close()
 

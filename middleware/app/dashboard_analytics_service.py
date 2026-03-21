@@ -20,6 +20,40 @@ class DashboardAnalyticsService:
     def _connect(self):
         return self._db.connect()
 
+    def get_analytics_overview(self) -> dict[str, Any]:
+        """Get comprehensive analytics overview for dashboard."""
+        with self._connect() as conn:
+            # Get all analytics data similar to home dashboard but more detailed
+            operational = self._get_operational_metrics(conn)
+            customer = self._get_customer_metrics(conn)
+            product = self._get_product_metrics(conn)
+            campaign = self._get_campaign_metrics(conn)
+            loyalty = self._get_loyalty_metrics(conn, self._resolve_date_range("30d"))
+            attention = self._get_attention_metrics(
+                customer=customer,
+                campaign=campaign,
+                product=product,
+                loyalty=loyalty,
+            )
+            integrations = self._get_integration_metrics(conn)
+
+            return {
+                "generated_at": datetime.now().isoformat(),
+                "overview": {
+                    "totalCustomers": customer.get("total", 0),
+                    "newCustomers": customer.get("new", 0),
+                    "revenue": operational.get("revenue", 0),
+                    "averageCheck": operational.get("averageCheck", 0),
+                },
+                "salesCard": operational,
+                "customerCard": customer,
+                "topProductsCard": product,
+                "campaignPulseCard": campaign,
+                "loyaltyCard": loyalty,
+                "attentionRequiredCard": attention,
+                "integrationsCard": integrations,
+            }
+
     def get_home_dashboard_data(self) -> dict[str, Any]:
         with self._connect() as conn:
             operational = self._get_operational_metrics(conn)

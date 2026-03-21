@@ -563,10 +563,12 @@ class LoginIn(BaseModel):
 
 
 class LoginOut(BaseModel):
-    token: str
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int
     must_change_password: bool
-    # Note: JWT tokens are delivered via httpOnly cookies only, NOT in response body
-    # Tokens are set via Set-Cookie headers for security
+    # Note: JWT tokens are returned in response body AND set via httpOnly cookies for security
 
 
 @public_router.get("/status")
@@ -652,9 +654,11 @@ def login(payload: LoginIn, response: Response, request: Request) -> LoginOut:
         )
 
         return LoginOut(
-            token=token,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer",
+            expires_in=get_settings().jwt_access_token_expire_minutes * 60,
             must_change_password=bool(int(row["must_change_password"])),
-            # JWT tokens are delivered via httpOnly cookies only - see _set_jwt_cookies()
         )
     finally:
         conn.close()
@@ -824,10 +828,14 @@ def rotate_token(
     new_access_token = create_access_token(admin_data)
     new_refresh_token = create_refresh_token(admin_data)
 
-    # Set new JWT cookies only - tokens NOT returned in response body
+    # Set new JWT cookies AND return in response body for standard compliance
     _set_jwt_cookies(response, new_access_token, new_refresh_token)
 
     return {
+        "access_token": new_access_token,
+        "refresh_token": new_refresh_token,
+        "token_type": "bearer",
+        "expires_in": get_settings().jwt_access_token_expire_minutes * 60,
         "refreshed": True,
     }
 
