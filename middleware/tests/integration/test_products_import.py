@@ -105,7 +105,7 @@ PROD1;Updated Name;150;goods
     data = r.json()
     assert data["total"] == 1
 
-    # Verify update in DB
+    # Verify update in DB (price is stored in cents/kopecks)
     from app.db import get_db
 
     db = get_db()
@@ -114,4 +114,4 @@ PROD1;Updated Name;150;goods
             "SELECT name, price FROM products WHERE code='PROD1'"
         ).fetchone()
         assert row["name"] == "Updated Name"
-        assert row["price"] == 150
+        assert row["price"] == 15000  # 150 rubles in kopecks

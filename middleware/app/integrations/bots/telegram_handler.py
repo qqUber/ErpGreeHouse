@@ -1,7 +1,11 @@
+from ...storage import get_redis as get_redis_client
+from ...middlewares import ThrottleMiddleware
+from ...handlers import router
+from ...db import get_db
+from ...config import get_settings
 import asyncio
 import json
 import sys
-from asyncio import TaskGroup
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator, Coroutine, Optional
 
@@ -26,11 +30,6 @@ try:
     RedisStorage = _RedisStorage
 except (ImportError, OSError):
     pass
-from ...config import get_settings
-from ...db import get_db
-from ...handlers import router
-from ...middlewares import ThrottleMiddleware
-from ...storage import get_redis as get_redis_client
 
 _dispatcher: Dispatcher | None = None
 

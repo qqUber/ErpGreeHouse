@@ -9,23 +9,17 @@ Only VK-specific API code is kept in this file.
 import asyncio
 import json
 import logging
-from typing import (Any, Callable, Dict, Literal, Mapping, Optional, Sequence,
-                    SupportsInt, Union, cast)
+from typing import (Any, Callable, Literal, Optional)
 
 import aiohttp
-from aiohttp import ClientSession, TCPConnector
 
-from ...config import get_settings
-from ...customer_identity import (generate_unique_qr_token, normalize_name,
-                                  normalize_phone)
-from ...db import get_db
+from ...customer_identity import normalize_phone
 from ...storage import get_redis
 # Import shared modules
 from .shared import (CURRENT_POLICY_VERSION, RegistrationFlow,
                      cleanup_user_data, consent_key, format_vk_keyboard,
-                     get_consent_buttons, get_consent_text,
-                     get_customer_consents, get_marketing_buttons,
-                     get_marketing_consent_text, registration_key,
+                     get_consent_buttons, get_customer_consents,
+                     get_marketing_buttons, get_marketing_consent_text,
                      store_consent, update_consent)
 
 logger = logging.getLogger(__name__)
@@ -689,8 +683,6 @@ async def validate_vk_token(
         except Exception as e:
             return {"valid": False, "error": f"Validation failed: {e}"}
 
-
-import asyncio
 
 # Global config for webhook processing
 _vk_config: Optional[dict] = None

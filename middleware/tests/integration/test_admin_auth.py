@@ -58,7 +58,7 @@ def test_login_and_change_password(client: TestClient) -> None:
         json={"username": "admin", "password": "ChangeMe123!"},
     )
     assert r.status_code == 200
-    token = r.json()["token"]
+    token = r.json()["access_token"]
 
     me = client.get("/api/v1/auth/me", headers={"x-admin-secret": token})
     assert me.status_code == 200

@@ -1,6 +1,6 @@
+from .utils.qr_codes import generate_unique_token as generate_unique_qr_token
 import json
 import logging
-import secrets
 import sqlite3
 from datetime import datetime
 from typing import Any
@@ -15,7 +15,6 @@ class CustomerIdentityConflictError(ValueError):
 
 
 # Import from utils for unified QR token generation
-from .utils.qr_codes import generate_unique_token as generate_unique_qr_token
 
 
 def get_or_generate_base_guid(conn: sqlite3.Connection) -> str:

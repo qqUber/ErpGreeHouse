@@ -17,7 +17,6 @@ from .loyalty_profile import build_customer_loyalty_profile
 from .pos_templates import list_integration_templates
 from .runtime import is_debug
 from .storage import get_redis
-from .trigger_engine import evaluate_and_queue_triggers
 from .utils.currency import format_currency
 from .worker import send_customer_message
 

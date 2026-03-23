@@ -1,3 +1,5 @@
+import random
+import json
 import logging
 import os
 from typing import Any, Optional
@@ -299,8 +301,6 @@ def cleanup(
 
 
 # Seed data endpoint for demos
-import json
-import random
 
 
 def _generate_phone() -> str:

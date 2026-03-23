@@ -1,7 +1,7 @@
 """Product Recommendation Service - centralized logic for smart product recommendations."""
 
 from typing import Any, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 from app.constants import (
     CACHE_TTL_LONG_SECONDS,
     CACHE_TTL_SHORT_SECONDS,

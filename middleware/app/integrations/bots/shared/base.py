@@ -7,7 +7,7 @@ remains separate while common business logic is centralized.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Literal
 
 from .consent import get_customer_consents
 from .keys import consent_key, registration_key
@@ -55,7 +55,6 @@ class BaseBotAdapter(ABC):
         Returns:
             Platform-specific response
         """
-        pass
 
     @abstractmethod
     def format_keyboard(self, keyboard_type: str) -> Any:
@@ -68,7 +67,6 @@ class BaseBotAdapter(ABC):
         Returns:
             Platform-specific keyboard object
         """
-        pass
 
     # =========================================================================
     # Common methods - can be used by all platform adapters
@@ -281,9 +279,9 @@ class BaseBotAdapter(ABC):
         if marketing_allowed:
             self.send_message(
                 user_id,
-                f"Готово! Начислено 100 приветственных баллов.\n\n"
-                f"Теперь вы будете получать новости и акции.\n\n"
-                f"Управление подпиской: /subscribe /revoke_consent",
+                "Готово! Начислено 100 приветственных баллов.\n\n"
+                "Теперь вы будете получать новости и акции.\n\n"
+                "Управление подпиской: /subscribe /revoke_consent",
             )
         else:
             self.send_message(

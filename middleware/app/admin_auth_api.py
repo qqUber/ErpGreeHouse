@@ -1,26 +1,24 @@
+from .storage import get_redis
+from .security import constant_time_equals, hash_password, new_salt
+from .request_context import get_admin_session_token
+from .db import get_db
+from .config import get_settings
+from .auth import (create_access_token, create_refresh_token,
+                   get_admin_from_jwt, validate_access_token,
+                   validate_refresh_token)
+from pydantic import BaseModel, Field
+from fastapi import (APIRouter, Depends, Header, HTTPException, Request,
+                     Response)
 import hashlib
 import logging
 import os
 import secrets
-import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
-from fastapi import (APIRouter, Depends, Header, HTTPException, Request,
-                     Response)
-from pydantic import BaseModel, Field
-
-from .auth import (create_access_token, create_refresh_token,
-                   get_admin_from_jwt, get_role_permissions,
-                   validate_access_token, validate_refresh_token)
-from .config import get_settings
-from .db import get_db
-from .request_context import get_admin_session_token
-from .security import constant_time_equals, hash_password, new_salt
-from .storage import get_redis
 
 public_router = APIRouter(prefix="/api/v1/public/auth")
 router = APIRouter(prefix="/api/v1/auth")
@@ -395,7 +393,7 @@ def require_admin_token_or_env(x_admin_secret: str | None) -> dict[str, Any]:
             and x_admin_secret
             and constant_time_equals(x_admin_secret, expected)
         ):
-            logger.info(f"Environment secret validation successful for user: env")
+            logger.info("Environment secret validation successful for user: env")
             return {
                 "user_id": 0,
                 "username": "env",

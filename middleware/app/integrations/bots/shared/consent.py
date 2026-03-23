@@ -33,6 +33,38 @@ def _get_id_column(source: Source) -> str:
     return ID_COLUMN_MAPPINGS[source]
 
 
+def get_consents(customer_id: int, conn=None) -> list[Dict[str, Any]]:
+    """
+    Get all consent records for a customer.
+
+    Args:
+        customer_id: The customer ID in the database
+        conn: Optional database connection to reuse (prevents locking)
+
+    Returns:
+        List of consent records sorted by accepted_at timestamp (newest first)
+    """
+    if conn:
+        cur = conn.execute(
+            "SELECT * FROM consents WHERE customer_id = ? ORDER BY accepted_at DESC",
+            (customer_id,),
+        )
+        rows = cur.fetchall()
+    else:
+        db = get_db()
+        conn = db.connect()
+        try:
+            cur = conn.execute(
+                "SELECT * FROM consents WHERE customer_id = ? ORDER BY accepted_at DESC",
+                (customer_id,),
+            )
+            rows = cur.fetchall()
+        finally:
+            conn.close()
+
+    return [dict(row) for row in rows]
+
+
 def get_consent_history(customer_id: int, conn=None) -> list[Dict[str, Any]]:
     """
     Get consent history for a customer for audit purposes.

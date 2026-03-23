@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from .constants import SECONDS_PER_HOUR
 from .db import get_db

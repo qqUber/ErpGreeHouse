@@ -1,7 +1,6 @@
 import json
 import os
 import random
-from datetime import datetime, timedelta
 from typing import Any
 
 from .config import Settings
@@ -78,12 +77,12 @@ def _seed_customers(conn: Any, rng: random.Random) -> list[int]:
     for i in range(36):
         full_name = f"{rng.choice(first_names)} {rng.choice(last_names)}"
         phone = (
-            f"+7 (9{rng.randint(10,99)}) {rng.randint(100,999)}-{rng.randint(10,99)}"
+            f"+7 (9{rng.randint(10, 99)}) {rng.randint(100, 999)}-{rng.randint(10, 99)}"
         )
-        qr_token = f"seed-{i:03d}-{rng.randint(1000,9999)}"
+        qr_token = f"seed-{i:03d}-{rng.randint(1000, 9999)}"
         marketing_allowed = 1 if rng.random() > 0.25 else 0
         birthday = (
-            f"199{rng.randint(0,9)}-{rng.randint(1,12):02d}-{rng.randint(1,28):02d}"
+            f"199{rng.randint(0, 9)}-{rng.randint(1, 12):02d}-{rng.randint(1, 28):02d}"
         )
         created_days_ago = rng.randint(1, 180)
         conn.execute(

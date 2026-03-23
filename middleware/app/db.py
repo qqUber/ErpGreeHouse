@@ -55,6 +55,15 @@ class DB:
             )
         except sqlite3.OperationalError:
             pass
+        # Migration for country_id and city_id columns (location service)
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN country_id INTEGER")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN city_id INTEGER")
+        except sqlite3.OperationalError:
+            pass
         # Analytics fields for customers
         try:
             conn.execute(
@@ -507,6 +516,74 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_short_urls_short_code ON short_urls(short_code);
             CREATE INDEX IF NOT EXISTS idx_short_urls_campaign_id ON short_urls(campaign_id);
             CREATE INDEX IF NOT EXISTS idx_short_urls_customer_id ON short_urls(customer_id);
+
+            -- Location service tables
+            CREATE TABLE IF NOT EXISTS countries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                name_local TEXT,
+                phone_prefix TEXT,
+                currency_code TEXT DEFAULT 'RUB',
+                timezone_default TEXT DEFAULT 'Europe/Moscow',
+                active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_countries_active ON countries(active);
+
+            CREATE TABLE IF NOT EXISTS cities (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                country_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                region TEXT,
+                timezone TEXT DEFAULT 'Europe/Moscow',
+                active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(country_id) REFERENCES countries(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_cities_country_id ON cities(country_id);
+            CREATE INDEX IF NOT EXISTS idx_cities_active ON cities(active);
+
+            CREATE TABLE IF NOT EXISTS locations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                city_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                address TEXT,
+                phone TEXT,
+                telegram_chat_id TEXT,
+                timezone TEXT DEFAULT 'Europe/Moscow',
+                status TEXT NOT NULL DEFAULT 'active',
+                priority_score INTEGER NOT NULL DEFAULT 0,
+                open_hours TEXT,
+                menu_preview_url TEXT,
+                description TEXT,
+                active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(city_id) REFERENCES cities(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_locations_city_id ON locations(city_id);
+            CREATE INDEX IF NOT EXISTS idx_locations_active ON locations(active);
+            CREATE INDEX IF NOT EXISTS idx_locations_status ON locations(status);
+
+            CREATE TABLE IF NOT EXISTS customer_visits (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_id INTEGER NOT NULL,
+                location_id INTEGER NOT NULL,
+                visit_date TEXT NOT NULL,
+                visit_count INTEGER NOT NULL DEFAULT 1,
+                last_transaction_id INTEGER,
+                total_spent REAL NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+                FOREIGN KEY(location_id) REFERENCES locations(id) ON DELETE CASCADE,
+                UNIQUE(customer_id, location_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_customer_visits_customer_id ON customer_visits(customer_id);
+            CREATE INDEX IF NOT EXISTS idx_customer_visits_location_id ON customer_visits(location_id);
             """)
         conn.commit()
         cols = [

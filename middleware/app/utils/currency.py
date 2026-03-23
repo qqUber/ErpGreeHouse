@@ -14,9 +14,6 @@ try:
     BABEL_AVAILABLE = True
 except ImportError:
     BABEL_AVAILABLE = False
-    import locale
-
-from ..config import get_settings
 
 
 @dataclass
@@ -39,8 +36,6 @@ class CurrencyFormatter:
 
     def _load_config(self) -> CurrencyConfig:
         """Load currency configuration from environment."""
-        settings = get_settings()
-
         return CurrencyConfig(
             code=os.getenv("CURRENCY_CODE", "RUB"),
             symbol=os.getenv("CURRENCY_SYMBOL", "₽"),
@@ -104,14 +99,7 @@ class CurrencyFormatter:
             "sr": "RSD",
             "sr_RS": "RSD",
         }
-        currency_symbols = {
-            "RUB": "₽",
-            "USD": "$",
-            "EUR": "€",
-            "RSD": "RSD",
-        }
         currency_code = locale_currency_mapping.get(locale, self.config.code)
-        symbol = currency_symbols.get(currency_code, self.config.symbol)
         return currency_code
 
     def _format_basic(self, amount: float, locale: str) -> str:

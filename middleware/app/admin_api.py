@@ -8,8 +8,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, Optional
 
-from fastapi import (APIRouter, BackgroundTasks, Depends, Header,
-                     HTTPException, Query, Request)
+from fastapi import (APIRouter, BackgroundTasks, Depends, HTTPException,
+                     Query, Request)
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -31,21 +31,31 @@ from .utils.currency import format_currency
 from .utils.money import to_cents
 from .worker import send_customer_message
 
+
+class DecimalEncoder(json.JSONEncoder):
+    """Custom JSON encoder to handle Decimal types."""
+
+    def default(self, o: Any) -> Any:
+        if isinstance(o, Decimal):
+            return float(o)
+        return super().default(o)
+
+
 router = APIRouter(prefix="/api/v1")
 public_router = APIRouter(prefix="/api/v1/public")
 
 
 async def _send_vk_batch_task(messages: list[dict], vk_token: str, expected_count: int) -> None:
     """Background task to send VK messages in batch.
-    
+
     This runs after the HTTP response is sent, so it doesn't block the client.
     VK has a rate limit of ~20 messages per second, so we add small delays.
     """
     import aiohttp
-    
+
     sent = 0
     failed = 0
-    
+
     async with aiohttp.ClientSession() as session:
         for i, msg in enumerate(messages):
             try:
@@ -57,7 +67,7 @@ async def _send_vk_batch_task(messages: list[dict], vk_token: str, expected_coun
                     "random_id": int(time.time() * 1000) + i,
                 }
                 async with session.post(
-                    "https://api.vk.com/method/messages.send", 
+                    "https://api.vk.com/method/messages.send",
                     params=params,
                     timeout=aiohttp.ClientTimeout(total=30)
                 ) as resp:
@@ -67,15 +77,15 @@ async def _send_vk_batch_task(messages: list[dict], vk_token: str, expected_coun
                         failed += 1
                     else:
                         sent += 1
-                
+
                 # Rate limiting: max 20 msg/sec, so sleep 50ms between requests
                 if i < len(messages) - 1:
                     await asyncio.sleep(0.05)
-                    
+
             except Exception as e:
                 print(f"Error sending VK message to {msg['vk_id']}: {e}")
                 failed += 1
-    
+
     print(f"VK batch complete: {sent} sent, {failed} failed (expected: {expected_count})")
 
 
@@ -1025,6 +1035,7 @@ def get_customer(
         if not row:
             raise HTTPException(status_code=404, detail="Customer not found")
         cust = dict(row)
+        cust["balance_points"] = cust["balance_points"] // 100  # Convert kopecks to rubles
         cust["preferences"] = json.loads(cust.pop("preferences_json") or "{}")
         cur2 = conn.execute(
             "SELECT id, total_amount, bonus_used, bonus_earned, items_json, receipt_pdf_path, external_erp_ref, created_at FROM transactions WHERE customer_id=? ORDER BY id DESC LIMIT 50",
@@ -1159,8 +1170,10 @@ def update_customer(
         gender = payload.gender if payload.gender is not None else existing["gender"]
         email = payload.email if payload.email is not None else existing["email"]
         city = payload.city if payload.city is not None else existing["city"]
-        marketing_allowed = payload.marketing_allowed if payload.marketing_allowed is not None else existing["marketing_allowed"]
-        data_processing_allowed = payload.data_processing_allowed if payload.data_processing_allowed is not None else existing["data_processing_allowed"]
+        marketing_allowed = payload.marketing_allowed if payload.marketing_allowed is not None else existing[
+            "marketing_allowed"]
+        data_processing_allowed = payload.data_processing_allowed if payload.data_processing_allowed is not None else existing[
+            "data_processing_allowed"]
 
         # Update preferences_json if notes provided
         prefs = None
@@ -1175,7 +1188,8 @@ def update_customer(
                     marketing_allowed=?, data_processing_allowed=?, preferences_json=?, updated_at=datetime('now')
                 WHERE id=?
                 """,
-                (full_name, phone, birthday, gender, email, city, marketing_allowed, data_processing_allowed, prefs, customer_id),
+                (full_name, phone, birthday, gender, email, city,
+                 marketing_allowed, data_processing_allowed, prefs, customer_id),
             )
         else:
             cur = conn.execute(
@@ -1388,7 +1402,7 @@ def create_sale(
         new_balance = int(cust["balance_points"]) - bonus_used + bonus_earned
 
         items_json = json.dumps(
-            [i.model_dump() for i in payload.items], ensure_ascii=False
+            [i.model_dump() for i in payload.items], ensure_ascii=False, cls=DecimalEncoder
         )
         cur2 = conn.execute(
             "INSERT INTO transactions(customer_id, total_amount, bonus_used, bonus_earned, items_json, receipt_pdf_path) VALUES(?,?,?,?,?,?)",
@@ -1446,10 +1460,10 @@ def create_sale(
 
         result = {
             "transaction_id": tx_id,
-            "total": total,
-            "bonus_used": bonus_used,
-            "bonus_earned": bonus_earned,
-            "payable": payable,
+            "total": total // 100,  # Convert kopecks to rubles for API response
+            "bonus_used": bonus_used // 100,  # Convert kopecks to rubles
+            "bonus_earned": bonus_earned // 100,  # Convert kopecks to rubles
+            "payable": payable // 100,  # Convert kopecks to rubles
             "balance": new_balance,
             "receipt_pdf_path": receipt_path,
             "external_erp_ref": erp_ref,
@@ -1609,9 +1623,6 @@ def marketing_push(
         failed = 0
 
         # Import async message sending functions
-        import asyncio
-
-        import aiohttp
 
         # Get VK settings for sending messages
         from .config import get_settings
@@ -1626,12 +1637,12 @@ def marketing_push(
         # Separate customers by channel for optimized sending
         tg_customers = []
         vk_customers = []
-        
+
         for customer in customers:
             preferred = customer["preferred_channel"]
             telegram_id = customer["telegram_id"]
             vk_id = customer["vk_id"]
-            
+
             if preferred == "tg" and telegram_id:
                 tg_customers.append(customer)
             elif preferred == "vk" and vk_id and vk_token:

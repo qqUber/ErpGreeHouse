@@ -8,8 +8,7 @@ from typing import Any, Optional
 
 import httpx
 import openpyxl
-from fastapi import (APIRouter, Depends, File, Header, HTTPException, Query,
-                     Request, UploadFile)
+from fastapi import (APIRouter, Depends, File, HTTPException, Request, UploadFile)
 from lxml import etree
 from pydantic import BaseModel, Field
 
@@ -31,7 +30,7 @@ router = APIRouter(prefix="/api/v1/products")
 # Re-export for backward compatibility
 def convert_price_to_cents(price_raw: Any) -> int:
     """Convert price to cents (integer) for database storage.
-    
+
     Uses Decimal internally for precision. Handles:
     - float: 99.99 -> 9999
     - int: 100 -> 10000
@@ -47,7 +46,7 @@ def convert_cents_to_float(price_cents: int) -> float:
 
 
 class ProductIn(BaseModel):
-    code: str = Field(default="", max_length=80)
+    code: str = Field(min_length=1, max_length=80)
     name: str = Field(min_length=1, max_length=200)
     kind: str = Field(default="", max_length=40)
     price: float = Field(default=0, ge=0)
@@ -512,7 +511,7 @@ def create_product(
             rowid = cur.lastrowid
             if rowid is None:
                 raise HTTPException(status_code=500, detail="Failed to get inserted row id")
-            
+
             # Update with permanent code based on rowid to avoid collisions
             if not payload.code:
                 code = f"AUTO-{rowid:06d}"
@@ -573,7 +572,7 @@ def update_product(
         # Preserve existing kind if not provided, use provided or default
         kind = payload.kind.strip() if payload.kind else existing["kind"]
         description = payload.description.strip() if payload.description else (existing["description"] or "")
-        
+
         cur = conn.execute(
             "UPDATE products SET code=?, name=?, kind=?, price=?, description=?, active=?, updated_at=datetime('now') WHERE id=?",
             (
@@ -1024,7 +1023,7 @@ def get_low_stock_products(
         # Build query based on whether location_id is provided
         if location_id:
             sql = """
-                SELECT 
+                SELECT
                     pi.id as inventory_id,
                     pi.product_id,
                     pi.location_id,
@@ -1048,7 +1047,7 @@ def get_low_stock_products(
             cur = conn.execute(sql, (location_id, limit))
         else:
             sql = """
-                SELECT 
+                SELECT
                     pi.id as inventory_id,
                     pi.product_id,
                     pi.location_id,
@@ -1181,18 +1180,18 @@ def get_product_inventory(
     try:
         where_clauses = []
         args = []
-        
+
         if product_id:
             where_clauses.append("pi.product_id = ?")
             args.append(product_id)
         if location_id:
             where_clauses.append("pi.location_id = ?")
             args.append(location_id)
-            
+
         where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
-        
+
         sql = f"""
-            SELECT 
+            SELECT
                 pi.id as inventory_id,
                 pi.product_id,
                 pi.location_id,
@@ -1213,7 +1212,7 @@ def get_product_inventory(
             WHERE {where_sql}
             ORDER BY pi.updated_at DESC
         """
-        
+
         cur = conn.execute(sql, tuple(args))
         items = []
         for r in cur.fetchall():

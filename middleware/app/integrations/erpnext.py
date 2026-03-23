@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 """ERPNext API Client Module - Minimal implementation for testing"""
 
-import json
 import logging
-import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-import requests
 
 logger = logging.getLogger(__name__)
 

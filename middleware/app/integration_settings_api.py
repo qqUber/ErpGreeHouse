@@ -20,7 +20,6 @@ from .handlers import _get_telegram_integration_config
 from .integrations.bots.telegram_handler import (create_bot,
                                                  create_bot_with_token,
                                                  ensure_telegram_bot_menu,
-                                                 get_configured_telegram_token,
                                                  get_stored_telegram_token)
 from .integrations.bots.vk_handler import validate_vk_token
 
@@ -442,7 +441,7 @@ def get_telegram_menu_config(
             "support_chat_id": config.get("support_chat_id"),
             "base_web_url": get_settings().base_web_url,
         }
-    except Exception as e:
+    except Exception:
         # Return empty config on error
         return {
             "menu_items": [],

@@ -36,7 +36,7 @@ class TestQRImageGeneration:
 
     @pytest.fixture(autouse=True)
     def _patch_buffered_input_file(self):
-        with patch("app.handlers.BufferedInputFile", _BufferedInputFileFake):
+        with patch("app.utils.qr_codes.BufferedInputFile", _BufferedInputFileFake):
             yield
 
     def test_make_qr_image_basic(self):
@@ -98,7 +98,7 @@ class TestQRImageGeneration:
         file_size = len(_image_bytes(qr_file))
         assert 1_000 <= file_size <= 500_000
 
-    @patch("app.handlers.qrcode.QRCode")
+    @patch("app.utils.qr_codes.qrcode.QRCode")
     def test_make_qr_image_qr_parameters(self, mock_qr_code_class):
         mock_qr = MagicMock()
         mock_qr.make_image.return_value = Image.new("RGB", (420, 420), "white")
@@ -115,8 +115,8 @@ class TestQRImageGeneration:
         mock_qr.add_data.assert_called_once_with("ABC12345")
         mock_qr.make.assert_called_once_with(fit=True)
 
-    @patch("app.handlers.ImageDraw.Draw")
-    @patch("app.handlers.ImageFont.truetype")
+    @patch("app.utils.qr_codes.ImageDraw.Draw")
+    @patch("app.utils.qr_codes.ImageFont.truetype")
     def test_make_qr_image_font_handling(self, mock_font_truetype, mock_draw):
         mock_font_truetype.side_effect = Exception("Font not found")
         mock_draw.return_value = MagicMock()
@@ -144,7 +144,7 @@ class TestQRImageIntegration:
 
     @pytest.fixture(autouse=True)
     def _patch_buffered_input_file(self):
-        with patch("app.handlers.BufferedInputFile", _BufferedInputFileFake):
+        with patch("app.utils.qr_codes.BufferedInputFile", _BufferedInputFileFake):
             yield
 
     def test_qr_image_with_real_tokens(self):

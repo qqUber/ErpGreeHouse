@@ -5,11 +5,10 @@ Provides comprehensive operational, marketing, customer, product, and integratio
 analytics for the admin dashboard.
 """
 
-import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends
 
 from .admin_api import _cache_get_json, _cache_set_json, check_permission
 from .admin_auth_api import require_jwt_auth

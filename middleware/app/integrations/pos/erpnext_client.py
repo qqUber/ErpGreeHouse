@@ -1,12 +1,10 @@
 import asyncio
 import hashlib
 import logging
-import os
 import time
 from typing import Any, Dict, List, Optional
 
 import httpx
-from fastapi import HTTPException
 
 from ...config import get_settings
 from ...storage import get_redis
@@ -16,8 +14,6 @@ logger = logging.getLogger(__name__)
 
 class ERPClientError(Exception):
     """Custom exception for ERPClient errors that can be used in both HTTP and non-HTTP contexts."""
-
-    pass
 
 
 class ERPClient:

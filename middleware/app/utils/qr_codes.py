@@ -8,7 +8,6 @@ Two simple functions for all QR operations.
 import io
 import random
 import sqlite3
-from typing import Optional
 
 import qrcode
 from aiogram.types import BufferedInputFile

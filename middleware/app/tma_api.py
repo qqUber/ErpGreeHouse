@@ -4,7 +4,7 @@ import json
 from typing import Any, cast
 from urllib.parse import parse_qsl
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from .db import get_db

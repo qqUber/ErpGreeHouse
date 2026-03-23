@@ -1,12 +1,9 @@
 import logging
-import os
-import sqlite3
 from datetime import datetime, timedelta, timezone
-from typing import Any, Iterable, Optional, cast
+from typing import Any, Iterable, cast
 
 import jwt
-from fastapi import Depends, Header, HTTPException, Request
-from starlette.status import HTTP_401_UNAUTHORIZED
+from fastapi import HTTPException, Request
 
 from .config import get_settings
 from .db import get_db

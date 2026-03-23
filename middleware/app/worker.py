@@ -1,24 +1,21 @@
-import logging
-
-logger = logging.getLogger(__name__)
-
-import asyncio
-import json
-from typing import Any
-
-import httpx
-from aiogram.types import Update
-from celery import Celery
-
-from .config import get_settings
+from .storage import get_redis
+from .integrations.bots.telegram_handler import create_bot
+from .db import get_db
 from .constants import (
     EXPIRE_INACTIVE_POINTS_INTERVAL,
     INACTIVE_POINTS_EXPIRY_DAYS,
     PROCESS_MARKETING_INTERVAL,
 )
-from .db import get_db
-from .integrations.bots.telegram_handler import create_bot, create_dispatcher
-from .storage import get_redis
+from .config import get_settings
+from celery import Celery
+import httpx
+from typing import Any
+import json
+import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 settings = get_settings()
 

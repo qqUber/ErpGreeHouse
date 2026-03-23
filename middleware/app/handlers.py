@@ -1,20 +1,21 @@
-import asyncio
-import io
+from .utils.qr_codes import make_qr_image as _make_qr_image
+from .integrations.bots.shared.consent import update_consent as _shared_update
+from .integrations.bots.shared.consent import store_consent as _shared_store
+from .integrations.bots.shared.consent import \
+    cleanup_user_data as _shared_cleanup
+from .integrations.bots.shared.consent import get_customer_consents as _shared_get
+from .integrations.bots.shared.consent import CURRENT_POLICY_VERSION
 import json
 import logging
-import random
 import re
 from typing import Any, Dict, Literal, Tuple
 
-import qrcode
 from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.types import (BufferedInputFile, CallbackQuery,
-                           InlineKeyboardButton, InlineKeyboardMarkup,
-                           KeyboardButton, Message, ReplyKeyboardMarkup,
-                           ReplyKeyboardRemove, WebAppInfo)
-from fastapi import HTTPException
-from PIL import Image, ImageDraw, ImageEnhance, ImageFont
+from aiogram.types import (CallbackQuery, InlineKeyboardButton,
+                           InlineKeyboardMarkup, KeyboardButton,
+                           Message, ReplyKeyboardMarkup, ReplyKeyboardRemove,
+                           WebAppInfo)
 
 from .config import get_settings
 from .customer_identity import (CustomerIdentityConflictError,
@@ -23,7 +24,7 @@ from .db import get_db
 from .identify import normalize_name, normalize_phone
 from .integrations.pos.erpnext_client import ERPClient
 from .loyalty_profile import build_customer_loyalty_profile
-from .menu import MENU, find_item
+from .menu import find_item
 from .services import get_location_service
 from .storage import delete, get_json, get_redis, set_json
 from .utils.currency import format_currency
@@ -210,13 +211,6 @@ async def send_video_with_circle(
 
 
 # Import cleanup function from shared module for backward compatibility
-from .integrations.bots.shared.consent import CURRENT_POLICY_VERSION
-from .integrations.bots.shared.consent import \
-    cleanup_user_data as _shared_cleanup
-from .integrations.bots.shared.consent import \
-    get_customer_consents as _shared_get
-from .integrations.bots.shared.consent import store_consent as _shared_store
-from .integrations.bots.shared.consent import update_consent as _shared_update
 
 
 def _cleanup_user_data(telegram_id: int) -> None:
@@ -401,7 +395,7 @@ def _countries_keyboard() -> InlineKeyboardMarkup:
     """Build country selection keyboard."""
     service = get_location_service()
     countries = service.get_countries(active_only=True)
-    
+
     buttons = []
     for country in countries:
         name = country.get("name_local") or country.get("name") or country["code"]
@@ -411,7 +405,7 @@ def _countries_keyboard() -> InlineKeyboardMarkup:
                 callback_data=f"country:{country['id']}"
             )
         ])
-    
+
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
@@ -419,7 +413,7 @@ def _cities_keyboard(country_id: int) -> InlineKeyboardMarkup:
     """Build city selection keyboard for a country."""
     service = get_location_service()
     cities = service.get_cities_by_country(country_id)
-    
+
     buttons = []
     for city in cities:
         name = city.get("name") or f"City {city['id']}"
@@ -429,7 +423,7 @@ def _cities_keyboard(country_id: int) -> InlineKeyboardMarkup:
                 callback_data=f"city:{city['id']}"
             )
         ])
-    
+
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
@@ -611,7 +605,6 @@ def _build_command_keyboard(
 
 
 # Import from utils for unified QR image generation
-from .utils.qr_codes import make_qr_image as _make_qr_image
 
 
 async def _send_media_urls(message: Message, media_urls: list[str]) -> None:
@@ -1004,12 +997,12 @@ async def cb_consent(cb: CallbackQuery) -> None:
             conn.commit()
         finally:
             conn.close()
-        
+
         # Check if force_single_country mode is enabled
         service = get_location_service()
         force_single = service.get_force_single_country()
         system_country = service.get_system_country()
-        
+
         if force_single and system_country:
             # Skip country selection, go directly to city selection
             country_id = system_country["id"]
@@ -1058,14 +1051,14 @@ async def cb_country(cb: CallbackQuery) -> None:
     r = get_redis()
     key = _consent_key(cb.from_user.id)
     data = r.hgetall(key)
-    
+
     if not data or data.get("consent_given") != "1":
         await cb.message.edit_text(
             "Сессия регистрации истекла. Начните заново с /start"
         )
         await cb.answer()
         return
-    
+
     # Store country_id and move to city selection
     r.hset(key, mapping={"country_id": country_id, "step": "city_select"})
     await cb.message.edit_text("🌍 Страна выбрана")
@@ -1084,14 +1077,14 @@ async def cb_city(cb: CallbackQuery) -> None:
     r = get_redis()
     key = _consent_key(cb.from_user.id)
     data = r.hgetall(key)
-    
+
     if not data or data.get("consent_given") != "1":
         await cb.message.edit_text(
             "Сессия регистрации истекла. Начните заново с /start"
         )
         await cb.answer()
         return
-    
+
     # Store city_id and move to phone step
     r.hset(key, mapping={"city_id": city_id, "step": "phone"})
     await cb.message.edit_text("🏙️ Город выбран")

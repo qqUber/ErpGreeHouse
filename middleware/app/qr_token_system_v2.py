@@ -182,7 +182,6 @@ def _update_customer_if_changed(
 ) -> None:
     """Update customer if data has changed."""
     # Implementation of update logic with proper field handling
-    pass
 
 
 def _create_new_customer(conn: sqlite3.Connection, **kwargs) -> int:
@@ -192,7 +191,7 @@ def _create_new_customer(conn: sqlite3.Connection, **kwargs) -> int:
     cur = conn.execute(
         """
         INSERT INTO customers (
-            phone, full_name, telegram_id, vk_id, qr_token, 
+            phone, full_name, telegram_id, vk_id, qr_token,
             marketing_allowed, data_processing_allowed, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     """,

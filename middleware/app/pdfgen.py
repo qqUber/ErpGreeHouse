@@ -21,15 +21,15 @@ def write_simple_receipt_pdf(
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
 
-    body_lines = [f"({ _pdf_escape(title) }) Tj"]
+    body_lines = [f"({_pdf_escape(title)}) Tj"]
     body_lines.append("0 -18 Td")
     body_lines.append(
-        f"({ _pdf_escape(datetime.now().strftime('%Y-%m-%d %H:%M:%S')) }) Tj"
+        f"({_pdf_escape(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))}) Tj"
     )
     body_lines.append("0 -24 Td")
 
     for line in lines:
-        body_lines.append(f"({ _pdf_escape(line.text) }) Tj")
+        body_lines.append(f"({_pdf_escape(line.text)}) Tj")
         body_lines.append("0 -16 Td")
 
     content_stream = "BT /F1 12 Tf 50 780 Td " + " ".join(body_lines) + " ET"
@@ -62,13 +62,13 @@ def write_simple_receipt_pdf(
         out.extend(b"\nendobj\n")
 
     xref_pos = len(out)
-    out.extend(f"xref\n0 {len(objects)+1}\n".encode("ascii"))
+    out.extend(f"xref\n0 {len(objects) + 1}\n".encode("ascii"))
     out.extend(b"0000000000 65535 f \n")
     for off in offsets:
         out.extend(f"{off:010d} 00000 n \n".encode("ascii"))
 
     out.extend(b"trailer\n")
-    out.extend(f"<< /Size {len(objects)+1} /Root 1 0 R >>\n".encode("ascii"))
+    out.extend(f"<< /Size {len(objects) + 1} /Root 1 0 R >>\n".encode("ascii"))
     out.extend(b"startxref\n")
     out.extend(f"{xref_pos}\n".encode("ascii"))
     out.extend(b"%%EOF\n")
