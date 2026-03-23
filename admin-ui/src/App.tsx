@@ -15,7 +15,7 @@ import {
     setAdminSecret,
 } from './api';
 import { ComplianceView } from './ComplianceView';
-import { DashboardWrapper } from './components/dashboard/DashboardWrapper';
+import { DashboardView } from './components/dashboard/DashboardView';
 import { IntegrationSettings } from './components/IntegrationSettings';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ProductImport } from './components/ProductImport';
@@ -23,7 +23,6 @@ import { ErrorMessage, SuccessMessage, WarningMessage } from './components/ui';
 import { useDashboardData } from './hooks/useDashboardData';
 import { useViewportMode } from './hooks/useViewportMode';
 import { MarketingView } from './MarketingView';
-import type { DashboardHomeViewModel } from './services/dashboard-analytics.service';
 import { useAuth } from './stores/auth';
 
 type Tab =
@@ -1092,21 +1091,7 @@ function App() {
   );
 }
 
-type DashboardViewProps = {
-  data: DashboardHomeViewModel | null;
-  reload: () => Promise<void>;
-  onNavigate: (tab: string, params?: Record<string, string | number>) => void;
-};
-
-function DashboardView({ data, reload, onNavigate }: DashboardViewProps) {
-  const { t } = useTranslation();
-
-  return (
-    <div className="grid" data-testid="admin-dashboard">
-      <DashboardWrapper data={data} onNavigate={onNavigate} />
-    </div>
-  );
-}
+// DashboardViewProps is defined in ./components/dashboard/DashboardView
 
 type CustomersViewProps = {
   q: string;
@@ -1235,7 +1220,7 @@ function CustomersView({
                 overflowY: 'auto',
               }}
             >
-              {searchSuggestions.map((customer) => (
+              {searchSuggestions?.map((customer) => (
                 <div
                   key={customer.id}
                   onClick={() => {
@@ -1370,7 +1355,7 @@ function CustomersView({
               padding: '8px',
             }}
           >
-            {customers.map((c) => {
+            {customers?.map((c) => {
               // Skip customers without essential data
               if (!c.full_name && !c.phone) {
                 return null;
@@ -1460,7 +1445,7 @@ function CustomersView({
                 </button>
               );
             })}
-            {customers.length === 0 ? (
+            {(customers?.length ?? 0) === 0 ? (
               <div
                 style={{
                   textAlign: 'center',
@@ -1934,6 +1919,13 @@ function PosView({ refreshCustomers, products, reloadProducts, onSaleDone }: Pos
   const [notice, setNotice] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  // Auto-load products on mount if empty
+  useEffect(() => {
+    if (products.length === 0) {
+      void reloadProducts();
+    }
+  }, []);
+
   async function submitSale() {
     const parsedCustomerId = Number(customerId.trim());
     const parsedQty = Number(qty.trim());
@@ -2007,12 +1999,12 @@ function PosView({ refreshCustomers, products, reloadProducts, onSaleDone }: Pos
           >
             <option value="">{t('sales.selectProduct')}</option>
             {products
-              .filter((p) => p.active)
+              ?.filter((p) => p.active)
               .map((p) => (
                 <option key={p.id} value={String(p.id)}>
                   {p.code} - {p.name} ({money(p.price)} ₽)
                 </option>
-              ))}
+              )) ?? <option value="">{t('sales.noProducts')}</option>}
           </select>
           <input
             className="input"
@@ -2168,7 +2160,7 @@ function IntegrationsView({
         </div>
         <div style={{ display: 'grid', gap: 8, marginTop: 10 }}>
           {canManage
-            ? items.map((i) => (
+            ? items?.map((i) => (
                 <button
                   key={i.id}
                   type="button"
@@ -2195,7 +2187,7 @@ function IntegrationsView({
                 </button>
               ))
             : null}
-          {canManage && items.length === 0 && !busy ? (
+          {canManage && items?.length === 0 && !busy ? (
             <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
               {t('integrations.noConnections')}
             </div>
@@ -2277,7 +2269,7 @@ function IntegrationsView({
             </div>
             {err ? <div style={{ color: '#8b0000' }}>{err}</div> : null}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {templates.map((tpl) => (
+              {templates?.map((tpl) => (
                 <button
                   key={tpl.id}
                   className="btn"
@@ -2459,7 +2451,7 @@ function ProductsView({
 
       <div className="card cardFull">
         <div style={{ display: 'grid', gap: 8 }}>
-          {items.map((p) => (
+          {items?.map((p) => (
             <div key={p.id} className="row card cardCompact">
               <div style={{ flex: 2 }}>
                 <div style={{ fontWeight: 700 }}>{p.name}</div>
@@ -2473,7 +2465,7 @@ function ProductsView({
               </span>
             </div>
           ))}
-          {items.length === 0 ? (
+          {items?.length === 0 ? (
             <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
               {t('products.noProducts')}
             </div>

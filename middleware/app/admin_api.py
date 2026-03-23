@@ -1,8 +1,11 @@
+import asyncio
 import csv
 import io
 import json
 import os
+import time
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Optional
 
 from fastapi import (APIRouter, BackgroundTasks, Depends, Header,
@@ -25,10 +28,55 @@ from .runtime import is_debug
 from .storage import get_redis
 from .trigger_engine import evaluate_and_queue_triggers
 from .utils.currency import format_currency
+from .utils.money import to_cents
 from .worker import send_customer_message
 
 router = APIRouter(prefix="/api/v1")
 public_router = APIRouter(prefix="/api/v1/public")
+
+
+async def _send_vk_batch_task(messages: list[dict], vk_token: str, expected_count: int) -> None:
+    """Background task to send VK messages in batch.
+    
+    This runs after the HTTP response is sent, so it doesn't block the client.
+    VK has a rate limit of ~20 messages per second, so we add small delays.
+    """
+    import aiohttp
+    
+    sent = 0
+    failed = 0
+    
+    async with aiohttp.ClientSession() as session:
+        for i, msg in enumerate(messages):
+            try:
+                params = {
+                    "access_token": vk_token,
+                    "v": "5.131",
+                    "user_id": msg['vk_id'],
+                    "message": msg['text'],
+                    "random_id": int(time.time() * 1000) + i,
+                }
+                async with session.post(
+                    "https://api.vk.com/method/messages.send", 
+                    params=params,
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as resp:
+                    result = await resp.json()
+                    if result.get('error'):
+                        print(f"VK API error for user {msg['vk_id']}: {result['error']}")
+                        failed += 1
+                    else:
+                        sent += 1
+                
+                # Rate limiting: max 20 msg/sec, so sleep 50ms between requests
+                if i < len(messages) - 1:
+                    await asyncio.sleep(0.05)
+                    
+            except Exception as e:
+                print(f"Error sending VK message to {msg['vk_id']}: {e}")
+                failed += 1
+    
+    print(f"VK batch complete: {sent} sent, {failed} failed (expected: {expected_count})")
 
 
 def _parse_items_json(items_json: Optional[str]) -> list[dict[str, Any]]:
@@ -192,7 +240,7 @@ class CreateCustomerIn(BaseModel):
 class SaleItem(BaseModel):
     code: str = Field(min_length=1)
     name: str = Field(min_length=1)
-    price: int = Field(ge=0)
+    price: Decimal = Field(default=Decimal("0"), ge=0)
     qty: int = Field(ge=1)
 
 
@@ -637,6 +685,54 @@ def analytics_recalculate(
         conn.close()
 
 
+@router.get("/analytics/summary")
+def analytics_summary(
+    days: int = Query(default=30, ge=1, le=365),
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Aggregated analytics summary for dashboard header."""
+    check_permission(auth_result, "dashboard.read")
+
+    db = get_db()
+    conn = db.connect()
+    try:
+        # Sales summary
+        cur = conn.execute(
+            """
+            SELECT
+                COUNT(*) as total_transactions,
+                COALESCE(SUM(total_amount), 0) as total_revenue,
+                COALESCE(SUM(bonus_earned), 0) as total_points_issued,
+                COALESCE(SUM(bonus_used), 0) as total_points_redeemed
+            FROM transactions
+            WHERE created_at >= date('now', ?)
+            """,
+            (f"-{days} days",),
+        )
+        sales = dict(cur.fetchone())
+
+        # Customer summary
+        cur = conn.execute(
+            """
+            SELECT
+                COUNT(*) as total_customers,
+                COUNT(CASE WHEN created_at >= date('now', '-7 days') THEN 1 END) as new_this_week,
+                COUNT(CASE WHEN telegram_id IS NOT NULL THEN 1 END) as with_telegram
+            FROM customers
+            """
+        )
+        customers = dict(cur.fetchone())
+
+        return {
+            "period_days": days,
+            "sales": sales,
+            "customers": customers,
+            "generated_at": datetime.now().isoformat(),
+        }
+    finally:
+        conn.close()
+
+
 @router.get("/customers/list")
 def list_customers_simple(
     q: str | None = None,
@@ -1001,6 +1097,7 @@ def create_customer(
             "id": customer["id"],
             "phone": customer["phone"],
             "full_name": customer["full_name"],
+            "notes": payload.notes,
             "telegram_id": customer["telegram_id"],
             "qr_token": customer["qr_token"],
             "balance_points": customer["balance_points"],
@@ -1010,6 +1107,115 @@ def create_customer(
             "city": customer["city"],
             "onboarding_status": customer["onboarding_status"],
             "created_at": customer["created_at"],
+        }
+    finally:
+        conn.close()
+
+
+class UpdateCustomerIn(BaseModel):
+    full_name: str | None = None
+    phone: str | None = None
+    notes: str | None = None
+    birthday: str | None = None
+    gender: str | None = None
+    email: str | None = None
+    city: str | None = None
+    marketing_allowed: int | None = None
+    data_processing_allowed: int | None = None
+
+
+@router.put("/customers/{customer_id}")
+def update_customer(
+    customer_id: int,
+    payload: UpdateCustomerIn,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    check_permission(auth_result, "customer.update")
+    db = get_db()
+    conn = db.connect()
+    try:
+        # Check if customer exists
+        cur = conn.execute(
+            "SELECT id, phone, full_name, birthday, gender, email, city, marketing_allowed, data_processing_allowed FROM customers WHERE id=?",
+            (customer_id,),
+        )
+        existing = cur.fetchone()
+        if not existing:
+            raise HTTPException(status_code=404, detail="Customer not found")
+
+        # Check phone uniqueness if provided
+        if payload.phone:
+            phone = normalize_phone(payload.phone)
+            if phone and phone != existing["phone"]:
+                cur = conn.execute("SELECT id FROM customers WHERE phone=? AND id != ?", (phone, customer_id))
+                if cur.fetchone():
+                    raise HTTPException(status_code=400, detail="Customer with this phone already exists")
+        else:
+            phone = existing["phone"]
+
+        # Build update fields
+        full_name = payload.full_name.strip() if payload.full_name else existing["full_name"]
+        birthday = payload.birthday if payload.birthday is not None else existing["birthday"]
+        gender = payload.gender if payload.gender is not None else existing["gender"]
+        email = payload.email if payload.email is not None else existing["email"]
+        city = payload.city if payload.city is not None else existing["city"]
+        marketing_allowed = payload.marketing_allowed if payload.marketing_allowed is not None else existing["marketing_allowed"]
+        data_processing_allowed = payload.data_processing_allowed if payload.data_processing_allowed is not None else existing["data_processing_allowed"]
+
+        # Update preferences_json if notes provided
+        prefs = None
+        if payload.notes is not None:
+            prefs = json.dumps({"notes": payload.notes}) if payload.notes else "{}"
+
+        if prefs:
+            cur = conn.execute(
+                """
+                UPDATE customers SET
+                    full_name=?, phone=?, birthday=?, gender=?, email=?, city=?,
+                    marketing_allowed=?, data_processing_allowed=?, preferences_json=?, updated_at=datetime('now')
+                WHERE id=?
+                """,
+                (full_name, phone, birthday, gender, email, city, marketing_allowed, data_processing_allowed, prefs, customer_id),
+            )
+        else:
+            cur = conn.execute(
+                """
+                UPDATE customers SET
+                    full_name=?, phone=?, birthday=?, gender=?, email=?, city=?,
+                    marketing_allowed=?, data_processing_allowed=?, updated_at=datetime('now')
+                WHERE id=?
+                """,
+                (full_name, phone, birthday, gender, email, city, marketing_allowed, data_processing_allowed, customer_id),
+            )
+        conn.commit()
+
+        if cur.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Customer not found")
+
+        _cache_del_prefix("crm:cache:customers:")
+
+        # Return updated customer
+        cur = conn.execute(
+            "SELECT id, phone, full_name, telegram_id, qr_token, balance_points, birthday, gender, email, city, onboarding_status, created_at, updated_at FROM customers WHERE id=?",
+            (customer_id,),
+        )
+        customer = cur.fetchone()
+
+        return {
+            "id": customer["id"],
+            "phone": customer["phone"],
+            "full_name": customer["full_name"],
+            "notes": payload.notes,
+            "telegram_id": customer["telegram_id"],
+            "qr_token": customer["qr_token"],
+            "balance_points": customer["balance_points"],
+            "birthday": customer["birthday"],
+            "gender": customer["gender"],
+            "email": customer["email"],
+            "city": customer["city"],
+            "onboarding_status": customer["onboarding_status"],
+            "created_at": customer["created_at"],
+            "updated_at": customer["updated_at"],
         }
     finally:
         conn.close()
@@ -1122,7 +1328,8 @@ def create_sale(
     if not payload.items:
         raise HTTPException(status_code=400, detail="items required")
 
-    total = sum(i.price * i.qty for i in payload.items)
+    # Use Decimal-based conversion for financial precision
+    total = sum(to_cents(i.price) * i.qty for i in payload.items)
     tx_id = 0
     result: dict[str, Any] | None = None
 
@@ -1356,6 +1563,7 @@ class MarketingPushIn(BaseModel):
 @router.post("/marketing/push")
 def marketing_push(
     payload: MarketingPushIn,
+    background_tasks: BackgroundTasks,
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
     """
@@ -1415,62 +1623,51 @@ def marketing_push(
         )
         vk_group_id = getattr(settings, "vk_group_id", None) or os.getenv("VK_GROUP_ID")
 
+        # Separate customers by channel for optimized sending
+        tg_customers = []
+        vk_customers = []
+        
         for customer in customers:
-            customer_id = int(customer["id"])
+            preferred = customer["preferred_channel"]
             telegram_id = customer["telegram_id"]
             vk_id = customer["vk_id"]
-            preferred = customer["preferred_channel"]
-
-            try:
-                # Send via preferred channel
-                if preferred == "tg" and telegram_id:
-                    # Use worker task for async sending
-                    result = send_customer_message.delay(
-                        int(telegram_id), payload.message
-                    )
-                    sent_tg += 1
-                elif preferred == "vk" and vk_id and vk_token:
-                    # Send via VK API directly
-                    async def send_vk_message():
-                        async with aiohttp.ClientSession() as session:
-                            params = {
-                                "access_token": vk_token,
-                                "v": "5.131",
-                                "user_id": int(vk_id),
-                                "message": payload.message,
-                                "random_id": int(
-                                    asyncio.get_event_loop().time() * 1000
-                                ),
-                            }
-                            async with session.post(
-                                "https://api.vk.com/method/messages.send", params=params
-                            ) as resp:
-                                return await resp.json()
-
-                    # Run async VK send
-                    try:
-                        asyncio.run(send_vk_message())
-                        sent_vk += 1
-                    except Exception as vk_err:
-                        print(f"VK send error: {vk_err}")
-                        failed += 1
-                else:
-                    # Fallback: try telegram if available
-                    if telegram_id:
-                        send_customer_message.delay(int(telegram_id), payload.message)
-                        sent_tg += 1
-                    else:
-                        failed += 1
-            except Exception as e:
-                print(f"Error sending to customer {customer_id}: {e}")
+            
+            if preferred == "tg" and telegram_id:
+                tg_customers.append(customer)
+            elif preferred == "vk" and vk_id and vk_token:
+                vk_customers.append(customer)
+            elif telegram_id:  # Fallback to Telegram
+                tg_customers.append(customer)
+            else:
                 failed += 1
 
+        # Send Telegram messages via Celery (immediate queue)
+        for customer in tg_customers:
+            try:
+                send_customer_message.delay(int(customer["telegram_id"]), payload.message)
+                sent_tg += 1
+            except Exception as e:
+                print(f"Error queuing TG message to customer {customer['id']}: {e}")
+                failed += 1
+
+        # Queue VK messages via BackgroundTasks (non-blocking)
+        if vk_customers and vk_token:
+            vk_messages = [
+                {
+                    'vk_id': int(c['vk_id']),
+                    'text': payload.message,
+                }
+                for c in vk_customers
+            ]
+            background_tasks.add_task(_send_vk_batch_task, vk_messages, vk_token, len(vk_customers))
+
         return {
-            "status": "completed",
+            "status": "queued",
             "total_customers": len(customers),
             "sent_telegram": sent_tg,
-            "sent_vk": sent_vk,
+            "sent_vk": len(vk_customers),
             "failed": failed,
+            "vk_queued_for_background": len(vk_customers),
             "message": (
                 payload.message[:50] + "..."
                 if len(payload.message) > 50

@@ -166,7 +166,8 @@
     "quantity": "Qty",
     "customerId": "Customer ID",
     "qty": "Quantity",
-    "createSale": "Create Sale"
+    "createSale": "Create Sale",
+    "noProducts": "No products available"
   },
   "clients": {
     "title": "Clients",

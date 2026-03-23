@@ -166,7 +166,8 @@
     "quantity": "Кол-во",
     "customerId": "ID клиента",
     "qty": "Количество",
-    "createSale": "Создать продажу"
+    "createSale": "Создать продажу",
+    "noProducts": "Нет доступных товаров"
   },
   "clients": {
     "title": "Клиенты",

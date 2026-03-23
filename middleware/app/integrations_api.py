@@ -242,7 +242,7 @@ class ReceiptCustomer(BaseModel):
 class ReceiptItem(BaseModel):
     code: str = Field(min_length=1)
     name: str = Field(min_length=1)
-    price: int = Field(ge=0)
+    price: float = Field(default=0, ge=0)
     qty: int = Field(ge=1)
 
 

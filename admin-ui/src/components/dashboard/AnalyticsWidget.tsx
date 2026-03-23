@@ -36,122 +36,136 @@ export type MarketingAnalyticsData = {
 export function AnalyticsWidget({ data }: { data?: MarketingAnalyticsData }) {
   const { t } = useTranslation();
 
+  // Helper to safely convert to number, defaulting on NaN
+  const safeNumber = (value: any, defaultValue = 0): number => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : defaultValue;
+  };
+
   const customers = data?.customers || {};
   const campaigns = data?.campaigns || {};
-  const totalCustomers = Number(customers.total_customers || 0);
-  const consented = Number(customers.marketing_consent || 0);
-  const telegram = Number(customers.channels?.telegram || 0);
-  const vk = Number(customers.channels?.vk || 0);
+  const totalCustomers = safeNumber(customers.total_customers, 0);
+  const consented = safeNumber(customers.marketing_consent, 0);
+  const telegram = safeNumber(customers.channels?.telegram, 0);
+  const vk = safeNumber(customers.channels?.vk, 0);
   const reachable = Math.min(totalCustomers, telegram + vk);
   const reachableCoverage = totalCustomers > 0 ? Math.round((reachable / totalCustomers) * 100) : 0;
   const consentRate = totalCustomers > 0 ? Math.round((consented / totalCustomers) * 100) : 0;
-  const avgLTV = customers.avg_ltv || 14567;
-  const activeCampaigns = campaigns.active_campaigns || 3;
+  const avgLTV = safeNumber(customers.avg_ltv, 0);
+  const activeCampaigns = safeNumber(campaigns.active_campaigns, 0);
   const segments = customers.segments || {};
-  const highValueCount = Number(segments.high_value || 0);
+  const highValueCount = safeNumber(segments.high_value, 0);
   const highValueShare =
     totalCustomers > 0 ? Math.round((highValueCount / totalCustomers) * 100) : 0;
 
   return (
     <Widget title={t('analytics.title')} compactable={false}>
-      <div className="marketing-analytics-dashboard crm-analytics p-4">
-        <div className="metrics-grid grid grid-cols-4 gap-3 mb-4">
-          <div className="stat-card stat-card-success crm-kpi-tile">
+      <div className="dashboard-widget-2026 animate-fade-in-up">
+        <div className="kpi-grid-2026 mb-6">
+          <div className="stat-card-2026 stat-card-2026-success">
             <div className="stat-card-content">
-              <div className="stat-card-value">{consentRate}%</div>
-              <div className="stat-card-label">{t('analytics.consentRate')}</div>
+              <div className="kpi-value-2026" style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{consentRate}%</div>
+              <div className="kpi-label-2026">{t('analytics.consentRate')}</div>
             </div>
           </div>
-          <div className="stat-card stat-card-primary crm-kpi-tile">
+          <div className="stat-card-2026 stat-card-2026-primary">
             <div className="stat-card-content">
-              <div className="stat-card-value">{reachableCoverage}%</div>
-              <div className="stat-card-label">Reachable coverage</div>
+              <div className="kpi-value-2026">{reachableCoverage}%</div>
+              <div className="kpi-label-2026">Reachable coverage</div>
             </div>
           </div>
-          <div className="stat-card stat-card-warning crm-kpi-tile">
+          <div className="stat-card-2026 stat-card-2026-warning">
             <div className="stat-card-content">
-              <div className="stat-card-value">{activeCampaigns}</div>
-              <div className="stat-card-label">{t('analytics.activeCampaigns')}</div>
+              <div className="kpi-value-2026" style={{ background: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{activeCampaigns}</div>
+              <div className="kpi-label-2026">{t('analytics.activeCampaigns')}</div>
             </div>
           </div>
-          <div className="stat-card stat-card-info crm-kpi-tile">
+          <div className="stat-card-2026 stat-card-2026-info">
             <div className="stat-card-content">
-              <div className="stat-card-value">{highValueShare}%</div>
-              <div className="stat-card-label">High-value share</div>
+              <div className="kpi-value-2026" style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{highValueShare}%</div>
+              <div className="kpi-label-2026">High-value share</div>
             </div>
           </div>
         </div>
 
-        <section className="crm-collapsible-section">
-          <h4 className="crm-section-title">Channel coverage</h4>
-          <div className="crm-coverage-grid">
-            <div className="crm-coverage-row">
-              <span>Telegram</span>
-              <div className="crm-progress-track">
+        <section className="mb-6">
+          <h4 className="section-title-2026">Channel coverage</h4>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium w-20">Telegram</span>
+              <div className="progress-track-2026 flex-1">
                 <div
-                  className="crm-progress-fill"
+                  className="progress-fill-2026"
                   style={{
                     width: `${totalCustomers > 0 ? Math.round((telegram / totalCustomers) * 100) : 0}%`,
                   }}
                 />
               </div>
-              <strong>{telegram}</strong>
+              <span className="badge-2026 badge-2026-primary">{telegram}</span>
             </div>
-            <div className="crm-coverage-row">
-              <span>VK</span>
-              <div className="crm-progress-track">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium w-20">VK</span>
+              <div className="progress-track-2026 flex-1">
                 <div
-                  className="crm-progress-fill"
+                  className="progress-fill-2026"
                   style={{
                     width: `${totalCustomers > 0 ? Math.round((vk / totalCustomers) * 100) : 0}%`,
                   }}
                 />
               </div>
-              <strong>{vk}</strong>
+              <span className="badge-2026 badge-2026-primary">{vk}</span>
             </div>
-            <div className="crm-coverage-row">
-              <span>Consented</span>
-              <div className="crm-progress-track">
-                <div className="crm-progress-fill" style={{ width: `${consentRate}%` }} />
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium w-20">Consented</span>
+              <div className="progress-track-2026 flex-1">
+                <div className="progress-fill-2026" style={{ width: `${consentRate}%` }} />
               </div>
-              <strong>{consented}</strong>
+              <span className="badge-2026 badge-2026-success">{consented}</span>
             </div>
           </div>
         </section>
 
-        <section className="crm-collapsible-section">
-          <h4 className="crm-section-title">Campaign activity</h4>
-          <div className="crm-inline-stats">
-            <span>
-              Active campaigns: <strong>{activeCampaigns}</strong>
-            </span>
-            <span>
-              Upcoming: <strong>{Number(campaigns.upcoming_campaigns || 0)}</strong>
-            </span>
-            <span>
-              Messages / 24h: <strong>{Number(campaigns.messages_sent_24h || 0)}</strong>
-            </span>
-            <span>
-              Open rate: <strong>{Number(campaigns.open_rate || 0)}%</strong>
-            </span>
+        <section className="mb-6">
+          <h4 className="section-title-2026">Campaign activity</h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="kpi-card-2026">
+              <div className="text-2xl font-bold text-gray-800">{activeCampaigns}</div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">Active</div>
+            </div>
+            <div className="kpi-card-2026">
+              <div className="text-2xl font-bold text-gray-800">{Number(campaigns.upcoming_campaigns || 0)}</div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">Upcoming</div>
+            </div>
+            <div className="kpi-card-2026">
+              <div className="text-2xl font-bold text-gray-800">{Number(campaigns.messages_sent_24h || 0)}</div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">Messages/24h</div>
+            </div>
+            <div className="kpi-card-2026">
+              <div className="text-2xl font-bold text-gray-800">{Number(campaigns.open_rate || 0)}%</div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">Open Rate</div>
+            </div>
           </div>
         </section>
 
-        <section className="crm-collapsible-section">
-          <h4 className="crm-section-title">Customer value segments</h4>
-          <div className="crm-inline-stats">
-            <span>
-              {t('analytics.highValue')}: <strong>{Number(segments.high_value || 0)}</strong>
-            </span>
-            <span>
-              {t('analytics.active')}: <strong>{Number(segments.active || 0)}</strong>
-            </span>
-            <span>
-              {t('analytics.new')}: <strong>{Number(segments.new_customers || 0)}</strong>
-            </span>
-            <span>
-              {t('analytics.avgLTV')}: <strong>{avgLTV.toLocaleString()}</strong>
-            </span>
+        <section>
+          <h4 className="section-title-2026">Customer value segments</h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="kpi-card-2026">
+              <div className="text-2xl font-bold text-indigo-600">{Number(segments.high_value || 0)}</div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">{t('analytics.highValue')}</div>
+            </div>
+            <div className="kpi-card-2026">
+              <div className="text-2xl font-bold text-green-600">{Number(segments.active || 0)}</div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">{t('analytics.active')}</div>
+            </div>
+            <div className="kpi-card-2026">
+              <div className="text-2xl font-bold text-blue-600">{Number(segments.new_customers || 0)}</div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">{t('analytics.new')}</div>
+            </div>
+            <div className="kpi-card-2026">
+              <div className="text-2xl font-bold text-purple-600">{avgLTV > 0 ? avgLTV.toLocaleString() : '—'}</div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">{t('analytics.avgLTV')}</div>
+            </div>
           </div>
         </section>
       </div>

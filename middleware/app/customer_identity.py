@@ -141,6 +141,8 @@ def resolve_or_create_customer(
     birthday: str | None = None,
     email: str | None = None,
     city: str | None = None,
+    country_id: int | None = None,
+    city_id: int | None = None,
     username: str | None = None,
     first_name: str | None = None,
     last_name: str | None = None,
@@ -228,6 +230,12 @@ def resolve_or_create_customer(
                 if city and target["city"] != city:
                     updates.append("city = ?")
                     params.append(city)
+                if country_id is not None:
+                    updates.append("country_id = ?")
+                    params.append(country_id)
+                if city_id is not None:
+                    updates.append("city_id = ?")
+                    params.append(city_id)
                 if marketing_allowed is not None and int(
                     target["marketing_allowed"] or 0
                 ) != int(marketing_allowed):
@@ -310,10 +318,10 @@ def resolve_or_create_customer(
                     INSERT INTO customers(
                         phone, full_name, telegram_id, vk_id, qr_token,
                         preferences_json, marketing_allowed, data_processing_allowed,
-                        birthday, gender, email, city, onboarding_status,
+                        birthday, gender, email, city, country_id, city_id, onboarding_status,
                         phone_verified_at, phone_verification_method
                     )
-                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                     """,
                     (
                         normalized_phone,
@@ -328,6 +336,8 @@ def resolve_or_create_customer(
                         gender,
                         email,
                         city,
+                        country_id,
+                        city_id,
                         resolved_onboarding_status,
                         (
                             datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")

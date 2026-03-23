@@ -352,6 +352,7 @@ def init_db() -> None:
                 name TEXT NOT NULL,
                 kind TEXT NOT NULL,
                 price INTEGER NOT NULL DEFAULT 0,
+                description TEXT,
                 active INTEGER NOT NULL DEFAULT 1,
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -540,6 +541,13 @@ def init_db() -> None:
             conn.execute(
                 "ALTER TABLE admin_users ADD COLUMN password_iter INTEGER NOT NULL DEFAULT 200000"
             )
+            conn.commit()
+        # Migration: add description column to products if missing
+        product_cols = [
+            r["name"] for r in conn.execute("PRAGMA table_info(products)").fetchall()
+        ]
+        if "description" not in product_cols:
+            conn.execute("ALTER TABLE products ADD COLUMN description TEXT")
             conn.commit()
     finally:
         conn.close()

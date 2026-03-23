@@ -166,7 +166,8 @@
     "quantity": "Број",
     "customerId": "ID клијента",
     "qty": "Количина",
-    "createSale": "Креирај продају"
+    "createSale": "Креирај продају",
+    "noProducts": "Нема доступних производа"
   },
   "clients": {
     "title": "Клијенти",

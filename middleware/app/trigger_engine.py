@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Any, Dict, List
 
+from .constants import SECONDS_PER_HOUR
 from .db import get_db
 from .worker import celery_app
 
@@ -56,7 +57,7 @@ def evaluate_and_queue_triggers(
 
             # We schedule it for now + delay_hours.
             # In Celery, countdown is in seconds.
-            countdown_seconds = delay_hours * 3600
+            countdown_seconds = delay_hours * SECONDS_PER_HOUR
 
             # Register in DB
             cur = conn.execute(

@@ -92,6 +92,9 @@ async def lifespan(app: FastAPI):
         seeded = ensure_seed_data()
         logger.info("[SEED] Auto-seed completed: %s", seeded)
 
+    # Initialize country and currency settings (ENV -> DB -> Auto)
+    _initialize_country_settings(settings)
+
     # Load VK config from database if available
     _load_vk_config()
 
@@ -553,6 +556,39 @@ def _start_erp_scheduler() -> None:
             logger.info("ERP sync scheduler not started (disabled or error)")
     except Exception as e:
         logger.warning(f"Failed to start ERP sync scheduler: {e}")
+
+
+def _initialize_country_settings(settings: Any) -> None:
+    """Initialize country and currency settings at startup.
+
+    Priority:
+    1. ENV variables (DEFAULT_COUNTRY_CODE, DEFAULT_CURRENCY_CODE)
+    2. Existing DB settings (system_settings table)
+    3. Auto-detect from first available country in DB
+
+    Saves the final settings to DB for persistence across restarts.
+    """
+    try:
+        from .services import get_location_service
+
+        service = get_location_service()
+        result = service.initialize_system_country(
+            env_country_code=settings.default_country_code,
+            env_currency_code=settings.default_currency_code
+        )
+
+        if result["initialized"]:
+            source_map = {"env": "ENV variables", "db": "database", "auto": "auto-detection"}
+            source_name = source_map.get(result["source"], result["source"])
+            logger.info(
+                f"[COUNTRY] System initialized: country_id={result['country_id']}, "
+                f"currency={result['currency_code']}, source={source_name}, "
+                f"force_single={result.get('force_single_country', False)}"
+            )
+        else:
+            logger.warning("[COUNTRY] Failed to initialize system country - no countries in database")
+    except Exception as e:
+        logger.warning(f"[COUNTRY] Failed to initialize country settings: {e}")
 
 
 # Catch-all for SPA routing (Vue Router history mode)

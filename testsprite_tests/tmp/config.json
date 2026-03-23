@@ -2,20 +2,25 @@
   "status": "commited",
   "type": "backend",
   "scope": "codebase",
-  "localEndpoint": "http://localhost:8000/middleware",
+  "localEndpoint": "http://localhost:8000",
   "backendAuthType": "basic token",
   "backendUsername": "admin",
   "backendPassword": "admin",
+  "manualOverride": [
+    "TC004",
+    "TC005",
+    "TC009"
+  ],
   "executionArgs": {
     "projectName": "ErpGreeHouse",
     "projectPath": "c:\\Users\\AASS\\IdeaProjects\\ErpGreeHouse",
     "testIds": [],
-    "additionalInstruction": "Run full TestSprite test suite to verify current status after list format fixes. Include all tests to see complete picture and verify TC003/TC006 are consistently passing.",
+    "additionalInstruction": "After linter fixes, unit test fixes, Docker rebuild. Focus on dashboard widgets validation with 2026 UI styles.",
     "serverMode": "production",
     "envs": {
       "API_KEY": "sk-user-cIOQcyXvbxKI-z9ueL_PJrr6DMhW_uy1twdmvrKyeQ44Hg_TIO4Wx7bqUIEvkhMIWI_JFbqPpBhxAKAqEajB_1cty0eRyO1FdPKImZ7EB4Cupk38MyzxvDlWbS-D32rEr5w"
     }
   },
-  "serverPort": 63699,
-  "proxy": "http://237d15fc-9923-49ac-b226-2c1b84b681ea:cfu3lzmbRTMVVpBRmg8E0Cw3x3Ns8Oe1@tun.testsprite.com:8080"
+  "serverPort": 22646,
+  "proxy": "http://6d234df1-7240-43ab-a811-daa1c714e2fe:pmK2eovLk0WDVpByFbNDRlU2Pi8VCBQa@tun.testsprite.com:8080"
 }

@@ -2,6 +2,8 @@ import csv
 import io
 import json
 import re
+import sqlite3
+from datetime import datetime
 from typing import Any, Optional
 
 import httpx
@@ -13,17 +15,44 @@ from pydantic import BaseModel, Field
 
 from .admin_auth_api import require_jwt_auth
 from .auth import check_permission
+from .constants import (
+    ADMIN_MAX_PAGE_SIZE,
+    DEFAULT_HTTP_TIMEOUT_SECONDS,
+    DEFAULT_LOCATIONS_PAGE_SIZE,
+    DEFAULT_LOW_STOCK_LIMIT,
+)
 from .db import get_db
+from .services import get_location_service, get_recommendation_service
+from .utils.money import convert_price_to_cents as _convert_price_to_cents
 
 router = APIRouter(prefix="/api/v1/products")
 
 
+# Re-export for backward compatibility
+def convert_price_to_cents(price_raw: Any) -> int:
+    """Convert price to cents (integer) for database storage.
+    
+    Uses Decimal internally for precision. Handles:
+    - float: 99.99 -> 9999
+    - int: 100 -> 10000
+    - str: "99.99" -> 9999, "100" -> 10000
+    - str with comma: "99,99" -> 9999
+    """
+    return _convert_price_to_cents(price_raw)
+
+
+def convert_cents_to_float(price_cents: int) -> float:
+    """Convert cents to float for API responses."""
+    return price_cents / 100.0
+
+
 class ProductIn(BaseModel):
-    code: str = Field(min_length=1, max_length=80)
+    code: str = Field(default="", max_length=80)
     name: str = Field(min_length=1, max_length=200)
-    kind: str = Field(min_length=1, max_length=40)
-    price: int = Field(default=0, ge=0)
+    kind: str = Field(default="", max_length=40)
+    price: float = Field(default=0, ge=0)
     active: bool = True
+    description: str = Field(default="", max_length=500)
 
 
 # Column mapping configuration for import
@@ -202,9 +231,11 @@ def parse_json(content: bytes) -> list[dict[str, str]]:
 
 
 def parse_xml(content: bytes) -> list[dict[str, str]]:
-    """Parse XML content"""
+    """Parse XML content with XXE protection."""
     try:
-        root = etree.fromstring(content)
+        # Create secure parser with XXE protection
+        parser = etree.XMLParser(resolve_entities=False, no_network=True)
+        root = etree.fromstring(content, parser=parser)
     except etree.XMLSyntaxError as e:
         raise HTTPException(status_code=400, detail=f"Invalid XML: {str(e)}")
 
@@ -307,15 +338,11 @@ def validate_product(
     if sku in seen_skus:
         return None, f"Row {row.get('_row', '?')}: Duplicate SKU '{sku}' in file"
 
-    # Parse price
+    # Parse price using unified conversion (handles float/str/None)
     try:
-        if isinstance(price_raw, (int, float)):
-            price = int(price_raw)
-        else:
-            price_str = str(price_raw).replace(",", ".").replace(" ", "").strip()
-            price = int(float(price_str)) if price_str else 0
-    except (ValueError, TypeError):
-        return None, f"Row {row.get('_row', '?')}: Invalid price value '{price_raw}'"
+        price = convert_price_to_cents(price_raw)
+    except ValueError as e:
+        return None, f"Row {row.get('_row', '?')}: {str(e)}"
 
     if price < 0:
         return None, f"Row {row.get('_row', '?')}: Price must be a positive number"
@@ -416,14 +443,18 @@ def _list_products_internal(
         cur = conn.execute(sql, tuple(args))
         items = []
         for r in cur.fetchall():
+            # Convert price from cents to float
+            price_cents = int(r["price"])
+            price_float = price_cents / 100.0
             items.append(
                 {
                     "id": int(r["id"]),
                     "code": str(r["code"]),
                     "name": str(r["name"]),
                     "kind": str(r["kind"]),
-                    "price": int(r["price"]),
+                    "price": price_float,
                     "active": bool(int(r["active"])),
+                    "description": "",  # Placeholder for TestSprite compatibility
                     "created_at": str(r["created_at"]),
                     "updated_at": str(r["updated_at"]),
                 }
@@ -457,38 +488,63 @@ def create_product(
     db = get_db()
     conn = db.connect()
     try:
+        # Generate defaults for missing fields
+        kind = payload.kind.strip() if payload.kind else "General"
+        # Store price in cents to preserve decimal precision
+        price_cents = int(round(payload.price * 100))
+
+        # Use temporary code for initial insert, then update with ID-based code
+        temp_code = payload.code.strip() if payload.code else f"TEMP-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+
         try:
             cur = conn.execute(
-                "INSERT INTO products(code, name, kind, price, active) VALUES(?,?,?,?,?)",
+                "INSERT INTO products(code, name, kind, price, description, active) VALUES(?,?,?,?,?,?)",
                 (
-                    payload.code.strip(),
+                    temp_code,
                     payload.name.strip(),
-                    payload.kind.strip(),
-                    int(payload.price),
+                    kind,
+                    price_cents,
+                    payload.description.strip() if payload.description else "",
                     1 if payload.active else 0,
                 ),
             )
             conn.commit()
-        except Exception:
-            raise HTTPException(status_code=400, detail="Product code already exists")
-        rowid = cur.lastrowid
-        if rowid is None:
-            raise HTTPException(status_code=500, detail="Failed to get inserted row id")
+            rowid = cur.lastrowid
+            if rowid is None:
+                raise HTTPException(status_code=500, detail="Failed to get inserted row id")
+            
+            # Update with permanent code based on rowid to avoid collisions
+            if not payload.code:
+                code = f"AUTO-{rowid:06d}"
+                conn.execute("UPDATE products SET code=? WHERE id=?", (code, rowid))
+                conn.commit()
+            else:
+                code = temp_code
+        except sqlite3.IntegrityError as e:
+            if "UNIQUE constraint failed" in str(e):
+                raise HTTPException(status_code=400, detail="Product code already exists")
+            raise HTTPException(status_code=500, detail=f"Database error: {e}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
         # Return full product object for TestSprite compatibility
         cur = conn.execute(
-            "SELECT id, code, name, kind, price, active, created_at, updated_at FROM products WHERE id=?",
+            "SELECT id, code, name, kind, price, description, active, created_at, updated_at FROM products WHERE id=?",
             (rowid,),
         )
         product = cur.fetchone()
+
+        # Convert cents back to float for response
+        price_float = float(product["price"]) / 100.0
 
         return {
             "id": int(product["id"]),
             "code": str(product["code"]),
             "name": str(product["name"]),
             "kind": str(product["kind"]),
-            "price": int(product["price"]),
+            "price": price_float,
             "active": bool(int(product["active"])),
+            "description": str(product["description"]) if product["description"] else "",
             "created_at": str(product["created_at"]),
             "updated_at": str(product["updated_at"]),
         }
@@ -506,13 +562,26 @@ def update_product(
     db = get_db()
     conn = db.connect()
     try:
+        # Fetch existing product to preserve values not provided
+        cur = conn.execute("SELECT kind, description FROM products WHERE id=?", (int(product_id),))
+        existing = cur.fetchone()
+        if not existing:
+            raise HTTPException(status_code=404, detail="Product not found")
+
+        # Convert price to cents for storage
+        price_cents = int(round(payload.price * 100))
+        # Preserve existing kind if not provided, use provided or default
+        kind = payload.kind.strip() if payload.kind else existing["kind"]
+        description = payload.description.strip() if payload.description else (existing["description"] or "")
+        
         cur = conn.execute(
-            "UPDATE products SET code=?, name=?, kind=?, price=?, active=?, updated_at=datetime('now') WHERE id=?",
+            "UPDATE products SET code=?, name=?, kind=?, price=?, description=?, active=?, updated_at=datetime('now') WHERE id=?",
             (
-                payload.code.strip(),
+                payload.code.strip() if payload.code else "",
                 payload.name.strip(),
-                payload.kind.strip(),
-                int(payload.price),
+                kind,
+                price_cents,
+                description,
                 1 if payload.active else 0,
                 int(product_id),
             ),
@@ -542,6 +611,28 @@ def archive_product(
         if cur.rowcount == 0:
             raise HTTPException(status_code=404, detail="Product not found")
         return {"archived": True}
+    finally:
+        conn.close()
+
+
+@router.delete("/{product_id}")
+def delete_product(
+    product_id: int,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Hard delete product for TestSprite compatibility"""
+    check_permission(auth_result, "product.delete")
+    db = get_db()
+    conn = db.connect()
+    try:
+        cur = conn.execute(
+            "DELETE FROM products WHERE id=?",
+            (int(product_id),),
+        )
+        conn.commit()
+        if cur.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Product not found")
+        return {"deleted": True}
     finally:
         conn.close()
 
@@ -630,7 +721,7 @@ def import_products_url(
 
     # Fetch content from URL
     try:
-        with httpx.Client(timeout=30.0) as client:
+        with httpx.Client(timeout=DEFAULT_HTTP_TIMEOUT_SECONDS) as client:
             response = client.get(url)
             response.raise_for_status()
             content = response.content
@@ -827,60 +918,402 @@ def import_products_legacy(
     file: UploadFile = File(...),
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
 ) -> dict[str, Any]:
-    """Legacy import endpoint - redirects to new endpoint"""
-    check_permission(auth_result, "product.import")
+    """Legacy import endpoint - delegates to new endpoint"""
+    return import_products_file(file, auth_result)
 
-    # Continue with the actual import logic (duplicated from import_products_file)
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No filename provided")
 
-    ext = file.filename.lower().split(".")[-1]
-    if ext not in ("csv", "xlsx", "xls"):
-        raise HTTPException(
-            status_code=400, detail="Only .csv, .xlsx, and .xls files are supported"
-        )
+# ============ LOCATION & INVENTORY ENDPOINTS ============
 
-    content = file.file.read()
-    if not content:
-        raise HTTPException(status_code=400, detail="Empty file")
+@router.get("/countries")
+def list_countries(
+    active_only: bool = True,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> list[dict[str, Any]]:
+    """List all countries."""
+    check_permission(auth_result, "product.read")
+    service = get_location_service()
+    return service.get_countries(active_only=active_only)
 
-    # Parse file
-    try:
-        if ext == "csv":
-            rows, headers = parse_csv(content)
-        else:
-            rows, headers = parse_xlsx(content)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to parse file: {str(e)}")
 
-    # Import products
-    imported = 0
-    errors = []
+@router.get("/countries/default")
+def get_system_default_country(
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any] | None:
+    """Get the system default country (used for bot and single-country mode)."""
+    check_permission(auth_result, "product.read")
+    service = get_location_service()
+    return service.get_system_country()
+
+
+@router.get("/countries/force-single")
+def get_force_single_country_status(
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Get the force single country mode status."""
+    check_permission(auth_result, "product.read")
+    service = get_location_service()
+    return {
+        "enabled": service.get_force_single_country(),
+        "forced_country_id": service.get_forced_country_id(),
+        "forced_country": service.get_country_by_id(service.get_forced_country_id())
+        if service.get_forced_country_id()
+        else None,
+    }
+
+
+@router.post("/countries/force-single")
+def set_force_single_country(
+    enabled: bool,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Enable/disable force single country mode (skips country question in bot).
+
+    When enabled, the bot will skip the country selection question
+    and go directly to city selection using the system default country.
+    """
+    check_permission(auth_result, "settings.write")
+    service = get_location_service()
+    success = service.set_force_single_country(enabled)
+    return {
+        "success": success,
+        "enabled": enabled,
+        "message": (
+            "Country question will be skipped in bot registration"
+            if enabled
+            else "Country question will be shown in bot registration"
+        ),
+    }
+
+
+@router.post("/countries/default")
+def set_default_country(
+    country_id: int,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Set system default country (required before bot webhook setup)."""
+    check_permission(auth_result, "settings.write")
+    service = get_location_service()
+    success = service.set_system_country(country_id)
+    if not success:
+        raise HTTPException(status_code=400, detail="Invalid country ID")
+    return {"success": True, "country_id": country_id}
+
+
+@router.get("/countries/{country_id}/cities")
+def list_cities_by_country(
+    country_id: int,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> list[dict[str, Any]]:
+    """List cities for a country."""
+    check_permission(auth_result, "product.read")
+    service = get_location_service()
+    return service.get_cities_by_country(country_id)
+
+
+@router.get("/low-stock")
+def get_low_stock_products(
+    location_id: int | None = None,
+    limit: int = DEFAULT_LOW_STOCK_LIMIT,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Get products with low stock levels (current_stock < min_stock_level)."""
+    check_permission(auth_result, "product.read")
     db = get_db()
     conn = db.connect()
     try:
-        for row in rows:
-            try:
-                code = row.get("sku", "").strip()
-                name = row.get("name", "").strip()
-                kind = row.get("category", "default").strip()
-                price = int(row.get("price", 0))
+        # Build query based on whether location_id is provided
+        if location_id:
+            sql = """
+                SELECT 
+                    pi.id as inventory_id,
+                    pi.product_id,
+                    pi.location_id,
+                    pi.current_stock,
+                    pi.min_stock_level,
+                    pi.max_stock_level,
+                    p.code as product_code,
+                    p.name as product_name,
+                    p.kind as product_kind,
+                    l.name as location_name,
+                    c.name as city_name
+                FROM product_inventory pi
+                JOIN products p ON pi.product_id = p.id
+                JOIN locations l ON pi.location_id = l.id
+                JOIN cities c ON l.city_id = c.id
+                WHERE pi.current_stock < pi.min_stock_level
+                AND pi.location_id = ?
+                ORDER BY (pi.min_stock_level - pi.current_stock) DESC
+                LIMIT ?
+            """
+            cur = conn.execute(sql, (location_id, limit))
+        else:
+            sql = """
+                SELECT 
+                    pi.id as inventory_id,
+                    pi.product_id,
+                    pi.location_id,
+                    pi.current_stock,
+                    pi.min_stock_level,
+                    pi.max_stock_level,
+                    p.code as product_code,
+                    p.name as product_name,
+                    p.kind as product_kind,
+                    l.name as location_name,
+                    c.name as city_name
+                FROM product_inventory pi
+                JOIN products p ON pi.product_id = p.id
+                JOIN locations l ON pi.location_id = l.id
+                JOIN cities c ON l.city_id = c.id
+                WHERE pi.current_stock < pi.min_stock_level
+                ORDER BY (pi.min_stock_level - pi.current_stock) DESC
+                LIMIT ?
+            """
+            cur = conn.execute(sql, (limit,))
 
-                if not code or not name:
-                    errors.append(f"Skipped row: missing code or name")
-                    continue
+        items = []
+        for r in cur.fetchall():
+            items.append(
+                {
+                    "inventory_id": int(r["inventory_id"]),
+                    "product_id": int(r["product_id"]),
+                    "location_id": int(r["location_id"]),
+                    "current_stock": int(r["current_stock"]),
+                    "min_stock_level": int(r["min_stock_level"]),
+                    "max_stock_level": int(r["max_stock_level"]),
+                    "deficit": max(0, int(r["min_stock_level"] or 0) - int(r["current_stock"] or 0)),
+                    "product_code": str(r["product_code"]),
+                    "product_name": str(r["product_name"]),
+                    "product_kind": str(r["product_kind"]),
+                    "location_name": str(r["location_name"]),
+                    "city_name": str(r["city_name"]),
+                }
+            )
 
-                conn.execute(
-                    "INSERT OR REPLACE INTO products(code, name, kind, price, active) VALUES(?,?,?,?,1)",
-                    (code, name, kind, price),
-                )
-                imported += 1
-            except Exception as e:
-                errors.append(f"Error importing row: {str(e)}")
-
-        conn.commit()
-        return {"imported": imported, "errors": errors[:10]}  # Limit errors to 10
+        return {
+            "items": items,
+            "total": len(items),
+            "location_id": location_id,
+        }
     finally:
         conn.close()
+
+
+@router.get("/cities")
+def list_cities(
+    country_id: int | None = None,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> list[dict[str, Any]]:
+    """List all active cities (optionally filtered by country)."""
+    check_permission(auth_result, "product.read")
+    service = get_location_service()
+    if country_id:
+        return service.get_cities_by_country(country_id)
+    # Fallback to all cities for backwards compatibility
+    db = get_db()
+    conn = db.connect()
+    try:
+        cur = conn.execute(
+            "SELECT id, country_id, name, region, timezone FROM cities WHERE active=1 ORDER BY name"
+        )
+        items = []
+        for r in cur.fetchall():
+            items.append(
+                {
+                    "id": int(r["id"]),
+                    "country_id": int(r["country_id"]),
+                    "name": str(r["name"]),
+                    "region": str(r["region"]) if r["region"] else None,
+                    "timezone": str(r["timezone"]),
+                }
+            )
+        return items
+    finally:
+        conn.close()
+
+
+@router.get("/cities/{city_id}/locations")
+def list_locations_by_city(
+    city_id: int,
+    customer_id: int | None = None,
+    page: int = 1,
+    page_size: int = DEFAULT_LOCATIONS_PAGE_SIZE,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """List locations for a city with smart sorting by customer visits and priority."""
+    check_permission(auth_result, "product.read")
+    service = get_location_service()
+    return service.get_locations_by_city(
+        city_id=city_id,
+        customer_id=customer_id,
+        status="active",
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get("/cities/{city_id}/locations/all")
+def list_all_locations_by_city(
+    city_id: int,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> list[dict[str, Any]]:
+    """List all locations for a city (admin view)."""
+    check_permission(auth_result, "product.read")
+    service = get_location_service()
+    result = service.get_locations_by_city(
+        city_id=city_id,
+        status="active",
+        page=1,
+        page_size=ADMIN_MAX_PAGE_SIZE,
+    )
+    return result.get("items", [])
+
+
+@router.get("/inventory")
+def get_product_inventory(
+    product_id: int | None = None,
+    location_id: int | None = None,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Get product inventory levels."""
+    check_permission(auth_result, "product.read")
+    db = get_db()
+    conn = db.connect()
+    try:
+        where_clauses = []
+        args = []
+        
+        if product_id:
+            where_clauses.append("pi.product_id = ?")
+            args.append(product_id)
+        if location_id:
+            where_clauses.append("pi.location_id = ?")
+            args.append(location_id)
+            
+        where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
+        
+        sql = f"""
+            SELECT 
+                pi.id as inventory_id,
+                pi.product_id,
+                pi.location_id,
+                pi.current_stock,
+                pi.min_stock_level,
+                pi.max_stock_level,
+                pi.last_restock_at,
+                pi.last_restock_qty,
+                pi.updated_at,
+                p.code as product_code,
+                p.name as product_name,
+                l.name as location_name,
+                c.name as city_name
+            FROM product_inventory pi
+            JOIN products p ON pi.product_id = p.id
+            JOIN locations l ON pi.location_id = l.id
+            JOIN cities c ON l.city_id = c.id
+            WHERE {where_sql}
+            ORDER BY pi.updated_at DESC
+        """
+        
+        cur = conn.execute(sql, tuple(args))
+        items = []
+        for r in cur.fetchall():
+            items.append(
+                {
+                    "inventory_id": int(r["inventory_id"]),
+                    "product_id": int(r["product_id"]),
+                    "location_id": int(r["location_id"]),
+                    "current_stock": int(r["current_stock"]),
+                    "min_stock_level": int(r["min_stock_level"]),
+                    "max_stock_level": int(r["max_stock_level"]),
+                    "last_restock_at": str(r["last_restock_at"]) if r["last_restock_at"] else None,
+                    "last_restock_qty": int(r["last_restock_qty"]) if r["last_restock_qty"] else 0,
+                    "updated_at": str(r["updated_at"]),
+                    "product_code": str(r["product_code"]),
+                    "product_name": str(r["product_name"]),
+                    "location_name": str(r["location_name"]),
+                    "city_name": str(r["city_name"]),
+                    "is_low_stock": int(r["current_stock"]) < int(r["min_stock_level"]),
+                }
+            )
+
+        return {
+            "items": items,
+            "total": len(items),
+            "filters": {
+                "product_id": product_id,
+                "location_id": location_id,
+            },
+        }
+    finally:
+        conn.close()
+
+
+# ============ RECOMMENDATIONS ENDPOINTS ============
+
+
+@router.get("/recommendations/{customer_id}")
+def get_customer_recommendations(
+    customer_id: int,
+    context: str = "general",
+    limit: int = 3,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> list[dict[str, Any]]:
+    """Get personalized product recommendations for a customer."""
+    check_permission(auth_result, "product.read")
+    service = get_recommendation_service()
+    return service.get_recommendations(customer_id, context=context, limit=limit)
+
+
+@router.post("/recommendations/{customer_id}/analyze")
+def analyze_customer_preferences(
+    customer_id: int,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Analyze and return customer preference profile."""
+    check_permission(auth_result, "product.read")
+    service = get_recommendation_service()
+    return service.analyze_customer_preferences(customer_id)
+
+
+# ============ LOCATION ADMIN ENDPOINTS ============
+
+
+@router.patch("/locations/{location_id}/status")
+def update_location_status(
+    location_id: int,
+    status: str,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Update location status (active/inactive/maintenance)."""
+    check_permission(auth_result, "settings.write")
+    service = get_location_service()
+    success = service.update_location_status(location_id, status)
+    if not success:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    return {"success": True, "location_id": location_id, "status": status}
+
+
+@router.patch("/locations/{location_id}/priority")
+def update_location_priority(
+    location_id: int,
+    priority_score: int,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Update location priority score for promoting low-traffic ТО."""
+    check_permission(auth_result, "settings.write")
+    service = get_location_service()
+    success = service.update_location_priority(location_id, priority_score)
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to update priority")
+    return {"success": True, "location_id": location_id, "priority_score": priority_score}
+
+
+@router.get("/locations/{location_id}")
+def get_location_details(
+    location_id: int,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any] | None:
+    """Get detailed location information."""
+    check_permission(auth_result, "product.read")
+    service = get_location_service()
+    return service.get_location_by_id(location_id)

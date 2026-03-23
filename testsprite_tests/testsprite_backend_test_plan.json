@@ -22,7 +22,7 @@
   {
     "id": "TC005",
     "title": "update existing customer with valid data",
-    "description": "Test the PUT /api/v1/customers/{id} endpoint with valid customer ID, valid update data, and a valid access token to verify it returns 200 status and the updated Customer object."
+    "description": "Test the PUT /api/v1/customers/{id} endpoint with a valid customer ID, valid update data, and a valid access token to verify it returns 200 status and the updated Customer object."
   },
   {
     "id": "TC006",
@@ -37,12 +37,12 @@
   {
     "id": "TC008",
     "title": "user login with valid credentials",
-    "description": "Test the POST /api/v1/public/auth/login endpoint with valid username and password to verify it returns 200 status and LoginResponse containing access and refresh tokens."
+    "description": "Test the POST /api/v1/public/auth/login endpoint with valid username and password to verify it returns 200 status and LoginResponse with access and refresh tokens."
   },
   {
     "id": "TC009",
     "title": "refresh access token with valid refresh token",
-    "description": "Test the POST /api/v1/auth/refresh endpoint with a valid refresh token in Authorization header to verify it returns 200 status and a new access token."
+    "description": "Test the POST /api/v1/auth/refresh endpoint with a valid refresh token to verify it returns 200 status and a new access token."
   },
   {
     "id": "TC010",

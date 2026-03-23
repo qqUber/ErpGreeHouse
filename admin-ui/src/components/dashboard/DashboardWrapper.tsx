@@ -3,6 +3,7 @@ import type { DashboardHomeViewModel } from '../../services/dashboard-analytics.
 import { useAuth } from '../../stores/auth';
 import { hasPermission, Permission, PermissionSet, Role } from '../../types/roles';
 import { AdminDashboard } from './AdminDashboard';
+import { DashboardErrorBoundary } from './DashboardErrorBoundary';
 import { ManagerDashboard } from './ManagerDashboard';
 import { OperatorDashboard } from './OperatorDashboard';
 
@@ -40,18 +41,34 @@ export function DashboardWrapper({ data, onNavigate }: DashboardWrapperProps) {
 
   switch (role) {
     case 'operator':
-      return <OperatorDashboard data={data} onNavigate={onNavigate} />;
+      return (
+        <DashboardErrorBoundary>
+          <OperatorDashboard data={data} onNavigate={onNavigate} />
+        </DashboardErrorBoundary>
+      );
 
     case 'marketer':
-      return <ManagerDashboard data={data} onNavigate={onNavigate} />;
+      return (
+        <DashboardErrorBoundary>
+          <ManagerDashboard data={data} onNavigate={onNavigate} />
+        </DashboardErrorBoundary>
+      );
 
     case 'owner':
     case 'admin':
-      return <AdminDashboard data={data} onNavigate={onNavigate} />;
+      return (
+        <DashboardErrorBoundary>
+          <AdminDashboard data={data} onNavigate={onNavigate} />
+        </DashboardErrorBoundary>
+      );
 
     default:
       // Fallback for unknown roles - render operator dashboard by default
-      return <OperatorDashboard data={data} onNavigate={onNavigate} />;
+      return (
+        <DashboardErrorBoundary>
+          <OperatorDashboard data={data} onNavigate={onNavigate} />
+        </DashboardErrorBoundary>
+      );
   }
 }
 

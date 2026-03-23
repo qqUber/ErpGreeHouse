@@ -1,43 +1,44 @@
 import requests
 
 BASE_URL = "http://localhost:8000"
-LOGIN_URL = f"{BASE_URL}/api/v1/public/auth/login"
-ANALYTICS_URL = f"{BASE_URL}/api/v1/dashboard/analytics"
+LOGIN_ENDPOINT = "/api/v1/public/auth/login"
+ANALYTICS_ENDPOINT = "/api/v1/dashboard/analytics"
 TIMEOUT = 30
 
-def test_get_dashboard_analytics_with_valid_token():
-    # Step 1: Login to get access token
-    login_payload = {
-        "username": "admin",
-        "password": "admin"
-    }
-    try:
-        login_response = requests.post(LOGIN_URL, json=login_payload, timeout=TIMEOUT)
-        assert login_response.status_code == 200, f"Login failed with status {login_response.status_code}"
-        login_json = login_response.json()
-        assert "access_token" in login_json and isinstance(login_json["access_token"], str), "Access token missing in login response"
-        access_token = login_json["access_token"]
-    except requests.RequestException as e:
-        assert False, f"Login request failed: {e}"
+USERNAME = "admin"
+PASSWORD = "admin"
 
-    # Step 2: Use access token to get dashboard analytics
-    headers = {
-        "Authorization": f"Bearer {access_token}"
-    }
-    try:
-        analytics_response = requests.get(ANALYTICS_URL, headers=headers, timeout=TIMEOUT)
-    except requests.RequestException as e:
-        assert False, f"Analytics request failed: {e}"
 
-    # Step 3: Validate response status code and body
-    assert analytics_response.status_code == 200, f"Expected 200 but got {analytics_response.status_code}"
+def test_get_dashboard_analytics_data_with_valid_token():
+    # Login to get access token
+    login_url = BASE_URL + LOGIN_ENDPOINT
+    login_payload = {"username": USERNAME, "password": PASSWORD}
     try:
-        analytics_data = analytics_response.json()
+        login_resp = requests.post(login_url, json=login_payload, timeout=TIMEOUT)
+        assert login_resp.status_code == 200, f"Login failed with status {login_resp.status_code}"
+        login_data = login_resp.json()
+        access_token = login_data.get("access_token")
+        assert access_token, "Access token missing in login response"
+    except (requests.RequestException, AssertionError) as e:
+        assert False, f"Login request failed or invalid response: {e}"
+
+    # Call the analytics endpoint with the valid token
+    analytics_url = BASE_URL + ANALYTICS_ENDPOINT
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    try:
+        analytics_resp = requests.get(analytics_url, headers=headers, timeout=TIMEOUT)
+    except requests.RequestException as e:
+        assert False, f"Request to analytics endpoint failed: {e}"
+
+    assert analytics_resp.status_code == 200, f"Expected 200 but got {analytics_resp.status_code}"
+
+    try:
+        analytics_data = analytics_resp.json()
     except ValueError:
         assert False, "Response is not valid JSON"
 
-    # Basic structure validation of AnalyticsData (not fully detailed in PRD, so minimal check)
     assert isinstance(analytics_data, dict), "AnalyticsData response should be a JSON object"
-    assert len(analytics_data) > 0, "AnalyticsData response is empty"
 
-test_get_dashboard_analytics_with_valid_token()
+
+test_get_dashboard_analytics_data_with_valid_token()

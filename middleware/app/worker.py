@@ -11,6 +11,11 @@ from aiogram.types import Update
 from celery import Celery
 
 from .config import get_settings
+from .constants import (
+    EXPIRE_INACTIVE_POINTS_INTERVAL,
+    INACTIVE_POINTS_EXPIRY_DAYS,
+    PROCESS_MARKETING_INTERVAL,
+)
 from .db import get_db
 from .integrations.bots.telegram_handler import create_bot, create_dispatcher
 from .storage import get_redis
@@ -26,11 +31,11 @@ celery_app = Celery(
 celery_app.conf.beat_schedule = {
     "expire-inactive-points-daily": {
         "task": "app.worker.expire_inactive_points",
-        "schedule": 86400.0,  # Run every day
+        "schedule": float(EXPIRE_INACTIVE_POINTS_INTERVAL),  # Run every day
     },
     "process-periodic-marketing-daily": {
         "task": "app.worker.process_periodic_marketing",
-        "schedule": 3600.0,  # Run every hour to be safe, but logic normally skips once done
+        "schedule": float(PROCESS_MARKETING_INTERVAL),  # Run every hour
     },
 }
 celery_app.conf.timezone = "UTC"
@@ -501,17 +506,17 @@ async def send_media_group(bot, chat_id: int, media_items: list) -> bool:
 
 @celery_app.task
 def expire_inactive_points() -> dict:
-    """Zeroes out balance for customers inactive for > 180 days."""
+    """Zeroes out balance for customers inactive for > INACTIVE_POINTS_EXPIRY_DAYS days."""
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute("""
+        cur = conn.execute(f"""
             UPDATE customers
             SET balance_points = 0, updated_at = datetime('now')
             WHERE balance_points > 0
             AND id NOT IN (
                 SELECT customer_id FROM transactions
-                WHERE created_at >= datetime('now', '-180 days')
+                WHERE created_at >= datetime('now', '-{INACTIVE_POINTS_EXPIRY_DAYS} days')
             )
         """)
         conn.commit()

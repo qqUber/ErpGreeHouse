@@ -24,6 +24,7 @@ from .identify import normalize_name, normalize_phone
 from .integrations.pos.erpnext_client import ERPClient
 from .loyalty_profile import build_customer_loyalty_profile
 from .menu import MENU, find_item
+from .services import get_location_service
 from .storage import delete, get_json, get_redis, set_json
 from .utils.currency import format_currency
 
@@ -296,6 +297,8 @@ def _upsert_local_customer(
     birthday: str | None = None,
     email: str | None = None,
     city: str | None = None,
+    country_id: int | None = None,
+    city_id: int | None = None,
     username: str | None = None,
     first_name: str | None = None,
     last_name: str | None = None,
@@ -315,6 +318,8 @@ def _upsert_local_customer(
             birthday=birthday,
             email=email,
             city=city,
+            country_id=country_id,
+            city_id=city_id,
             username=username,
             first_name=first_name,
             last_name=last_name,
@@ -390,6 +395,42 @@ def _gender_keyboard() -> InlineKeyboardMarkup:
             ]
         ]
     )
+
+
+def _countries_keyboard() -> InlineKeyboardMarkup:
+    """Build country selection keyboard."""
+    service = get_location_service()
+    countries = service.get_countries(active_only=True)
+    
+    buttons = []
+    for country in countries:
+        name = country.get("name_local") or country.get("name") or country["code"]
+        buttons.append([
+            InlineKeyboardButton(
+                text=f"{name}",
+                callback_data=f"country:{country['id']}"
+            )
+        ])
+    
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def _cities_keyboard(country_id: int) -> InlineKeyboardMarkup:
+    """Build city selection keyboard for a country."""
+    service = get_location_service()
+    cities = service.get_cities_by_country(country_id)
+    
+    buttons = []
+    for city in cities:
+        name = city.get("name") or f"City {city['id']}"
+        buttons.append([
+            InlineKeyboardButton(
+                text=name,
+                callback_data=f"city:{city['id']}"
+            )
+        ])
+    
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 def _virtual_card_message(qr_token: str) -> str:
@@ -963,24 +1004,103 @@ async def cb_consent(cb: CallbackQuery) -> None:
             conn.commit()
         finally:
             conn.close()
-        r.hset(
-            _consent_key(cb.from_user.id),
-            mapping={
-                "consent_given": "1",
-                "step": "phone",
-                "username": cb.from_user.username or "",
-                "first_name": cb.from_user.first_name or "",
-                "last_name": cb.from_user.last_name or "",
-            },
-        )
-        await cb.message.edit_text("Согласие принято! ✅")
-        await cb.message.answer(
-            "Чтобы подключиться к нашей программе лояльности,\n"
-            "нажми кнопку «Поделиться контактом» или отправь свой номер вручную.",
-            reply_markup=_registration_phone_keyboard(),
+        
+        # Check if force_single_country mode is enabled
+        service = get_location_service()
+        force_single = service.get_force_single_country()
+        system_country = service.get_system_country()
+        
+        if force_single and system_country:
+            # Skip country selection, go directly to city selection
+            country_id = system_country["id"]
+            r.hset(
+                _consent_key(cb.from_user.id),
+                mapping={
+                    "consent_given": "1",
+                    "country_id": str(country_id),
+                    "step": "city_select",
+                    "username": cb.from_user.username or "",
+                    "first_name": cb.from_user.first_name or "",
+                    "last_name": cb.from_user.last_name or "",
+                },
+            )
+            await cb.message.edit_text("Согласие принято! ✅")
+            await cb.message.answer(
+                "Выберите ваш город:",
+                reply_markup=_cities_keyboard(country_id)
+            )
+        else:
+            # Show country selection
+            r.hset(
+                _consent_key(cb.from_user.id),
+                mapping={
+                    "consent_given": "1",
+                    "step": "country_select",
+                    "username": cb.from_user.username or "",
+                    "first_name": cb.from_user.first_name or "",
+                    "last_name": cb.from_user.last_name or "",
+                },
+            )
+            await cb.message.edit_text("Согласие принято! ✅")
+            await cb.message.answer(
+                "Выберите вашу страну:",
+                reply_markup=_countries_keyboard()
+            )
+        await cb.answer()
+        return
+
+
+@router.callback_query(F.data.startswith("country:"))
+async def cb_country(cb: CallbackQuery) -> None:
+    """Handle country selection during registration."""
+    _remember_telegram_language(cb)
+    country_id = cb.data.split(":", 1)[1]
+    r = get_redis()
+    key = _consent_key(cb.from_user.id)
+    data = r.hgetall(key)
+    
+    if not data or data.get("consent_given") != "1":
+        await cb.message.edit_text(
+            "Сессия регистрации истекла. Начните заново с /start"
         )
         await cb.answer()
         return
+    
+    # Store country_id and move to city selection
+    r.hset(key, mapping={"country_id": country_id, "step": "city_select"})
+    await cb.message.edit_text("🌍 Страна выбрана")
+    await cb.message.answer(
+        "Выберите ваш город:",
+        reply_markup=_cities_keyboard(int(country_id))
+    )
+    await cb.answer()
+
+
+@router.callback_query(F.data.startswith("city:"))
+async def cb_city(cb: CallbackQuery) -> None:
+    """Handle city selection during registration."""
+    _remember_telegram_language(cb)
+    city_id = cb.data.split(":", 1)[1]
+    r = get_redis()
+    key = _consent_key(cb.from_user.id)
+    data = r.hgetall(key)
+    
+    if not data or data.get("consent_given") != "1":
+        await cb.message.edit_text(
+            "Сессия регистрации истекла. Начните заново с /start"
+        )
+        await cb.answer()
+        return
+    
+    # Store city_id and move to phone step
+    r.hset(key, mapping={"city_id": city_id, "step": "phone"})
+    await cb.message.edit_text("🏙️ Город выбран")
+    await cb.message.answer(
+        "Чтобы подключиться к нашей программе лояльности,\n"
+        "нажми кнопку «Поделиться контактом» или отправь свой номер вручную.",
+        reply_markup=_registration_phone_keyboard()
+    )
+    await cb.answer()
 
 
 @router.message(
@@ -1146,6 +1266,8 @@ async def cb_marketing_consent(cb: CallbackQuery) -> None:
             birthday=data.get("birthday"),
             email=data.get("email"),
             city=data.get("city"),
+            country_id=int(data.get("country_id")) if data.get("country_id") else None,
+            city_id=int(data.get("city_id")) if data.get("city_id") else None,
             username=data.get("username"),
             first_name=data.get("first_name"),
             last_name=data.get("last_name"),

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StatCard } from '../ui/StatCard';
 import { Widget } from '../Widget';
 
 type SalesData = {
@@ -25,70 +24,91 @@ export function SalesWidget({ data }: { data?: any }) {
   const peakHourTx = Number(data?.peakHourTransactions ?? 0);
   const topProducts: any[] = data?.topProducts ?? [];
   const topProductName = topProducts[0]?.name ?? '—';
-  const firstHalfRevenue = 0;
-  const secondHalfRevenue = 0;
-  const growth =
-    Number.isFinite(firstHalfRevenue) && firstHalfRevenue > 0
-      ? Math.round(((secondHalfRevenue - firstHalfRevenue) / firstHalfRevenue) * 100)
-      : 0;
+  const firstHalfRevenue = Number(data?.firstHalfRevenue ?? 0);
+  const secondHalfRevenue = Number(data?.secondHalfRevenue ?? 0);
+  
+  const getGrowthDisplay = (): { value: string; variant: 'info' | 'success' | 'warning' } => {
+    if (!Number.isFinite(firstHalfRevenue) || !Number.isFinite(secondHalfRevenue)) {
+      return { value: '—', variant: 'info' };
+    }
+    if (firstHalfRevenue === 0) {
+      if (secondHalfRevenue === 0) return { value: '—', variant: 'info' };
+      return { value: 'New', variant: 'success' };
+    }
+    const growth = Math.round(((secondHalfRevenue - firstHalfRevenue) / firstHalfRevenue) * 100);
+    return {
+      value: `${growth >= 0 ? '+' : ''}${growth}%`,
+      variant: growth > 0 ? 'success' : growth < 0 ? 'warning' : 'info'
+    };
+  };
+  
+  const growthDisplay = getGrowthDisplay();
 
   const compactContent = (
-    <StatCard
-      variant="info"
-      value={`₽${totalRevenue.toLocaleString()}`}
-      label={t('widgets.sales.totalSales')}
-    />
+    <div className="kpi-card-2026 animate-fade-in-up">
+      <div className="kpi-value-2026">₽{totalRevenue.toLocaleString()}</div>
+      <div className="kpi-label-2026">{t('widgets.sales.totalSales')}</div>
+    </div>
   );
 
   const expandedContent = (
-    <div>
-      <h3 className="text-lg font-semibold mb-4">{t('widgets.sales.details')}</h3>
-      <div className="space-y-4">
-        <div>
-          <div className="text-sm text-gray-500">{t('widgets.sales.totalSales')}</div>
-          <div className="text-xl font-bold">₽{totalRevenue.toLocaleString()}</div>
+    <div className="dashboard-widget-2026">
+      <h3 className="section-title-2026">{t('widgets.sales.details')}</h3>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="stat-card-2026 stat-card-2026-primary">
+          <div className="kpi-label-2026">{t('widgets.sales.totalSales')}</div>
+          <div className="kpi-value-2026 text-xl">₽{totalRevenue.toLocaleString()}</div>
         </div>
-        <div>
-          <div className="text-sm text-gray-500">{t('widgets.sales.transactions')}</div>
-          <div className="text-xl font-bold">{transactions}</div>
+        <div className="stat-card-2026 stat-card-2026-info">
+          <div className="kpi-label-2026">{t('widgets.sales.transactions')}</div>
+          <div className="kpi-value-2026 text-xl text-indigo-600">{transactions}</div>
         </div>
-        <div>
-          <div className="text-sm text-gray-500">{t('widgets.sales.dailyAverage')}</div>
-          <div className="text-xl font-bold">₽{avgCheck.toLocaleString()}</div>
+        <div className="stat-card-2026 stat-card-2026-success">
+          <div className="kpi-label-2026">{t('widgets.sales.dailyAverage')}</div>
+          <div className="kpi-value-2026 text-xl text-green-600">₽{avgCheck.toLocaleString()}</div>
         </div>
-        <div>
-          <div className="text-sm text-gray-500">{t('widgets.sales.peakHour')}</div>
-          <div className="text-xl font-bold">
+        <div className="stat-card-2026 stat-card-2026-warning">
+          <div className="kpi-label-2026">{t('widgets.sales.peakHour')}</div>
+          <div className="kpi-value-2026 text-xl text-amber-600">
             {peakHour == null ? '—' : `${peakHour}:00`} {peakHourTx > 0 ? `(${peakHourTx})` : ''}
           </div>
         </div>
-        <div>
-          <div className="text-sm text-gray-500">{t('widgets.sales.topProduct')}</div>
-          <div className="text-xl font-bold">{topProductName}</div>
+      </div>
+
+      <div className="mt-6">
+        <h4 className="text-sm font-semibold text-gray-700 mb-3">{t('widgets.sales.topProduct')}</h4>
+        <div className="row-item-2026">
+          <span className="font-medium">{topProductName}</span>
+          <span className="badge-2026 badge-2026-primary">Top</span>
         </div>
-        {topProducts.length > 0 ? (
-          <div>
-            <div className="text-sm text-gray-500">{t('widgets.sales.topItems')}</div>
-            <div className="space-y-4">
-              {topProducts.slice(0, 3).map((p: any, idx: number) => (
-                <div
-                  key={`${p.name || 'product'}-${idx}`}
-                  className="flex justify-between items-center"
-                >
-                  <span className="text-sm text-gray-500">{p.name || '—'}</span>
-                  <span className="text-sm font-semibold">
-                    {Number(p.quantity || 0)} · ₽{Number(p.revenue || 0).toLocaleString()}
-                  </span>
-                </div>
-              ))}
-            </div>
+      </div>
+
+      {topProducts.length > 0 ? (
+        <div className="mt-4">
+          <h4 className="text-sm font-semibold text-gray-700 mb-3">{t('widgets.sales.topItems')}</h4>
+          <div className="space-y-2">
+            {topProducts.slice(0, 3).map((p: any, idx: number) => (
+              <div
+                key={`${p.name || 'product'}-${idx}`}
+                className="row-item-2026"
+              >
+                <span className="text-sm text-gray-600">{p.name || '—'}</span>
+                <span className="text-sm font-semibold text-gray-800">
+                  {Number(p.quantity || 0)} · ₽{Number(p.revenue || 0).toLocaleString()}
+                </span>
+              </div>
+            ))}
           </div>
-        ) : null}
-        <StatCard
-          variant={growth >= 0 ? 'success' : 'warning'}
-          value={`${growth >= 0 ? '+' : ''}${growth}%`}
-          label={t('widgets.sales.growth')}
-        />
+        </div>
+      ) : null}
+
+      <div className="mt-6">
+        <div className={`stat-card-2026 stat-card-2026-${growthDisplay.variant === 'success' ? 'success' : growthDisplay.variant === 'warning' ? 'warning' : 'info'}`}>
+          <div className="kpi-label-2026">{t('widgets.sales.growth')}</div>
+          <div className={`kpi-value-2026 text-2xl ${growthDisplay.variant === 'success' ? 'text-green-600' : growthDisplay.variant === 'warning' ? 'text-amber-600' : 'text-blue-600'}`}>
+            {growthDisplay.value}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -102,24 +122,29 @@ export function SalesWidget({ data }: { data?: any }) {
       compactContent={compactContent}
       expandedContent={expandedContent}
     >
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">{t('widgets.sales.totalSales')}</span>
-          <span className="text-lg font-semibold">₽{totalRevenue.toLocaleString()}</span>
+      <div className="dashboard-widget-2026 p-4">
+        <div className="space-y-4">
+          <div className="row-item-2026">
+            <span className="text-sm text-gray-600">{t('widgets.sales.totalSales')}</span>
+            <span className="text-lg font-semibold text-gray-800">₽{totalRevenue.toLocaleString()}</span>
+          </div>
+          <div className="row-item-2026">
+            <span className="text-sm text-gray-600">{t('date.thisWeek')}</span>
+            <span className="text-lg font-semibold text-blue-600">₽{thisWeek.toLocaleString()}</span>
+          </div>
+          <div className="row-item-2026">
+            <span className="text-sm text-gray-600">{t('widgets.sales.dailyAverage')}</span>
+            <span className="text-lg font-semibold text-green-600">₽{avgCheck.toLocaleString()}</span>
+          </div>
+          <div className={`stat-card-2026 stat-card-2026-${growthDisplay.variant === 'success' ? 'success' : growthDisplay.variant === 'warning' ? 'warning' : 'info'}`}>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">{t('widgets.sales.growth')}</span>
+              <span className={`text-xl font-bold ${growthDisplay.variant === 'success' ? 'text-green-600' : growthDisplay.variant === 'warning' ? 'text-amber-600' : 'text-blue-600'}`}>
+                {growthDisplay.value}
+              </span>
+            </div>
+          </div>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">{t('date.thisWeek')}</span>
-          <span className="text-lg font-semibold">₽{thisWeek.toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">{t('widgets.sales.dailyAverage')}</span>
-          <span className="text-lg font-semibold">₽{avgCheck.toLocaleString()}</span>
-        </div>
-        <StatCard
-          variant={growth >= 0 ? 'success' : 'warning'}
-          value={`${growth >= 0 ? '+' : ''}${growth}%`}
-          label={t('widgets.sales.growth')}
-        />
       </div>
     </Widget>
   );

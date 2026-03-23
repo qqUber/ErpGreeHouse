@@ -343,7 +343,7 @@ http GET localhost:8000/api/v1/products \
 
 # Refresh token
 http POST localhost:8000/api/v1/auth/refresh \
-  Authorization:"Bearer <refresh_token>"
+  x-refresh-token:<refresh_token>
 ```
 
 ---

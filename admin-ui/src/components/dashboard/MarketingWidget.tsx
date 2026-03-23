@@ -17,6 +17,8 @@ export function MarketingWidget({ data }: { data?: any }) {
   const activeCampaigns = Number(data?.activeCampaigns ?? 0);
   const newWeek = Number(data?.needsAttention ?? 0);
   const messagesSent = Number(data?.messagesSent24h ?? 0);
+  const campaigns = data?.campaigns || {};
+  const openRate = Number(data?.openRate ?? campaigns?.open_rate ?? 0);
 
   const compactContent = (
     <StatCard
@@ -44,7 +46,7 @@ export function MarketingWidget({ data }: { data?: any }) {
           </div>
           <div>
             <span>{t('widgets.marketing.openRate')}</span>
-            <strong>87%</strong>
+            <strong>{openRate > 0 ? `${openRate}%` : '—'}</strong>
           </div>
         </div>
       </section>
@@ -103,7 +105,7 @@ export function MarketingWidget({ data }: { data?: any }) {
           <span className="text-sm text-gray-500">{t('widgets.marketing.messagesSent')}</span>
           <span className="text-lg font-semibold">{messagesSent}</span>
         </div>
-        <StatCard variant="success" value="87%" label={t('widgets.marketing.openRate')} />
+        <StatCard variant="success" value={openRate > 0 ? `${openRate}%` : '—'} label={t('widgets.marketing.openRate')} />
       </div>
     </Widget>
   );

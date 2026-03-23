@@ -70,6 +70,12 @@ class Settings:
     base_web_url: str
     erp_mock_mode: bool
 
+    # Country and Currency configuration
+    # DEFAULT_COUNTRY_CODE: ISO country code (e.g., 'RU', 'KZ', 'BY') - sets system default country
+    default_country_code: str | None
+    # DEFAULT_CURRENCY_CODE: ISO currency code (e.g., 'RUB', 'KZT', 'BYN') - sets system default currency
+    default_currency_code: str | None
+
     # Compliance configuration (152-FZ)
     # Data localization settings (must be hosted within Russian Federation borders)
     # This is enforced by production infrastructure configuration
@@ -205,6 +211,9 @@ def get_settings() -> Settings:
         base_web_url=base_web_url,
         erp_mock_mode=os.getenv("ERP_MOCK_MODE", "false").lower()
         in ("1", "true", "yes"),
+        # Country and Currency settings from ENV
+        default_country_code=os.getenv("DEFAULT_COUNTRY_CODE", "").strip() or None,
+        default_currency_code=os.getenv("DEFAULT_CURRENCY_CODE", "").strip() or None,
         # Rate limiting settings for password recovery
         recovery_rate_limit_attempts=int(
             os.getenv("RECOVERY_RATE_LIMIT_ATTEMPTS", "5")

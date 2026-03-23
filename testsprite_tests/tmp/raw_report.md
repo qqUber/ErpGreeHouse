@@ -5,7 +5,7 @@
 
 ## 1️⃣ Document Metadata
 - **Project Name:** ErpGreeHouse
-- **Date:** 2026-03-21
+- **Date:** 2026-03-23
 - **Prepared by:** TestSprite AI Team
 
 ---
@@ -14,21 +14,21 @@
 
 #### Test TC001 get dashboard analytics data with valid token
 - **Test Code:** [TC001_get_dashboard_analytics_data_with_valid_token.py](./TC001_get_dashboard_analytics_data_with_valid_token.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/4b4cca40-e11c-413e-bd43-0eb1b19d746b/7fa37ca9-83d6-4f2e-9e63-8bbf2f9c7881
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/18a32870-b9fc-48d6-8759-eed476da6b24/200841ab-247d-4e5b-92e8-1cd688830231
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC002 get widget configurations with valid token
 - **Test Code:** [TC002_get_widget_configurations_with_valid_token.py](./TC002_get_widget_configurations_with_valid_token.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/4b4cca40-e11c-413e-bd43-0eb1b19d746b/cc47c6fe-5887-43b5-846e-072a08c4ef6a
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/18a32870-b9fc-48d6-8759-eed476da6b24/24e03236-7091-4864-aca1-d686c901e647
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC003 list all customers with valid token
 - **Test Code:** [TC003_list_all_customers_with_valid_token.py](./TC003_list_all_customers_with_valid_token.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/4b4cca40-e11c-413e-bd43-0eb1b19d746b/5e1992c3-d09a-4d2f-8847-35d05a6f02aa
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/18a32870-b9fc-48d6-8759-eed476da6b24/9209f4ba-949e-473a-be9f-dbc82550b63d
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -38,54 +38,39 @@
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 66, in <module>
-  File "<string>", line 45, in test_create_new_customer_with_valid_data
-AssertionError: notes mismatch
+  File "<string>", line 64, in <module>
+  File "<string>", line 47, in test_create_new_customer_with_valid_data
+AssertionError: Missing or invalid customer id
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/4b4cca40-e11c-413e-bd43-0eb1b19d746b/cdbba4b0-b18e-4cac-9358-1e4e2502420e
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/18a32870-b9fc-48d6-8759-eed476da6b24/a770ad02-068b-414f-af34-702d775b85bf
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC005 update existing customer with valid data
 - **Test Code:** [TC005_update_existing_customer_with_valid_data.py](./TC005_update_existing_customer_with_valid_data.py)
-- **Test Error:** Traceback (most recent call last):
-  File "/var/task/handler.py", line 258, in run_with_retry
-    exec(code, exec_env)
-  File "<string>", line 88, in <module>
-  File "<string>", line 58, in test_TC005_update_existing_customer_with_valid_data
-  File "<string>", line 44, in create_customer
-AssertionError: Failed to create customer, status 400
-
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/4b4cca40-e11c-413e-bd43-0eb1b19d746b/751315dd-2c41-4368-84ac-70ee0e07decf
-- **Status:** ❌ Failed
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/18a32870-b9fc-48d6-8759-eed476da6b24/dc23377d-7f4f-4d3a-b48e-0083c09eccef
+- **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC006 list all products with valid token
 - **Test Code:** [TC006_list_all_products_with_valid_token.py](./TC006_list_all_products_with_valid_token.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/4b4cca40-e11c-413e-bd43-0eb1b19d746b/c657d200-9c9a-426f-89b6-905ce31b7a48
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/18a32870-b9fc-48d6-8759-eed476da6b24/d5c21110-92fa-426d-8ab1-73e9536c4f36
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC007 create new product with valid data
 - **Test Code:** [TC007_create_new_product_with_valid_data.py](./TC007_create_new_product_with_valid_data.py)
-- **Test Error:** Traceback (most recent call last):
-  File "/var/task/handler.py", line 258, in run_with_retry
-    exec(code, exec_env)
-  File "<string>", line 53, in <module>
-  File "<string>", line 33, in test_create_new_product_with_valid_data
-AssertionError: Product creation failed with status 422
-
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/4b4cca40-e11c-413e-bd43-0eb1b19d746b/13a07223-f41f-4ee1-a43c-f171d1ce9a9e
-- **Status:** ❌ Failed
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/18a32870-b9fc-48d6-8759-eed476da6b24/f8457f1b-218a-4ea4-831d-bab042fce8f2
+- **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC008 user login with valid credentials
 - **Test Code:** [TC008_user_login_with_valid_credentials.py](./TC008_user_login_with_valid_credentials.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/4b4cca40-e11c-413e-bd43-0eb1b19d746b/1554c050-2113-43eb-ae61-5ba4734bd139
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/18a32870-b9fc-48d6-8759-eed476da6b24/f2c8f0f8-7c15-421c-9057-d3e0ee58e431
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -95,34 +80,26 @@ AssertionError: Product creation failed with status 422
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 35, in <module>
-  File "<string>", line 33, in test_refresh_access_token_with_valid_refresh_token
-  File "<string>", line 26, in test_refresh_access_token_with_valid_refresh_token
-AssertionError: Refresh failed with status 401
+  File "<string>", line 48, in <module>
+  File "<string>", line 32, in test_refresh_access_token_with_valid_refresh_token
+AssertionError: Missing access token in login response
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/4b4cca40-e11c-413e-bd43-0eb1b19d746b/fe8e56eb-720d-4663-899c-7b011893bad0
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/18a32870-b9fc-48d6-8759-eed476da6b24/e7c0682a-d65a-4031-a79b-0960235cceff
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC010 get analytics summary with valid token
 - **Test Code:** [TC010_get_analytics_summary_with_valid_token.py](./TC010_get_analytics_summary_with_valid_token.py)
-- **Test Error:** Traceback (most recent call last):
-  File "/var/task/handler.py", line 258, in run_with_retry
-    exec(code, exec_env)
-  File "<string>", line 36, in <module>
-  File "<string>", line 25, in test_get_analytics_summary_with_valid_token
-AssertionError: Analytics summary request failed: {"detail":"Not found"}
-
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/4b4cca40-e11c-413e-bd43-0eb1b19d746b/b4a08888-42a1-4708-93cb-20f5554ea89b
-- **Status:** ❌ Failed
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/18a32870-b9fc-48d6-8759-eed476da6b24/c9f89208-3710-4223-9ff3-c46fd3321a64
+- **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 
 ## 3️⃣ Coverage & Matching Metrics
 
-- **50.00** of tests passed
+- **80.00** of tests passed
 
 | Requirement        | Total Tests | ✅ Passed | ❌ Failed  |
 |--------------------|-------------|-----------|------------|
