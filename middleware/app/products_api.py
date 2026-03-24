@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 import httpx
 import openpyxl
-from fastapi import (APIRouter, Depends, File, HTTPException, Request, UploadFile)
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from lxml import etree
 from pydantic import BaseModel, Field
 
@@ -493,7 +493,11 @@ def create_product(
         price_cents = int(round(payload.price * 100))
 
         # Use temporary code for initial insert, then update with ID-based code
-        temp_code = payload.code.strip() if payload.code else f"TEMP-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        temp_code = (
+            payload.code.strip()
+            if payload.code
+            else f"TEMP-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        )
 
         try:
             cur = conn.execute(
@@ -510,7 +514,9 @@ def create_product(
             conn.commit()
             rowid = cur.lastrowid
             if rowid is None:
-                raise HTTPException(status_code=500, detail="Failed to get inserted row id")
+                raise HTTPException(
+                    status_code=500, detail="Failed to get inserted row id"
+                )
 
             # Update with permanent code based on rowid to avoid collisions
             if not payload.code:
@@ -521,7 +527,9 @@ def create_product(
                 code = temp_code
         except sqlite3.IntegrityError as e:
             if "UNIQUE constraint failed" in str(e):
-                raise HTTPException(status_code=400, detail="Product code already exists")
+                raise HTTPException(
+                    status_code=400, detail="Product code already exists"
+                )
             raise HTTPException(status_code=500, detail=f"Database error: {e}")
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
@@ -543,7 +551,9 @@ def create_product(
             "kind": str(product["kind"]),
             "price": price_float,
             "active": bool(int(product["active"])),
-            "description": str(product["description"]) if product["description"] else "",
+            "description": (
+                str(product["description"]) if product["description"] else ""
+            ),
             "created_at": str(product["created_at"]),
             "updated_at": str(product["updated_at"]),
         }
@@ -562,7 +572,9 @@ def update_product(
     conn = db.connect()
     try:
         # Fetch existing product to preserve values not provided
-        cur = conn.execute("SELECT kind, description FROM products WHERE id=?", (int(product_id),))
+        cur = conn.execute(
+            "SELECT kind, description FROM products WHERE id=?", (int(product_id),)
+        )
         existing = cur.fetchone()
         if not existing:
             raise HTTPException(status_code=404, detail="Product not found")
@@ -571,7 +583,11 @@ def update_product(
         price_cents = int(round(payload.price * 100))
         # Preserve existing kind if not provided, use provided or default
         kind = payload.kind.strip() if payload.kind else existing["kind"]
-        description = payload.description.strip() if payload.description else (existing["description"] or "")
+        description = (
+            payload.description.strip()
+            if payload.description
+            else (existing["description"] or "")
+        )
 
         cur = conn.execute(
             "UPDATE products SET code=?, name=?, kind=?, price=?, description=?, active=?, updated_at=datetime('now') WHERE id=?",
@@ -923,6 +939,7 @@ def import_products_legacy(
 
 # ============ LOCATION & INVENTORY ENDPOINTS ============
 
+
 @router.get("/countries")
 def list_countries(
     active_only: bool = True,
@@ -954,9 +971,11 @@ def get_force_single_country_status(
     return {
         "enabled": service.get_force_single_country(),
         "forced_country_id": service.get_forced_country_id(),
-        "forced_country": service.get_country_by_id(service.get_forced_country_id())
-        if service.get_forced_country_id()
-        else None,
+        "forced_country": (
+            service.get_country_by_id(service.get_forced_country_id())
+            if service.get_forced_country_id()
+            else None
+        ),
     }
 
 
@@ -1079,7 +1098,9 @@ def get_low_stock_products(
                     "current_stock": int(r["current_stock"]),
                     "min_stock_level": int(r["min_stock_level"]),
                     "max_stock_level": int(r["max_stock_level"]),
-                    "deficit": max(0, int(r["min_stock_level"] or 0) - int(r["current_stock"] or 0)),
+                    "deficit": max(
+                        0, int(r["min_stock_level"] or 0) - int(r["current_stock"] or 0)
+                    ),
                     "product_code": str(r["product_code"]),
                     "product_name": str(r["product_name"]),
                     "product_kind": str(r["product_kind"]),
@@ -1224,8 +1245,12 @@ def get_product_inventory(
                     "current_stock": int(r["current_stock"]),
                     "min_stock_level": int(r["min_stock_level"]),
                     "max_stock_level": int(r["max_stock_level"]),
-                    "last_restock_at": str(r["last_restock_at"]) if r["last_restock_at"] else None,
-                    "last_restock_qty": int(r["last_restock_qty"]) if r["last_restock_qty"] else 0,
+                    "last_restock_at": (
+                        str(r["last_restock_at"]) if r["last_restock_at"] else None
+                    ),
+                    "last_restock_qty": (
+                        int(r["last_restock_qty"]) if r["last_restock_qty"] else 0
+                    ),
                     "updated_at": str(r["updated_at"]),
                     "product_code": str(r["product_code"]),
                     "product_name": str(r["product_name"]),
@@ -1304,7 +1329,11 @@ def update_location_priority(
     success = service.update_location_priority(location_id, priority_score)
     if not success:
         raise HTTPException(status_code=400, detail="Failed to update priority")
-    return {"success": True, "location_id": location_id, "priority_score": priority_score}
+    return {
+        "success": True,
+        "location_id": location_id,
+        "priority_score": priority_score,
+    }
 
 
 @router.get("/locations/{location_id}")

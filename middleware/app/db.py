@@ -279,7 +279,8 @@ def init_db() -> None:
     conn.execute("PRAGMA journal_mode = WAL")
     conn.execute("PRAGMA synchronous = NORMAL")
     try:
-        conn.executescript("""
+        conn.executescript(
+            """
             CREATE TABLE IF NOT EXISTS customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 phone TEXT UNIQUE,
@@ -584,7 +585,8 @@ def init_db() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_customer_visits_customer_id ON customer_visits(customer_id);
             CREATE INDEX IF NOT EXISTS idx_customer_visits_location_id ON customer_visits(location_id);
-            """)
+            """
+        )
         conn.commit()
         cols = [
             r["name"]

@@ -8,16 +8,18 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, Optional
 
-from fastapi import (APIRouter, BackgroundTasks, Depends, HTTPException,
-                     Query, Request)
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from .admin_auth_api import require_jwt_auth
-from .auth import (ALL_PERMISSIONS, check_permission, check_roles,
-                   get_default_permissions)
-from .customer_identity import (generate_unique_qr_token,
-                                resolve_or_create_customer)
+from .auth import (
+    ALL_PERMISSIONS,
+    check_permission,
+    check_roles,
+    get_default_permissions,
+)
+from .customer_identity import generate_unique_qr_token, resolve_or_create_customer
 from .db import get_db
 from .identify import normalize_name, normalize_phone
 from .integration_events import dispatch_event
@@ -45,7 +47,9 @@ router = APIRouter(prefix="/api/v1")
 public_router = APIRouter(prefix="/api/v1/public")
 
 
-async def _send_vk_batch_task(messages: list[dict], vk_token: str, expected_count: int) -> None:
+async def _send_vk_batch_task(
+    messages: list[dict], vk_token: str, expected_count: int
+) -> None:
     """Background task to send VK messages in batch.
 
     This runs after the HTTP response is sent, so it doesn't block the client.
@@ -62,18 +66,20 @@ async def _send_vk_batch_task(messages: list[dict], vk_token: str, expected_coun
                 params = {
                     "access_token": vk_token,
                     "v": "5.131",
-                    "user_id": msg['vk_id'],
-                    "message": msg['text'],
+                    "user_id": msg["vk_id"],
+                    "message": msg["text"],
                     "random_id": int(time.time() * 1000) + i,
                 }
                 async with session.post(
                     "https://api.vk.com/method/messages.send",
                     params=params,
-                    timeout=aiohttp.ClientTimeout(total=30)
+                    timeout=aiohttp.ClientTimeout(total=30),
                 ) as resp:
                     result = await resp.json()
-                    if result.get('error'):
-                        print(f"VK API error for user {msg['vk_id']}: {result['error']}")
+                    if result.get("error"):
+                        print(
+                            f"VK API error for user {msg['vk_id']}: {result['error']}"
+                        )
                         failed += 1
                     else:
                         sent += 1
@@ -86,7 +92,9 @@ async def _send_vk_batch_task(messages: list[dict], vk_token: str, expected_coun
                 print(f"Error sending VK message to {msg['vk_id']}: {e}")
                 failed += 1
 
-    print(f"VK batch complete: {sent} sent, {failed} failed (expected: {expected_count})")
+    print(
+        f"VK batch complete: {sent} sent, {failed} failed (expected: {expected_count})"
+    )
 
 
 def _parse_items_json(items_json: Optional[str]) -> list[dict[str, Any]]:
@@ -640,7 +648,8 @@ def analytics_recalculate(
     conn = db.connect()
     try:
         # Get all customers with transactions
-        cur = conn.execute("""
+        cur = conn.execute(
+            """
             SELECT
                 c.id,
                 COALESCE(SUM(t.total_amount), 0) as ltv,
@@ -650,7 +659,8 @@ def analytics_recalculate(
             FROM customers c
             LEFT JOIN transactions t ON c.id = t.customer_id
             GROUP BY c.id
-            """)
+            """
+        )
 
         updated = 0
         for row in cur.fetchall():
@@ -1035,7 +1045,9 @@ def get_customer(
         if not row:
             raise HTTPException(status_code=404, detail="Customer not found")
         cust = dict(row)
-        cust["balance_points"] = cust["balance_points"] // 100  # Convert kopecks to rubles
+        cust["balance_points"] = (
+            cust["balance_points"] // 100
+        )  # Convert kopecks to rubles
         cust["preferences"] = json.loads(cust.pop("preferences_json") or "{}")
         cur2 = conn.execute(
             "SELECT id, total_amount, bonus_used, bonus_earned, items_json, receipt_pdf_path, external_erp_ref, created_at FROM transactions WHERE customer_id=? ORDER BY id DESC LIMIT 50",
@@ -1158,22 +1170,38 @@ def update_customer(
         if payload.phone:
             phone = normalize_phone(payload.phone)
             if phone and phone != existing["phone"]:
-                cur = conn.execute("SELECT id FROM customers WHERE phone=? AND id != ?", (phone, customer_id))
+                cur = conn.execute(
+                    "SELECT id FROM customers WHERE phone=? AND id != ?",
+                    (phone, customer_id),
+                )
                 if cur.fetchone():
-                    raise HTTPException(status_code=400, detail="Customer with this phone already exists")
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Customer with this phone already exists",
+                    )
         else:
             phone = existing["phone"]
 
         # Build update fields
-        full_name = payload.full_name.strip() if payload.full_name else existing["full_name"]
-        birthday = payload.birthday if payload.birthday is not None else existing["birthday"]
+        full_name = (
+            payload.full_name.strip() if payload.full_name else existing["full_name"]
+        )
+        birthday = (
+            payload.birthday if payload.birthday is not None else existing["birthday"]
+        )
         gender = payload.gender if payload.gender is not None else existing["gender"]
         email = payload.email if payload.email is not None else existing["email"]
         city = payload.city if payload.city is not None else existing["city"]
-        marketing_allowed = payload.marketing_allowed if payload.marketing_allowed is not None else existing[
-            "marketing_allowed"]
-        data_processing_allowed = payload.data_processing_allowed if payload.data_processing_allowed is not None else existing[
-            "data_processing_allowed"]
+        marketing_allowed = (
+            payload.marketing_allowed
+            if payload.marketing_allowed is not None
+            else existing["marketing_allowed"]
+        )
+        data_processing_allowed = (
+            payload.data_processing_allowed
+            if payload.data_processing_allowed is not None
+            else existing["data_processing_allowed"]
+        )
 
         # Update preferences_json if notes provided
         prefs = None
@@ -1188,8 +1216,18 @@ def update_customer(
                     marketing_allowed=?, data_processing_allowed=?, preferences_json=?, updated_at=datetime('now')
                 WHERE id=?
                 """,
-                (full_name, phone, birthday, gender, email, city,
-                 marketing_allowed, data_processing_allowed, prefs, customer_id),
+                (
+                    full_name,
+                    phone,
+                    birthday,
+                    gender,
+                    email,
+                    city,
+                    marketing_allowed,
+                    data_processing_allowed,
+                    prefs,
+                    customer_id,
+                ),
             )
         else:
             cur = conn.execute(
@@ -1199,7 +1237,17 @@ def update_customer(
                     marketing_allowed=?, data_processing_allowed=?, updated_at=datetime('now')
                 WHERE id=?
                 """,
-                (full_name, phone, birthday, gender, email, city, marketing_allowed, data_processing_allowed, customer_id),
+                (
+                    full_name,
+                    phone,
+                    birthday,
+                    gender,
+                    email,
+                    city,
+                    marketing_allowed,
+                    data_processing_allowed,
+                    customer_id,
+                ),
             )
         conn.commit()
 
@@ -1402,7 +1450,9 @@ def create_sale(
         new_balance = int(cust["balance_points"]) - bonus_used + bonus_earned
 
         items_json = json.dumps(
-            [i.model_dump() for i in payload.items], ensure_ascii=False, cls=DecimalEncoder
+            [i.model_dump() for i in payload.items],
+            ensure_ascii=False,
+            cls=DecimalEncoder,
         )
         cur2 = conn.execute(
             "INSERT INTO transactions(customer_id, total_amount, bonus_used, bonus_earned, items_json, receipt_pdf_path) VALUES(?,?,?,?,?,?)",
@@ -1655,7 +1705,9 @@ def marketing_push(
         # Send Telegram messages via Celery (immediate queue)
         for customer in tg_customers:
             try:
-                send_customer_message.delay(int(customer["telegram_id"]), payload.message)
+                send_customer_message.delay(
+                    int(customer["telegram_id"]), payload.message
+                )
                 sent_tg += 1
             except Exception as e:
                 print(f"Error queuing TG message to customer {customer['id']}: {e}")
@@ -1665,12 +1717,14 @@ def marketing_push(
         if vk_customers and vk_token:
             vk_messages = [
                 {
-                    'vk_id': int(c['vk_id']),
-                    'text': payload.message,
+                    "vk_id": int(c["vk_id"]),
+                    "text": payload.message,
                 }
                 for c in vk_customers
             ]
-            background_tasks.add_task(_send_vk_batch_task, vk_messages, vk_token, len(vk_customers))
+            background_tasks.add_task(
+                _send_vk_batch_task, vk_messages, vk_token, len(vk_customers)
+            )
 
         return {
             "status": "queued",

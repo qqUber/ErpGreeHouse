@@ -31,13 +31,15 @@ class TestSearchCyrillicSerbian:
         conn.execute("PRAGMA foreign_keys = ON")
 
         # Create customers table
-        conn.executescript("""
+        conn.executescript(
+            """
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 phone TEXT UNIQUE,
                 full_name TEXT
             );
-        """)
+        """
+        )
 
         # Insert test data with various character sets
         test_customers = [

@@ -66,15 +66,27 @@ class LocationService:
             cur = conn.execute(sql)
             items = []
             for row in _fetch_all_rows(cur):
-                items.append({
-                    "id": int(row["id"]),
-                    "code": str(row["code"]),
-                    "name": str(row["name"]),
-                    "name_local": str(row["name_local"]) if row["name_local"] else None,
-                    "phone_prefix": str(row["phone_prefix"]) if row["phone_prefix"] else None,
-                    "currency_code": str(row["currency_code"]) if row["currency_code"] else "RUB",
-                    "timezone_default": str(row["timezone_default"]) if row["timezone_default"] else "Europe/Moscow",
-                })
+                items.append(
+                    {
+                        "id": int(row["id"]),
+                        "code": str(row["code"]),
+                        "name": str(row["name"]),
+                        "name_local": (
+                            str(row["name_local"]) if row["name_local"] else None
+                        ),
+                        "phone_prefix": (
+                            str(row["phone_prefix"]) if row["phone_prefix"] else None
+                        ),
+                        "currency_code": (
+                            str(row["currency_code"]) if row["currency_code"] else "RUB"
+                        ),
+                        "timezone_default": (
+                            str(row["timezone_default"])
+                            if row["timezone_default"]
+                            else "Europe/Moscow"
+                        ),
+                    }
+                )
 
             r.setex(cache_key, CACHE_TTL, json.dumps(items))
             return items
@@ -88,7 +100,7 @@ class LocationService:
             cur = conn.execute(
                 "SELECT id, code, name, name_local, phone_prefix, currency_code, timezone_default "
                 "FROM countries WHERE id = ?",
-                (country_id,)
+                (country_id,),
             )
             row = cur.fetchone()
             if not row:
@@ -98,9 +110,17 @@ class LocationService:
                 "code": str(row["code"]),
                 "name": str(row["name"]),
                 "name_local": str(row["name_local"]) if row["name_local"] else None,
-                "phone_prefix": str(row["phone_prefix"]) if row["phone_prefix"] else None,
-                "currency_code": str(row["currency_code"]) if row["currency_code"] else "RUB",
-                "timezone_default": str(row["timezone_default"]) if row["timezone_default"] else "Europe/Moscow",
+                "phone_prefix": (
+                    str(row["phone_prefix"]) if row["phone_prefix"] else None
+                ),
+                "currency_code": (
+                    str(row["currency_code"]) if row["currency_code"] else "RUB"
+                ),
+                "timezone_default": (
+                    str(row["timezone_default"])
+                    if row["timezone_default"]
+                    else "Europe/Moscow"
+                ),
             }
         finally:
             conn.close()
@@ -121,9 +141,17 @@ class LocationService:
                     "code": str(row["code"]),
                     "name": str(row["name"]),
                     "name_local": str(row["name_local"]) if row["name_local"] else None,
-                    "phone_prefix": str(row["phone_prefix"]) if row["phone_prefix"] else None,
-                    "currency_code": str(row["currency_code"]) if row["currency_code"] else "RUB",
-                    "timezone_default": str(row["timezone_default"]) if row["timezone_default"] else "Europe/Moscow",
+                    "phone_prefix": (
+                        str(row["phone_prefix"]) if row["phone_prefix"] else None
+                    ),
+                    "currency_code": (
+                        str(row["currency_code"]) if row["currency_code"] else "RUB"
+                    ),
+                    "timezone_default": (
+                        str(row["timezone_default"])
+                        if row["timezone_default"]
+                        else "Europe/Moscow"
+                    ),
                 }
 
             # Fallback to first active country
@@ -138,9 +166,17 @@ class LocationService:
                     "code": str(row["code"]),
                     "name": str(row["name"]),
                     "name_local": str(row["name_local"]) if row["name_local"] else None,
-                    "phone_prefix": str(row["phone_prefix"]) if row["phone_prefix"] else None,
-                    "currency_code": str(row["currency_code"]) if row["currency_code"] else "RUB",
-                    "timezone_default": str(row["timezone_default"]) if row["timezone_default"] else "Europe/Moscow",
+                    "phone_prefix": (
+                        str(row["phone_prefix"]) if row["phone_prefix"] else None
+                    ),
+                    "currency_code": (
+                        str(row["currency_code"]) if row["currency_code"] else "RUB"
+                    ),
+                    "timezone_default": (
+                        str(row["timezone_default"])
+                        if row["timezone_default"]
+                        else "Europe/Moscow"
+                    ),
                 }
             return None
         finally:
@@ -148,7 +184,9 @@ class LocationService:
 
     # ============ City Methods ============
 
-    def get_cities_by_country(self, country_id: int, active_only: bool = True) -> list[dict[str, Any]]:
+    def get_cities_by_country(
+        self, country_id: int, active_only: bool = True
+    ) -> list[dict[str, Any]]:
         """Get cities for a country."""
         cache_key = f"cities:{country_id}:{active_only}"
         r = get_redis()
@@ -166,13 +204,17 @@ class LocationService:
             cur = conn.execute(sql, (country_id,))
             items = []
             for row in _fetch_all_rows(cur):
-                items.append({
-                    "id": int(row["id"]),
-                    "country_id": int(row["country_id"]),
-                    "name": str(row["name"]),
-                    "region": str(row["region"]) if row["region"] else None,
-                    "timezone": str(row["timezone"]) if row["timezone"] else "Europe/Moscow",
-                })
+                items.append(
+                    {
+                        "id": int(row["id"]),
+                        "country_id": int(row["country_id"]),
+                        "name": str(row["name"]),
+                        "region": str(row["region"]) if row["region"] else None,
+                        "timezone": (
+                            str(row["timezone"]) if row["timezone"] else "Europe/Moscow"
+                        ),
+                    }
+                )
 
             r.setex(cache_key, CACHE_TTL, json.dumps(items))
             return items
@@ -185,7 +227,7 @@ class LocationService:
         try:
             cur = conn.execute(
                 "SELECT id, country_id, name, region, timezone FROM cities WHERE id = ?",
-                (city_id,)
+                (city_id,),
             )
             row = cur.fetchone()
             if not row:
@@ -195,7 +237,9 @@ class LocationService:
                 "country_id": int(row["country_id"]),
                 "name": str(row["name"]),
                 "region": str(row["region"]) if row["region"] else None,
-                "timezone": str(row["timezone"]) if row["timezone"] else "Europe/Moscow",
+                "timezone": (
+                    str(row["timezone"]) if row["timezone"] else "Europe/Moscow"
+                ),
             }
         finally:
             conn.close()
@@ -208,7 +252,7 @@ class LocationService:
         customer_id: Optional[int] = None,
         status: str = "active",
         page: int = 1,
-        page_size: int = 15
+        page_size: int = 15,
     ) -> dict[str, Any]:
         """
         Get locations for a city with smart sorting:
@@ -222,7 +266,7 @@ class LocationService:
             # Get total count for pagination
             count_cur = conn.execute(
                 "SELECT COUNT(*) as total FROM locations WHERE city_id = ? AND active = 1 AND status = ?",
-                (city_id, status)
+                (city_id, status),
             )
             count_row = count_cur.fetchone()
             if isinstance(count_row, dict):
@@ -265,25 +309,57 @@ class LocationService:
             """
 
             offset = (page - 1) * page_size
-            cur = conn.execute(sql, (customer_id or 0, city_id, status, page_size, offset))
+            cur = conn.execute(
+                sql, (customer_id or 0, city_id, status, page_size, offset)
+            )
 
             items = []
             for row in _fetch_all_rows(cur):
-                items.append({
-                    "id": int(_row_get(row, "id", 0)),
-                    "city_id": int(_row_get(row, "city_id", 0)),
-                    "name": str(_row_get(row, "name", "")),
-                    "address": str(_row_get(row, "address")) if _row_get(row, "address") else None,
-                    "phone": str(_row_get(row, "phone")) if _row_get(row, "phone") else None,
-                    "telegram_chat_id": str(_row_get(row, "telegram_chat_id")) if _row_get(row, "telegram_chat_id") else None,
-                    "timezone": str(_row_get(row, "timezone")) if _row_get(row, "timezone") else "Europe/Moscow",
-                    "status": str(_row_get(row, "status", "active")),
-                    "priority_score": int(_row_get(row, "priority_score", 0) or 0),
-                    "open_hours": str(_row_get(row, "open_hours")) if _row_get(row, "open_hours") else None,
-                    "menu_preview_url": str(_row_get(row, "menu_preview_url")) if _row_get(row, "menu_preview_url") else None,
-                    "description": str(_row_get(row, "description")) if _row_get(row, "description") else None,
-                    "visit_count": int(_row_get(row, "visit_count", 0) or 0),
-                })
+                items.append(
+                    {
+                        "id": int(_row_get(row, "id", 0)),
+                        "city_id": int(_row_get(row, "city_id", 0)),
+                        "name": str(_row_get(row, "name", "")),
+                        "address": (
+                            str(_row_get(row, "address"))
+                            if _row_get(row, "address")
+                            else None
+                        ),
+                        "phone": (
+                            str(_row_get(row, "phone"))
+                            if _row_get(row, "phone")
+                            else None
+                        ),
+                        "telegram_chat_id": (
+                            str(_row_get(row, "telegram_chat_id"))
+                            if _row_get(row, "telegram_chat_id")
+                            else None
+                        ),
+                        "timezone": (
+                            str(_row_get(row, "timezone"))
+                            if _row_get(row, "timezone")
+                            else "Europe/Moscow"
+                        ),
+                        "status": str(_row_get(row, "status", "active")),
+                        "priority_score": int(_row_get(row, "priority_score", 0) or 0),
+                        "open_hours": (
+                            str(_row_get(row, "open_hours"))
+                            if _row_get(row, "open_hours")
+                            else None
+                        ),
+                        "menu_preview_url": (
+                            str(_row_get(row, "menu_preview_url"))
+                            if _row_get(row, "menu_preview_url")
+                            else None
+                        ),
+                        "description": (
+                            str(_row_get(row, "description"))
+                            if _row_get(row, "description")
+                            else None
+                        ),
+                        "visit_count": int(_row_get(row, "visit_count", 0) or 0),
+                    }
+                )
 
             if total == 0 and items:
                 total = len(items)
@@ -307,7 +383,7 @@ class LocationService:
                    FROM locations l
                    JOIN cities c ON c.id = l.city_id
                    WHERE l.id = ? AND l.active = 1""",
-                (location_id,)
+                (location_id,),
             )
             row = cur.fetchone()
             if not row:
@@ -321,12 +397,20 @@ class LocationService:
                 "name": str(row["name"]),
                 "address": str(row["address"]) if row["address"] else None,
                 "phone": str(row["phone"]) if row["phone"] else None,
-                "telegram_chat_id": str(row["telegram_chat_id"]) if row["telegram_chat_id"] else None,
-                "timezone": str(row["timezone"]) if row["timezone"] else "Europe/Moscow",
+                "telegram_chat_id": (
+                    str(row["telegram_chat_id"]) if row["telegram_chat_id"] else None
+                ),
+                "timezone": (
+                    str(row["timezone"]) if row["timezone"] else "Europe/Moscow"
+                ),
                 "status": str(row["status"]),
-                "priority_score": int(row["priority_score"]) if row["priority_score"] else 0,
+                "priority_score": (
+                    int(row["priority_score"]) if row["priority_score"] else 0
+                ),
                 "open_hours": str(row["open_hours"]) if row["open_hours"] else None,
-                "menu_preview_url": str(row["menu_preview_url"]) if row["menu_preview_url"] else None,
+                "menu_preview_url": (
+                    str(row["menu_preview_url"]) if row["menu_preview_url"] else None
+                ),
                 "description": str(row["description"]) if row["description"] else None,
             }
         finally:
@@ -337,7 +421,7 @@ class LocationService:
         customer_id: int,
         location_id: int,
         transaction_id: Optional[int] = None,
-        amount_spent: float = 0
+        amount_spent: float = 0,
     ) -> None:
         """Record a customer visit to a location for smart sorting."""
         conn = self.db.connect()
@@ -351,7 +435,7 @@ class LocationService:
             # Check if visit record exists
             cur = conn.execute(
                 "SELECT id, visit_count FROM customer_visits WHERE customer_id = ? AND location_id = ?",
-                (customer_id, location_id)
+                (customer_id, location_id),
             )
             row = cur.fetchone()
 
@@ -367,7 +451,7 @@ class LocationService:
                            total_spent = total_spent + ?,
                            updated_at = datetime('now')
                        WHERE id = ?""",
-                    (today, transaction_id, amount_spent, row["id"])
+                    (today, transaction_id, amount_spent, row["id"]),
                 )
             else:
                 # Insert new
@@ -375,14 +459,16 @@ class LocationService:
                     """INSERT INTO customer_visits
                        (customer_id, location_id, visit_date, visit_count, last_transaction_id, total_spent)
                        VALUES (?, ?, ?, 1, ?, ?)""",
-                    (customer_id, location_id, today, transaction_id, amount_spent)
+                    (customer_id, location_id, today, transaction_id, amount_spent),
                 )
 
             conn.commit()
         finally:
             conn.close()
 
-    def get_customer_frequent_locations(self, customer_id: int, limit: int = 5) -> list[dict[str, Any]]:
+    def get_customer_frequent_locations(
+        self, customer_id: int, limit: int = 5
+    ) -> list[dict[str, Any]]:
         """Get customer's most frequently visited locations."""
         cache_key = f"customer_visits:{customer_id}"
         r = get_redis()
@@ -399,22 +485,32 @@ class LocationService:
                    WHERE cv.customer_id = ? AND l.active = 1 AND l.status = 'active'
                    ORDER BY cv.visit_count DESC
                    LIMIT ?""",
-                (customer_id, limit)
+                (customer_id, limit),
             )
 
             items = []
             for row in cur.fetchall():
-                items.append({
-                    "id": int(row["id"]),
-                    "location_id": int(row["location_id"]),
-                    "name": str(row["name"]),
-                    "address": str(row["address"]) if row["address"] else None,
-                    "visit_count": int(row["visit_count"]),
-                    "visit_date": str(row["visit_date"]),
-                    "total_spent": float(row["total_spent"]) if row["total_spent"] else 0,
-                    "open_hours": str(row["open_hours"]) if row["open_hours"] else None,
-                    "menu_preview_url": str(row["menu_preview_url"]) if row["menu_preview_url"] else None,
-                })
+                items.append(
+                    {
+                        "id": int(row["id"]),
+                        "location_id": int(row["location_id"]),
+                        "name": str(row["name"]),
+                        "address": str(row["address"]) if row["address"] else None,
+                        "visit_count": int(row["visit_count"]),
+                        "visit_date": str(row["visit_date"]),
+                        "total_spent": (
+                            float(row["total_spent"]) if row["total_spent"] else 0
+                        ),
+                        "open_hours": (
+                            str(row["open_hours"]) if row["open_hours"] else None
+                        ),
+                        "menu_preview_url": (
+                            str(row["menu_preview_url"])
+                            if row["menu_preview_url"]
+                            else None
+                        ),
+                    }
+                )
 
             r.setex(cache_key, CACHE_TTL, json.dumps(items))
             return items
@@ -432,7 +528,7 @@ class LocationService:
         try:
             conn.execute(
                 "UPDATE locations SET status = ?, updated_at = datetime('now') WHERE id = ?",
-                (status, location_id)
+                (status, location_id),
             )
             conn.commit()
 
@@ -453,7 +549,7 @@ class LocationService:
         try:
             conn.execute(
                 "UPDATE locations SET priority_score = ?, updated_at = datetime('now') WHERE id = ?",
-                (priority_score, location_id)
+                (priority_score, location_id),
             )
             conn.commit()
 
@@ -472,8 +568,7 @@ class LocationService:
         try:
             # Check if country exists and is active
             cur = conn.execute(
-                "SELECT id FROM countries WHERE id = ? AND active = 1",
-                (country_id,)
+                "SELECT id FROM countries WHERE id = ? AND active = 1", (country_id,)
             )
             if not cur.fetchone():
                 return False
@@ -483,7 +578,7 @@ class LocationService:
                 """INSERT INTO system_settings (key, value, updated_at)
                    VALUES ('default_country_id', ?, datetime('now'))
                    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')""",
-                (str(country_id),)
+                (str(country_id),),
             )
             conn.commit()
 
@@ -534,7 +629,7 @@ class LocationService:
                 """INSERT INTO system_settings (key, value, updated_at)
                    VALUES ('force_single_country', ?, datetime('now'))
                    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')""",
-                ("1" if enabled else "0",)
+                ("1" if enabled else "0",),
             )
             conn.commit()
 
@@ -587,7 +682,9 @@ class LocationService:
             return countries[0]["id"]
         return None
 
-    def initialize_system_country(self, env_country_code: str | None, env_currency_code: str | None) -> dict[str, Any]:
+    def initialize_system_country(
+        self, env_country_code: str | None, env_currency_code: str | None
+    ) -> dict[str, Any]:
         """Initialize system country and currency at first startup.
 
         Priority:
@@ -627,12 +724,14 @@ class LocationService:
                 # Find country by code
                 cur = conn.execute(
                     "SELECT id, code, currency_code FROM countries WHERE code = ? AND active = 1",
-                    (env_country_code.upper(),)
+                    (env_country_code.upper(),),
                 )
                 country_row = cur.fetchone()
                 if country_row:
                     country_id = int(country_row["id"])
-                    currency_code = env_currency_code or str(country_row["currency_code"] or "RUB")
+                    currency_code = env_currency_code or str(
+                        country_row["currency_code"] or "RUB"
+                    )
                     source = "env"
 
             # Priority 2: Existing DB settings
@@ -660,7 +759,7 @@ class LocationService:
                     """INSERT INTO system_settings (key, value, updated_at)
                        VALUES ('default_country_id', ?, datetime('now'))
                        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')""",
-                    (str(country_id),)
+                    (str(country_id),),
                 )
 
                 # Save currency
@@ -669,11 +768,13 @@ class LocationService:
                         """INSERT INTO system_settings (key, value, updated_at)
                            VALUES ('default_currency_code', ?, datetime('now'))
                            ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')""",
-                        (currency_code,)
+                        (currency_code,),
                     )
 
                 # Also save force_single_country based on active countries count
-                cur = conn.execute("SELECT COUNT(*) as count FROM countries WHERE active = 1")
+                cur = conn.execute(
+                    "SELECT COUNT(*) as count FROM countries WHERE active = 1"
+                )
                 country_count = cur.fetchone()["count"]
                 force_single = country_count == 1
 
@@ -681,7 +782,7 @@ class LocationService:
                     """INSERT INTO system_settings (key, value, updated_at)
                        VALUES ('force_single_country', ?, datetime('now'))
                        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')""",
-                    ("1" if force_single else "0",)
+                    ("1" if force_single else "0",),
                 )
 
                 conn.commit()
@@ -692,14 +793,16 @@ class LocationService:
                 r.delete("system:default_currency_code")
                 r.delete("system:force_single_country")
 
-                result.update({
-                    "initialized": True,
-                    "country_id": country_id,
-                    "country_code": env_country_code if source == "env" else None,
-                    "currency_code": currency_code,
-                    "source": source,
-                    "force_single_country": force_single,
-                })
+                result.update(
+                    {
+                        "initialized": True,
+                        "country_id": country_id,
+                        "country_code": env_country_code if source == "env" else None,
+                        "currency_code": currency_code,
+                        "source": source,
+                        "force_single_country": force_single,
+                    }
+                )
 
             return result
         finally:

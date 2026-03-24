@@ -1,48 +1,39 @@
 import requests
+from requests.auth import HTTPBasicAuth
 
 BASE_URL = "http://localhost:8000"
+LOGIN_PATH = "/api/v1/public/auth/login"
+REFRESH_PATH = "/api/v1/auth/refresh"
 TIMEOUT = 30
-USERNAME = "admin"
-PASSWORD = "admin"
 
 def test_refresh_access_token_with_valid_refresh_token():
-    login_url = f"{BASE_URL}/api/v1/public/auth/login"
-    refresh_url = f"{BASE_URL}/api/v1/auth/refresh"
-
-    # Step 1: Login to get refresh token
+    login_url = BASE_URL + LOGIN_PATH
+    refresh_url = BASE_URL + REFRESH_PATH
+    username = "admin"
+    password = "admin"
+    login_payload = {
+        "username": username,
+        "password": password
+    }
     try:
-        login_resp = requests.post(
-            login_url,
-            json={"username": USERNAME, "password": PASSWORD},
-            timeout=TIMEOUT
-        )
-        login_resp.raise_for_status()
+        # Step 1: Login to get refresh token
+        login_resp = requests.post(login_url, json=login_payload, timeout=TIMEOUT)
+        assert login_resp.status_code == 200, f"Login failed with status code {login_resp.status_code}"
         login_data = login_resp.json()
+        assert "refresh" in login_data and isinstance(login_data["refresh"], str) and login_data["refresh"], "Refresh token missing or invalid in login response"
 
-        refresh_token = None
-        if "refresh" in login_data and isinstance(login_data["refresh"], str):
-            refresh_token = login_data["refresh"]
-        elif "refresh_token" in login_data and isinstance(login_data["refresh_token"], str):
-            refresh_token = login_data["refresh_token"]
-        elif login_resp.cookies and "refresh" in login_resp.cookies:
-            refresh_token = login_resp.cookies.get("refresh")
+        refresh_token = login_data["refresh"]
 
-        assert refresh_token is not None and isinstance(refresh_token, str), "Missing refresh token in login response"
-
-        assert "access" in login_data and isinstance(login_data["access"], str), "Missing access token in login response"
-
-        # Step 2: Use refresh token to refresh access token
-        headers = {"Authorization": f"Bearer {refresh_token}"}
+        # Step 2: Use refresh token to get new access token
+        headers = {
+            "Authorization": f"Bearer {refresh_token}"
+        }
         refresh_resp = requests.post(refresh_url, headers=headers, timeout=TIMEOUT)
-
-        refresh_resp.raise_for_status()
+        assert refresh_resp.status_code == 200, f"Refresh token request failed with status code {refresh_resp.status_code}"
         refresh_data = refresh_resp.json()
+        assert "access" in refresh_data and isinstance(refresh_data["access"], str) and refresh_data["access"], "Access token missing or invalid in refresh response"
 
-        assert refresh_resp.status_code == 200, f"Expected status 200 but got {refresh_resp.status_code}"
-        assert "access" in refresh_data and isinstance(refresh_data["access"], str), "Missing new access token in refresh response"
     except requests.RequestException as e:
-        raise AssertionError(f"HTTP request failed: {e}")
-    except ValueError:
-        raise AssertionError("Response is not valid JSON")
+        assert False, f"Request failed: {e}"
 
 test_refresh_access_token_with_valid_refresh_token()

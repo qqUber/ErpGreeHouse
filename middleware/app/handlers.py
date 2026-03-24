@@ -1,8 +1,7 @@
 from .utils.qr_codes import make_qr_image as _make_qr_image
 from .integrations.bots.shared.consent import update_consent as _shared_update
 from .integrations.bots.shared.consent import store_consent as _shared_store
-from .integrations.bots.shared.consent import \
-    cleanup_user_data as _shared_cleanup
+from .integrations.bots.shared.consent import cleanup_user_data as _shared_cleanup
 from .integrations.bots.shared.consent import get_customer_consents as _shared_get
 from .integrations.bots.shared.consent import CURRENT_POLICY_VERSION
 import json
@@ -12,14 +11,23 @@ from typing import Any, Dict, Literal, Tuple
 
 from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.types import (CallbackQuery, InlineKeyboardButton,
-                           InlineKeyboardMarkup, KeyboardButton,
-                           Message, ReplyKeyboardMarkup, ReplyKeyboardRemove,
-                           WebAppInfo)
+from aiogram.types import (
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    Message,
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+    WebAppInfo,
+)
 
 from .config import get_settings
-from .customer_identity import (CustomerIdentityConflictError,
-                                get_customer_row, resolve_or_create_customer)
+from .customer_identity import (
+    CustomerIdentityConflictError,
+    get_customer_row,
+    resolve_or_create_customer,
+)
 from .db import get_db
 from .identify import normalize_name, normalize_phone
 from .integrations.pos.erpnext_client import ERPClient
@@ -399,12 +407,13 @@ def _countries_keyboard() -> InlineKeyboardMarkup:
     buttons = []
     for country in countries:
         name = country.get("name_local") or country.get("name") or country["code"]
-        buttons.append([
-            InlineKeyboardButton(
-                text=f"{name}",
-                callback_data=f"country:{country['id']}"
-            )
-        ])
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    text=f"{name}", callback_data=f"country:{country['id']}"
+                )
+            ]
+        )
 
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -417,12 +426,9 @@ def _cities_keyboard(country_id: int) -> InlineKeyboardMarkup:
     buttons = []
     for city in cities:
         name = city.get("name") or f"City {city['id']}"
-        buttons.append([
-            InlineKeyboardButton(
-                text=name,
-                callback_data=f"city:{city['id']}"
-            )
-        ])
+        buttons.append(
+            [InlineKeyboardButton(text=name, callback_data=f"city:{city['id']}")]
+        )
 
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -1019,8 +1025,7 @@ async def cb_consent(cb: CallbackQuery) -> None:
             )
             await cb.message.edit_text("Согласие принято! ✅")
             await cb.message.answer(
-                "Выберите ваш город:",
-                reply_markup=_cities_keyboard(country_id)
+                "Выберите ваш город:", reply_markup=_cities_keyboard(country_id)
             )
         else:
             # Show country selection
@@ -1036,8 +1041,7 @@ async def cb_consent(cb: CallbackQuery) -> None:
             )
             await cb.message.edit_text("Согласие принято! ✅")
             await cb.message.answer(
-                "Выберите вашу страну:",
-                reply_markup=_countries_keyboard()
+                "Выберите вашу страну:", reply_markup=_countries_keyboard()
             )
         await cb.answer()
         return
@@ -1063,8 +1067,7 @@ async def cb_country(cb: CallbackQuery) -> None:
     r.hset(key, mapping={"country_id": country_id, "step": "city_select"})
     await cb.message.edit_text("🌍 Страна выбрана")
     await cb.message.answer(
-        "Выберите ваш город:",
-        reply_markup=_cities_keyboard(int(country_id))
+        "Выберите ваш город:", reply_markup=_cities_keyboard(int(country_id))
     )
     await cb.answer()
 
@@ -1091,7 +1094,7 @@ async def cb_city(cb: CallbackQuery) -> None:
     await cb.message.answer(
         "Чтобы подключиться к нашей программе лояльности,\n"
         "нажми кнопку «Поделиться контактом» или отправь свой номер вручную.",
-        reply_markup=_registration_phone_keyboard()
+        reply_markup=_registration_phone_keyboard(),
     )
     await cb.answer()
 

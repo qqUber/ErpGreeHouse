@@ -9,8 +9,7 @@ the actual message sending.
 from typing import Any, Callable, Dict, Literal, Optional
 
 from ....db import get_db
-from .consent import (CURRENT_POLICY_VERSION, store_consent,
-                      update_consent)
+from .consent import CURRENT_POLICY_VERSION, store_consent, update_consent
 
 # Valid platform sources with column mappings
 Source = Literal["tg", "vk"]

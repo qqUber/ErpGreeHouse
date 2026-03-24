@@ -15,12 +15,12 @@
     "projectName": "ErpGreeHouse",
     "projectPath": "c:\\Users\\AASS\\IdeaProjects\\ErpGreeHouse",
     "testIds": [],
-    "additionalInstruction": "After linter fixes, unit test fixes, Docker rebuild. Focus on dashboard widgets validation with 2026 UI styles.",
-    "serverMode": "production",
+    "additionalInstruction": "",
+    "serverMode": "development",
     "envs": {
       "API_KEY": "sk-user-cIOQcyXvbxKI-z9ueL_PJrr6DMhW_uy1twdmvrKyeQ44Hg_TIO4Wx7bqUIEvkhMIWI_JFbqPpBhxAKAqEajB_1cty0eRyO1FdPKImZ7EB4Cupk38MyzxvDlWbS-D32rEr5w"
     }
   },
-  "serverPort": 22646,
-  "proxy": "http://6d234df1-7240-43ab-a811-daa1c714e2fe:pmK2eovLk0WDVpByFbNDRlU2Pi8VCBQa@tun.testsprite.com:8080"
+  "serverPort": 35297,
+  "proxy": "http://f86f2b6d-4a28-4c4b-8670-90e49a15db4e:SKvE3ESAjiVKcVp0bAGygQzU55ppHR9A@tun.testsprite.com:8080"
 }

@@ -21,14 +21,16 @@ def get_or_generate_base_guid(conn: sqlite3.Connection) -> str:
     """Get base GUID from system settings or generate new one with proper transaction"""
     # Create system_settings table if not exists
     try:
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-        """)
+        """
+        )
     except sqlite3.Error:
         pass  # Table might already exist
 
@@ -352,11 +354,13 @@ def resolve_or_create_customer(
                 if "city_id" in customer_columns:
                     insert_columns.append("city_id")
                     insert_values.append(city_id)
-                insert_columns.extend([
-                    "onboarding_status",
-                    "phone_verified_at",
-                    "phone_verification_method",
-                ])
+                insert_columns.extend(
+                    [
+                        "onboarding_status",
+                        "phone_verified_at",
+                        "phone_verification_method",
+                    ]
+                )
                 insert_values.extend(
                     [
                         resolved_onboarding_status,

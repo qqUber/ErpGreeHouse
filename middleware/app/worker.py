@@ -507,7 +507,8 @@ def expire_inactive_points() -> dict:
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute(f"""
+        cur = conn.execute(
+            f"""
             UPDATE customers
             SET balance_points = 0, updated_at = datetime('now')
             WHERE balance_points > 0
@@ -515,7 +516,8 @@ def expire_inactive_points() -> dict:
                 SELECT customer_id FROM transactions
                 WHERE created_at >= datetime('now', '-{INACTIVE_POINTS_EXPIRY_DAYS} days')
             )
-        """)
+        """
+        )
         conn.commit()
         return {"expired_accounts": cur.rowcount}
     finally:
@@ -605,25 +607,29 @@ def process_periodic_marketing() -> dict:
     try:
         # Birthday triggers
         # SQLite: strftime('%m-%d', 'now')
-        rows = conn.execute("""
+        rows = conn.execute(
+            """
             SELECT id FROM customers
             WHERE birthday IS NOT NULL
             AND strftime('%m-%d', birthday) = strftime('%m-%d', 'now')
-        """).fetchall()
+        """
+        ).fetchall()
         for r in rows:
             trigger_engine.evaluate_and_queue_triggers(
                 int(r["id"]), "customer.birthday", {}
             )
 
         # Inactive customer triggers
-        rows = conn.execute("""
+        rows = conn.execute(
+            """
             SELECT c.id,
                    CAST((julianday('now') - julianday(MAX(t.created_at))) AS INTEGER) as days_inactive
             FROM customers c
             LEFT JOIN transactions t ON c.id = t.customer_id
             GROUP BY c.id
             HAVING days_inactive IS NOT NULL
-        """).fetchall()
+        """
+        ).fetchall()
         for r in rows:
             trigger_engine.evaluate_and_queue_triggers(
                 int(r["id"]),
@@ -632,10 +638,12 @@ def process_periodic_marketing() -> dict:
             )
 
         # Welcome message triggers for new customers
-        rows = conn.execute("""
+        rows = conn.execute(
+            """
             SELECT id FROM customers
             WHERE created_at >= datetime('now', '-24 hours')
-        """).fetchall()
+        """
+        ).fetchall()
         for r in rows:
             trigger_engine.evaluate_and_queue_triggers(
                 int(r["id"]), "customer.welcome", {}
@@ -643,14 +651,16 @@ def process_periodic_marketing() -> dict:
 
         # Points expiration triggers
         # Check for points that will expire in next 7 days
-        rows = conn.execute("""
+        rows = conn.execute(
+            """
             SELECT c.id, SUM(t.bonus_earned - t.bonus_used) as points_to_expire
             FROM customers c
             LEFT JOIN transactions t ON c.id = t.customer_id
             WHERE t.created_at <= datetime('now', '-365 days')
             GROUP BY c.id
             HAVING points_to_expire > 0
-        """).fetchall()
+        """
+        ).fetchall()
         for r in rows:
             trigger_engine.evaluate_and_queue_triggers(
                 int(r["id"]),
@@ -672,8 +682,7 @@ def process_telegram_update(payload: dict) -> dict:
     async def runner() -> dict:
         from aiogram.types import Update
 
-        from app.integrations.bots.telegram_handler import (create_bot,
-                                                            create_dispatcher)
+        from app.integrations.bots.telegram_handler import create_bot, create_dispatcher
 
         bot = create_bot()
         dp = create_dispatcher()

@@ -43,8 +43,7 @@ async def ensure_telegram_bot_menu(bot: Bot) -> None:
     logger = logging.getLogger(__name__)
 
     # Import here to avoid circular imports
-    from ...handlers import (_get_telegram_menu_item_config,
-                             _get_telegram_menu_label)
+    from ...handlers import _get_telegram_menu_item_config, _get_telegram_menu_label
 
     # Get menu items configuration
     menu_commands = []

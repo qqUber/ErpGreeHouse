@@ -9,18 +9,27 @@ Only VK-specific API code is kept in this file.
 import asyncio
 import json
 import logging
-from typing import (Any, Callable, Literal, Optional)
+from typing import Any, Callable, Literal, Optional
 
 import aiohttp
 
 from ...customer_identity import normalize_phone
 from ...storage import get_redis
+
 # Import shared modules
-from .shared import (CURRENT_POLICY_VERSION, RegistrationFlow,
-                     cleanup_user_data, consent_key, format_vk_keyboard,
-                     get_consent_buttons, get_customer_consents,
-                     get_marketing_buttons, get_marketing_consent_text,
-                     store_consent, update_consent)
+from .shared import (
+    CURRENT_POLICY_VERSION,
+    RegistrationFlow,
+    cleanup_user_data,
+    consent_key,
+    format_vk_keyboard,
+    get_consent_buttons,
+    get_customer_consents,
+    get_marketing_buttons,
+    get_marketing_consent_text,
+    store_consent,
+    update_consent,
+)
 
 logger = logging.getLogger(__name__)
 

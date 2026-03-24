@@ -46,7 +46,9 @@ def _resolve_time_range_bounds(time_range: str) -> tuple[datetime, datetime]:
     return start_date, end_date
 
 
-def _format_time_range_bounds(start_date: datetime, end_date: datetime) -> tuple[str, str]:
+def _format_time_range_bounds(
+    start_date: datetime, end_date: datetime
+) -> tuple[str, str]:
     return (
         start_date.strftime("%Y-%m-%d %H:%M:%S"),
         end_date.strftime("%Y-%m-%d %H:%M:%S"),

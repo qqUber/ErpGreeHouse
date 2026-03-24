@@ -17,10 +17,12 @@ from .auth import check_roles
 from .config import get_settings
 from .db import get_db
 from .handlers import _get_telegram_integration_config
-from .integrations.bots.telegram_handler import (create_bot,
-                                                 create_bot_with_token,
-                                                 ensure_telegram_bot_menu,
-                                                 get_stored_telegram_token)
+from .integrations.bots.telegram_handler import (
+    create_bot,
+    create_bot_with_token,
+    ensure_telegram_bot_menu,
+    get_stored_telegram_token,
+)
 from .integrations.bots.vk_handler import validate_vk_token
 
 router = APIRouter(prefix="/api/v1/admin/integrations")

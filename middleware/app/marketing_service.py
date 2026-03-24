@@ -151,7 +151,8 @@ class MarketingCampaignService:
 
     def get_events_breakdown(self) -> dict[str, Any]:
         with self._db.connect() as conn:
-            rows = conn.execute("""
+            rows = conn.execute(
+                """
                 SELECT
                     event_type,
                     COUNT(*) as count,
@@ -159,7 +160,8 @@ class MarketingCampaignService:
                 FROM marketing_events
                 GROUP BY event_type, json_extract(event_data, '$.channel')
                 ORDER BY event_type
-                """).fetchall()
+                """
+            ).fetchall()
             return {"events": [dict(row) for row in rows]}
 
     def list_campaigns(self) -> list[dict[str, Any]]:
@@ -542,13 +544,15 @@ class MarketingCampaignService:
             )
             params.append(int(criteria["days_since_visit"]))
         if criteria.get("min_purchase_amount") is not None:
-            filters.append("""
+            filters.append(
+                """
                 EXISTS (
                     SELECT 1 FROM transactions
                     WHERE customer_id = customers.id
                     AND total_amount >= ?
                 )
-                """)
+                """
+            )
             params.append(int(criteria["min_purchase_amount"]))
         if criteria.get("purchase_frequency") is not None:
             filters.append("purchase_frequency >= ?")

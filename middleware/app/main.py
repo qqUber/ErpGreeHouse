@@ -8,8 +8,7 @@ from .integrations_api import router as integrations_router
 from .integrations_api import public_router as integrations_public_router
 from .integrations.webhooks import router as erp_webhook_router
 from .integrations.bots.vk_handler import process_vk_webhook_event
-from .integrations.bots.telegram_handler import (create_bot,
-                                                 ensure_telegram_bot_menu)
+from .integrations.bots.telegram_handler import create_bot, ensure_telegram_bot_menu
 from .integration_settings_api import router as integration_settings_router
 from .erp_scheduler import start_erp_sync_scheduler
 from .dev_seed import ensure_seed_data, should_auto_seed
@@ -572,11 +571,15 @@ def _initialize_country_settings(settings: Any) -> None:
         service = get_location_service()
         result = service.initialize_system_country(
             env_country_code=settings.default_country_code,
-            env_currency_code=settings.default_currency_code
+            env_currency_code=settings.default_currency_code,
         )
 
         if result["initialized"]:
-            source_map = {"env": "ENV variables", "db": "database", "auto": "auto-detection"}
+            source_map = {
+                "env": "ENV variables",
+                "db": "database",
+                "auto": "auto-detection",
+            }
             source_name = source_map.get(result["source"], result["source"])
             logger.info(
                 f"[COUNTRY] System initialized: country_id={result['country_id']}, "
@@ -584,7 +587,9 @@ def _initialize_country_settings(settings: Any) -> None:
                 f"force_single={result.get('force_single_country', False)}"
             )
         else:
-            logger.warning("[COUNTRY] Failed to initialize system country - no countries in database")
+            logger.warning(
+                "[COUNTRY] Failed to initialize system country - no countries in database"
+            )
     except Exception as e:
         logger.warning(f"[COUNTRY] Failed to initialize country settings: {e}")
 
