@@ -199,9 +199,19 @@ class TestLocationService:
         # Mock country data
         mock_conn.execute.side_effect = [
             Mock(fetchone=Mock(return_value={"value": "1"})),  # System setting
-            Mock(fetchone=Mock(return_value={"id": 1, "code": "RU", "name": "Russia", 
-                                              "name_local": "Россия", "phone_prefix": "+7",
-                                              "currency_code": "RUB", "timezone_default": "Europe/Moscow"})),
+            Mock(
+                fetchone=Mock(
+                    return_value={
+                        "id": 1,
+                        "code": "RU",
+                        "name": "Russia",
+                        "name_local": "Россия",
+                        "phone_prefix": "+7",
+                        "currency_code": "RUB",
+                        "timezone_default": "Europe/Moscow",
+                    }
+                )
+            ),
         ]
         
         service = LocationService()
@@ -216,14 +226,21 @@ class TestLocationService:
     def test_initialize_system_country_priority_env(self, mock_db, mock_redis):
         """Test that ENV variables have highest priority for country initialization."""
         mock_db_instance, mock_conn = mock_db
-        
-        # Mock country lookup by code
-        mock_conn.execute.side_effect = [
-            Mock(fetchone=Mock(return_value=None)),  # No existing setting
-            Mock(fetchone=Mock(return_value=None)),  # No existing currency
-            Mock(fetchone=Mock(return_value={"id": 2, "code": "KZ", "currency_code": "KZT"})),  # Found by ENV code
-            Mock(fetchone=Mock(return_value={"count": 1})),  # Country count for force_single
-        ]
+
+        # Mock queries by SQL shape so additional INSERT/UPDATE statements do not break the test.
+        def execute_side_effect(sql, params=None):
+            sql_text = str(sql).lower()
+            if "select value from system_settings where key = 'default_country_id'" in sql_text:
+                return Mock(fetchone=Mock(return_value=None))
+            if "select value from system_settings where key = 'default_currency_code'" in sql_text:
+                return Mock(fetchone=Mock(return_value=None))
+            if "select id, code, currency_code from countries where code = ? and active = 1" in sql_text:
+                return Mock(fetchone=Mock(return_value={"id": 2, "code": "KZ", "currency_code": "KZT"}))
+            if "select count(*) as count from countries where active = 1" in sql_text:
+                return Mock(fetchone=Mock(return_value={"count": 1}))
+            return Mock(fetchone=Mock(return_value=None))
+
+        mock_conn.execute.side_effect = execute_side_effect
         
         service = LocationService()
         service.db = mock_db_instance

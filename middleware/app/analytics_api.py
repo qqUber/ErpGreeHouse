@@ -29,6 +29,30 @@ def _cache_get_json(key: str) -> Any | None:
         return None
 
 
+def _resolve_time_range_bounds(time_range: str) -> tuple[datetime, datetime]:
+    end_date = datetime.now()
+    if time_range == "24h":
+        start_date = end_date - timedelta(hours=24)
+    elif time_range == "7d":
+        start_date = end_date - timedelta(days=7)
+    elif time_range == "30d":
+        start_date = end_date - timedelta(days=30)
+    elif time_range == "90d":
+        start_date = end_date - timedelta(days=90)
+    elif time_range == "1y":
+        start_date = end_date - timedelta(days=365)
+    else:
+        start_date = end_date - timedelta(days=7)
+    return start_date, end_date
+
+
+def _format_time_range_bounds(start_date: datetime, end_date: datetime) -> tuple[str, str]:
+    return (
+        start_date.strftime("%Y-%m-%d %H:%M:%S"),
+        end_date.strftime("%Y-%m-%d %H:%M:%S"),
+    )
+
+
 def _cache_set_json(key: str, value: Any, ttl_seconds: int) -> None:
     try:
         r = get_redis()
@@ -104,24 +128,8 @@ def get_dashboard_overview(
     db = get_db()
     conn = db.connect()
     try:
-        # Calculate date range
-        end_date = datetime.now()
-        if time_range == "24h":
-            start_date = end_date - timedelta(hours=24)
-        elif time_range == "7d":
-            start_date = end_date - timedelta(days=7)
-        elif time_range == "30d":
-            start_date = end_date - timedelta(days=30)
-        elif time_range == "90d":
-            start_date = end_date - timedelta(days=90)
-        elif time_range == "1y":
-            start_date = end_date - timedelta(days=365)
-        else:
-            start_date = end_date - timedelta(days=7)
-
-        # Format dates for SQL queries
-        start_str = start_date.strftime("%Y-%m-%d %H:%M:%S")
-        end_str = end_date.strftime("%Y-%m-%d %H:%M:%S")
+        start_date, end_date = _resolve_time_range_bounds(time_range)
+        start_str, end_str = _format_time_range_bounds(start_date, end_date)
 
         # Total customers
         total_customers = conn.execute("SELECT COUNT(*) FROM customers").fetchone()[0]
@@ -381,18 +389,7 @@ def get_sales_chart(
     db = get_db()
     conn = db.connect()
     try:
-        # Calculate date range
-        end_date = datetime.now()
-        if time_range == "7d":
-            start_date = end_date - timedelta(days=7)
-        elif time_range == "30d":
-            start_date = end_date - timedelta(days=30)
-        elif time_range == "90d":
-            start_date = end_date - timedelta(days=90)
-        elif time_range == "1y":
-            start_date = end_date - timedelta(days=365)
-        else:
-            start_date = end_date - timedelta(days=7)
+        start_date, end_date = _resolve_time_range_bounds(time_range)
 
         # Build query based on interval
         if interval == "day":
@@ -495,18 +492,7 @@ def get_customer_chart(
     db = get_db()
     conn = db.connect()
     try:
-        # Calculate date range
-        end_date = datetime.now()
-        if time_range == "7d":
-            start_date = end_date - timedelta(days=7)
-        elif time_range == "30d":
-            start_date = end_date - timedelta(days=30)
-        elif time_range == "90d":
-            start_date = end_date - timedelta(days=90)
-        elif time_range == "1y":
-            start_date = end_date - timedelta(days=365)
-        else:
-            start_date = end_date - timedelta(days=7)
+        start_date, end_date = _resolve_time_range_bounds(time_range)
 
         # Build query based on interval
         if interval == "day":
@@ -614,18 +600,7 @@ def get_loyalty_chart(
     db = get_db()
     conn = db.connect()
     try:
-        # Calculate date range
-        end_date = datetime.now()
-        if time_range == "7d":
-            start_date = end_date - timedelta(days=7)
-        elif time_range == "30d":
-            start_date = end_date - timedelta(days=30)
-        elif time_range == "90d":
-            start_date = end_date - timedelta(days=90)
-        elif time_range == "1y":
-            start_date = end_date - timedelta(days=365)
-        else:
-            start_date = end_date - timedelta(days=7)
+        start_date, end_date = _resolve_time_range_bounds(time_range)
 
         # Build query based on interval
         if interval == "day":

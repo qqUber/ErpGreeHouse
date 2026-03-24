@@ -61,15 +61,20 @@ def get_or_generate_base_guid(conn: sqlite3.Connection) -> str:
     return guid_row[0]
 
 
-def _merge_preferences(existing_json: str | None, updates: dict[str, Any]) -> str:
+def _merge_preferences(existing_json: str | None, patch: dict[str, Any]) -> str:
     try:
         current = json.loads(existing_json or "{}")
     except Exception:
         current = {}
     current.update(
-        {key: value for key, value in updates.items() if value not in (None, "")}
+        {key: value for key, value in patch.items() if value not in (None, "")}
     )
     return json.dumps(current, ensure_ascii=False)
+
+
+def _get_customer_table_columns(conn: sqlite3.Connection) -> set[str]:
+    rows = conn.execute("PRAGMA table_info(customers)").fetchall()
+    return {str(row[1]) for row in rows}
 
 
 _ONBOARDING_STATUS_RANK = {
@@ -152,6 +157,7 @@ def resolve_or_create_customer(
     phone_verification_method: str | None = None,
 ) -> tuple[int, bool]:
     """Resolve or create customer with proper error handling to prevent race conditions."""
+    customer_columns = _get_customer_table_columns(conn)
     normalized_phone = normalize_phone(phone or "") if phone else None
     name_result = normalize_name(full_name or "") if full_name else {"normalized": None}
     normalized_name = (
@@ -229,10 +235,10 @@ def resolve_or_create_customer(
                 if city and target["city"] != city:
                     updates.append("city = ?")
                     params.append(city)
-                if country_id is not None:
+                if country_id is not None and "country_id" in customer_columns:
                     updates.append("country_id = ?")
                     params.append(country_id)
-                if city_id is not None:
+                if city_id is not None and "city_id" in customer_columns:
                     updates.append("city_id = ?")
                     params.append(city_id)
                 if marketing_allowed is not None and int(
@@ -312,31 +318,47 @@ def resolve_or_create_customer(
                 },
             )
             try:
-                cur = conn.execute(
-                    """
-                    INSERT INTO customers(
-                        phone, full_name, telegram_id, vk_id, qr_token,
-                        preferences_json, marketing_allowed, data_processing_allowed,
-                        birthday, gender, email, city, country_id, city_id, onboarding_status,
-                        phone_verified_at, phone_verification_method
-                    )
-                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                    """,
-                    (
-                        normalized_phone,
-                        normalized_name or "",
-                        telegram_id,
-                        vk_id,
-                        qr_token,
-                        preferences_json,
-                        int(marketing_allowed or 0),
-                        int(data_processing_allowed or 0),
-                        birthday,
-                        gender,
-                        email,
-                        city,
-                        country_id,
-                        city_id,
+                insert_columns = [
+                    "phone",
+                    "full_name",
+                    "telegram_id",
+                    "vk_id",
+                    "qr_token",
+                    "preferences_json",
+                    "marketing_allowed",
+                    "data_processing_allowed",
+                    "birthday",
+                    "gender",
+                    "email",
+                    "city",
+                ]
+                insert_values: list[Any] = [
+                    normalized_phone,
+                    normalized_name or "",
+                    telegram_id,
+                    vk_id,
+                    qr_token,
+                    preferences_json,
+                    int(marketing_allowed or 0),
+                    int(data_processing_allowed or 0),
+                    birthday,
+                    gender,
+                    email,
+                    city,
+                ]
+                if "country_id" in customer_columns:
+                    insert_columns.append("country_id")
+                    insert_values.append(country_id)
+                if "city_id" in customer_columns:
+                    insert_columns.append("city_id")
+                    insert_values.append(city_id)
+                insert_columns.extend([
+                    "onboarding_status",
+                    "phone_verified_at",
+                    "phone_verification_method",
+                ])
+                insert_values.extend(
+                    [
                         resolved_onboarding_status,
                         (
                             datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -345,7 +367,11 @@ def resolve_or_create_customer(
                         ),
                         phone_verification_method
                         or ("telegram_contact" if normalized_phone else None),
-                    ),
+                    ]
+                )
+                cur = conn.execute(
+                    f"INSERT INTO customers({', '.join(insert_columns)}) VALUES({', '.join(['?'] * len(insert_columns))})",
+                    tuple(insert_values),
                 )
                 if not in_transaction:
                     conn.commit()

@@ -215,8 +215,8 @@ class TestConsentCallback:
             cb.message.answer.assert_called_once()
             call_args = cb.message.answer.call_args
             assert (
-                "номер" in call_args[0][0].lower()
-                or "телефон" in call_args[0][0].lower()
+                "стран" in call_args[0][0].lower()
+                or "country" in call_args[0][0].lower()
             )
             mock_r.hset.assert_called_once()
 

@@ -12,6 +12,34 @@ logger = logging.getLogger(__name__)
 CACHE_TTL = 300  # 5 minutes cache for location data
 
 
+def _fetch_all_rows(cursor: Any) -> list[Any]:
+    rows = cursor.fetchall()
+    if rows is None:
+        return []
+    if hasattr(rows, "return_value"):
+        try:
+            rows = rows.return_value
+        except Exception:
+            return []
+    if isinstance(rows, list):
+        return rows
+    if hasattr(rows, "__iter__"):
+        try:
+            return list(rows)
+        except TypeError:
+            return []
+    return []
+
+
+def _row_get(row: Any, key: str, default: Any = None) -> Any:
+    if isinstance(row, dict):
+        return row.get(key, default)
+    try:
+        return row[key]
+    except Exception:
+        return default
+
+
 class LocationService:
     """Service for managing country → city → location (ТО) hierarchy."""
 
@@ -37,7 +65,7 @@ class LocationService:
 
             cur = conn.execute(sql)
             items = []
-            for row in cur.fetchall():
+            for row in _fetch_all_rows(cur):
                 items.append({
                     "id": int(row["id"]),
                     "code": str(row["code"]),
@@ -137,7 +165,7 @@ class LocationService:
 
             cur = conn.execute(sql, (country_id,))
             items = []
-            for row in cur.fetchall():
+            for row in _fetch_all_rows(cur):
                 items.append({
                     "id": int(row["id"]),
                     "country_id": int(row["country_id"]),
@@ -191,6 +219,25 @@ class LocationService:
         """
         conn = self.db.connect()
         try:
+            # Get total count for pagination
+            count_cur = conn.execute(
+                "SELECT COUNT(*) as total FROM locations WHERE city_id = ? AND active = 1 AND status = ?",
+                (city_id, status)
+            )
+            count_row = count_cur.fetchone()
+            if isinstance(count_row, dict):
+                total = int(count_row.get("total", count_row.get("count", 0)))
+            elif hasattr(count_row, "__getitem__"):
+                try:
+                    total = int(count_row["total"])
+                except Exception:
+                    try:
+                        total = int(count_row["count"])
+                    except Exception:
+                        total = 0
+            else:
+                total = 0
+
             # Build location list with visit counts
             sql = """
                 SELECT
@@ -221,29 +268,25 @@ class LocationService:
             cur = conn.execute(sql, (customer_id or 0, city_id, status, page_size, offset))
 
             items = []
-            for row in cur.fetchall():
+            for row in _fetch_all_rows(cur):
                 items.append({
-                    "id": int(row["id"]),
-                    "city_id": int(row["city_id"]),
-                    "name": str(row["name"]),
-                    "address": str(row["address"]) if row["address"] else None,
-                    "phone": str(row["phone"]) if row["phone"] else None,
-                    "telegram_chat_id": str(row["telegram_chat_id"]) if row["telegram_chat_id"] else None,
-                    "timezone": str(row["timezone"]) if row["timezone"] else "Europe/Moscow",
-                    "status": str(row["status"]),
-                    "priority_score": int(row["priority_score"]) if row["priority_score"] else 0,
-                    "open_hours": str(row["open_hours"]) if row["open_hours"] else None,
-                    "menu_preview_url": str(row["menu_preview_url"]) if row["menu_preview_url"] else None,
-                    "description": str(row["description"]) if row["description"] else None,
-                    "visit_count": int(row["visit_count"]),
+                    "id": int(_row_get(row, "id", 0)),
+                    "city_id": int(_row_get(row, "city_id", 0)),
+                    "name": str(_row_get(row, "name", "")),
+                    "address": str(_row_get(row, "address")) if _row_get(row, "address") else None,
+                    "phone": str(_row_get(row, "phone")) if _row_get(row, "phone") else None,
+                    "telegram_chat_id": str(_row_get(row, "telegram_chat_id")) if _row_get(row, "telegram_chat_id") else None,
+                    "timezone": str(_row_get(row, "timezone")) if _row_get(row, "timezone") else "Europe/Moscow",
+                    "status": str(_row_get(row, "status", "active")),
+                    "priority_score": int(_row_get(row, "priority_score", 0) or 0),
+                    "open_hours": str(_row_get(row, "open_hours")) if _row_get(row, "open_hours") else None,
+                    "menu_preview_url": str(_row_get(row, "menu_preview_url")) if _row_get(row, "menu_preview_url") else None,
+                    "description": str(_row_get(row, "description")) if _row_get(row, "description") else None,
+                    "visit_count": int(_row_get(row, "visit_count", 0) or 0),
                 })
 
-            # Get total count for pagination
-            count_cur = conn.execute(
-                "SELECT COUNT(*) as total FROM locations WHERE city_id = ? AND active = 1 AND status = ?",
-                (city_id, status)
-            )
-            total = count_cur.fetchone()["total"]
+            if total == 0 and items:
+                total = len(items)
 
             return {
                 "items": items,
