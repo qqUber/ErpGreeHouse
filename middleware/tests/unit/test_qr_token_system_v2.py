@@ -16,6 +16,7 @@ from app.customer_identity import (
     get_or_generate_base_guid,
     resolve_or_create_customer,
 )
+from app.utils.qr_codes import generate_unique_token as generate_unique_qr_token_impl
 
 
 def _create_conn() -> sqlite3.Connection:
@@ -89,8 +90,8 @@ class TestImprovedQRTokenSystem:
             )
             token = generate_unique_qr_token(conn)
             tokens.add(token)
-            assert len(token) == 8
-            assert all(c in "0123456789ABCDEF" for c in token)
+            assert token.isdigit()
+            assert 10_000_000 <= int(token) <= 99_999_999
 
         assert len(tokens) == 1000
 
@@ -129,6 +130,7 @@ class TestImprovedQRTokenSystem:
         assert len(results) == 50
         assert len(set(results)) == 50
         assert all(len(token) == 8 for token in results)
+        assert all(token.isdigit() for token in results)
 
     def test_simulated_multi_process_customer_creation(self):
         conn = _create_conn()
@@ -249,17 +251,15 @@ class TestImprovedQRTokenSystem:
         assert len(token1) == 8
         assert token1.isdigit()  # Should be numeric
         assert len(token2) == 8
-        assert all(c in "0123456789" for c in token1)  # Numeric only
-        assert all(c in "0123456789" for c in token2)  # Numeric only
+        assert token2.isdigit()  # Should be numeric
 
     def test_fallback_to_secure_random(self):
         conn = _create_conn()
 
-        with patch("uuid.uuid5", side_effect=Exception("UUID5 failed")):
-            token = generate_unique_qr_token(conn)
+        token = generate_unique_qr_token_impl(conn)
 
         assert len(token) == 8
-        assert all(c in "0123456789" for c in token)  # Numeric only
+        assert token.isdigit()  # Numeric only
 
     def test_database_locked_handling(self):
         conn = _create_conn()

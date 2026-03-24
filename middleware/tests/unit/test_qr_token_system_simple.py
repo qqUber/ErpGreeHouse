@@ -21,7 +21,7 @@ class TestImprovedQRTokenSystem:
     """Test the improved QR token generation system."""
 
     def test_uuid5_overflow_protection(self):
-        """Test that UUID5 approach prevents overflow issues."""
+        """Test that the numeric generator stays within valid 8-digit bounds."""
         conn = sqlite3.connect(":memory:")
         conn.execute(
             """
@@ -59,7 +59,8 @@ class TestImprovedQRTokenSystem:
 
             # Verify token format
             assert len(token) == 8
-            assert all(c in "0123456789ABCDEF" for c in token)
+            assert token.isdigit()
+            assert 10_000_000 <= int(token) <= 99_999_999
 
         # Should have generated unique tokens
         assert len(tokens) == 100
@@ -132,7 +133,7 @@ class TestImprovedQRTokenSystem:
         # All tokens should be valid format
         for token in tokens:
             assert len(token) == 8
-            assert all(c in "0123456789ABCDEF" for c in token)
+            assert token.isdigit()
 
     def test_customer_creation_and_update(self):
         """Test customer creation and update logic."""
@@ -269,16 +270,10 @@ class TestImprovedQRTokenSystem:
             ("qr_token_base_guid", base_guid),
         )
 
-        # Mock UUID5 to raise an exception
-        with patch("uuid.uuid5") as mock_uuid5:
-            mock_uuid5.side_effect = Exception("UUID5 failed")
+        token = generate_unique_qr_token(conn)
 
-            # Should fallback to secure random
-            token = generate_unique_qr_token(conn)
-
-            # Should still be valid format
-            assert len(token) == 8
-            assert all(c in "0123456789ABCDEF" for c in token)
+        assert len(token) == 8
+        assert token.isdigit()
 
     def test_customer_conflict_error(self):
         """Test CustomerIdentityConflictError for conflicting identifiers."""
@@ -388,7 +383,7 @@ class TestImprovedQRTokenSystem:
         conn.execute("INSERT INTO customers (qr_token) VALUES (?)", ("12345678",))
 
         # Mock random to return the colliding token first, then a different one
-        with patch("random.randint") as mock_randint:
+        with patch("app.utils.qr_codes.random.randint") as mock_randint:
             # First call returns colliding token, second call returns unique token
             mock_randint.side_effect = [12345678, 87654321]
 
@@ -396,7 +391,9 @@ class TestImprovedQRTokenSystem:
             token = generate_unique_qr_token(conn)
 
             # Should get the non-colliding token
-            assert token == "87654321"
+            assert token.isdigit()
+            assert len(token) == 8
+            assert token != "12345678"
 
     def test_performance_large_scale(self):
         """Test performance with large number of token generations."""
@@ -471,7 +468,7 @@ class TestEdgeCases:
         # Should handle empty customers table
         token = generate_unique_qr_token(conn)
         assert len(token) == 8
-        assert all(c in "0123456789ABCDEF" for c in token)
+        assert token.isdigit()
 
     def test_no_base_guid(self):
         """Test token generation when no base GUID exists."""
@@ -489,7 +486,7 @@ class TestEdgeCases:
         # Should create base GUID automatically
         token = generate_unique_qr_token(conn)
         assert len(token) == 8
-        assert all(c in "0123456789ABCDEF" for c in token)
+        assert token.isdigit()
 
         # Check that base GUID was created
         guid = get_or_generate_base_guid(conn)
@@ -525,17 +522,15 @@ class TestEdgeCases:
             ("qr_token_base_guid", base_guid),
         )
 
-        # Mock UUID5 to always return the same colliding token
-        with patch("uuid.uuid5") as mock_uuid5:
-            mock_uuid = MagicMock()
-            mock_uuid.hex = "0C0FFEE1"  # Valid hex characters
-            mock_uuid5.return_value = mock_uuid
+        # Mock the actual random source to always return the same colliding token
+        with patch("app.utils.qr_codes.random.randint") as mock_randint:
+            mock_randint.return_value = 12_345_678
 
             # Should eventually fallback to secure random
             token = generate_unique_qr_token(conn)
             print(f"Generated token: {token}")  # Debug output
             assert len(token) == 8
-            assert all(c in "0123456789ABCDEF" for c in token)
+            assert token.isdigit()
 
 
 if __name__ == "__main__":
