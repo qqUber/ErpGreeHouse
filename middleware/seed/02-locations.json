@@ -1,0 +1,89 @@
+{
+  "version": "1.0.0",
+  "locations": [
+    {
+      "city": "Moscow",
+      "name": "GreenHouse Tverskaya",
+      "address": "Tverskaya St., 12, Moscow",
+      "phone": "+7 495 000-00-01",
+      "timezone": "Europe/Moscow",
+      "status": "active",
+      "priority_score": 100,
+      "open_hours": "Mon-Sun 08:00-22:00",
+      "menu_preview_url": "https://greenhouse.local/menu/tverskaya",
+      "description": "Central flagship GreenHouse coffee shop"
+    },
+    {
+      "city": "Moscow",
+      "name": "GreenHouse Arbat",
+      "address": "Novy Arbat Ave., 15, Moscow",
+      "phone": "+7 495 000-00-02",
+      "timezone": "Europe/Moscow",
+      "status": "active",
+      "priority_score": 90,
+      "open_hours": "Mon-Sun 08:00-23:00",
+      "menu_preview_url": "https://greenhouse.local/menu/arbat",
+      "description": "Street-side coffee shop near the Arbat"
+    },
+    {
+      "city": "Saint Petersburg",
+      "name": "GreenHouse Nevsky",
+      "address": "Nevsky Prospekt, 48, Saint Petersburg",
+      "phone": "+7 812 000-00-03",
+      "timezone": "Europe/Moscow",
+      "status": "active",
+      "priority_score": 95,
+      "open_hours": "Mon-Sun 08:00-22:00",
+      "menu_preview_url": "https://greenhouse.local/menu/nevsky",
+      "description": "Coffee shop on Nevsky Prospekt"
+    },
+    {
+      "city": "Kazan",
+      "name": "GreenHouse Bauman",
+      "address": "Bauman St., 21, Kazan",
+      "phone": "+7 843 000-00-04",
+      "timezone": "Europe/Moscow",
+      "status": "active",
+      "priority_score": 80,
+      "open_hours": "Mon-Sun 09:00-22:00",
+      "menu_preview_url": "https://greenhouse.local/menu/bauman",
+      "description": "Tourist-friendly coffee shop in the city center"
+    },
+    {
+      "city": "Yekaterinburg",
+      "name": "GreenHouse 1905",
+      "address": "Ploshchad 1905 Goda, 2, Yekaterinburg",
+      "phone": "+7 343 000-00-05",
+      "timezone": "Asia/Yekaterinburg",
+      "status": "active",
+      "priority_score": 85,
+      "open_hours": "Mon-Sun 08:00-22:00",
+      "menu_preview_url": "https://greenhouse.local/menu/1905",
+      "description": "Busy downtown location"
+    },
+    {
+      "city": "Belgrade",
+      "name": "GreenHouse Knez Mihailova",
+      "address": "Knez Mihailova 18, Belgrade",
+      "phone": "+381 11 000-00-06",
+      "timezone": "Europe/Belgrade",
+      "status": "active",
+      "priority_score": 92,
+      "open_hours": "Mon-Sun 08:00-23:00",
+      "menu_preview_url": "https://greenhouse.local/menu/knez-mihailova",
+      "description": "Prime pedestrian street location in Belgrade"
+    },
+    {
+      "city": "Novi Sad",
+      "name": "GreenHouse Dunavska",
+      "address": "Dunavska St., 7, Novi Sad",
+      "phone": "+381 21 000-00-07",
+      "timezone": "Europe/Belgrade",
+      "status": "active",
+      "priority_score": 78,
+      "open_hours": "Mon-Sun 08:00-22:00",
+      "menu_preview_url": "https://greenhouse.local/menu/dunavska",
+      "description": "Cozy coffee shop near the old center"
+    }
+  ]
+}

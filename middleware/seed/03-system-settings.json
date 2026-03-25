@@ -1,0 +1,8 @@
+{
+  "version": "1.0.0",
+  "system_settings": {
+    "app_name": "GreenHouse ERP",
+    "default_currency_code": "RUB",
+    "force_single_country": "0"
+  }
+}

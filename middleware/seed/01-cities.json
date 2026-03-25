@@ -1,0 +1,180 @@
+{
+  "version": "1.0.0",
+  "cities": [
+    {
+      "country_code": "RU",
+      "name": "Moscow",
+      "region": "Moscow",
+      "timezone": "Europe/Moscow",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Saint Petersburg",
+      "region": "Saint Petersburg",
+      "timezone": "Europe/Moscow",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Novosibirsk",
+      "region": "Novosibirsk Oblast",
+      "timezone": "Asia/Novosibirsk",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Yekaterinburg",
+      "region": "Sverdlovsk Oblast",
+      "timezone": "Asia/Yekaterinburg",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Kazan",
+      "region": "Tatarstan",
+      "timezone": "Europe/Moscow",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Nizhny Novgorod",
+      "region": "Nizhny Novgorod Oblast",
+      "timezone": "Europe/Moscow",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Samara",
+      "region": "Samara Oblast",
+      "timezone": "Europe/Samara",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Omsk",
+      "region": "Omsk Oblast",
+      "timezone": "Asia/Omsk",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Chelyabinsk",
+      "region": "Chelyabinsk Oblast",
+      "timezone": "Asia/Yekaterinburg",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Rostov-on-Don",
+      "region": "Rostov Oblast",
+      "timezone": "Europe/Moscow",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Ufa",
+      "region": "Bashkortostan",
+      "timezone": "Asia/Yekaterinburg",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Krasnoyarsk",
+      "region": "Krasnoyarsk Krai",
+      "timezone": "Asia/Krasnoyarsk",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Perm",
+      "region": "Perm Krai",
+      "timezone": "Asia/Yekaterinburg",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Voronezh",
+      "region": "Voronezh Oblast",
+      "timezone": "Europe/Moscow",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Volgograd",
+      "region": "Volgograd Oblast",
+      "timezone": "Europe/Volgograd",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Krasnodar",
+      "region": "Krasnodar Krai",
+      "timezone": "Europe/Moscow",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Tolyatti",
+      "region": "Samara Oblast",
+      "timezone": "Europe/Samara",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Izhevsk",
+      "region": "Udmurt Republic",
+      "timezone": "Europe/Samara",
+      "active": true
+    },
+    {
+      "country_code": "RU",
+      "name": "Barnaul",
+      "region": "Altai Krai",
+      "timezone": "Asia/Barnaul",
+      "active": true
+    },
+    {
+      "country_code": "RS",
+      "name": "Belgrade",
+      "region": "Central Serbia",
+      "timezone": "Europe/Belgrade",
+      "active": true
+    },
+    {
+      "country_code": "RS",
+      "name": "Novi Sad",
+      "region": "Vojvodina",
+      "timezone": "Europe/Belgrade",
+      "active": true
+    },
+    {
+      "country_code": "RS",
+      "name": "Niš",
+      "region": "Southern and Eastern Serbia",
+      "timezone": "Europe/Belgrade",
+      "active": true
+    },
+    {
+      "country_code": "RS",
+      "name": "Kragujevac",
+      "region": "Šumadija",
+      "timezone": "Europe/Belgrade",
+      "active": true
+    },
+    {
+      "country_code": "RS",
+      "name": "Subotica",
+      "region": "Vojvodina",
+      "timezone": "Europe/Belgrade",
+      "active": true
+    },
+    {
+      "country_code": "RS",
+      "name": "Pančevo",
+      "region": "Vojvodina",
+      "timezone": "Europe/Belgrade",
+      "active": true
+    }
+  ]
+}

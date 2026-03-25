@@ -1,0 +1,64 @@
+{
+  "description": "Default seed data for initial application setup",
+  "version": "1.0.0",
+  "created_at": "2025-03-25",
+  "admins": [
+    {
+      "username": "admin",
+      "password": "admin",
+      "role": "owner",
+      "disabled": false
+    },
+    {
+      "username": "manager",
+      "password": "manager",
+      "role": "manager",
+      "disabled": false
+    }
+  ],
+  "products": [
+    {
+      "sku": "ESP-001",
+      "name": "Espresso",
+      "price": 2.5,
+      "category": "beverages",
+      "stock": 100
+    },
+    {
+      "sku": "CAP-001",
+      "name": "Cappuccino",
+      "price": 3.5,
+      "category": "beverages",
+      "stock": 80
+    },
+    {
+      "sku": "LAT-001",
+      "name": "Latte",
+      "price": 4.0,
+      "category": "beverages",
+      "stock": 80
+    },
+    {
+      "sku": "AMR-001",
+      "name": "Americano",
+      "price": 3.0,
+      "category": "beverages",
+      "stock": 90
+    },
+    {
+      "sku": "CRO-001",
+      "name": "Croissant",
+      "price": 2.0,
+      "category": "pastries",
+      "stock": 50
+    },
+    {
+      "sku": "MUF-001",
+      "name": "Muffin",
+      "price": 2.5,
+      "category": "pastries",
+      "stock": 40
+    }
+  ],
+  "note": "This file is loaded by db-init container on first startup. Modify to customize initial data."
+}

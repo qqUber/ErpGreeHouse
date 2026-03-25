@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "countries": [
+    {
+      "code": "RU",
+      "name": "Russia",
+      "name_local": "Россия",
+      "phone_prefix": "+7",
+      "currency_code": "RUB",
+      "timezone_default": "Europe/Moscow",
+      "active": true
+    },
+    {
+      "code": "RS",
+      "name": "Serbia",
+      "name_local": "Србија",
+      "phone_prefix": "+381",
+      "currency_code": "RSD",
+      "timezone_default": "Europe/Belgrade",
+      "active": true
+    }
+  ]
+}
