@@ -688,7 +688,19 @@
       "noChannel": "Нет канала",
       "consent": "Согласие",
       "noConsent": "Нет согласия",
-      "ltv": "LTV"
+      "ltv": "LTV",
+      "newThisWeek": "Новых за неделю",
+      "newThisWeekHelper": "Текущий период",
+      "reachable": "Доступная аудитория",
+      "reachableHelper": "Можно писать в Telegram или VK",
+      "consentRate": "Процент согласия",
+      "consentHelper": "Маркетинговое согласие",
+      "highValueTitle": "Клиенты высокой ценности",
+      "recentlyActiveTitle": "Недавно активные клиенты",
+      "unreachableTitle": "Пробелы согласия / недоступные",
+      "noHighValue": "В данных нет клиентов высокой ценности.",
+      "noRecent": "Нет данных о недавней активности.",
+      "noGaps": "Нет пробелов по согласию или доступности."
     },
     "products": {
       "title": "Товары",
@@ -707,7 +719,17 @@
       "quantity": "Кол-во",
       "revenue": "Доход",
       "trend": "Тренд",
-      "productDetail": "Детали товара"
+      "productDetail": "Детали товара",
+      "summaryTitle": "Обзор товаров",
+      "topProductsTitle": "Топ товаров",
+      "lowStockTitle": "Риск низкого остатка",
+      "noTopProducts": "Нет доступных лидеров продаж.",
+      "activeCatalogHelper": "Активный каталог",
+      "recentMovementHelper": "Товары с недавним движением",
+      "noTrendData": "Нет данных о тренде",
+      "combinedQuantityHelper": "Суммарное количество",
+      "needsReplenishment": "Требуется пополнение",
+      "noLowStockItems": "Нет товаров с низким остатком"
     },
     "marketing": {
       "title": "Маркетинг",

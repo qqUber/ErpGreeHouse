@@ -7,7 +7,7 @@ import { WidgetProps } from '../types/widgets';
 
 interface Props extends WidgetProps {
   title: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   expandedContent?: React.ReactNode;
   compactContent?: React.ReactNode;
   drawerTitle?: string;
@@ -89,7 +89,7 @@ export function Widget({
         </div>
       ) : null}
 
-      {children ? (
+      {children && isExpanded ? (
         <div className="widget-expanded" data-testid="widget-expanded-content">
           {children}
         </div>

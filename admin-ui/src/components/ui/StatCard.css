@@ -4,9 +4,13 @@
   align-items: center;
   justify-content: center;
   padding: var(--spacing-md);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-lg);
   text-align: center;
   transition: all 0.2s ease;
+  border: 1px solid transparent;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  position: relative;
 }
 
 .stat-card-content {
@@ -31,6 +35,50 @@
   font-size: var(--font-size-sm);
   color: var(--muted);
   line-height: 1.4;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 55%);
+  pointer-events: none;
+}
+
+.stat-card-gradient {
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.stat-card-gradient-primary {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(255, 255, 255, 0.98));
+}
+
+.stat-card-gradient-success {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(255, 255, 255, 0.98));
+}
+
+.stat-card-gradient-warning {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(255, 255, 255, 0.98));
+}
+
+.stat-card-gradient-info {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(255, 255, 255, 0.98));
+}
+
+html[data-theme='dark'] .stat-card-gradient-primary {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.34), rgba(15, 23, 42, 0.96));
+}
+
+html[data-theme='dark'] .stat-card-gradient-success {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.34), rgba(15, 23, 42, 0.96));
+}
+
+html[data-theme='dark'] .stat-card-gradient-warning {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.34), rgba(15, 23, 42, 0.96));
+}
+
+html[data-theme='dark'] .stat-card-gradient-info {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.32), rgba(15, 23, 42, 0.96));
 }
 
 /* Variants using CSS tokens */

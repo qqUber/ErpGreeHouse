@@ -19,34 +19,57 @@ export function MarketingWidget({ data }: { data?: any }) {
   const messagesSent = Number(data?.messagesSent24h ?? 0);
   const campaigns = data?.campaigns || {};
   const openRate = Number(data?.openRate ?? campaigns?.open_rate ?? 0);
+  const attentionLabel = t('widgets.common.attention', 'Need attention');
+  const hasMarketingSignal = activeCampaigns > 0 || newWeek > 0 || messagesSent > 0 || openRate > 0;
+
+  const renderMetric = (label: string, value: React.ReactNode, helper?: string, tone: 'primary' | 'success' | 'warning' | 'info' = 'primary') => (
+    <StatCard value={value as any} label={label} variant={tone} className={`stat-card-gradient stat-card-gradient-${tone}`} />
+  );
 
   const compactContent = (
-    <StatCard
-      variant="primary"
-      value={activeCampaigns}
-      label={t('widgets.marketing.activeCampaigns')}
-    />
+    <StatCard variant="primary" value={activeCampaigns.toLocaleString()} label={t('widgets.marketing.activeCampaigns')} className="stat-card-gradient stat-card-gradient-primary" />
   );
 
   const expandedContent = (
     <div className="crm-drawer-stack">
-      <section className="crm-detail-card">
-        <div className="crm-detail-grid">
-          <div>
-            <span>{t('widgets.marketing.activeCampaigns')}</span>
-            <strong>{activeCampaigns}</strong>
+      <section className="crm-collapsible-section">
+        <h3 className="crm-section-title">{t('widgets.marketing.details', 'Campaign details')}</h3>
+        <div className="crm-list">
+          <div className="crm-customer-row">
+            <div className="crm-customer-main">
+              <span className="crm-customer-name">{t('widgets.marketing.activeCampaigns')}</span>
+            </div>
+            <div className="crm-customer-badges">
+              <span className="crm-badge crm-badge-value">{activeCampaigns.toLocaleString()}</span>
+              <span className="crm-badge crm-badge-muted">{activeCampaigns > 0 ? 'Live only' : 'No active campaigns'}</span>
+            </div>
           </div>
-          <div>
-            <span>{t('widgets.common.attention', 'Needs attention')}</span>
-            <strong>{newWeek}</strong>
+          <div className="crm-customer-row">
+            <div className="crm-customer-main">
+              <span className="crm-customer-name">{attentionLabel}</span>
+            </div>
+            <div className="crm-customer-badges">
+              <span className="crm-badge crm-badge-warn">{newWeek.toLocaleString()}</span>
+              <span className="crm-badge crm-badge-muted">{newWeek > 0 ? 'Needs review' : 'No items need attention'}</span>
+            </div>
           </div>
-          <div>
-            <span>{t('widgets.marketing.messagesSent')}</span>
-            <strong>{messagesSent}</strong>
+          <div className="crm-customer-row">
+            <div className="crm-customer-main">
+              <span className="crm-customer-name">{t('widgets.marketing.messagesSent')}</span>
+            </div>
+            <div className="crm-customer-badges">
+              <span className="crm-badge crm-badge-value">{messagesSent.toLocaleString()}</span>
+              <span className="crm-badge crm-badge-muted">{messagesSent > 0 ? 'Last 24h' : 'No messages sent'}</span>
+            </div>
           </div>
-          <div>
-            <span>{t('widgets.marketing.openRate')}</span>
-            <strong>{openRate > 0 ? `${openRate}%` : '—'}</strong>
+          <div className="crm-customer-row">
+            <div className="crm-customer-main">
+              <span className="crm-customer-name">{t('widgets.marketing.openRate')}</span>
+            </div>
+            <div className="crm-customer-badges">
+              <span className="crm-badge crm-badge-good">{openRate > 0 ? `${openRate}%` : '—'}</span>
+              <span className="crm-badge crm-badge-muted">{openRate > 0 ? 'Open rate' : 'No open rate'}</span>
+            </div>
           </div>
         </div>
       </section>
@@ -91,22 +114,6 @@ export function MarketingWidget({ data }: { data?: any }) {
       onCollapse={() => setIsExpanded(false)}
       compactContent={compactContent}
       expandedContent={expandedContent}
-    >
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">{t('widgets.marketing.activeCampaigns')}</span>
-          <span className="text-lg font-semibold">{activeCampaigns}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">{t('widgets.common.newThisWeek')}</span>
-          <span className="text-lg font-semibold">{newWeek}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">{t('widgets.marketing.messagesSent')}</span>
-          <span className="text-lg font-semibold">{messagesSent}</span>
-        </div>
-        <StatCard variant="success" value={openRate > 0 ? `${openRate}%` : '—'} label={t('widgets.marketing.openRate')} />
-      </div>
-    </Widget>
+    />
   );
 }

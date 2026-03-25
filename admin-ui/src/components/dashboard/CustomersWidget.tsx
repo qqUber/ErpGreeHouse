@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Widget } from '../Widget';
+import { StatCard } from '../ui/StatCard';
 
 type CustomersData = {
   total_customers?: number;
@@ -24,7 +25,6 @@ type CustomersData = {
 export function CustomersWidget({ data }: { data?: any }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
 
   const total = Number(data?.totalCustomers ?? 0);
   const newWeek = Number(data?.newCustomers ?? 0);
@@ -32,35 +32,84 @@ export function CustomersWidget({ data }: { data?: any }) {
   const reachableCustomers = Number(data?.reachableCustomers ?? 0);
   const telegramReachable = customers.filter((c: any) => Boolean(c.telegram_id)).length;
   const vkReachable = customers.filter((c: any) => Boolean(c.vk_id)).length;
-  const consentCount = Math.round((Number(data?.consentRate ?? 0) / 100) * total);
-  const consentRate = total > 0 ? Math.round((consentCount / total) * 100) : 0;
   const derivedReachable = customers.filter((c: any) => Boolean(c.telegram_id) || Boolean(c.vk_id));
   const highValueThreshold = Math.max(1, Number(data?.highValueThreshold ?? 15000));
-  const highValue = customers.filter((c: any) => Number(c.ltv ?? c.total_spent ?? 0) >= highValueThreshold);
-  const recentlyActive = customers
-    .slice()
-    .sort((a: any, b: any) => Number(b.transactions ?? 0) - Number(a.transactions ?? 0))
+  const dedupeCustomers = (items: any[]) => {
+    const seen = new Set<string>();
+    return items.filter((customer: any) => {
+      const key = `${customer.id ?? 'no-id'}-${customer.phone ?? 'no-phone'}-${customer.name ?? 'no-name'}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+
+  const uniqueCustomers = dedupeCustomers(customers);
+  const uniqueRecentlyActive = dedupeCustomers(
+    uniqueCustomers
+      .slice()
+      .sort((a: any, b: any) => Number(b.transactions ?? 0) - Number(a.transactions ?? 0))
+      .slice(0, 5)
+  );
+  const uniqueGaps = dedupeCustomers(uniqueCustomers.filter((c: any) => !c.marketing_allowed || (!c.telegram_id && !c.vk_id)));
+  const highValueCustomers = uniqueCustomers
+    .filter((customer: any) => Number(customer.ltv ?? customer.total_spent ?? 0) >= highValueThreshold)
     .slice(0, 5);
-  const gaps = customers.filter((c: any) => !c.marketing_allowed || (!c.telegram_id && !c.vk_id));
-  const selectedCustomer = customers.find((c: any) => c.id === selectedCustomerId) ?? null;
+  const recentlyActiveCustomers = uniqueRecentlyActive.slice(0, 5);
+  const unreachableCustomers = uniqueGaps.slice(0, 5);
+
+  const topCardDefinitions = [
+    {
+      value: total,
+      label: t('widgets.customers.totalCustomers', 'Total Customers'),
+      tone: 'indigo',
+    },
+    {
+      value: telegramReachable,
+      label: t('widgets.customers.telegram', 'Telegram'),
+      tone: 'blue',
+    },
+    {
+      value: vkReachable,
+      label: t('widgets.customers.vk', 'VK'),
+      tone: 'purple',
+    },
+  ];
+
+  const renderSummaryMetric = (label: string, value: React.ReactNode, helper?: string, tone: 'primary' | 'success' | 'warning' | 'info' = 'primary') => (
+    <div className={`crm-summary-card crm-detail-card--accent-${tone}`}>
+      <div className="crm-summary-label">{label}</div>
+      <div className="crm-summary-value">{value}</div>
+      {helper ? <div className="crm-summary-helper">{helper}</div> : null}
+    </div>
+  );
 
   const compactContent = (
-    <div className="kpi-grid-2026 animate-fade-in-up">
-      <div className="kpi-card-2026">
-        <div className="kpi-value-2026 text-indigo-600">{total}</div>
-        <div className="kpi-label-2026">{t('widgets.customers.totalCustomers')}</div>
+    <div className="space-y-4 animate-fade-in-up">
+      <div className="kpi-grid-2026">
+        {topCardDefinitions.map((card) => (
+          <StatCard
+            key={card.label}
+            value={card.value.toLocaleString()}
+            label={card.label}
+            variant={card.tone === 'green' ? 'success' : card.tone === 'blue' ? 'info' : card.tone === 'purple' ? 'primary' : 'primary'}
+            className={`stat-card-gradient stat-card-gradient-${card.tone}`}
+          />
+        ))}
       </div>
-      <div className="kpi-card-2026">
-        <div className="kpi-value-2026 text-blue-600">{telegramReachable}</div>
-        <div className="kpi-label-2026">{t('widgets.customers.telegram')}</div>
-      </div>
-      <div className="kpi-card-2026">
-        <div className="kpi-value-2026 text-purple-600">{vkReachable}</div>
-        <div className="kpi-label-2026">{t('widgets.customers.vk')}</div>
-      </div>
-      <div className="kpi-card-2026">
-        <div className="kpi-value-2026 text-green-600">{consentRate}%</div>
-        <div className="kpi-label-2026">{t('analytics.consentRate')}</div>
+      <div className="crm-summary-grid">
+        <StatCard
+          value={newWeek.toLocaleString()}
+          label={t('widgets.customers.newThisWeek', 'New this week')}
+          variant="primary"
+          className="stat-card-gradient stat-card-gradient-primary"
+        />
+        <StatCard
+          value={(reachableCustomers || derivedReachable.length).toLocaleString()}
+          label={t('widgets.customers.reachable', 'Reachable audience')}
+          variant="info"
+          className="stat-card-gradient stat-card-gradient-info"
+        />
       </div>
     </div>
   );
@@ -72,11 +121,9 @@ export function CustomersWidget({ data }: { data?: any }) {
     const consent = customer.marketing_allowed !== false;
     const ltv = Number(customer.ltv ?? customer.total_spent ?? 0);
     return (
-      <button
+      <div
         key={`${id}-${customer.name ?? 'customer'}`}
-        type="button"
         className="row-item-2026"
-        onClick={() => setSelectedCustomerId(id)}
       >
         <div className="flex items-center gap-3">
           <span className="font-mono text-sm text-gray-500">#{id}</span>
@@ -101,145 +148,59 @@ export function CustomersWidget({ data }: { data?: any }) {
             {t('widgets.customers.ltv')} {ltv.toLocaleString()}
           </span>
         </div>
-      </button>
+      </div>
     );
   };
 
   const expandedContent = (
     <div className="dashboard-widget-2026">
-      {selectedCustomer ? (
-        <section className="stat-card-2026 stat-card-2026-primary mb-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-title-2026">Customer Profile</h3>
-            <button
-              type="button"
-              className="text-sm text-primary-600 hover:text-primary-700"
-              onClick={() => setSelectedCustomerId(null)}
-            >
-              ← Back to list
-            </button>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="kpi-card-2026">
-              <div className="text-xs text-gray-500 uppercase">ID</div>
-              <div className="font-mono text-lg">#{selectedCustomer.id ?? '-'}</div>
-            </div>
-            <div className="kpi-card-2026">
-              <div className="text-xs text-gray-500 uppercase">Name</div>
-              <div className="font-medium text-lg">{selectedCustomer.name ?? '-'}</div>
-            </div>
-            <div className="kpi-card-2026">
-              <div className="text-xs text-gray-500 uppercase">Phone</div>
-              <div className="text-lg">{selectedCustomer.phone ?? '-'}</div>
-            </div>
-            <div className="kpi-card-2026">
-              <div className="text-xs text-gray-500 uppercase">Telegram</div>
-              <div className={`text-lg ${selectedCustomer.telegram_id ? 'text-blue-600 font-semibold' : 'text-gray-400'}`}>
-                {selectedCustomer.telegram_id ?? 'No'}
-              </div>
-            </div>
-            <div className="kpi-card-2026">
-              <div className="text-xs text-gray-500 uppercase">VK</div>
-              <div className={`text-lg ${selectedCustomer.vk_id ? 'text-purple-600 font-semibold' : 'text-gray-400'}`}>
-                {selectedCustomer.vk_id ?? 'No'}
-              </div>
-            </div>
-            <div className="kpi-card-2026">
-              <div className="text-xs text-gray-500 uppercase">Consent</div>
-              <div className={`text-lg ${selectedCustomer.marketing_allowed !== false ? 'text-green-600' : 'text-red-600'}`}>
-                {selectedCustomer.marketing_allowed !== false ? 'Allowed' : 'Denied'}
-              </div>
-            </div>
-            <div className="kpi-card-2026">
-              <div className="text-xs text-gray-500 uppercase">Balance</div>
-              <div className="text-xl font-bold text-indigo-600">
-                {Number(selectedCustomer.balance_points ?? 0).toLocaleString()}
-              </div>
-            </div>
-            <div className="kpi-card-2026">
-              <div className="text-xs text-gray-500 uppercase">LTV</div>
-              <div className="text-xl font-bold text-green-600">
-                {Number(selectedCustomer.ltv ?? selectedCustomer.total_spent ?? 0).toLocaleString()}
-              </div>
-            </div>
-            <div className="kpi-card-2026">
-              <div className="text-xs text-gray-500 uppercase">Last purchase</div>
-              <div className="text-lg">{selectedCustomer.last_purchase_date ?? '-'}</div>
-            </div>
-          </div>
-        </section>
-      ) : (
-        <div className="space-y-4">
-          <section className="mb-4">
-            <h3 className="section-title-2026">High value customers</h3>
-            <div className="space-y-2">
-              {highValue.length ? (
-                highValue.map(renderCustomerRow)
-              ) : (
-                <p className="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">No high-value customers in payload.</p>
-              )}
-            </div>
-          </section>
-          <section className="mb-4">
-            <h3 className="section-title-2026">Recently active customers</h3>
-            <div className="space-y-2">
-              {recentlyActive.length ? (
-                recentlyActive.map(renderCustomerRow)
-              ) : (
-                <p className="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">No recent activity data.</p>
-              )}
-            </div>
-          </section>
-          <section className="mb-4">
-            <h3 className="section-title-2026">Consent gaps / unreachable</h3>
-            <div className="space-y-2">
-              {gaps.length ? (
-                gaps.map(renderCustomerRow)
-              ) : (
-                <p className="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">No consent or reachability gaps.</p>
-              )}
-            </div>
-          </section>
+      <section className="mb-4">
+        <h3 className="section-title-2026">{t('widgets.customers.highValueTitle', 'High value customers')}</h3>
+        <div className="space-y-2">
+          {highValueCustomers.length ? (
+            highValueCustomers.map(renderCustomerRow)
+          ) : (
+            <div className="crm-empty-state">{t('widgets.customers.noHighValue', 'No high-value customers in payload.')}</div>
+          )}
         </div>
-      )}
+      </section>
+
+      <section className="mb-4">
+        <h3 className="section-title-2026">{t('widgets.customers.recentlyActiveTitle', 'Recently active customers')}</h3>
+        <div className="space-y-2">
+          {recentlyActiveCustomers.length ? (
+            recentlyActiveCustomers.map(renderCustomerRow)
+          ) : (
+            <div className="crm-empty-state">{t('widgets.customers.noRecent', 'No recent activity data.')}</div>
+          )}
+        </div>
+      </section>
+
+      <section className="mb-4">
+        <h3 className="section-title-2026">{t('widgets.customers.unreachableTitle', 'Consent gaps / unreachable')}</h3>
+        <div className="space-y-2">
+          {unreachableCustomers.length ? (
+            unreachableCustomers.map(renderCustomerRow)
+          ) : (
+            <div className="crm-empty-state">{t('widgets.customers.noGaps', 'No consent or reachability gaps.')}</div>
+          )}
+        </div>
+      </section>
     </div>
   );
 
   return (
     <Widget
       title={t('widgets.customers.title')}
-      drawerTitle={selectedCustomer ? 'Customer detail' : 'Customer CRM details'}
       isExpanded={isExpanded}
       onExpand={() => {
-        setSelectedCustomerId(null);
         setIsExpanded(true);
       }}
       onCollapse={() => {
-        setSelectedCustomerId(null);
         setIsExpanded(false);
       }}
       compactContent={compactContent}
       expandedContent={expandedContent}
-    >
-      <div className="dashboard-widget-2026 p-4">
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="text-center">
-            <div className="text-xs text-gray-500 uppercase">{t('widgets.common.newThisWeek')}</div>
-            <div className="font-semibold text-green-600">{newWeek}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-xs text-gray-500 uppercase">Reachable</div>
-            <div className="font-semibold text-blue-600">{reachableCustomers || derivedReachable.length}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-xs text-gray-500 uppercase">{t('analytics.consentRate')}</div>
-            <div className="font-semibold text-indigo-600">{consentRate}%</div>
-          </div>
-        </div>
-        <div className="space-y-2">
-          {customers.slice(0, 3).map(renderCustomerRow)}
-        </div>
-      </div>
-    </Widget>
+    />
   );
 }

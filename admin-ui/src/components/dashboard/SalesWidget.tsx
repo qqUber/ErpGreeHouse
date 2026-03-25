@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Widget } from '../Widget';
+import { StatCard } from '../ui/StatCard';
 
 type SalesData = {
   total_revenue?: number;
@@ -45,41 +46,52 @@ export function SalesWidget({ data }: { data?: any }) {
   const growthDisplay = getGrowthDisplay();
 
   const compactContent = (
-    <div className="kpi-card-2026 animate-fade-in-up">
-      <div className="kpi-value-2026">₽{totalRevenue.toLocaleString()}</div>
-      <div className="kpi-label-2026">{t('widgets.sales.totalSales')}</div>
-    </div>
+    <StatCard
+      variant="primary"
+      value={`₽${totalRevenue.toLocaleString()}`}
+      label={t('widgets.sales.totalSales')}
+      className="stat-card-gradient stat-card-gradient-primary"
+    />
   );
+
+  const averageLabel = avgCheck > 0 ? t('widgets.sales.dailyAverage') : t('widgets.sales.dailyAverage', 'Average per day');
+  const averageHelper = avgCheck > 0 ? 'Shown as dashboard period average' : 'No period data available';
+  const thisWeekLabel = t('widgets.sales.thisWeek', 'Sales this week');
 
   const expandedContent = (
     <div className="dashboard-widget-2026">
       <h3 className="section-title-2026">{t('widgets.sales.details')}</h3>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="stat-card-2026 stat-card-2026-primary">
-          <div className="kpi-label-2026">{t('widgets.sales.totalSales')}</div>
-          <div className="kpi-value-2026 text-xl">₽{totalRevenue.toLocaleString()}</div>
-        </div>
-        <div className="stat-card-2026 stat-card-2026-info">
-          <div className="kpi-label-2026">{t('widgets.sales.transactions')}</div>
-          <div className="kpi-value-2026 text-xl text-indigo-600">{transactions}</div>
-        </div>
-        <div className="stat-card-2026 stat-card-2026-success">
-          <div className="kpi-label-2026">{t('widgets.sales.dailyAverage')}</div>
-          <div className="kpi-value-2026 text-xl text-green-600">₽{avgCheck.toLocaleString()}</div>
-        </div>
-        <div className="stat-card-2026 stat-card-2026-warning">
-          <div className="kpi-label-2026">{t('widgets.sales.peakHour')}</div>
-          <div className="kpi-value-2026 text-xl text-amber-600">
-            {peakHour == null ? '—' : `${peakHour}:00`} {peakHourTx > 0 ? `(${peakHourTx})` : ''}
+      <section className="crm-collapsible-section mb-4">
+        <h4 className="crm-section-title">{t('widgets.sales.summary', 'Sales snapshot')}</h4>
+        <div className="crm-list">
+          <div className="crm-customer-row">
+            <div className="crm-customer-main"><span className="crm-customer-name">{t('widgets.sales.totalSales')}</span></div>
+            <div className="crm-customer-badges"><span className="crm-badge crm-badge-value">₽{totalRevenue.toLocaleString()}</span><span className="crm-badge crm-badge-muted">Period total</span></div>
+          </div>
+          <div className="crm-customer-row">
+            <div className="crm-customer-main"><span className="crm-customer-name">{t('widgets.sales.transactions')}</span></div>
+            <div className="crm-customer-badges"><span className="crm-badge crm-badge-good">{transactions}</span><span className="crm-badge crm-badge-muted">Completed orders</span></div>
+          </div>
+          <div className="crm-customer-row">
+            <div className="crm-customer-main"><span className="crm-customer-name">{averageLabel}</span></div>
+            <div className="crm-customer-badges"><span className="crm-badge crm-badge-value">₽{avgCheck.toLocaleString()}</span><span className="crm-badge crm-badge-muted">{averageHelper}</span></div>
+          </div>
+          <div className="crm-customer-row">
+            <div className="crm-customer-main"><span className="crm-customer-name">{t('widgets.sales.peakHour')}</span></div>
+            <div className="crm-customer-badges"><span className="crm-badge crm-badge-warn">{peakHour == null ? '—' : `${peakHour}:00`}</span><span className="crm-badge crm-badge-muted">{peakHourTx > 0 ? `${peakHourTx} tx` : 'No peak data'}</span></div>
           </div>
         </div>
-      </div>
+      </section>
 
       <div className="mt-6">
         <h4 className="text-sm font-semibold text-gray-700 mb-3">{t('widgets.sales.topProduct')}</h4>
-        <div className="row-item-2026">
-          <span className="font-medium">{topProductName}</span>
-          <span className="badge-2026 badge-2026-primary">Top</span>
+        <div className="crm-customer-row">
+          <div className="crm-customer-main">
+            <span className="crm-customer-name">{topProductName}</span>
+          </div>
+          <div className="crm-customer-badges">
+            <span className="crm-badge crm-badge-value">{topProducts.length > 0 ? t('widgets.sales.topItems') : 'No top items available'}</span>
+          </div>
         </div>
       </div>
 
@@ -88,14 +100,14 @@ export function SalesWidget({ data }: { data?: any }) {
           <h4 className="text-sm font-semibold text-gray-700 mb-3">{t('widgets.sales.topItems')}</h4>
           <div className="space-y-2">
             {topProducts.slice(0, 3).map((p: any, idx: number) => (
-              <div
-                key={`${p.name || 'product'}-${idx}`}
-                className="row-item-2026"
-              >
-                <span className="text-sm text-gray-600">{p.name || '—'}</span>
-                <span className="text-sm font-semibold text-gray-800">
-                  {Number(p.quantity || 0)} · ₽{Number(p.revenue || 0).toLocaleString()}
-                </span>
+              <div key={`${p.name || 'product'}-${idx}`} className="crm-customer-row">
+                <div className="crm-customer-main">
+                  <span className="crm-customer-name">{p.name || '—'}</span>
+                </div>
+                <div className="crm-customer-badges">
+                  <span className="crm-badge crm-badge-good">{Number(p.quantity || 0)}</span>
+                  <span className="crm-badge crm-badge-value">₽{Number(p.revenue || 0).toLocaleString()}</span>
+                </div>
               </div>
             ))}
           </div>
@@ -103,10 +115,12 @@ export function SalesWidget({ data }: { data?: any }) {
       ) : null}
 
       <div className="mt-6">
-        <div className={`stat-card-2026 stat-card-2026-${growthDisplay.variant === 'success' ? 'success' : growthDisplay.variant === 'warning' ? 'warning' : 'info'}`}>
-          <div className="kpi-label-2026">{t('widgets.sales.growth')}</div>
-          <div className={`kpi-value-2026 text-2xl ${growthDisplay.variant === 'success' ? 'text-green-600' : growthDisplay.variant === 'warning' ? 'text-amber-600' : 'text-blue-600'}`}>
-            {growthDisplay.value}
+        <div className="crm-customer-row">
+          <div className="crm-customer-main">
+            <span className="crm-customer-name">{t('widgets.sales.growth')}</span>
+          </div>
+          <div className="crm-customer-badges">
+            <span className={`crm-badge ${growthDisplay.variant === 'success' ? 'crm-badge-good' : growthDisplay.variant === 'warning' ? 'crm-badge-warn' : 'crm-badge-value'}`}>{growthDisplay.value}</span>
           </div>
         </div>
       </div>
@@ -121,31 +135,6 @@ export function SalesWidget({ data }: { data?: any }) {
       onCollapse={() => setIsExpanded(false)}
       compactContent={compactContent}
       expandedContent={expandedContent}
-    >
-      <div className="dashboard-widget-2026 p-4">
-        <div className="space-y-4">
-          <div className="row-item-2026">
-            <span className="text-sm text-gray-600">{t('widgets.sales.totalSales')}</span>
-            <span className="text-lg font-semibold text-gray-800">₽{totalRevenue.toLocaleString()}</span>
-          </div>
-          <div className="row-item-2026">
-            <span className="text-sm text-gray-600">{t('date.thisWeek')}</span>
-            <span className="text-lg font-semibold text-blue-600">₽{thisWeek.toLocaleString()}</span>
-          </div>
-          <div className="row-item-2026">
-            <span className="text-sm text-gray-600">{t('widgets.sales.dailyAverage')}</span>
-            <span className="text-lg font-semibold text-green-600">₽{avgCheck.toLocaleString()}</span>
-          </div>
-          <div className={`stat-card-2026 stat-card-2026-${growthDisplay.variant === 'success' ? 'success' : growthDisplay.variant === 'warning' ? 'warning' : 'info'}`}>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">{t('widgets.sales.growth')}</span>
-              <span className={`text-xl font-bold ${growthDisplay.variant === 'success' ? 'text-green-600' : growthDisplay.variant === 'warning' ? 'text-amber-600' : 'text-blue-600'}`}>
-                {growthDisplay.value}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Widget>
+    />
   );
 }

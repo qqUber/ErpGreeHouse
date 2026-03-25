@@ -14,14 +14,26 @@ export function IntegrationsWidget({ data }: { data?: any }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const integrations = data?.integrations ?? [];
+  const uniqueIntegrations = integrations.filter((integration: any, index: number, array: any[]) => {
+    const key = `${integration.kind ?? 'kind'}-${integration.name ?? 'name'}-${integration.status ?? 'status'}`;
+    return array.findIndex((candidate: any) => `${candidate.kind ?? 'kind'}-${candidate.name ?? 'name'}-${candidate.status ?? 'status'}` === key) === index;
+  });
   const total = integrations.length;
-  const active = integrations.filter((integration: any) => integration.status === 'online').length;
+  const active = uniqueIntegrations.filter((integration: any) => integration.status === 'online').length;
   const pendingCount = Number(data?.pendingCount ?? 0);
   const lastDelivery = data?.recentDeliveries?.[0]?.created_at;
   const lastSync = lastDelivery
     ? new Date(lastDelivery).toLocaleString()
     : t('widgets.integrations.twoMinutesAgo');
   const allConnected = pendingCount === 0;
+
+  const renderSummaryMetric = (label: string, value: React.ReactNode, helper?: string, tone: 'primary' | 'success' | 'warning' | 'info' = 'primary') => (
+    <div className={`crm-summary-card crm-detail-card--accent-${tone}`}>
+      <div className="crm-summary-label">{label}</div>
+      <div className="crm-summary-value">{value}</div>
+      {helper ? <div className="crm-summary-helper">{helper}</div> : null}
+    </div>
+  );
 
   const compactContent = (
     <StatCard
@@ -33,31 +45,19 @@ export function IntegrationsWidget({ data }: { data?: any }) {
 
   const expandedContent = (
     <div className="crm-drawer-stack">
-      <section className="crm-detail-card">
-        <div className="crm-detail-grid">
-          <div>
-            <span>{t('widgets.integrations.totalIntegrations')}</span>
-            <strong>{total}</strong>
-          </div>
-          <div>
-            <span>{t('widgets.common.active')}</span>
-            <strong>{active}</strong>
-          </div>
-          <div>
-            <span>{t('widgets.common.pending', 'Pending')}</span>
-            <strong>{pendingCount}</strong>
-          </div>
-          <div>
-            <span>{t('widgets.integrations.lastSync')}</span>
-            <strong>{lastSync}</strong>
-          </div>
+      <section className="crm-detail-card crm-detail-card--accent-warning">
+        <div className="crm-summary-grid">
+          {renderSummaryMetric(t('widgets.integrations.totalIntegrations'), total, total > 0 ? 'Configured connectors' : 'No integrations configured', 'primary')}
+          {renderSummaryMetric(t('widgets.common.active'), active, active > 0 ? 'Online now' : 'No active integrations', 'success')}
+          {renderSummaryMetric(t('widgets.common.pending', 'Pending'), pendingCount, allConnected ? 'All connected' : 'Pending deliveries exist', 'warning')}
+          {renderSummaryMetric(t('widgets.integrations.lastSync'), lastSync, allConnected ? 'All connected' : 'Pending deliveries exist', 'info')}
         </div>
       </section>
       <section className="crm-collapsible-section">
         <h3 className="crm-section-title">Integration status</h3>
         <div className="crm-list">
-          {integrations.length ? (
-            integrations.map((integration: any, index: number) => (
+          {uniqueIntegrations.length ? (
+            uniqueIntegrations.map((integration: any, index: number) => (
               <div
                 key={`${integration.kind}-${integration.name}-${index}`}
                 className="crm-customer-row"
@@ -92,23 +92,6 @@ export function IntegrationsWidget({ data }: { data?: any }) {
       onCollapse={() => setIsExpanded(false)}
       compactContent={compactContent}
       expandedContent={expandedContent}
-    >
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">
-            {t('widgets.integrations.totalIntegrations')}
-          </span>
-          <span className="text-lg font-semibold">{total}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">{t('widgets.common.active')}</span>
-          <span className="text-lg font-semibold">{active}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">{t('widgets.integrations.lastSync')}</span>
-          <span className="text-lg font-semibold">{lastSync}</span>
-        </div>
-      </div>
-    </Widget>
+    />
   );
 }

@@ -645,7 +645,19 @@
       "noChannel": "No channel",
       "consent": "Consent",
       "noConsent": "No consent",
-      "ltv": "LTV"
+      "ltv": "LTV",
+      "newThisWeek": "New this week",
+      "newThisWeekHelper": "Current period",
+      "reachable": "Reachable audience",
+      "reachableHelper": "Telegram or VK contactable",
+      "consentRate": "Consent rate",
+      "consentHelper": "Marketing consent rate",
+      "highValueTitle": "High value customers",
+      "recentlyActiveTitle": "Recently active customers",
+      "unreachableTitle": "Consent gaps / unreachable",
+      "noHighValue": "No high-value customers in payload.",
+      "noRecent": "No recent activity data.",
+      "noGaps": "No consent or reachability gaps."
     },
     "products": {
       "title": "Products",
@@ -664,7 +676,17 @@
       "quantity": "Qty",
       "revenue": "Rev",
       "trend": "Trend",
-      "productDetail": "Product detail"
+      "productDetail": "Product detail",
+      "summaryTitle": "Product overview",
+      "topProductsTitle": "Top products",
+      "lowStockTitle": "Low stock risk",
+      "noTopProducts": "No top products available.",
+      "activeCatalogHelper": "Active catalog",
+      "recentMovementHelper": "Products with recent movement",
+      "noTrendData": "No trend data available",
+      "combinedQuantityHelper": "Combined quantity",
+      "needsReplenishment": "Needs replenishment",
+      "noLowStockItems": "No low stock items"
     },
     "marketing": {
       "title": "Marketing",

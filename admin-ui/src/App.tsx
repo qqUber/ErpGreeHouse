@@ -19,6 +19,7 @@ import { DashboardView } from './components/dashboard/DashboardView';
 import { IntegrationSettings } from './components/IntegrationSettings';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ProductImport } from './components/ProductImport';
+import { ThemeSwitcher, type ThemeMode } from './components/ThemeSwitcher';
 import { ErrorMessage, SuccessMessage, WarningMessage } from './components/ui';
 import { useDashboardData } from './hooks/useDashboardData';
 import { useViewportMode } from './hooks/useViewportMode';
@@ -53,6 +54,12 @@ function App() {
   // Use auth context for authentication state
   const { t } = useTranslation();
   const viewport = useViewportMode();
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    if (typeof window === 'undefined') return 'light';
+    const savedTheme = window.localStorage.getItem('theme');
+    if (savedTheme === 'dark' || savedTheme === 'light') return savedTheme;
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
 
   // Role label helper - uses translation from component scope
   function roleLabel(role: string) {
@@ -139,6 +146,15 @@ function App() {
     if (typeof localStorage === 'undefined') return;
     localStorage.setItem('admin_login_username', username);
   }, [username]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.setAttribute('data-theme', themeMode);
+    document.documentElement.style.colorScheme = themeMode;
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('theme', themeMode);
+    }
+  }, [themeMode]);
 
   useEffect(() => {
     if (!selectedId || selectedId <= 0) {
@@ -735,6 +751,7 @@ function App() {
           </nav>
           {authReady ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <ThemeSwitcher value={themeMode} onChange={setThemeMode} />
               <LanguageSwitcher />
               <div className="pill" style={{ whiteSpace: 'nowrap', minWidth: 'fit-content' }}>
                 {t('common.role')}: {roleLabel(me?.role || '')}
