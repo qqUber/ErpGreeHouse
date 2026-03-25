@@ -11,17 +11,15 @@ from .integrations.bots.vk_handler import process_vk_webhook_event
 from .integrations.bots.telegram_handler import create_bot, ensure_telegram_bot_menu
 from .integration_settings_api import router as integration_settings_router
 from .erp_scheduler import start_erp_sync_scheduler
-from .dev_seed import ensure_seed_data, should_auto_seed
 from .debug_api import router as debug_router
 from .dashboard_api import router as dashboard_router
 from .analytics_api import router as analytics_router
 from .admin_auth_api import router as auth_router
 from .admin_auth_api import public_router as auth_public_router
-from .admin_auth_api import _bootstrap_default_admin, _bootstrap_demo_users
 from .admin_api import router as admin_router
 from .admin_api import public_router as public_router
 from .middlewares import rate_limit_middleware
-from .db import init_db
+from .db import init_db, get_db
 from .config import get_settings
 import logging
 import logging.config
@@ -82,16 +80,17 @@ mimetypes.add_type("text/css", ".css")
 async def lifespan(app: FastAPI):
     # Startup
     settings = get_settings()
-    init_db()
-    _bootstrap_default_admin()
-    _bootstrap_demo_users()
-    if should_auto_seed(settings):
-        seeded = ensure_seed_data()
-        logger.info("[SEED] Auto-seed completed: %s", seeded)
-
-    # Initialize country and currency settings (ENV -> DB -> Auto)
-    _initialize_country_settings(settings)
-
+    
+    # Verify database connection (migrations and seeding done by init container)
+    db = get_db()
+    conn = db.connect()
+    try:
+        cursor = conn.execute("SELECT 1")
+        cursor.fetchone()
+        logger.info("Database connection verified")
+    finally:
+        conn.close()
+    
     # Load VK config from database if available
     _load_vk_config()
 

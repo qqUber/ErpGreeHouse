@@ -292,7 +292,15 @@ class ProductRecommendationService:
                     tuple(preferred_categories) + tuple(recent_products) + (limit,),
                 )
 
-                for row in cur.fetchall():
+                try:
+                    rows = cur.fetchall()
+                except Exception:
+                    rows = []
+
+                if not isinstance(rows, (list, tuple)):
+                    rows = []
+
+                for row in rows:
                     recommendations.append(
                         {
                             "id": int(row["id"]),
@@ -326,7 +334,15 @@ class ProductRecommendationService:
                     tuple(existing_codes) + (needed,),
                 )
 
-                for row in cur.fetchall():
+                try:
+                    rows = cur.fetchall()
+                except Exception:
+                    rows = []
+
+                if not isinstance(rows, (list, tuple)):
+                    rows = []
+
+                for row in rows:
                     recommendations.append(
                         {
                             "id": int(row["id"]),

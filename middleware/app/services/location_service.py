@@ -692,7 +692,9 @@ class LocationService:
         2. Existing DB settings (system_settings table)
         3. Auto-detect from first available country in DB
 
-        Saves the final settings to DB for persistence.
+        If ENV values are provided, they are treated as immutable and are not
+        written back to the database. Otherwise, the database stores the first
+        resolved values once at startup.
         """
         result = {
             "initialized": False,
@@ -752,46 +754,42 @@ class LocationService:
                     currency_code = str(first_country["currency_code"] or "RUB")
                     source = "auto"
 
-            # Save to DB if we found a country
-            if country_id:
-                # Save country
-                conn.execute(
-                    """INSERT INTO system_settings (key, value, updated_at)
-                       VALUES ('default_country_id', ?, datetime('now'))
-                       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')""",
-                    (str(country_id),),
-                )
-
-                # Save currency
-                if currency_code:
-                    conn.execute(
-                        """INSERT INTO system_settings (key, value, updated_at)
-                           VALUES ('default_currency_code', ?, datetime('now'))
-                           ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')""",
-                        (currency_code,),
-                    )
-
-                # Also save force_single_country based on active countries count
+            if country_id is not None:
                 cur = conn.execute(
                     "SELECT COUNT(*) as count FROM countries WHERE active = 1"
                 )
                 country_count = cur.fetchone()["count"]
                 force_single = country_count == 1
 
-                conn.execute(
-                    """INSERT INTO system_settings (key, value, updated_at)
-                       VALUES ('force_single_country', ?, datetime('now'))
-                       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')""",
-                    ("1" if force_single else "0",),
-                )
+                if not env_country_code and not env_currency_code:
+                    conn.execute(
+                        """INSERT INTO system_settings (key, value, updated_at)
+                           VALUES ('default_country_id', ?, datetime('now'))
+                           ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')""",
+                        (str(country_id),),
+                    )
 
-                conn.commit()
+                    if currency_code:
+                        conn.execute(
+                            """INSERT INTO system_settings (key, value, updated_at)
+                               VALUES ('default_currency_code', ?, datetime('now'))
+                               ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')""",
+                            (currency_code,),
+                        )
 
-                # Invalidate cache
-                r = get_redis()
-                r.delete("system:default_country")
-                r.delete("system:default_currency_code")
-                r.delete("system:force_single_country")
+                    conn.execute(
+                        """INSERT INTO system_settings (key, value, updated_at)
+                           VALUES ('force_single_country', ?, datetime('now'))
+                           ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')""",
+                        ("1" if force_single else "0",),
+                    )
+
+                    conn.commit()
+
+                    r = get_redis()
+                    r.delete("system:default_country")
+                    r.delete("system:default_currency_code")
+                    r.delete("system:force_single_country")
 
                 result.update(
                     {

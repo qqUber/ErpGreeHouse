@@ -411,6 +411,13 @@ def init_db() -> None:
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
             );
 
+            CREATE TABLE IF NOT EXISTS seed_migrations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                filename TEXT NOT NULL UNIQUE,
+                checksum TEXT,
+                applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+
             -- Performance indexes for QR token system
             CREATE INDEX IF NOT EXISTS idx_customers_qr_token ON customers(qr_token);
             CREATE INDEX IF NOT EXISTS idx_system_settings_key ON system_settings(key);
