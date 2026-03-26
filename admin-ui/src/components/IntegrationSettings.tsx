@@ -64,21 +64,49 @@ type VKStatus = {
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
+// Menu item definitions with available template variables documentation
 const TELEGRAM_MENU_DEFINITIONS = [
-  { id: 'balance_card', label: 'Баланс и карта', description: 'Баланс, QR и дополнительные медиа' },
-  { id: 'menu_addresses', label: 'Меню и адреса', description: 'Меню, адреса и кнопка перехода' },
+  { 
+    id: 'balance_card', 
+    label: 'Баланс и карта', 
+    description: 'Баланс, QR и дополнительные медиа',
+    availableVars: ['{qr_token}', '{customer_id}', '{full_name}', '{balance}', '{bonus_balance}', '{total_purchases}', '{loyalty_level}']
+  },
+  { 
+    id: 'menu_addresses', 
+    label: 'Меню и адреса', 
+    description: 'Меню, адреса и кнопка перехода',
+    availableVars: ['{city}'] // City-based content
+  },
   {
     id: 'open_coffee_shop',
     label: 'Открыть кофейню',
     description: 'Запуск приложения или каталога',
+    availableVars: [] // No variables, just media/video
   },
-  { id: 'ask_question', label: 'Задать вопрос', description: 'Сообщение для связи с клиентом' },
-  { id: 'leave_feedback', label: 'Оставить отзыв', description: 'Сообщение для сбора отзывов' },
-  { id: 'vacancies', label: 'Вакансии', description: 'Текст и медиа про вакансии' },
+  { 
+    id: 'ask_question', 
+    label: 'Задать вопрос', 
+    description: 'Сообщение для связи с клиентом',
+    availableVars: [] // Static text only
+  },
+  { 
+    id: 'leave_feedback', 
+    label: 'Оставить отзыв', 
+    description: 'Сообщение для сбора отзывов',
+    availableVars: [] // Static text only
+  },
+  { 
+    id: 'vacancies', 
+    label: 'Вакансии', 
+    description: 'Текст и медиа про вакансии',
+    availableVars: [] // Static text only
+  },
   {
     id: 'about_club',
     label: 'Что такое клуб Green House?',
     description: 'Описание клуба и преимуществ',
+    availableVars: [] // Static text only
   },
 ] as const;
 
@@ -793,10 +821,22 @@ export function IntegrationSettings() {
                             e.target.value
                           )
                         }
-                        placeholder="Текст сообщения. Можно использовать {balance}, {customer_name}, {qr_token}, {customer_id}"
+                        placeholder="Введите текст сообщения..."
                         rows={4}
                         style={{ width: '100%' }}
                       />
+                      {(() => {
+                        const definition = TELEGRAM_MENU_DEFINITIONS.find(
+                          (d) => d.id === selectedTelegramMenuItem.id
+                        );
+                        const vars = definition?.availableVars || [];
+                        if (vars.length === 0) return null;
+                        return (
+                          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+                            Доступные переменные: {vars.join(', ')}
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
 

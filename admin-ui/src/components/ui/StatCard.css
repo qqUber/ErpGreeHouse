@@ -26,15 +26,17 @@
 }
 
 .stat-card-value {
-  font-size: 1.5rem;
+  font-size: 1.875rem;
   font-weight: 700;
   line-height: 1.2;
 }
 
 .stat-card-label {
-  font-size: var(--font-size-sm);
+  font-size: 0.75rem;
   color: var(--muted);
   line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .stat-card::before {
@@ -121,10 +123,10 @@ html[data-theme='dark'] .stat-card-gradient-info {
   }
 
   .stat-card-value {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
   }
 
   .stat-card-label {
-    font-size: var(--font-size-xs);
+    font-size: 0.65rem;
   }
 }

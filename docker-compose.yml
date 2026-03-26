@@ -14,6 +14,27 @@ services:
     volumes:
       - redis_data:/data
 
+  # Database initialization container
+  db-init:
+    build:
+      context: ./middleware
+      dockerfile: Dockerfile
+      target: development
+    container_name: erp_db_init
+    command: ["python", "-m", "app.db_init"]
+    env_file:
+      - .env
+    environment:
+      - CRM_DB_PATH=/app/data/crm.db
+      - SEED_FILE_PATH=/app/seed/default_seed.json
+    volumes:
+      - db_data:/app/data
+      - ./middleware:/app
+      - ./middleware/seed:/app/seed:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+
   # Backend API
   backend:
     build:
@@ -28,9 +49,13 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
       - ADMIN_SECRET=${ADMIN_SECRET}
+      - CRM_DB_PATH=/app/data/crm.db
     volumes:
+      - db_data:/app/data
       - ./middleware:/app
     depends_on:
+      db-init:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     healthcheck:
@@ -51,9 +76,13 @@ services:
       - .env
     environment:
       - REDIS_URL=redis://redis:6379/0
+      - CRM_DB_PATH=/app/data/crm.db
     volumes:
+      - db_data:/app/data
       - ./middleware:/app
     depends_on:
+      db-init:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
 
@@ -97,3 +126,4 @@ services:
 
 volumes:
   redis_data:
+  db_data:

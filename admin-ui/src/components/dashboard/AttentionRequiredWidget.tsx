@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Widget } from '../Widget';
 import { StatCard } from '../ui/StatCard';
@@ -17,99 +18,102 @@ interface AttentionRequiredData {
 
 export function AttentionRequiredWidget({ data }: { data?: AttentionRequiredData }) {
   const { t } = useTranslation();
+  const [isExpanded, setIsExpanded] = useState(false);
   const items = data?.items ?? [];
   const priority = data?.priority ?? items[0] ?? null;
-  const attentionLabel = t('widgets.attentionRequired.attention', 'Attention');
-  const sectionTitle = t('widgets.attentionRequired.title', 'Attention Required');
-  const detailTitle = t('widgets.attentionRequired.details', 'Priority actions and analytics');
-
-  const actionOptions = [
-    {
-      title: t('widgets.attentionRequired.actionFast', 'Fast action'),
-      description: t('widgets.attentionRequired.actionFastDesc', 'Handle urgent cases with the highest business impact first.'),
-    },
-    {
-      title: t('widgets.attentionRequired.actionSegment', 'Segmented review'),
-      description: t('widgets.attentionRequired.actionSegmentDesc', 'Group records by risk, value, and channel reachability before outreach.'),
-    },
-    {
-      title: t('widgets.attentionRequired.actionNurture', 'Nurture flow'),
-      description: t('widgets.attentionRequired.actionNurtureDesc', 'Move non-urgent items into a follow-up cadence with clear ownership.'),
-    },
-  ];
-
-  const bestPractices = [
-    t('widgets.attentionRequired.bestPractice1', 'Prioritize by urgency, value, and contactability.'),
-    t('widgets.attentionRequired.bestPractice2', 'Keep one owner per action to avoid duplicated follow-up.'),
-    t('widgets.attentionRequired.bestPractice3', 'Use channel-aware messaging for Telegram, VK, and phone.'),
-  ];
 
   const compactContent = (
-    <div className="crm-widget-compact">
-      <div className="crm-kpi-grid">
-        <StatCard variant="warning" value={(priority ? priority.value : 0).toLocaleString()} label={attentionLabel} className="stat-card-gradient stat-card-gradient-warning" />
+    <div className="animate-fade-in-up">
+      <StatCard
+        variant="warning"
+        value={(priority ? priority.value : 0).toLocaleString()}
+        label={t('widgets.attentionRequired.attention')}
+        className="stat-card-gradient stat-card-gradient-warning"
+      />
+    </div>
+  );
+
+  const renderAttentionRow = (item: AttentionItem) => (
+    <div key={item.id} className="row-item-2026">
+      <div className="flex items-center gap-3">
+        <span className="font-medium">{item.title}</span>
+        <span className="text-sm text-gray-500">
+          {item.tone === 'danger'
+            ? t('widgets.attentionRequired.criticalPriority')
+            : t('widgets.attentionRequired.watchlistItem')}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className={`badge-2026 ${item.tone === 'danger' ? 'badge-2026-warning' : 'badge-2026-primary'}`}>
+          {item.value.toLocaleString()}
+          {item.suffix ?? ''}
+        </span>
       </div>
     </div>
   );
 
+  const renderActionRow = (option: { title: string; description: string }) => (
+    <div key={option.title} className="row-item-2026">
+      <div className="flex flex-col gap-1">
+        <span className="font-medium">{option.title}</span>
+        <span className="text-sm text-gray-500">{option.description}</span>
+      </div>
+      <span className="badge-2026 badge-2026-primary">
+        {t('widgets.attentionRequired.actionBadge')}
+      </span>
+    </div>
+  );
+
+  const renderBestPracticeRow = (practice: string) => (
+    <div key={practice} className="row-item-2026">
+      <span className="font-medium">{practice}</span>
+      <span className="badge-2026 badge-2026-success">
+        {t('widgets.attentionRequired.bestPracticeBadge')}
+      </span>
+    </div>
+  );
+
   const expandedContent = (
-    <div className="crm-drawer-stack">
-      <section className="crm-collapsible-section">
-        <h3 className="crm-section-title">{detailTitle}</h3>
-        <div className="crm-list">
+    <div className="dashboard-widget-2026">
+      <section className="mb-4">
+        <h3 className="section-title-2026">{t('widgets.attentionRequired.details')}</h3>
+        <div className="space-y-2">
           {items.length ? (
-            items.map((item) => (
-              <div key={item.id} className="crm-customer-row">
-                <div className="crm-customer-main">
-                  <span className="crm-customer-name">{item.title}</span>
-                  <span className="crm-customer-id">{item.tone === 'danger' ? 'Critical priority' : 'Watchlist item'}</span>
-                </div>
-                <div className="crm-customer-badges">
-                  <span
-                    className={`crm-badge ${item.tone === 'danger' ? 'crm-badge-warn' : 'crm-badge-value'}`}
-                  >
-                    {item.value.toLocaleString()}
-                    {item.suffix ?? ''}
-                  </span>
-                </div>
-              </div>
-            ))
+            items.map(renderAttentionRow)
           ) : (
-            <p className="crm-empty-state">No attention items in payload.</p>
+            <div className="crm-empty-state">{t('widgets.attentionRequired.noItems')}</div>
           )}
         </div>
       </section>
 
-      <section className="crm-collapsible-section">
-        <h3 className="crm-section-title">Action options</h3>
-        <div className="crm-list">
-          {actionOptions.map((option) => (
-            <div key={option.title} className="crm-customer-row">
-              <div className="crm-customer-main">
-                <span className="crm-customer-name">{option.title}</span>
-                <span className="crm-customer-id">{option.description}</span>
-              </div>
-              <div className="crm-customer-badges">
-                <span className="crm-badge crm-badge-value">Action</span>
-              </div>
-            </div>
-          ))}
+      <section className="mb-4">
+        <h3 className="section-title-2026">{t('widgets.attentionRequired.actionOptions')}</h3>
+        <div className="space-y-2">
+          {[
+            {
+              title: t('widgets.attentionRequired.actionFast'),
+              description: t('widgets.attentionRequired.actionFastDesc'),
+            },
+            {
+              title: t('widgets.attentionRequired.actionSegment'),
+              description: t('widgets.attentionRequired.actionSegmentDesc'),
+            },
+            {
+              title: t('widgets.attentionRequired.actionNurture'),
+              description: t('widgets.attentionRequired.actionNurtureDesc'),
+            },
+          ].map(renderActionRow)}
         </div>
       </section>
 
-      <section className="crm-collapsible-section">
-        <h3 className="crm-section-title">CRM best practices</h3>
-        <div className="crm-list">
-          {bestPractices.map((practice) => (
-            <div key={practice} className="crm-customer-row">
-              <div className="crm-customer-main">
-                <span className="crm-customer-name">{practice}</span>
-              </div>
-              <div className="crm-customer-badges">
-                <span className="crm-badge crm-badge-good">Best practice</span>
-              </div>
-            </div>
-          ))}
+      <section className="mb-4">
+        <h3 className="section-title-2026">{t('widgets.attentionRequired.bestPractices')}</h3>
+        <div className="space-y-2">
+          {[
+            t('widgets.attentionRequired.bestPractice1'),
+            t('widgets.attentionRequired.bestPractice2'),
+            t('widgets.attentionRequired.bestPractice3'),
+          ].map(renderBestPracticeRow)}
         </div>
       </section>
     </div>
@@ -117,7 +121,10 @@ export function AttentionRequiredWidget({ data }: { data?: AttentionRequiredData
 
   return (
     <Widget
-      title={sectionTitle}
+      title={t('widgets.attentionRequired.title')}
+      isExpanded={isExpanded}
+      onExpand={() => setIsExpanded(true)}
+      onCollapse={() => setIsExpanded(false)}
       compactContent={compactContent}
       expandedContent={expandedContent}
     />

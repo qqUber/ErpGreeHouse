@@ -3267,10 +3267,10 @@ html[data-theme='dark'] .language-option.active {
 }
 
 .crm-summary-value {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
   color: var(--neutral-900);
-  line-height: 1.15;
+  line-height: 1.2;
 }
 
 .crm-summary-helper {

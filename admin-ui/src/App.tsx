@@ -1938,7 +1938,7 @@ function PosView({ refreshCustomers, products, reloadProducts, onSaleDone }: Pos
 
   // Auto-load products on mount if empty
   useEffect(() => {
-    if (products.length === 0) {
+    if (!products || products.length === 0) {
       void reloadProducts();
     }
   }, []);
@@ -1946,7 +1946,7 @@ function PosView({ refreshCustomers, products, reloadProducts, onSaleDone }: Pos
   async function submitSale() {
     const parsedCustomerId = Number(customerId.trim());
     const parsedQty = Number(qty.trim());
-    const product = products.find((p) => String(p.id) === selectedProductId);
+    const product = products?.find((p) => String(p.id) === selectedProductId);
 
     if (!Number.isInteger(parsedCustomerId) || parsedCustomerId < 1) {
       setErr('Customer ID must be a positive integer');

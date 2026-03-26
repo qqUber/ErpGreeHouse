@@ -263,17 +263,14 @@ html[data-theme='dark'] .language-option.active {
 }
 
 .kpi-value-2026 {
-  font-size: var(--font-size-3xl);
-  font-weight: var(--font-weight-extrabold);
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--neutral-900);
   line-height: 1.2;
 }
 
 .kpi-label-2026 {
-  font-size: var(--font-size-xs);
+  font-size: 0.75rem;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -465,7 +462,7 @@ html[data-theme='dark'] .language-option.active {
   }
 
   .kpi-value-2026 {
-    font-size: var(--font-size-2xl);
+    font-size: 1.5rem;
   }
 }
 

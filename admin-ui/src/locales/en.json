@@ -717,11 +717,37 @@
       "peakHour": "Peak Hour",
       "growth": "Growth",
       "saturday": "Saturday",
-      "latte": "Latte"
+      "latte": "Latte",
+      "thisWeekSales": "Sales this week",
+      "periodTotal": "Period total",
+      "completedOrders": "Completed orders",
+      "periodAverageHelper": "Shown as dashboard period average",
+      "noPeriodData": "No period data available",
+      "noPeakData": "No peak data",
+      "noTopItems": "No top items available",
+      "summaryTitle": "Sales snapshot",
+      "txSuffix": "tx"
     },
-    "analytics": {
-      "dashboardTitle": "Analytics Dashboard",
-      "dashboardDesc": "Sales, customers, and products over time"
+    "attentionRequired": {
+      "title": "Attention Required",
+      "attention": "Attention",
+      "details": "Priority actions and analytics",
+      "criticalPriority": "Critical priority",
+      "watchlistItem": "Watchlist item",
+      "actionOptions": "Action options",
+      "actionFast": "Fast action",
+      "actionFastDesc": "Handle urgent cases with the highest business impact first.",
+      "actionSegment": "Segmented review",
+      "actionSegmentDesc": "Group records by risk, value, and channel reachability before outreach.",
+      "actionNurture": "Nurture flow",
+      "actionNurtureDesc": "Move non-urgent items into a follow-up cadence with clear ownership.",
+      "bestPractices": "CRM best practices",
+      "bestPractice1": "Prioritize by urgency, value, and contactability.",
+      "bestPractice2": "Keep one owner per action to avoid duplicated follow-up.",
+      "bestPractice3": "Use channel-aware messaging for Telegram, VK, and phone.",
+      "actionBadge": "Action",
+      "bestPracticeBadge": "Best practice",
+      "noItems": "No attention items in payload."
     }
   }
 }

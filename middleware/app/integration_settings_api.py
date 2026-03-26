@@ -16,7 +16,7 @@ from .admin_auth_api import require_jwt_auth
 from .auth import check_roles
 from .config import get_settings
 from .db import get_db
-from .handlers import _get_telegram_integration_config
+from .handlers import TELEGRAM_I18N, _get_telegram_integration_config
 from .integrations.bots.telegram_handler import (
     create_bot,
     create_bot_with_token,
@@ -450,6 +450,83 @@ def get_telegram_menu_config(
             "support_chat_id": None,
             "base_web_url": get_settings().base_web_url,
         }
+
+
+# --- Bot Text Management Endpoints ---
+
+
+class BotTextsIn(BaseModel):
+    texts: dict[str, dict[str, str]] = Field(default_factory=dict)
+
+
+@router.get("/telegram/texts")
+def get_telegram_texts(
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Get bot i18n texts - defaults with optional custom overrides from config"""
+    check_roles(auth_result, roles=("owner", "marketer"))
+
+    try:
+        config = _get_telegram_integration_config()
+        # Get custom texts from config (if any)
+        custom_texts = config.get("custom_texts", {})
+
+        # Build response with defaults and overrides
+        result = {}
+        for lang in ["ru", "en"]:
+            result[lang] = {
+                # Include all default texts
+                **TELEGRAM_I18N.get(lang, {}),
+                # Override with custom texts if present
+                **custom_texts.get(lang, {})
+            }
+
+        return {
+            "texts": result,
+            "has_custom": bool(custom_texts),
+        }
+    except Exception as e:
+        # Return defaults on error
+        return {
+            "texts": TELEGRAM_I18N,
+            "has_custom": False,
+            "error": str(e),
+        }
+
+
+@router.post("/telegram/texts")
+def save_telegram_texts(
+    payload: BotTextsIn,
+    auth_result: dict[str, Any] = Depends(require_jwt_auth),
+) -> dict[str, Any]:
+    """Save custom bot i18n texts to config (overrides defaults)"""
+    check_roles(auth_result, roles=("owner", "marketer"))
+
+    db = get_db()
+    conn = db.connect()
+    try:
+        # Get existing config
+        cur = conn.execute("SELECT id, config_json FROM integrations WHERE kind='telegram' LIMIT 1")
+        row = cur.fetchone()
+
+        if row:
+            try:
+                config = json.loads(row["config_json"] or "{}")
+            except Exception:
+                config = {}
+            # Update custom texts
+            config["custom_texts"] = payload.texts
+            conn.execute(
+                "UPDATE integrations SET config_json=?, updated_at=datetime('now') WHERE id=?",
+                (json.dumps(config, ensure_ascii=False), int(row["id"])),
+            )
+            conn.commit()
+            return {"saved": True, "count": sum(len(v) for v in payload.texts.values())}
+        else:
+            # No telegram integration exists yet
+            return {"saved": False, "error": "Telegram integration not found. Please configure bot token first."}
+    finally:
+        conn.close()
 
 
 # --- Combined Status ---

@@ -1,0 +1,374 @@
+{
+  "version": "1.0.0",
+  "products": [
+    {
+      "code": "TEA-001",
+      "name": "Green Tea",
+      "kind": "tea",
+      "price": 140
+    },
+    {
+      "code": "SAND-001",
+      "name": "Chicken Sandwich",
+      "kind": "food",
+      "price": 320
+    },
+    {
+      "code": "JV-001",
+      "name": "Orange Juice",
+      "kind": "drink",
+      "price": 200
+    }
+  ],
+  "marketing_segments": [
+    {
+      "name": "VIP Customers",
+      "criteria": {
+        "min_spent": 1000,
+        "marketing_allowed": true
+      }
+    },
+    {
+      "name": "At Risk",
+      "criteria": {
+        "days_inactive": 14,
+        "marketing_allowed": true
+      }
+    },
+    {
+      "name": "Morning Regulars",
+      "criteria": {
+        "visit_hours": [8, 9, 10, 11],
+        "marketing_allowed": true
+      }
+    }
+  ],
+  "marketing_campaigns": [
+    {
+      "name": "Весенний кофейный фестиваль",
+      "type": "push",
+      "content": "Приходите на весенний кофейный фестиваль и получите двойные бонусы за новые напитки.",
+      "content_type": "text",
+      "status": "active",
+      "segment_name": "VIP Customers",
+      "budget_limit": 25000,
+      "budget_spent": 8400,
+      "audience_count": 42,
+      "stats_json": {
+        "sent": 42,
+        "delivered": 40,
+        "opened": 24,
+        "clicked": 7
+      }
+    },
+    {
+      "name": "Новинки недели: латте с корицей",
+      "type": "push",
+      "content": "Попробуйте новую позицию недели и оставьте отзыв в приложении.",
+      "content_type": "text",
+      "status": "scheduled",
+      "segment_name": "Morning Regulars",
+      "scheduled_at": "2025-03-28 09:00:00",
+      "budget_limit": 12000,
+      "budget_spent": 0,
+      "audience_count": 18,
+      "stats_json": {
+        "sent": 0,
+        "delivered": 0,
+        "opened": 0,
+        "clicked": 0
+      }
+    },
+    {
+      "name": "Возвращаем гостей",
+      "type": "push",
+      "content": "Мы скучаем по вам — вот бонус на следующий визит.",
+      "content_type": "text",
+      "status": "draft",
+      "segment_name": "At Risk",
+      "budget_limit": 8000,
+      "budget_spent": 0,
+      "audience_count": 12,
+      "stats_json": {
+        "sent": 0,
+        "delivered": 0,
+        "opened": 0,
+        "clicked": 0
+      }
+    }
+  ],
+  "marketing_triggers": [
+    {
+      "name": "Welcome",
+      "event_source": "transaction.created",
+      "criteria_json": {},
+      "delay_hours": 0,
+      "message_text": "Спасибо за первый заказ! Вот ваш бонус.",
+      "active": true
+    },
+    {
+      "name": "Birthday Gift",
+      "event_source": "customer.birthday",
+      "criteria_json": {},
+      "delay_hours": 0,
+      "message_text": "С днём рождения! Ловите подарок от нас.",
+      "active": true
+    },
+    {
+      "name": "Come Back",
+      "event_source": "customer.inactive_30d",
+      "criteria_json": {
+        "days_inactive": 30
+      },
+      "delay_hours": 24,
+      "message_text": "Мы скучаем! Возвращайтесь за новым бонусом.",
+      "active": true
+    }
+  ],
+  "integrations": [
+    {
+      "name": "Telegram Bot",
+      "kind": "telegram",
+      "enabled": true,
+      "secret": "seed-telegram",
+      "config": {
+        "channel": "telegram",
+        "locale": "ru"
+      }
+    },
+    {
+      "name": "VK Community",
+      "kind": "vk",
+      "enabled": true,
+      "secret": "seed-vk",
+      "config": {
+        "channel": "vk",
+        "community_id": 123456789
+      }
+    },
+    {
+      "name": "ERP Webhook",
+      "kind": "erp",
+      "enabled": true,
+      "secret": "seed-erp",
+      "config": {
+        "endpoint": "erp.local",
+        "retry_policy": "standard"
+      }
+    }
+  ],
+  "integration_deliveries": [
+    {
+      "integration_name": "Telegram Bot",
+      "event_type": "customer.created",
+      "status": "success",
+      "http_status": 200,
+      "response_body": {
+        "ok": true
+      },
+      "created_at_offset": "-1 day"
+    },
+    {
+      "integration_name": "VK Community",
+      "event_type": "transaction.completed",
+      "status": "success",
+      "http_status": 200,
+      "response_body": {
+        "ok": true
+      },
+      "created_at_offset": "-2 days"
+    },
+    {
+      "integration_name": "ERP Webhook",
+      "event_type": "marketing.sent",
+      "status": "failed",
+      "http_status": 500,
+      "response_body": {
+        "ok": false,
+        "reason": "temporary upstream error"
+      },
+      "created_at_offset": "-3 days"
+    }
+  ],
+  "short_urls": [
+    {
+      "short_code": "spring-fest",
+      "original_url": "https://greenhouse.local/campaigns/spring-festival",
+      "campaign_name": "Весенний кофейный фестиваль",
+      "customer_qr_token": "DEMO-QR-100001"
+    },
+    {
+      "short_code": "latte-cinnamon",
+      "original_url": "https://greenhouse.local/campaigns/cinnamon-latte",
+      "campaign_name": "Новинки недели: латте с корицей",
+      "customer_qr_token": "DEMO-QR-100002"
+    }
+  ],
+  "customer_visits": [
+    {
+      "customer_qr_token": "DEMO-QR-100001",
+      "location_name": "GreenHouse Tverskaya",
+      "visit_date": "2025-03-20",
+      "visit_count": 4,
+      "total_spent": 2840,
+      "last_transaction_id": null
+    },
+    {
+      "customer_qr_token": "DEMO-QR-100002",
+      "location_name": "GreenHouse Nevsky",
+      "visit_date": "2025-03-22",
+      "visit_count": 3,
+      "total_spent": 1760,
+      "last_transaction_id": null
+    },
+    {
+      "customer_qr_token": "DEMO-QR-100003",
+      "location_name": "GreenHouse Knez Mihailova",
+      "visit_date": "2025-03-24",
+      "visit_count": 2,
+      "total_spent": 920,
+      "last_transaction_id": null
+    }
+  ],
+  "demo_customers": [
+    {
+      "phone": "+7 495 111-11-01",
+      "full_name": "Ivan Petrov",
+      "telegram_id": 70000001,
+      "qr_token": "DEMO-QR-100001",
+      "balance_points": 1250,
+      "birthday": "1991-04-18",
+      "marketing_allowed": true,
+      "consents": [
+        {
+          "source": "admin_panel",
+          "consent_version": "1.0",
+          "consent_text": "Согласие на обработку персональных данных",
+          "consent_type": "data_processing"
+        },
+        {
+          "source": "telegram_bot",
+          "consent_version": "1.0",
+          "consent_text": "Согласие на маркетинговые рассылки",
+          "consent_type": "marketing"
+        }
+      ]
+    },
+    {
+      "phone": "+7 812 222-22-02",
+      "full_name": "Anna Smirnova",
+      "telegram_id": 70000002,
+      "qr_token": "DEMO-QR-100002",
+      "balance_points": 860,
+      "birthday": "1993-09-07",
+      "marketing_allowed": true,
+      "consents": [
+        {
+          "source": "admin_panel",
+          "consent_version": "1.0",
+          "consent_text": "Согласие на обработку персональных данных",
+          "consent_type": "data_processing"
+        }
+      ]
+    },
+    {
+      "phone": "+381 11 333-33-03",
+      "full_name": "Milan Jovanovic",
+      "telegram_id": 70000003,
+      "qr_token": "DEMO-QR-100003",
+      "balance_points": 430,
+      "birthday": "1989-02-12",
+      "marketing_allowed": false,
+      "consents": [
+        {
+          "source": "admin_panel",
+          "consent_version": "1.0",
+          "consent_text": "Согласие на обработку персональных данных",
+          "consent_type": "data_processing"
+        }
+      ]
+    }
+  ],
+  "demo_transactions": [
+    {
+      "customer_qr_token": "DEMO-QR-100001",
+      "days_ago": 6,
+      "hours_ago": 2,
+      "bonus_used": 0,
+      "items": [
+        {
+          "code": "ESP-001",
+          "name": "Espresso",
+          "price": 250,
+          "qty": 2
+        },
+        {
+          "code": "LAT-001",
+          "name": "Latte",
+          "price": 400,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "customer_qr_token": "DEMO-QR-100001",
+      "days_ago": 2,
+      "hours_ago": 5,
+      "bonus_used": 50,
+      "items": [
+        {
+          "code": "CAP-001",
+          "name": "Cappuccino",
+          "price": 350,
+          "qty": 1
+        },
+        {
+          "code": "CRO-001",
+          "name": "Croissant",
+          "price": 200,
+          "qty": 2
+        }
+      ]
+    },
+    {
+      "customer_qr_token": "DEMO-QR-100002",
+      "days_ago": 4,
+      "hours_ago": 1,
+      "bonus_used": 0,
+      "items": [
+        {
+          "code": "TEA-001",
+          "name": "Green Tea",
+          "price": 140,
+          "qty": 2
+        },
+        {
+          "code": "MUF-001",
+          "name": "Muffin",
+          "price": 250,
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "customer_qr_token": "DEMO-QR-100003",
+      "days_ago": 1,
+      "hours_ago": 8,
+      "bonus_used": 20,
+      "items": [
+        {
+          "code": "SAND-001",
+          "name": "Chicken Sandwich",
+          "price": 320,
+          "qty": 1
+        },
+        {
+          "code": "JV-001",
+          "name": "Orange Juice",
+          "price": 200,
+          "qty": 1
+        }
+      ]
+    }
+  ]
+}

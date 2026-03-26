@@ -561,6 +561,15 @@ def _telegram_text(
     **values: Any,
 ) -> str:
     language = _telegram_language(message)
+    # Get custom texts from integration config
+    config = _get_telegram_integration_config()
+    custom_texts = config.get("custom_texts", {})
+    # Check for custom text in user's language
+    lang_custom = custom_texts.get(language, {})
+    if key in lang_custom:
+        template = str(lang_custom[key])
+        return _render_command_text(template, values)
+    # Fall back to default TELEGRAM_I18N
     translations = TELEGRAM_I18N.get(language) or TELEGRAM_I18N["ru"]
     template = str(translations.get(key) or TELEGRAM_I18N["ru"].get(key) or key)
     return _render_command_text(template, values)
@@ -631,6 +640,8 @@ async def _send_media_urls(message: Message, media_urls: list[str]) -> None:
 async def _send_virtual_card(message: Message, customer: dict[str, Any]) -> None:
     qr_token = str(customer.get("qr_token") or "").strip()
     customer_id = int(customer.get("id") or 0)
+    full_name = customer.get("full_name") or ""
+    logger.debug(f"[DEBUG] _send_virtual_card: customer_id={customer_id}, full_name='{full_name}', qr_token='{qr_token}'")
     if not qr_token or not customer_id:
         await message.answer(
             _telegram_text(message, "virtual_card_ready", qr_token=qr_token or "—")
@@ -1151,11 +1162,14 @@ async def handle_registration_message(message: Message) -> None:
         return
 
     if step == "full_name":
-        full_name = normalize_name((message.text or "").strip())
+        name_result = normalize_name((message.text or "").strip())
+        full_name = name_result.get("normalized", "") if isinstance(name_result, dict) else str(name_result)
+        logger.debug(f"[DEBUG] Received full_name input: raw='{message.text}' -> normalized='{full_name}'")
         if not full_name:
             await message.answer("Имя не распознано. Введите полное имя и фамилию.")
             return
         r.hset(key, mapping={"full_name": full_name, "step": "gender"})
+        logger.debug(f"[DEBUG] Saved full_name to Redis: {full_name}")
         await message.answer("Укажи свой пол.", reply_markup=_gender_keyboard())
         return
 
@@ -1178,7 +1192,8 @@ async def handle_registration_message(message: Message) -> None:
         return
 
     if step == "city":
-        city = normalize_name((message.text or "").strip())
+        city_result = normalize_name((message.text or "").strip())
+        city = city_result.get("normalized", "") if isinstance(city_result, dict) else str(city_result)
         if not city:
             await message.answer("Введите город.")
             return
@@ -1246,17 +1261,21 @@ async def cb_marketing_consent(cb: CallbackQuery) -> None:
         consent_text = "Я ознакомлен с Политикой конфиденциальности и даю согласие на обработку персональных данных и получение рекламных рассылок в соответствии с 152-ФЗ."
 
         # 1. Create in ERP
+        erp_name = data.get("full_name", "")
+        logger.debug(f"[DEBUG] Creating ERP customer with name: '{erp_name}'")
         await client.create_customer(
             telegram_id=cb.from_user.id,
-            name=data.get("full_name", ""),
+            name=erp_name,
             phone=data.get("phone", ""),
             consent_text=consent_text,
         )
 
         # 2. Upsert locally
+        local_full_name = data.get("full_name", "")
+        logger.debug(f"[DEBUG] Upserting local customer with name: '{local_full_name}'")
         customer_id = _upsert_local_customer(
             cb.from_user.id,
-            data.get("full_name", ""),
+            local_full_name,
             data.get("phone", ""),
             gender=data.get("gender"),
             birthday=data.get("birthday"),
@@ -1284,6 +1303,7 @@ async def cb_marketing_consent(cb: CallbackQuery) -> None:
         conn_local = get_db().connect()
         try:
             customer = get_customer_row(conn_local, customer_id)
+            logger.debug(f"[DEBUG] Customer from DB: id={customer.get('id')}, full_name='{customer.get('full_name')}', qr_token='{customer.get('qr_token')}'")
         finally:
             conn_local.close()
         msg = _telegram_text(cb, "registration_completed")
