@@ -478,7 +478,7 @@ def get_telegram_texts(
                 # Include all default texts
                 **TELEGRAM_I18N.get(lang, {}),
                 # Override with custom texts if present
-                **custom_texts.get(lang, {})
+                **custom_texts.get(lang, {}),
             }
 
         return {
@@ -506,7 +506,9 @@ def save_telegram_texts(
     conn = db.connect()
     try:
         # Get existing config
-        cur = conn.execute("SELECT id, config_json FROM integrations WHERE kind='telegram' LIMIT 1")
+        cur = conn.execute(
+            "SELECT id, config_json FROM integrations WHERE kind='telegram' LIMIT 1"
+        )
         row = cur.fetchone()
 
         if row:
@@ -524,7 +526,10 @@ def save_telegram_texts(
             return {"saved": True, "count": sum(len(v) for v in payload.texts.values())}
         else:
             # No telegram integration exists yet
-            return {"saved": False, "error": "Telegram integration not found. Please configure bot token first."}
+            return {
+                "saved": False,
+                "error": "Telegram integration not found. Please configure bot token first.",
+            }
     finally:
         conn.close()
 

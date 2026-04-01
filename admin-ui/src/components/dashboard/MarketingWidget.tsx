@@ -22,12 +22,27 @@ export function MarketingWidget({ data }: { data?: any }) {
   const attentionLabel = t('widgets.common.attention', 'Need attention');
   const hasMarketingSignal = activeCampaigns > 0 || newWeek > 0 || messagesSent > 0 || openRate > 0;
 
-  const renderMetric = (label: string, value: React.ReactNode, helper?: string, tone: 'primary' | 'success' | 'warning' | 'info' = 'primary') => (
-    <StatCard value={value as any} label={label} variant={tone} className={`stat-card-gradient stat-card-gradient-${tone}`} />
+  const renderMetric = (
+    label: string,
+    value: React.ReactNode,
+    helper?: string,
+    tone: 'primary' | 'success' | 'warning' | 'info' = 'primary'
+  ) => (
+    <StatCard
+      value={value as any}
+      label={label}
+      variant={tone}
+      className={`stat-card-gradient stat-card-gradient-${tone}`}
+    />
   );
 
   const compactContent = (
-    <StatCard variant="primary" value={activeCampaigns.toLocaleString()} label={t('widgets.marketing.activeCampaigns')} className="stat-card-gradient stat-card-gradient-primary" />
+    <StatCard
+      variant="primary"
+      value={activeCampaigns.toLocaleString()}
+      label={t('widgets.marketing.activeCampaigns')}
+      className="stat-card-gradient stat-card-gradient-primary"
+    />
   );
 
   const expandedContent = (
@@ -41,7 +56,9 @@ export function MarketingWidget({ data }: { data?: any }) {
             </div>
             <div className="crm-customer-badges">
               <span className="crm-badge crm-badge-value">{activeCampaigns.toLocaleString()}</span>
-              <span className="crm-badge crm-badge-muted">{activeCampaigns > 0 ? 'Live only' : 'No active campaigns'}</span>
+              <span className="crm-badge crm-badge-muted">
+                {activeCampaigns > 0 ? 'Live only' : 'No active campaigns'}
+              </span>
             </div>
           </div>
           <div className="crm-customer-row">
@@ -50,7 +67,9 @@ export function MarketingWidget({ data }: { data?: any }) {
             </div>
             <div className="crm-customer-badges">
               <span className="crm-badge crm-badge-warn">{newWeek.toLocaleString()}</span>
-              <span className="crm-badge crm-badge-muted">{newWeek > 0 ? 'Needs review' : 'No items need attention'}</span>
+              <span className="crm-badge crm-badge-muted">
+                {newWeek > 0 ? 'Needs review' : 'No items need attention'}
+              </span>
             </div>
           </div>
           <div className="crm-customer-row">
@@ -59,7 +78,9 @@ export function MarketingWidget({ data }: { data?: any }) {
             </div>
             <div className="crm-customer-badges">
               <span className="crm-badge crm-badge-value">{messagesSent.toLocaleString()}</span>
-              <span className="crm-badge crm-badge-muted">{messagesSent > 0 ? 'Last 24h' : 'No messages sent'}</span>
+              <span className="crm-badge crm-badge-muted">
+                {messagesSent > 0 ? 'Last 24h' : 'No messages sent'}
+              </span>
             </div>
           </div>
           <div className="crm-customer-row">
@@ -67,8 +88,12 @@ export function MarketingWidget({ data }: { data?: any }) {
               <span className="crm-customer-name">{t('widgets.marketing.openRate')}</span>
             </div>
             <div className="crm-customer-badges">
-              <span className="crm-badge crm-badge-good">{openRate > 0 ? `${openRate}%` : '—'}</span>
-              <span className="crm-badge crm-badge-muted">{openRate > 0 ? 'Open rate' : 'No open rate'}</span>
+              <span className="crm-badge crm-badge-good">
+                {openRate > 0 ? `${openRate}%` : '—'}
+              </span>
+              <span className="crm-badge crm-badge-muted">
+                {openRate > 0 ? 'Open rate' : 'No open rate'}
+              </span>
             </div>
           </div>
         </div>

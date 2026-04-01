@@ -25,18 +25,24 @@ export function WidgetSkeleton({ type }: { type: string }) {
           marginBottom: '16px',
         }}
       />
-      
+
       {/* Content skeleton lines */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ height: '16px', width: '100%', background: '#f3f4f6', borderRadius: '4px' }} />
+        <div
+          style={{ height: '16px', width: '100%', background: '#f3f4f6', borderRadius: '4px' }}
+        />
         <div style={{ height: '16px', width: '80%', background: '#f3f4f6', borderRadius: '4px' }} />
         <div style={{ height: '16px', width: '60%', background: '#f3f4f6', borderRadius: '4px' }} />
       </div>
-      
+
       {/* Number/stat skeleton */}
       <div style={{ marginTop: '20px', display: 'flex', gap: '16px' }}>
-        <div style={{ height: '40px', width: '80px', background: '#e5e7eb', borderRadius: '8px' }} />
-        <div style={{ height: '40px', width: '80px', background: '#e5e7eb', borderRadius: '8px' }} />
+        <div
+          style={{ height: '40px', width: '80px', background: '#e5e7eb', borderRadius: '8px' }}
+        />
+        <div
+          style={{ height: '40px', width: '80px', background: '#e5e7eb', borderRadius: '8px' }}
+        />
       </div>
     </div>
   );
@@ -53,10 +59,22 @@ export function SalesWidgetSkeleton() {
       }}
       data-testid="sales-widget-skeleton"
     >
-      <div style={{ height: '24px', width: '120px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '20px' }} />
+      <div
+        style={{
+          height: '24px',
+          width: '120px',
+          background: '#e5e7eb',
+          borderRadius: '4px',
+          marginBottom: '20px',
+        }}
+      />
       <div style={{ display: 'flex', gap: '24px', marginBottom: '20px' }}>
-        <div style={{ height: '60px', width: '100px', background: '#e5e7eb', borderRadius: '8px' }} />
-        <div style={{ height: '60px', width: '100px', background: '#e5e7eb', borderRadius: '8px' }} />
+        <div
+          style={{ height: '60px', width: '100px', background: '#e5e7eb', borderRadius: '8px' }}
+        />
+        <div
+          style={{ height: '60px', width: '100px', background: '#e5e7eb', borderRadius: '8px' }}
+        />
       </div>
       <div style={{ height: '80px', background: '#f3f4f6', borderRadius: '8px' }} />
     </div>
@@ -74,7 +92,15 @@ export function CustomersWidgetSkeleton() {
       }}
       data-testid="customers-widget-skeleton"
     >
-      <div style={{ height: '24px', width: '140px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '20px' }} />
+      <div
+        style={{
+          height: '24px',
+          width: '140px',
+          background: '#e5e7eb',
+          borderRadius: '4px',
+          marginBottom: '20px',
+        }}
+      />
       <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
         <div style={{ height: '50px', flex: 1, background: '#e5e7eb', borderRadius: '8px' }} />
         <div style={{ height: '50px', flex: 1, background: '#e5e7eb', borderRadius: '8px' }} />
@@ -95,12 +121,52 @@ export function ProductsWidgetSkeleton() {
       }}
       data-testid="products-widget-skeleton"
     >
-      <div style={{ height: '24px', width: '130px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '20px' }} />
+      <div
+        style={{
+          height: '24px',
+          width: '130px',
+          background: '#e5e7eb',
+          borderRadius: '4px',
+          marginBottom: '20px',
+        }}
+      />
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-        <div style={{ height: '80px', flex: '1 1 45%', minWidth: '150px', background: '#e5e7eb', borderRadius: '8px' }} />
-        <div style={{ height: '80px', flex: '1 1 45%', minWidth: '150px', background: '#e5e7eb', borderRadius: '8px' }} />
-        <div style={{ height: '80px', flex: '1 1 45%', minWidth: '150px', background: '#e5e7eb', borderRadius: '8px' }} />
-        <div style={{ height: '80px', flex: '1 1 45%', minWidth: '150px', background: '#e5e7eb', borderRadius: '8px' }} />
+        <div
+          style={{
+            height: '80px',
+            flex: '1 1 45%',
+            minWidth: '150px',
+            background: '#e5e7eb',
+            borderRadius: '8px',
+          }}
+        />
+        <div
+          style={{
+            height: '80px',
+            flex: '1 1 45%',
+            minWidth: '150px',
+            background: '#e5e7eb',
+            borderRadius: '8px',
+          }}
+        />
+        <div
+          style={{
+            height: '80px',
+            flex: '1 1 45%',
+            minWidth: '150px',
+            background: '#e5e7eb',
+            borderRadius: '8px',
+          }}
+        />
+        <div
+          style={{
+            height: '80px',
+            flex: '1 1 45%',
+            minWidth: '150px',
+            background: '#e5e7eb',
+            borderRadius: '8px',
+          }}
+        />
       </div>
     </div>
   );
@@ -122,7 +188,15 @@ export function CompactWidgetSkeleton() {
     >
       <div style={{ height: '40px', width: '40px', background: '#e5e7eb', borderRadius: '8px' }} />
       <div style={{ flex: 1 }}>
-        <div style={{ height: '16px', width: '60%', background: '#e5e7eb', borderRadius: '4px', marginBottom: '8px' }} />
+        <div
+          style={{
+            height: '16px',
+            width: '60%',
+            background: '#e5e7eb',
+            borderRadius: '4px',
+            marginBottom: '8px',
+          }}
+        />
         <div style={{ height: '12px', width: '40%', background: '#f3f4f6', borderRadius: '4px' }} />
       </div>
     </div>

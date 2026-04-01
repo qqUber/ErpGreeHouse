@@ -43,16 +43,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const validateToken = useCallback(async (): Promise<boolean> => {
     if (validatingRef.current) {
-      console.log('[Auth] Already validating, skipping...');
       return false;
     }
 
     validatingRef.current = true;
-    console.log('[Auth] Validating token...');
 
     try {
       const user = await Api.me();
-      console.log('[Auth] Token valid, user:', user.username);
       setState({
         isAuthenticated: true,
         isLoading: false,
@@ -63,7 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionStorage.setItem(TOKEN_VALIDATION_KEY, 'valid');
       return true;
     } catch (error: any) {
-      console.log('[Auth] Token validation failed:', error?.message);
       const msg = String(error?.message || error);
 
       // If 401, try to refresh token
@@ -72,7 +68,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         msg.toLowerCase().includes('unauthorized') ||
         msg.includes('expired')
       ) {
-        console.log('[Auth] Token expired/invalid, attempting refresh...');
         return false;
       }
 
@@ -92,27 +87,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshToken = useCallback(async (): Promise<boolean> => {
     // Prevent concurrent refresh attempts
     if (validatingRef.current) {
-      console.log('[Auth] Already validating, waiting...');
       // Wait for current validation to complete
       await new Promise((resolve) => setTimeout(resolve, 1000));
       // Check actual auth state after waiting
       return state.isAuthenticated;
     }
 
-    console.log('[Auth] Attempting token refresh...');
     try {
       const result = await Api.refreshToken();
-      console.log('[Auth] Token refreshed successfully');
       // After refresh, validate again
       return await validateToken();
     } catch (error: any) {
-      console.log('[Auth] Token refresh failed:', error?.message);
       return false;
     }
   }, [validateToken, state.isAuthenticated]);
 
   const login = useCallback(async (username: string, password: string) => {
-    console.log('[Auth] Logging in...');
     const result = await Api.login(username, password);
 
     // Note: JWT tokens are now in httpOnly cookies, so we don't need to store them in localStorage
@@ -122,7 +112,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let user = null;
     try {
       user = await Api.me();
-      console.log('[Auth] Login successful, user fetched:', user.username);
     } catch (e) {
       console.error('[Auth] Login successful but failed to fetch user:', e);
       // We still consider them authenticated, App.tsx bootstrap might retry or show error
@@ -139,13 +128,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    console.log('[Auth] Logging out...');
     // Clear all pending requests before logout
     clearPendingRequests();
     try {
       await Api.logout();
     } catch (error) {
-      console.log('[Auth] Logout API call failed, continuing with local logout');
+      // Logout API call failed, continuing with local logout
     }
 
     setState({
@@ -176,23 +164,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializedRef.current = true;
 
     const initAuth = async () => {
-      console.log('[Auth] Initializing auth state...');
-
       // Check if we have a valid validation state from sessionStorage
       const wasValid = sessionStorage.getItem(TOKEN_VALIDATION_KEY) === 'valid';
 
       if (wasValid) {
-        console.log('[Auth] Previous session was valid, validating...');
         // Try to validate the existing token (from cookie)
         const isValid = await validateToken();
 
         if (!isValid) {
-          console.log('[Auth] Previous session invalid, trying refresh...');
           // Try to refresh the token
           const refreshed = await refreshToken();
 
           if (!refreshed) {
-            console.log('[Auth] Refresh failed, user needs to login');
             setState((prev) => ({
               ...prev,
               isLoading: false,
@@ -201,7 +184,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       } else {
-        console.log('[Auth] No previous session, user is NOT authenticated');
         // No previous session - user needs to login
         // Explicitly set isAuthenticated to false
         setState((prev) => ({
@@ -222,11 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Refresh token every 10 minutes (before the 15-minute access token expires)
     const interval = setInterval(
       async () => {
-        console.log('[Auth] Periodic token refresh check...');
         const refreshed = await refreshToken();
-        if (!refreshed) {
-          console.log('[Auth] Periodic refresh failed');
-        }
       },
       10 * 60 * 1000
     ); // 10 minutes

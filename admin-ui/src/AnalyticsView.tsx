@@ -1,14 +1,55 @@
 import ReactECharts from 'echarts-for-react';
+import { TFunction } from 'i18next';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Api,
-    ChartData,
-    CustomerSegmentation,
-    DashboardOverview,
-    LoyaltyDetailedReport,
-    LoyaltyReportOverview,
+  Api,
+  ChartData,
+  CustomerSegmentation,
+  DashboardOverview,
+  LoyaltyDetailedReport,
+  LoyaltyReportOverview,
 } from './api';
+
+// Factory function to create common chart configuration
+function createChartBase(
+  dates: string[],
+  legendData: string[],
+  tooltipFormatter: (params: any) => string,
+  yAxisConfig: any,
+  seriesConfig: any[]
+) {
+  return {
+    tooltip: {
+      trigger: 'axis' as const,
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#e5e7eb',
+      textStyle: { color: '#374151' },
+      formatter: tooltipFormatter,
+    },
+    legend: {
+      data: legendData,
+      bottom: 0,
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '15%',
+      containLabel: true,
+    },
+    xAxis: {
+      type: 'category' as const,
+      boundaryGap: false,
+      data: dates,
+      axisLabel: {
+        rotate: 45,
+        fontSize: 10,
+      },
+    },
+    yAxis: yAxisConfig,
+    series: seriesConfig,
+  };
+}
 
 export function AnalyticsView() {
   const { t } = useTranslation();
@@ -49,7 +90,6 @@ export function AnalyticsView() {
         Api.loyaltyDetailedReport(timeRange),
         Api.customerSegmentation(),
       ]);
-
       setOverview(overviewData);
       setSalesChart(salesData);
       setCustomerChart(customerData);
@@ -59,7 +99,7 @@ export function AnalyticsView() {
       setSegmentation(segmentationData);
     } catch (e) {
       console.error('Failed to load analytics:', e);
-      setError('Не удалось загрузить аналитику');
+      setError(t('analytics.loadError'));
     } finally {
       setLoading(false);
     }
@@ -70,7 +110,6 @@ export function AnalyticsView() {
       setExportError(null);
       let response: Response;
       let filename: string;
-
       switch (type) {
         case 'loyalty':
           response = await Api.exportLoyaltyReport(timeRange);
@@ -87,16 +126,10 @@ export function AnalyticsView() {
         default:
           throw new Error('Unknown export type');
       }
-
       const blob = await response.blob();
-      
-      // Ensure proper UTF-8 encoding for Excel compatibility
       const text = await blob.text();
-      const bom = '\uFEFF'; // UTF-8 BOM
-      const utf8Blob = new Blob([bom + text], { 
-        type: 'text/csv;charset=utf-8' 
-      });
-      
+      const bom = '\uFEFF';
+      const utf8Blob = new Blob([bom + text], { type: 'text/csv;charset=utf-8' });
       const url = window.URL.createObjectURL(utf8Blob);
       const a = document.createElement('a');
       a.href = url;
@@ -111,23 +144,36 @@ export function AnalyticsView() {
     }
   }
 
-  // Add a proper loading state for charts
   if (loading && !overview && !salesChart) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-gray-500">{t('analytics.collecting')}</div>
+        <div style={{ color: 'var(--muted)' }}>{t('analytics.collecting')}</div>
       </div>
     );
   }
 
-  // Add a proper error state display
   if (error) {
     return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-        <div className="text-red-600">{error}</div>
+      <div
+        style={{
+          padding: 16,
+          background: 'var(--error-light)',
+          border: '1px solid var(--error)',
+          borderRadius: 'var(--radius-md)',
+        }}
+      >
+        <div style={{ color: 'var(--error)' }}>{error}</div>
         <button
           onClick={loadAnalyticsData}
-          className="mt-2 text-sm text-red-700 underline"
+          style={{
+            marginTop: 8,
+            fontSize: 14,
+            color: 'var(--error)',
+            textDecoration: 'underline',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+          }}
           data-testid="analytics_retry_button"
         >
           {t('common.refresh')}
@@ -137,63 +183,88 @@ export function AnalyticsView() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Header */}
-      <div className="flex flex-col space-y-4">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('analytics.dashboardTitle')}</h1>
-          <p className="text-gray-600 mt-1">{t('analytics.dashboardDesc')}</p>
+          <h1 style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>
+            {t('analytics.dashboardTitle')}
+          </h1>
+          <p style={{ color: 'var(--muted)', marginTop: 4 }}>{t('analytics.dashboardDesc')}</p>
         </div>
-        
-        {/* Time Range Selector */}
-        <div className="flex items-center space-x-4">
-          <label className="text-sm font-medium text-gray-700 whitespace-nowrap">{t('analytics.timeRange')}:</label>
-          <div className="flex items-center space-x-2">
-            <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm min-w-40"
-            >
-              <option value="24h">{t('analytics.timeFilter.24hours')}</option>
-              <option value="7d">{t('analytics.timeFilter.7days')}</option>
-              <option value="30d">{t('analytics.timeFilter.30days')}</option>
-              <option value="90d">{t('analytics.timeFilter.90days')}</option>
-              <option value="1y">{t('analytics.timeFilter.1year')}</option>
-            </select>
-            <button
-              onClick={() => {
-                // Add custom date range picker functionality
-                const today = new Date();
-                const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-                console.log('Custom date range:', lastWeek.toISOString(), today.toISOString());
-              }}
-              className="px-3 py-2 border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              title="Выбрать произвольный период"
-            >
-              📅
-            </button>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <label
+            style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)', whiteSpace: 'nowrap' }}
+          >
+            {t('analytics.timeRange')}:
+          </label>
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+            style={{
+              padding: '8px 16px',
+              border: '1px solid var(--border)',
+              borderRadius: 6,
+              background: 'var(--panel)',
+              color: 'var(--text)',
+              fontSize: 14,
+              minWidth: 160,
+            }}
+          >
+            <option value="24h">{t('analytics.timeFilter.24hours')}</option>
+            <option value="7d">{t('analytics.timeFilter.7days')}</option>
+            <option value="30d">{t('analytics.timeFilter.30days')}</option>
+            <option value="90d">{t('analytics.timeFilter.90days')}</option>
+            <option value="1y">{t('analytics.timeFilter.1year')}</option>
+          </select>
         </div>
-
-        {/* Export Buttons */}
-        <div className="flex items-center space-x-3">
-          <span className="text-sm font-medium text-gray-700">{t('analytics.export')}:</span>
-          <div className="flex space-x-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)' }}>
+            {t('analytics.export')}:
+          </span>
+          <div style={{ display: 'flex', gap: 8 }}>
             <button
               onClick={() => handleExport('loyalty')}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
+              style={{
+                padding: '8px 16px',
+                background: 'var(--primary)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 500,
+              }}
             >
               {t('analytics.exportLoyalty')}
             </button>
             <button
               onClick={() => handleExport('sales')}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm font-medium"
+              style={{
+                padding: '8px 16px',
+                background: 'var(--good)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 500,
+              }}
             >
               {t('analytics.exportSales')}
             </button>
             <button
               onClick={() => handleExport('customers')}
-              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-medium"
+              style={{
+                padding: '8px 16px',
+                background: 'var(--info)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 500,
+              }}
             >
               {t('analytics.exportCustomers')}
             </button>
@@ -201,149 +272,115 @@ export function AnalyticsView() {
         </div>
       </div>
 
-      {exportError ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{exportError}</div> : null}
+      {exportError ? (
+        <div
+          style={{
+            borderRadius: 8,
+            border: '1px solid var(--error)',
+            background: 'var(--error-light)',
+            padding: 12,
+            color: 'var(--error)',
+          }}
+        >
+          {exportError}
+        </div>
+      ) : null}
 
       {/* Key Metrics Overview */}
       {overview && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="card" style={{ padding: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ flexShrink: 0 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: 24,
+          }}
+        >
+          {[
+            {
+              icon: '👥',
+              label: t('analytics.totalCustomers'),
+              value: overview.metrics.total_customers,
+              color: 'var(--primary)',
+            },
+            {
+              icon: '📈',
+              label: t('analytics.newCustomers'),
+              value: overview.metrics.new_customers,
+              color: 'var(--good)',
+            },
+            {
+              icon: '💰',
+              label: t('analytics.revenue'),
+              value: `${new Intl.NumberFormat('ru-RU').format(overview.metrics.revenue)} ₽`,
+              color: 'rgba(168, 85, 247, 0.8)',
+            },
+            {
+              icon: '🎯',
+              label: t('analytics.avgCheck'),
+              value: `${new Intl.NumberFormat('ru-RU').format(overview.metrics.avg_check)} ₽`,
+              color: 'var(--warn)',
+            },
+          ].map((metric, i) => (
+            <div key={i} className="card dashboard-widget-2026" style={{ padding: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
                 <div
                   style={{
                     width: 32,
                     height: 32,
-                    background: 'var(--primary)',
+                    background: metric.color,
                     borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <span style={{ color: 'white', fontWeight: 'bold' }}>👥</span>
+                  <span style={{ color: 'white', fontWeight: 'bold' }}>{metric.icon}</span>
+                </div>
+                <div style={{ marginLeft: 16 }}>
+                  <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>
+                    {metric.label}
+                  </p>
+                  <p style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>
+                    {metric.value}
+                  </p>
                 </div>
               </div>
-              <div style={{ marginLeft: 16 }}>
-                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>
-                  {t('analytics.totalCustomers')}
-                </p>
-                <p style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>
-                  {overview.metrics.total_customers}
-                </p>
-              </div>
             </div>
-          </div>
-
-          <div className="card" style={{ padding: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ flexShrink: 0 }}>
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    background: 'var(--good)',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <span style={{ color: 'white', fontWeight: 'bold' }}>📈</span>
-                </div>
-              </div>
-              <div style={{ marginLeft: 16 }}>
-                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>
-                  Новые клиенты
-                </p>
-                <p style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>
-                  {overview.metrics.new_customers}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card" style={{ padding: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ flexShrink: 0 }}>
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    background: 'rgba(168, 85, 247, 0.8)',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <span style={{ color: 'white', fontWeight: 'bold' }}>💰</span>
-                </div>
-              </div>
-              <div style={{ marginLeft: 16 }}>
-                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>Выручка</p>
-                <p style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>
-                  {new Intl.NumberFormat('ru-RU').format(overview.metrics.revenue)} ₽
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card" style={{ padding: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ flexShrink: 0 }}>
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    background: 'var(--warn)',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <span style={{ color: 'white', fontWeight: 'bold' }}>🎯</span>
-                </div>
-              </div>
-              <div style={{ marginLeft: 16 }}>
-                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>Средний чек</p>
-                <p style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>
-                  {new Intl.NumberFormat('ru-RU').format(overview.metrics.avg_check)} ₽
-                </p>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       )}
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Sales Chart */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+          gap: 24,
+        }}
+      >
         {salesChart && (
-          <div className="card cardFull" style={{ padding: 24 }}>
+          <div className="card dashboard-widget-2026" style={{ padding: 24 }}>
             <h3
               style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text)', marginBottom: 16 }}
             >
-              Динамика продаж
+              {t('analytics.salesDynamics')}
             </h3>
             <ReactECharts
-              option={getSalesChartOption(salesChart.data)}
+              option={getSalesChartOption(salesChart.data, t)}
               style={{ height: '300px' }}
               opts={{ renderer: 'svg' }}
             />
           </div>
         )}
-
-        {/* Customers Chart */}
         {customerChart && (
-          <div className="card cardFull" style={{ padding: 24 }}>
+          <div className="card dashboard-widget-2026" style={{ padding: 24 }}>
             <h3
               style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text)', marginBottom: 16 }}
             >
-              Динамика клиентов
+              {t('analytics.customerDynamics')}
             </h3>
             <ReactECharts
-              option={getCustomersChartOption(customerChart.data)}
+              option={getCustomersChartOption(customerChart.data, t)}
               style={{ height: '300px' }}
               opts={{ renderer: 'svg' }}
             />
@@ -352,50 +389,61 @@ export function AnalyticsView() {
       </div>
 
       {/* Loyalty Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Loyalty Overview */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+          gap: 24,
+        }}
+      >
         {loyaltyOverview && (
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold mb-4">Лояльность</h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Начислено баллов</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    {loyaltyOverview.metrics.points_earned}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Использовано баллов</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    {loyaltyOverview.metrics.points_redeemed}
-                  </p>
-                </div>
+          <div className="card dashboard-widget-2026" style={{ padding: 24 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, color: 'var(--text)' }}>
+              {t('analytics.loyalty')}
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)' }}>
+                  {t('analytics.pointsEarned')}
+                </p>
+                <p style={{ fontSize: 20, fontWeight: 'bold', color: 'var(--text)' }}>
+                  {loyaltyOverview.metrics.points_earned}
+                </p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Конверсия в вызовы</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    {loyaltyOverview.metrics.redemption_rate.toFixed(1)}%
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Средние баллы на транзакцию</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    {loyaltyOverview.metrics.avg_points_per_transaction.toFixed(1)}
-                  </p>
-                </div>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)' }}>
+                  {t('analytics.pointsRedeemed')}
+                </p>
+                <p style={{ fontSize: 20, fontWeight: 'bold', color: 'var(--text)' }}>
+                  {loyaltyOverview.metrics.points_redeemed}
+                </p>
+              </div>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)' }}>
+                  {t('analytics.redemptionRate')}
+                </p>
+                <p style={{ fontSize: 20, fontWeight: 'bold', color: 'var(--text)' }}>
+                  {loyaltyOverview.metrics.redemption_rate.toFixed(1)}%
+                </p>
+              </div>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)' }}>
+                  {t('analytics.avgPointsPerTransaction')}
+                </p>
+                <p style={{ fontSize: 20, fontWeight: 'bold', color: 'var(--text)' }}>
+                  {loyaltyOverview.metrics.avg_points_per_transaction.toFixed(1)}
+                </p>
               </div>
             </div>
           </div>
         )}
-
-        {/* Loyalty Chart */}
         {loyaltyChart && (
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold mb-4">Лояльность по дням</h3>
+          <div className="card dashboard-widget-2026" style={{ padding: 24 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, color: 'var(--text)' }}>
+              {t('analytics.loyaltyByDay')}
+            </h3>
             <ReactECharts
-              option={getLoyaltyChartOption(loyaltyChart.data)}
+              option={getLoyaltyChartOption(loyaltyChart.data, t)}
               style={{ height: '300px' }}
               opts={{ renderer: 'svg' }}
             />
@@ -405,16 +453,37 @@ export function AnalyticsView() {
 
       {/* Customer Segmentation */}
       {segmentation && (
-        <div className="bg-white p-6 rounded-lg shadow" style={{ maxHeight: '400px', overflow: 'auto' }}>
-          <h3 className="text-lg font-semibold mb-4">Сегментация клиентов</h3>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4" style={{ minWidth: '600px' }}>
+        <div
+          className="card dashboard-widget-2026"
+          style={{ padding: 24, maxHeight: 400, overflow: 'auto' }}
+        >
+          <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, color: 'var(--text)' }}>
+            {t('analytics.customerSegmentation')}
+          </h3>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
+              gap: 16,
+              minWidth: 600,
+            }}
+          >
             {Object.entries(segmentation.segments).map(([segment, data]) => (
-              <div key={segment} className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm font-medium text-gray-600 capitalize">
-                  {getSegmentDisplayName(segment)}
+              <div key={segment} className="card" style={{ padding: 16 }}>
+                <p
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: 'var(--muted)',
+                    textTransform: 'capitalize',
+                  }}
+                >
+                  {getSegmentDisplayName(segment, t)}
                 </p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{data.count}</p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)', marginTop: 4 }}>
+                  {data.count}
+                </p>
+                <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
                   {((data.count / segmentation.total_customers) * 100).toFixed(1)}%
                 </p>
               </div>
@@ -425,62 +494,110 @@ export function AnalyticsView() {
 
       {/* Loyalty Details Table */}
       {loyaltyDetails && loyaltyDetails.customer_data.length > 0 && (
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Детализация по клиентам</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Клиент
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Телефон
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Транзакции
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Общая сумма
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Начислено
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Использовано
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Последняя транзакция
-                  </th>
+        <div className="card dashboard-widget-2026" style={{ padding: 24 }}>
+          <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, color: 'var(--text)' }}>
+            {t('analytics.customerDetails')}
+          </h3>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: 'var(--neutral-100)' }}>
+                  {[
+                    t('analytics.customer'),
+                    t('analytics.phone'),
+                    t('analytics.transactions'),
+                    t('analytics.totalAmount'),
+                    t('analytics.earned'),
+                    t('analytics.redeemed'),
+                    t('analytics.lastTransaction'),
+                  ].map((h, i) => (
+                    <th
+                      key={i}
+                      style={{
+                        padding: '12px 24px',
+                        textAlign: 'left',
+                        fontSize: 12,
+                        fontWeight: 500,
+                        color: 'var(--muted)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                      }}
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {loyaltyDetails.customer_data.slice(0, 10).map((customer) => (
-                  <tr key={customer.customer_id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{customer.full_name}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{customer.phone}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{customer.transaction_count}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {new Intl.NumberFormat('ru-RU').format(customer.total_spent)} ₽
+                  <tr
+                    key={customer.customer_id}
+                    style={{ borderBottom: '1px solid var(--border)' }}
+                  >
+                    <td style={{ padding: '16px 24px', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
+                        {customer.full_name}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{customer.points_earned}</div>
+                    <td
+                      style={{
+                        padding: '16px 24px',
+                        whiteSpace: 'nowrap',
+                        fontSize: 14,
+                        color: 'var(--text)',
+                      }}
+                    >
+                      {customer.phone}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{customer.points_redeemed}</div>
+                    <td
+                      style={{
+                        padding: '16px 24px',
+                        whiteSpace: 'nowrap',
+                        fontSize: 14,
+                        color: 'var(--text)',
+                      }}
+                    >
+                      {customer.transaction_count}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {new Date(customer.last_transaction).toLocaleDateString('ru-RU')}
-                      </div>
+                    <td
+                      style={{
+                        padding: '16px 24px',
+                        whiteSpace: 'nowrap',
+                        fontSize: 14,
+                        color: 'var(--text)',
+                      }}
+                    >
+                      {new Intl.NumberFormat('ru-RU').format(customer.total_spent)} ₽
+                    </td>
+                    <td
+                      style={{
+                        padding: '16px 24px',
+                        whiteSpace: 'nowrap',
+                        fontSize: 14,
+                        color: 'var(--text)',
+                      }}
+                    >
+                      {customer.points_earned}
+                    </td>
+                    <td
+                      style={{
+                        padding: '16px 24px',
+                        whiteSpace: 'nowrap',
+                        fontSize: 14,
+                        color: 'var(--text)',
+                      }}
+                    >
+                      {customer.points_redeemed}
+                    </td>
+                    <td
+                      style={{
+                        padding: '16px 24px',
+                        whiteSpace: 'nowrap',
+                        fontSize: 14,
+                        color: 'var(--text)',
+                      }}
+                    >
+                      {new Date(customer.last_transaction).toLocaleDateString('ru-RU')}
                     </td>
                   </tr>
                 ))}
@@ -488,8 +605,11 @@ export function AnalyticsView() {
             </table>
           </div>
           {loyaltyDetails.customer_data.length > 10 && (
-            <div className="mt-4 text-sm text-gray-500">
-              Показано {10} из {loyaltyDetails.customer_data.length} записей
+            <div style={{ marginTop: 16, fontSize: 14, color: 'var(--muted)' }}>
+              {t('analytics.showingRecords', {
+                shown: 10,
+                total: loyaltyDetails.customer_data.length,
+              })}
             </div>
           )}
         </div>
@@ -498,73 +618,52 @@ export function AnalyticsView() {
   );
 }
 
-function getSegmentDisplayName(segment: string): string {
+function getSegmentDisplayName(segment: string, t: (key: string) => string): string {
   const displayNames: Record<string, string> = {
-    new: 'Новые',
-    active: 'Активные',
-    at_risk: 'Риск',
-    churned: 'Отток',
-    vip: 'VIP',
+    new: t('analytics.segmentNew'),
+    active: t('analytics.segmentActive'),
+    at_risk: t('analytics.segmentAtRisk'),
+    churned: t('analytics.segmentChurned'),
+    vip: t('analytics.segmentVip'),
   };
   return displayNames[segment] || segment;
 }
 
-function getSalesChartOption(data: ChartData['data']) {
+function getSalesChartOption(data: ChartData['data'], t: TFunction) {
   const dates = data.map((d) => d.date);
   const revenue = data.map((d) => d.revenue || 0);
   const transactions = data.map((d) => d.transactions || 0);
 
-  return {
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-      borderColor: '#e5e7eb',
-      textStyle: { color: '#374151' },
-      formatter: (params: any) => {
-        const date = params[0]?.axisValue;
-        const revenueValue = params.find((p: any) => p.seriesName === 'Выручка')?.value;
-        const transactionsValue = params.find((p: any) => p.seriesName === 'Транзакции')?.value;
-        return `<b>${date}</b><br/>Выручка: ${new Intl.NumberFormat('ru-RU').format(revenueValue)} ₽<br/>Транзакции: ${transactionsValue}`;
-      },
+  return createChartBase(
+    dates,
+    [t('analytics.revenue'), t('analytics.transactions')],
+    (params: any) => {
+      const date = params[0]?.axisValue;
+      const revenueValue = params.find((p: any) => p.seriesName === t('analytics.revenue'))?.value;
+      const transactionsValue = params.find(
+        (p: any) => p.seriesName === t('analytics.transactions')
+      )?.value;
+      return `<b>${date}</b><br/>${t('analytics.revenue')}: ${new Intl.NumberFormat('ru-RU').format(revenueValue)} ₽<br/>${t('analytics.transactions')}: ${transactionsValue}`;
     },
-    legend: {
-      data: ['Выручка', 'Транзакции'],
-      bottom: 0,
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '15%',
-      containLabel: true,
-    },
-    xAxis: {
-      type: 'category',
-      boundaryGap: false,
-      data: dates,
-      axisLabel: {
-        rotate: 45,
-        fontSize: 10,
-      },
-    },
-    yAxis: [
+    [
       {
         type: 'value',
-        name: 'Выручка (₽)',
+        name: t('analytics.revenueCurrency'),
         axisLabel: {
           formatter: (value: number) => `${(value / 1000).toFixed(0)}k`,
         },
       },
       {
         type: 'value',
-        name: 'Транзакции',
+        name: t('analytics.transactions'),
         axisLabel: {
           formatter: (value: number) => `${value}`,
         },
       },
     ],
-    series: [
+    [
       {
-        name: 'Выручка',
+        name: t('analytics.revenue'),
         type: 'line',
         smooth: true,
         data: revenue,
@@ -584,61 +683,40 @@ function getSalesChartOption(data: ChartData['data']) {
         },
       },
       {
-        name: 'Транзакции',
+        name: t('analytics.transactions'),
         type: 'line',
         yAxisIndex: 1,
         smooth: true,
         data: transactions,
         itemStyle: { color: '#10b981' },
       },
-    ],
-  };
+    ]
+  );
 }
 
-function getCustomersChartOption(data: ChartData['data']) {
+function getCustomersChartOption(data: ChartData['data'], t: TFunction) {
   const dates = data.map((d) => d.date);
   const newCustomers = data.map((d) => d.new_customers || 0);
   const activeCustomers = data.map((d) => d.active_customers || 0);
 
-  return {
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-      borderColor: '#e5e7eb',
-      textStyle: { color: '#374151' },
-      formatter: (params: any) => {
-        const date = params[0]?.axisValue;
-        const newValue = params.find((p: any) => p.seriesName === 'Новые клиенты')?.value;
-        const activeValue = params.find((p: any) => p.seriesName === 'Активные клиенты')?.value;
-        return `<b>${date}</b><br/>Новые клиенты: ${newValue}<br/>Активные клиенты: ${activeValue}`;
-      },
+  return createChartBase(
+    dates,
+    [t('analytics.newCustomers'), t('analytics.activeCustomers')],
+    (params: any) => {
+      const date = params[0]?.axisValue;
+      const newValue = params.find((p: any) => p.seriesName === t('analytics.newCustomers'))?.value;
+      const activeValue = params.find(
+        (p: any) => p.seriesName === t('analytics.activeCustomers')
+      )?.value;
+      return `<b>${date}</b><br/>${t('analytics.newCustomers')}: ${newValue}<br/>${t('analytics.activeCustomers')}: ${activeValue}`;
     },
-    legend: {
-      data: ['Новые клиенты', 'Активные клиенты'],
-      bottom: 0,
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '15%',
-      containLabel: true,
-    },
-    xAxis: {
-      type: 'category',
-      boundaryGap: false,
-      data: dates,
-      axisLabel: {
-        rotate: 45,
-        fontSize: 10,
-      },
-    },
-    yAxis: {
+    {
       type: 'value',
-      name: 'Клиенты',
+      name: t('analytics.customers'),
     },
-    series: [
+    [
       {
-        name: 'Новые клиенты',
+        name: t('analytics.newCustomers'),
         type: 'bar',
         data: newCustomers,
         itemStyle: {
@@ -657,60 +735,37 @@ function getCustomersChartOption(data: ChartData['data']) {
         },
       },
       {
-        name: 'Активные клиенты',
+        name: t('analytics.activeCustomers'),
         type: 'line',
         smooth: true,
         data: activeCustomers,
         itemStyle: { color: '#10b981' },
       },
-    ],
-  };
+    ]
+  );
 }
 
-function getLoyaltyChartOption(data: ChartData['data']) {
+function getLoyaltyChartOption(data: ChartData['data'], t: TFunction) {
   const dates = data.map((d) => d.date);
   const pointsEarned = data.map((d) => d.points_earned || 0);
   const pointsRedeemed = data.map((d) => d.points_redeemed || 0);
 
-  return {
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-      borderColor: '#e5e7eb',
-      textStyle: { color: '#374151' },
-      formatter: (params: any) => {
-        const date = params[0]?.axisValue;
-        const earned = params.find((p: any) => p.seriesName === 'Начислено')?.value;
-        const redeemed = params.find((p: any) => p.seriesName === 'Использовано')?.value;
-        return `<b>${date}</b><br/>Начислено: ${earned} баллов<br/>Использовано: ${redeemed} баллов`;
-      },
+  return createChartBase(
+    dates,
+    [t('analytics.earned'), t('analytics.redeemed')],
+    (params: any) => {
+      const date = params[0]?.axisValue;
+      const earned = params.find((p: any) => p.seriesName === t('analytics.earned'))?.value;
+      const redeemed = params.find((p: any) => p.seriesName === t('analytics.redeemed'))?.value;
+      return `<b>${date}</b><br/>${t('analytics.earned')}: ${earned} ${t('analytics.points')}<br/>${t('analytics.redeemed')}: ${redeemed} ${t('analytics.points')}`;
     },
-    legend: {
-      data: ['Начислено', 'Использовано'],
-      bottom: 0,
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '15%',
-      containLabel: true,
-    },
-    xAxis: {
-      type: 'category',
-      boundaryGap: false,
-      data: dates,
-      axisLabel: {
-        rotate: 45,
-        fontSize: 10,
-      },
-    },
-    yAxis: {
+    {
       type: 'value',
-      name: 'Баллы',
+      name: t('analytics.points'),
     },
-    series: [
+    [
       {
-        name: 'Начислено',
+        name: t('analytics.earned'),
         type: 'line',
         smooth: true,
         data: pointsEarned,
@@ -730,7 +785,7 @@ function getLoyaltyChartOption(data: ChartData['data']) {
         },
       },
       {
-        name: 'Использовано',
+        name: t('analytics.redeemed'),
         type: 'line',
         smooth: true,
         data: pointsRedeemed,
@@ -749,6 +804,6 @@ function getLoyaltyChartOption(data: ChartData['data']) {
           },
         },
       },
-    ],
-  };
+    ]
+  );
 }

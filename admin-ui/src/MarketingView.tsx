@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Api,
-    baseUrl,
-    injectAuthHeaders,
-    MarketingCampaign,
-    MarketingCampaignPreview,
-    MarketingSegment,
-    MarketingTrigger,
+  Api,
+  baseUrl,
+  injectAuthHeaders,
+  MarketingCampaign,
+  MarketingCampaignPreview,
+  MarketingSegment,
+  MarketingTrigger,
 } from './api';
 import { useMarketingData } from './hooks/useMarketingData';
 import { marketingService } from './services/marketing.service';
@@ -242,7 +242,9 @@ function CampaignsManager({
           {error && <div className="text-red-600 text-sm">{error}</div>}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">{t('marketing.campaignName')}</label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t('marketing.campaignName')}
+            </label>
             <input
               className="input w-full"
               value={newName}

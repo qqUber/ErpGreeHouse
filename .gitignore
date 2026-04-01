@@ -69,3 +69,5 @@ tests/artifacts/
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
+.playwright-mcp/
+testsprite_tests/

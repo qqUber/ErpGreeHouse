@@ -798,3 +798,37 @@ def create_test_order(
         "total": total,
         "status": "pending",
     }
+
+
+# =============================================================================
+# Seed Data Validation
+# =============================================================================
+
+@pytest.fixture(scope="function")
+def validate_seed_data():
+    """Validate seed data integrity before tests run"""
+    from app.db_init import discover_seed_files, load_seed_file
+    
+    seed_files = discover_seed_files()
+    for seed_file in seed_files:
+        data = load_seed_file(seed_file)
+        
+        # Validate product codes in demo transactions exist
+        if "demo_transactions" in data:
+            product_codes = {p["code"] for p in data.get("products", [])}
+            for tx in data["demo_transactions"]:
+                for item in tx.get("items", []):
+                    assert item["code"] in product_codes, f"Product {item['code']} referenced in transaction but not defined"
+    
+    yield
+
+
+def get_seed_test_data(entity_type: str, index: int = 0):
+    """Get test data from seed files"""
+    from app.db_init import discover_seed_files, load_seed_file
+    
+    for seed_file in discover_seed_files():
+        data = load_seed_file(seed_file)
+        if entity_type in data and len(data[entity_type]) > index:
+            return data[entity_type][index]
+    raise ValueError(f"Entity {entity_type} not found in seed files")

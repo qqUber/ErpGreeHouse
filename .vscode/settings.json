@@ -161,7 +161,7 @@
     ]
   },
   "security.workspace.trust.untrustedFiles": "open",
-  "workbench.colorTheme": "Default Dark+",
+  "workbench.colorTheme": "VS Code Dark",
   "workbench.iconTheme": "material-icon-theme",
   "breadcrumbs.enabled": true,
   "explorer.confirmDelete": false,

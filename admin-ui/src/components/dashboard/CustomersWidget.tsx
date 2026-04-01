@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Widget } from '../Widget';
 import { StatCard } from '../ui/StatCard';
+import { Widget } from '../Widget';
 
 type CustomersData = {
   total_customers?: number;
@@ -51,9 +51,13 @@ export function CustomersWidget({ data }: { data?: any }) {
       .sort((a: any, b: any) => Number(b.transactions ?? 0) - Number(a.transactions ?? 0))
       .slice(0, 5)
   );
-  const uniqueGaps = dedupeCustomers(uniqueCustomers.filter((c: any) => !c.marketing_allowed || (!c.telegram_id && !c.vk_id)));
+  const uniqueGaps = dedupeCustomers(
+    uniqueCustomers.filter((c: any) => !c.marketing_allowed || (!c.telegram_id && !c.vk_id))
+  );
   const highValueCustomers = uniqueCustomers
-    .filter((customer: any) => Number(customer.ltv ?? customer.total_spent ?? 0) >= highValueThreshold)
+    .filter(
+      (customer: any) => Number(customer.ltv ?? customer.total_spent ?? 0) >= highValueThreshold
+    )
     .slice(0, 5);
   const recentlyActiveCustomers = uniqueRecentlyActive.slice(0, 5);
   const unreachableCustomers = uniqueGaps.slice(0, 5);
@@ -76,7 +80,12 @@ export function CustomersWidget({ data }: { data?: any }) {
     },
   ];
 
-  const renderSummaryMetric = (label: string, value: React.ReactNode, helper?: string, tone: 'primary' | 'success' | 'warning' | 'info' = 'primary') => (
+  const renderSummaryMetric = (
+    label: string,
+    value: React.ReactNode,
+    helper?: string,
+    tone: 'primary' | 'success' | 'warning' | 'info' = 'primary'
+  ) => (
     <div className={`crm-summary-card crm-detail-card--accent-${tone}`}>
       <div className="crm-summary-label">{label}</div>
       <div className="crm-summary-value">{value}</div>
@@ -92,7 +101,15 @@ export function CustomersWidget({ data }: { data?: any }) {
             key={card.label}
             value={card.value.toLocaleString()}
             label={card.label}
-            variant={card.tone === 'green' ? 'success' : card.tone === 'blue' ? 'info' : card.tone === 'purple' ? 'primary' : 'primary'}
+            variant={
+              card.tone === 'green'
+                ? 'success'
+                : card.tone === 'blue'
+                  ? 'info'
+                  : card.tone === 'purple'
+                    ? 'primary'
+                    : 'primary'
+            }
             className={`stat-card-gradient stat-card-gradient-${card.tone}`}
           />
         ))}
@@ -121,25 +138,23 @@ export function CustomersWidget({ data }: { data?: any }) {
     const consent = customer.marketing_allowed !== false;
     const ltv = Number(customer.ltv ?? customer.total_spent ?? 0);
     return (
-      <div
-        key={`${id}-${customer.name ?? 'customer'}`}
-        className="row-item-2026"
-      >
+      <div key={`${id}-${customer.name ?? 'customer'}`} className="row-item-2026">
         <div className="flex items-center gap-3">
           <span className="font-mono text-sm text-gray-500">#{id}</span>
-          <span className="font-medium">
-            {customer.name ?? t('widgets.customers.unknown')}
-          </span>
+          <span className="font-medium">{customer.name ?? t('widgets.customers.unknown')}</span>
         </div>
         <div className="flex items-center gap-2">
           {hasTelegram && (
             <span className="badge-2026 badge-2026-primary">{t('widgets.customers.telegram')}</span>
           )}
-          {hasVk && (
-            <span className="badge-2026 badge-2026-info">{t('widgets.customers.vk')}</span>
-          )}
+          {hasVk && <span className="badge-2026 badge-2026-info">{t('widgets.customers.vk')}</span>}
           {!hasTelegram && !hasVk && (
-            <span className="badge-2026" style={{ background: 'rgba(100,116,139,0.1)', color: '#64748b' }}>{t('widgets.customers.noChannel')}</span>
+            <span
+              className="badge-2026"
+              style={{ background: 'rgba(100,116,139,0.1)', color: '#64748b' }}
+            >
+              {t('widgets.customers.noChannel')}
+            </span>
           )}
           <span className={`badge-2026 ${consent ? 'badge-2026-success' : 'badge-2026-warning'}`}>
             {consent ? t('widgets.customers.consent') : t('widgets.customers.noConsent')}
@@ -155,34 +170,46 @@ export function CustomersWidget({ data }: { data?: any }) {
   const expandedContent = (
     <div className="dashboard-widget-2026">
       <section className="mb-4">
-        <h3 className="section-title-2026">{t('widgets.customers.highValueTitle', 'High value customers')}</h3>
+        <h3 className="section-title-2026">
+          {t('widgets.customers.highValueTitle', 'High value customers')}
+        </h3>
         <div className="space-y-2">
           {highValueCustomers.length ? (
             highValueCustomers.map(renderCustomerRow)
           ) : (
-            <div className="crm-empty-state">{t('widgets.customers.noHighValue', 'No high-value customers in payload.')}</div>
+            <div className="crm-empty-state">
+              {t('widgets.customers.noHighValue', 'No high-value customers in payload.')}
+            </div>
           )}
         </div>
       </section>
 
       <section className="mb-4">
-        <h3 className="section-title-2026">{t('widgets.customers.recentlyActiveTitle', 'Recently active customers')}</h3>
+        <h3 className="section-title-2026">
+          {t('widgets.customers.recentlyActiveTitle', 'Recently active customers')}
+        </h3>
         <div className="space-y-2">
           {recentlyActiveCustomers.length ? (
             recentlyActiveCustomers.map(renderCustomerRow)
           ) : (
-            <div className="crm-empty-state">{t('widgets.customers.noRecent', 'No recent activity data.')}</div>
+            <div className="crm-empty-state">
+              {t('widgets.customers.noRecent', 'No recent activity data.')}
+            </div>
           )}
         </div>
       </section>
 
       <section className="mb-4">
-        <h3 className="section-title-2026">{t('widgets.customers.unreachableTitle', 'Consent gaps / unreachable')}</h3>
+        <h3 className="section-title-2026">
+          {t('widgets.customers.unreachableTitle', 'Consent gaps / unreachable')}
+        </h3>
         <div className="space-y-2">
           {unreachableCustomers.length ? (
             unreachableCustomers.map(renderCustomerRow)
           ) : (
-            <div className="crm-empty-state">{t('widgets.customers.noGaps', 'No consent or reachability gaps.')}</div>
+            <div className="crm-empty-state">
+              {t('widgets.customers.noGaps', 'No consent or reachability gaps.')}
+            </div>
           )}
         </div>
       </section>

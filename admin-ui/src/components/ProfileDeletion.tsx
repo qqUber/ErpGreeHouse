@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Api } from '../api';
 
 interface FeedbackMessage {
@@ -13,15 +14,17 @@ export function ProfileDeletion({
   customerId: number;
   onDeleted: () => void;
 }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const [feedback, setFeedback] = useState<FeedbackMessage | null>(null);
 
   async function handleDelete() {
-    if (confirmText !== 'УДАЛИТЬ') {
+    const confirmWord = t('compliance.confirmDeleteWord');
+    if (confirmText !== confirmWord) {
       setFeedback({
         kind: 'error',
-        message: 'Пожалуйста, введите "УДАЛИТЬ" для подтверждения',
+        message: t('compliance.confirmDeleteRequired'),
       });
       return;
     }
@@ -30,11 +33,11 @@ export function ProfileDeletion({
     setFeedback(null);
     try {
       await Api.deleteCustomer(customerId);
-      setFeedback({ kind: 'success', message: 'Профиль пользователя успешно удален' });
+      setFeedback({ kind: 'success', message: t('compliance.profileDeletedSuccessfully') });
       onDeleted();
     } catch (e) {
       console.error(e);
-      setFeedback({ kind: 'error', message: 'Ошибка при удалении профиля пользователя' });
+      setFeedback({ kind: 'error', message: t('compliance.profileDeleteError') });
     } finally {
       setLoading(false);
     }
@@ -42,20 +45,19 @@ export function ProfileDeletion({
 
   return (
     <div className="bg-red-50 p-6 rounded-lg">
-      <h3 className="text-lg font-medium text-red-800 mb-4">Удаление профиля пользователя</h3>
+      <h3 className="text-lg font-medium text-red-800 mb-4">
+        {t('compliance.userProfileDeletion')}
+      </h3>
 
       <div className="mb-4">
-        <p className="text-red-700 mb-2">
-          Это действие нельзя отменить. Все данные пользователя будут permanently удалены из
-          системы.
-        </p>
-        <p className="text-sm text-red-600">Введите "УДАЛИТЬ" для подтверждения:</p>
+        <p className="text-red-700 mb-2">{t('compliance.cannotBeUndone')}</p>
+        <p className="text-sm text-red-600">{t('compliance.enterDeleteToConfirm')}:</p>
         <input
           type="text"
           value={confirmText}
           onChange={(e) => setConfirmText(e.target.value)}
           className="mt-2 p-2 border border-red-300 rounded-md w-full"
-          placeholder="Введите УДАЛИТЬ"
+          placeholder={t('compliance.enterDelete')}
         />
       </div>
 
@@ -73,10 +75,10 @@ export function ProfileDeletion({
 
       <button
         onClick={handleDelete}
-        disabled={loading || confirmText !== 'УДАЛИТЬ'}
+        disabled={loading || confirmText !== t('compliance.confirmDeleteWord')}
         className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? 'Удаление...' : 'Удалить профиль'}
+        {loading ? t('compliance.deleting') : t('compliance.deleteProfile')}
       </button>
     </div>
   );

@@ -641,7 +641,9 @@ async def _send_virtual_card(message: Message, customer: dict[str, Any]) -> None
     qr_token = str(customer.get("qr_token") or "").strip()
     customer_id = int(customer.get("id") or 0)
     full_name = customer.get("full_name") or ""
-    logger.debug(f"[DEBUG] _send_virtual_card: customer_id={customer_id}, full_name='{full_name}', qr_token='{qr_token}'")
+    logger.debug(
+        f"[DEBUG] _send_virtual_card: customer_id={customer_id}, full_name='{full_name}', qr_token='{qr_token}'"
+    )
     if not qr_token or not customer_id:
         await message.answer(
             _telegram_text(message, "virtual_card_ready", qr_token=qr_token or "—")
@@ -1163,8 +1165,14 @@ async def handle_registration_message(message: Message) -> None:
 
     if step == "full_name":
         name_result = normalize_name((message.text or "").strip())
-        full_name = name_result.get("normalized", "") if isinstance(name_result, dict) else str(name_result)
-        logger.debug(f"[DEBUG] Received full_name input: raw='{message.text}' -> normalized='{full_name}'")
+        full_name = (
+            name_result.get("normalized", "")
+            if isinstance(name_result, dict)
+            else str(name_result)
+        )
+        logger.debug(
+            f"[DEBUG] Received full_name input: raw='{message.text}' -> normalized='{full_name}'"
+        )
         if not full_name:
             await message.answer("Имя не распознано. Введите полное имя и фамилию.")
             return
@@ -1193,7 +1201,11 @@ async def handle_registration_message(message: Message) -> None:
 
     if step == "city":
         city_result = normalize_name((message.text or "").strip())
-        city = city_result.get("normalized", "") if isinstance(city_result, dict) else str(city_result)
+        city = (
+            city_result.get("normalized", "")
+            if isinstance(city_result, dict)
+            else str(city_result)
+        )
         if not city:
             await message.answer("Введите город.")
             return
@@ -1303,7 +1315,9 @@ async def cb_marketing_consent(cb: CallbackQuery) -> None:
         conn_local = get_db().connect()
         try:
             customer = get_customer_row(conn_local, customer_id)
-            logger.debug(f"[DEBUG] Customer from DB: id={customer.get('id')}, full_name='{customer.get('full_name')}', qr_token='{customer.get('qr_token')}'")
+            logger.debug(
+                f"[DEBUG] Customer from DB: id={customer.get('id')}, full_name='{customer.get('full_name')}', qr_token='{customer.get('qr_token')}'"
+            )
         finally:
             conn_local.close()
         msg = _telegram_text(cb, "registration_completed")
@@ -1428,7 +1442,6 @@ async def menu_menu_and_addresses(message: Message) -> None:
 )
 async def menu_open_coffee_shop(message: Message) -> None:
     _remember_telegram_language(message)
-    language = message.from_user.language_code or "en"
 
     # Path to your video file (should be stored in middleware/assets/videos/)
     video_path = "assets/videos/coffee_shop_intro.mp4"
@@ -1508,10 +1521,10 @@ async def menu_about_club(message: Message) -> None:
 
 
 @router.message(
-    lambda message: isinstance(
-        get_json(_support_request_key(message.from_user.id)), dict
+    lambda message: (
+        isinstance(get_json(_support_request_key(message.from_user.id)), dict)
+        and bool(get_json(_support_request_key(message.from_user.id)).get("active"))
     )
-    and bool(get_json(_support_request_key(message.from_user.id)).get("active"))
 )
 async def handle_support_request_message(message: Message) -> None:
     _remember_telegram_language(message)
@@ -1630,41 +1643,6 @@ async def cmd_order(message: Message) -> None:
         )
     except Exception as e:
         await message.answer(f"Ошибка оформления заказа: {e}")
-
-
-@router.message(Command("delete"))
-async def cmd_delete(message: Message) -> None:
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="Удалить", callback_data="delete:yes"),
-                InlineKeyboardButton(text="Отмена", callback_data="delete:no"),
-            ]
-        ]
-    )
-    await message.answer("Подтверди удаление данных", reply_markup=kb)
-
-
-@router.callback_query(F.data.startswith("delete:"))
-async def cb_delete(cb: CallbackQuery) -> None:
-    if cb.data.endswith("no"):
-        await cb.message.edit_text("Отменено")
-        await cb.answer()
-        return
-    client = ERPClient()
-    try:
-        await client.delete_telegram_client(cb.from_user.id)
-        db = get_db()
-        conn = db.connect()
-        conn.execute("DELETE FROM customers WHERE telegram_id=?", (cb.from_user.id,))
-        conn.commit()
-        conn.close()
-        await cb.message.edit_text(
-            "Ваш профиль и все данные удалены в соответствии с 152-ФЗ."
-        )
-    except Exception as e:
-        await cb.message.edit_text(f"Ошибка при удалении: {e}")
-    await cb.answer()
 
 
 @router.message(Command("revoke_consent"))

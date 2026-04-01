@@ -4,7 +4,7 @@
 import json
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Dict, Optional
 
 import redis
@@ -167,9 +167,7 @@ class ERPSyncService:
             Sync result with statistics
         """
         start_time = datetime.now()
-        success_count = 0
         failed_count = 0
-        errors = []
 
         try:
             logger.info(
@@ -180,30 +178,21 @@ class ERPSyncService:
 
             logger.info(f"Found {len(erp_customers)} customers to sync")
 
-            success_count = len(erp_customers)
+            _success_count = len(erp_customers)
 
-            history = SyncHistory(
-                sync_type="customer_sync",
-                total_records=len(erp_customers),
-                successful_records=success_count,
-                failed_records=failed_count,
-                sync_start=start_time,
-                sync_end=datetime.now(),
-            )
-
-            SYNC_SUCCESS.labels(sync_type="customer_sync").inc(success_count)
+            SYNC_SUCCESS.labels(sync_type="customer_sync").inc(_success_count)
 
             logger.info(
-                f"Customer sync completed: {success_count} successful, {failed_count} failed"
+                f"Customer sync completed: {_success_count} successful, {failed_count} failed"
             )
 
             return {
                 "success": True,
                 "sync_type": "customer_sync",
                 "total_records": len(erp_customers),
-                "successful_records": success_count,
+                "successful_records": _success_count,
                 "failed_records": failed_count,
-                "errors": errors,
+                "errors": [],
                 "duration": (datetime.now() - start_time).total_seconds(),
             }
 
@@ -248,9 +237,7 @@ class ERPSyncService:
             Import result with statistics
         """
         start_time = datetime.now()
-        success_count = 0
         failed_count = 0
-        errors = []
 
         try:
             logger.info(
@@ -261,30 +248,21 @@ class ERPSyncService:
 
             logger.info(f"Found {len(sales_invoices)} sales invoices to import")
 
-            success_count = len(sales_invoices)
+            _success_count = len(sales_invoices)
 
-            history = SyncHistory(
-                sync_type="purchase_import",
-                total_records=len(sales_invoices),
-                successful_records=success_count,
-                failed_records=failed_count,
-                sync_start=start_time,
-                sync_end=datetime.now(),
-            )
-
-            SYNC_SUCCESS.labels(sync_type="purchase_import").inc(success_count)
+            SYNC_SUCCESS.labels(sync_type="purchase_import").inc(_success_count)
 
             logger.info(
-                f"Purchase import completed: {success_count} successful, {failed_count} failed"
+                f"Purchase import completed: {_success_count} successful, {failed_count} failed"
             )
 
             return {
                 "success": True,
                 "sync_type": "purchase_import",
                 "total_records": len(sales_invoices),
-                "successful_records": success_count,
+                "successful_records": _success_count,
                 "failed_records": failed_count,
-                "errors": errors,
+                "errors": [],
                 "duration": (datetime.now() - start_time).total_seconds(),
             }
 
@@ -329,9 +307,6 @@ class ERPSyncService:
             Export result with statistics
         """
         start_time = datetime.now()
-        success_count = 0
-        failed_count = 0
-        errors = []
 
         try:
             logger.info(
@@ -339,15 +314,6 @@ class ERPSyncService:
             )
 
             logger.info("Loyalty data export not implemented yet")
-
-            history = SyncHistory(
-                sync_type="loyalty_export",
-                total_records=0,
-                successful_records=0,
-                failed_records=0,
-                sync_start=start_time,
-                sync_end=datetime.now(),
-            )
 
             logger.info("Loyalty data export completed")
 
@@ -357,7 +323,7 @@ class ERPSyncService:
                 "total_records": 0,
                 "successful_records": 0,
                 "failed_records": 0,
-                "errors": errors,
+                "errors": [],
                 "duration": (datetime.now() - start_time).total_seconds(),
             }
 
@@ -420,7 +386,7 @@ class ERPSyncService:
         for msg_id, msg in events:
             try:
                 event = json.loads(msg[b"event"])
-                error = msg[b"error"].decode("utf-8")
+                msg[b"error"].decode("utf-8")
                 retry_count = int(msg[b"retry_count"])
 
                 logger.info(
@@ -469,20 +435,16 @@ class ERPSyncService:
                     msg[b"retry_count"] = str(retry_count).encode("utf-8")
                     self.redis_client.xadd("erp_sync_dlq", msg, id=msg_id)
 
-    def get_sync_statistics(self, db, days: int = 7) -> Dict[str, Any]:
+    def get_sync_statistics(self, db) -> Dict[str, Any]:
         """
-        Get sync statistics for the last N days
+        Get sync statistics.
 
         Args:
             db: Database session
-            days: Number of days to include in statistics
 
         Returns:
             Sync statistics by type
         """
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=days)
-
         statistics = {
             "customer_sync": {"total": 0, "successful": 0, "failed": 0},
             "purchase_import": {"total": 0, "successful": 0, "failed": 0},

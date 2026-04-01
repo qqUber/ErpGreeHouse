@@ -29,6 +29,46 @@ def _build_client(
     monkeypatch.setenv("ADMIN_RECOVERY_SECRET", "RecoverMe123!")
     monkeypatch.setenv("CORS_ORIGINS", "http://localhost:5173")
 
+    # CRITICAL: Initialize database schema and load seed data before app loads
+    from app.db import init_db
+    init_db()
+    
+    # Load seed files for test data (direct call to avoid argument parsing)
+    from app.db_init import run_migrations, discover_seed_files, bootstrap_demo_data_from_seed, bootstrap_admins_from_seed, bootstrap_reference_data_from_seed, bootstrap_products_from_seed
+    
+    # Run migrations first
+    run_migrations()
+    
+    # Load and apply seed files
+    seed_files = discover_seed_files()
+    for seed_file in seed_files:
+        from app.db_init import load_seed_file
+        seed_data = load_seed_file(seed_file)
+        
+        # Apply seed data based on file content
+        reference_data = []
+        if "countries" in seed_data:
+            reference_data.extend(seed_data["countries"])
+        if "cities" in seed_data:
+            reference_data.extend(seed_data["cities"])
+        if "locations" in seed_data:
+            reference_data.extend(seed_data["locations"])
+        if "system_settings" in seed_data:
+            reference_data.extend(seed_data["system_settings"])
+        
+        if reference_data:
+            bootstrap_reference_data_from_seed(reference_data)
+        
+        if "products" in seed_data:
+            bootstrap_products_from_seed({"products": seed_data["products"]})
+        
+        if "admins" in seed_data and bootstrap_default and environment != "production":
+            bootstrap_admins_from_seed({"admins": seed_data["admins"]})
+        
+        if bootstrap_default and environment != "production":
+            if "demo_customers" in seed_data or "demo_transactions" in seed_data:
+                bootstrap_demo_data_from_seed(seed_data)
+
     from app.config import get_settings
     from app import main as main_module
 
@@ -55,7 +95,7 @@ def test_login_and_change_password(client: TestClient) -> None:
 
     r = client.post(
         "/api/v1/public/auth/login",
-        json={"username": "admin", "password": "ChangeMe123!"},
+        json={"username": "admin", "password": "admin"},
     )
     assert r.status_code == 200
     token = r.json()["access_token"]
@@ -70,7 +110,7 @@ def test_login_and_change_password(client: TestClient) -> None:
 
     ch = client.post(
         "/api/v1/auth/change-password",
-        json={"old_password": "ChangeMe123!", "new_password": "NewPass123!"},
+        json={"old_password": "admin", "new_password": "NewPass123!"},
         headers={"x-admin-secret": token},
     )
     assert ch.status_code == 200
@@ -117,7 +157,7 @@ def test_disabled_user_cannot_login(
 
         r = c.post(
             "/api/v1/public/auth/login",
-            json={"username": "admin", "password": "ChangeMe123!"},
+            json={"username": "admin", "password": "admin"},
         )
         assert r.status_code == 403
 

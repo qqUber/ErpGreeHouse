@@ -64,7 +64,16 @@ export function AnalyticsWidget({ data }: { data?: MarketingAnalyticsData }) {
         <div className="kpi-grid-2026 mb-6">
           <div className="stat-card-2026 stat-card-2026-success">
             <div className="stat-card-content">
-              <div className="kpi-value-2026" style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{consentRate}%</div>
+              <div
+                className="kpi-value-2026"
+                style={{
+                  background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                {consentRate}%
+              </div>
               <div className="kpi-label-2026">{t('analytics.consentRate')}</div>
             </div>
           </div>
@@ -76,13 +85,31 @@ export function AnalyticsWidget({ data }: { data?: MarketingAnalyticsData }) {
           </div>
           <div className="stat-card-2026 stat-card-2026-warning">
             <div className="stat-card-content">
-              <div className="kpi-value-2026" style={{ background: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{activeCampaigns}</div>
+              <div
+                className="kpi-value-2026"
+                style={{
+                  background: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                {activeCampaigns}
+              </div>
               <div className="kpi-label-2026">{t('analytics.activeCampaigns')}</div>
             </div>
           </div>
           <div className="stat-card-2026 stat-card-2026-info">
             <div className="stat-card-content">
-              <div className="kpi-value-2026" style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{highValueShare}%</div>
+              <div
+                className="kpi-value-2026"
+                style={{
+                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                {highValueShare}%
+              </div>
               <div className="kpi-label-2026">High-value share</div>
             </div>
           </div>
@@ -133,15 +160,21 @@ export function AnalyticsWidget({ data }: { data?: MarketingAnalyticsData }) {
               <div className="text-xs text-gray-500 uppercase tracking-wide">Active</div>
             </div>
             <div className="kpi-card-2026">
-              <div className="text-2xl font-bold text-gray-800">{Number(campaigns.upcoming_campaigns || 0)}</div>
+              <div className="text-2xl font-bold text-gray-800">
+                {Number(campaigns.upcoming_campaigns || 0)}
+              </div>
               <div className="text-xs text-gray-500 uppercase tracking-wide">Upcoming</div>
             </div>
             <div className="kpi-card-2026">
-              <div className="text-2xl font-bold text-gray-800">{Number(campaigns.messages_sent_24h || 0)}</div>
+              <div className="text-2xl font-bold text-gray-800">
+                {Number(campaigns.messages_sent_24h || 0)}
+              </div>
               <div className="text-xs text-gray-500 uppercase tracking-wide">Messages/24h</div>
             </div>
             <div className="kpi-card-2026">
-              <div className="text-2xl font-bold text-gray-800">{Number(campaigns.open_rate || 0)}%</div>
+              <div className="text-2xl font-bold text-gray-800">
+                {Number(campaigns.open_rate || 0)}%
+              </div>
               <div className="text-xs text-gray-500 uppercase tracking-wide">Open Rate</div>
             </div>
           </div>
@@ -151,20 +184,36 @@ export function AnalyticsWidget({ data }: { data?: MarketingAnalyticsData }) {
           <h4 className="section-title-2026">Customer value segments</h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="kpi-card-2026">
-              <div className="text-2xl font-bold text-indigo-600">{Number(segments.high_value || 0)}</div>
-              <div className="text-xs text-gray-500 uppercase tracking-wide">{t('analytics.highValue')}</div>
+              <div className="text-2xl font-bold text-indigo-600">
+                {Number(segments.high_value || 0)}
+              </div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">
+                {t('analytics.highValue')}
+              </div>
             </div>
             <div className="kpi-card-2026">
-              <div className="text-2xl font-bold text-green-600">{Number(segments.active || 0)}</div>
-              <div className="text-xs text-gray-500 uppercase tracking-wide">{t('analytics.active')}</div>
+              <div className="text-2xl font-bold text-green-600">
+                {Number(segments.active || 0)}
+              </div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">
+                {t('analytics.active')}
+              </div>
             </div>
             <div className="kpi-card-2026">
-              <div className="text-2xl font-bold text-blue-600">{Number(segments.new_customers || 0)}</div>
-              <div className="text-xs text-gray-500 uppercase tracking-wide">{t('analytics.new')}</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {Number(segments.new_customers || 0)}
+              </div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">
+                {t('analytics.new')}
+              </div>
             </div>
             <div className="kpi-card-2026">
-              <div className="text-2xl font-bold text-purple-600">{avgLTV > 0 ? avgLTV.toLocaleString() : '—'}</div>
-              <div className="text-xs text-gray-500 uppercase tracking-wide">{t('analytics.avgLTV')}</div>
+              <div className="text-2xl font-bold text-purple-600">
+                {avgLTV > 0 ? avgLTV.toLocaleString() : '—'}
+              </div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">
+                {t('analytics.avgLTV')}
+              </div>
             </div>
           </div>
         </section>

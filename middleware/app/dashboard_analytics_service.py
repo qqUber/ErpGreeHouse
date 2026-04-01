@@ -184,7 +184,8 @@ class DashboardAnalyticsService:
                 {
                     "hour": hour,
                     "transactions": int(row["cnt"] or 0),
-                    "revenue": int(row["revenue"] or 0),
+                    "revenue": int(row["revenue"] or 0)
+                    / 100,  # Divide by 100 to convert from cents to rubles
                 }
             )
 
@@ -203,7 +204,8 @@ class DashboardAnalyticsService:
                 "code": row["code"],
                 "name": row["name"],
                 "quantity": int(row["total_qty"] or 0),
-                "revenue": int(row["total_revenue"] or 0),
+                "revenue": int(row["total_revenue"] or 0)
+                / 100,  # Divide by 100 to convert from cents to rubles
             }
             for row in rows
         ]
@@ -227,14 +229,20 @@ class DashboardAnalyticsService:
             "top_products": top_products,
             "active_staff": int(staff["active_staff"] or 0),
             "total_transactions": int(summary["total_tx"] or 0),
-            "total_revenue": int(summary["total_revenue"] or 0),
-            "average_check": round(float(summary["avg_check"] or 0), 2),
+            "total_revenue": int(summary["total_revenue"] or 0)
+            / 100,  # Divide by 100 to convert from cents to rubles
+            "average_check": round(
+                float(summary["avg_check"] or 0) / 100, 2
+            ),  # Divide by 100 to convert from cents to rubles
             "peak_hour": peak_hour["hour"] if peak_hour else None,
             "peak_hour_transactions": peak_hour["transactions"] if peak_hour else 0,
             "headline": {
-                "revenue": int(summary["total_revenue"] or 0),
+                "revenue": int(summary["total_revenue"] or 0)
+                / 100,  # Divide by 100 to convert from cents to rubles
                 "transactions": int(summary["total_tx"] or 0),
-                "avgCheck": round(float(summary["avg_check"] or 0), 2),
+                "avgCheck": round(
+                    float(summary["avg_check"] or 0) / 100, 2
+                ),  # Divide by 100 to convert from cents to rubles
                 "peakHour": peak_hour["hour"] if peak_hour else None,
             },
         }
@@ -266,13 +274,15 @@ class DashboardAnalyticsService:
                 "id": row["id"],
                 "name": row["full_name"],
                 "phone": row["phone"],
-                "total_spent": int(row["total_spent"] or 0),
+                "total_spent": int(row["total_spent"] or 0)
+                / 100,  # Divide by 100 to convert from cents to rubles
                 "transactions": int(row["transaction_count"] or 0),
                 "telegram_id": row["telegram_id"],
                 "vk_id": row["vk_id"],
                 "marketing_allowed": bool(row["marketing_allowed"]),
                 "balance_points": int(row["balance_points"] or 0),
-                "ltv": int(row["ltv"] or row["total_spent"] or 0),
+                "ltv": int(row["ltv"] or row["total_spent"] or 0)
+                / 100,  # Divide by 100 to convert from cents to rubles
                 "last_purchase_date": row["last_purchase_date"],
             }
             for row in conn.execute(
@@ -385,7 +395,8 @@ class DashboardAnalyticsService:
                 "code": row["code"],
                 "name": row["name"],
                 "quantity": int(row["qty"] or 0),
-                "revenue": int(row["revenue"] or 0),
+                "revenue": int(row["revenue"] or 0)
+                / 100,  # Divide by 100 to convert from cents to rubles
             }
             for row in conn.execute(
                 """SELECT json_extract(value, '$.code') as code, json_extract(value, '$.name') as name,
@@ -404,7 +415,8 @@ class DashboardAnalyticsService:
                 "category": row["kind"],
                 "transactions": int(row["transaction_count"] or 0),
                 "items_sold": int(row["items_sold"] or 0),
-                "revenue": int(row["revenue"] or 0),
+                "revenue": int(row["revenue"] or 0)
+                / 100,  # Divide by 100 to convert from cents to rubles
             }
             for row in conn.execute(
                 """SELECT p.kind, COUNT(DISTINCT t.id) as transaction_count,
@@ -511,8 +523,11 @@ class DashboardAnalyticsService:
             "pointsEarned": int(points_earned or 0),
             "pointsRedeemed": int(points_redeemed or 0),
             "redemptionRate": round(redemption_rate, 1),
-            "avgOrderValue": round(float(avg_order_value or 0), 2),
-            "revenue": int(revenue or 0),
+            "avgOrderValue": round(
+                float(avg_order_value or 0) / 100, 2
+            ),  # Divide by 100 to convert from cents to rubles
+            "revenue": int(revenue or 0)
+            / 100,  # Divide by 100 to convert from cents to rubles
         }
 
     def _get_attention_metrics(

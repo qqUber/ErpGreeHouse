@@ -1,5 +1,10 @@
 import type { DashboardHomeViewModel } from '../../services/dashboard-analytics.service';
-import { CustomersWidgetSkeleton, ProductsWidgetSkeleton, SalesWidgetSkeleton, WidgetSkeleton } from '../ui/WidgetSkeleton';
+import {
+  CustomersWidgetSkeleton,
+  ProductsWidgetSkeleton,
+  SalesWidgetSkeleton,
+  WidgetSkeleton,
+} from '../ui/WidgetSkeleton';
 import { DashboardWrapper } from './DashboardWrapper';
 
 interface DashboardViewProps {
@@ -33,10 +38,5 @@ export function DashboardView({ data, reload, onNavigate }: DashboardViewProps) 
   }
 
   // Data loaded - render actual dashboard
-  return (
-    <DashboardWrapper
-      data={data}
-      onNavigate={onNavigate}
-    />
-  );
+  return <DashboardWrapper data={data} onNavigate={onNavigate} />;
 }

@@ -16,6 +16,7 @@ import hashlib
 import logging
 import os
 import secrets
+import sqlite3
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -572,93 +573,127 @@ class LoginOut(BaseModel):
 def auth_status(request: Request) -> dict[str, Any]:
     username = os.getenv("ADMIN_DEFAULT_USERNAME", "admin").strip() or "admin"
 
-    db = get_db()
-    conn = db.connect()
     try:
-        row = conn.execute(
-            "SELECT id, must_change_password FROM admin_users WHERE username=?",
-            (username,),
-        ).fetchone()
-        return {
-            "bootstrap_enabled": _is_bootstrap_allowed("ADMIN_BOOTSTRAP_DEFAULT"),
-            "default_admin_present": bool(row),
-            "default_admin_username": username,
-            "must_change_password": (
-                bool(int(row["must_change_password"])) if row else False
-            ),
-        }
-    finally:
-        conn.close()
+        db = get_db()
+        conn = db.connect()
+        try:
+            # Check if admin_users table exists first
+            conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='admin_users'"
+            ).fetchone()
+            row = conn.execute(
+                "SELECT id, must_change_password FROM admin_users WHERE username=?",
+                (username,),
+            ).fetchone()
+            return {
+                "bootstrap_enabled": _is_bootstrap_allowed("ADMIN_BOOTSTRAP_DEFAULT"),
+                "default_admin_present": bool(row),
+                "default_admin_username": username,
+                "must_change_password": (
+                    bool(int(row["must_change_password"])) if row else False
+                ),
+            }
+        finally:
+            conn.close()
+    except sqlite3.OperationalError as e:
+        if "no such table" in str(e):
+            # Database not initialized yet - return graceful response
+            return {
+                "bootstrap_enabled": _is_bootstrap_allowed("ADMIN_BOOTSTRAP_DEFAULT"),
+                "default_admin_present": False,
+                "default_admin_username": username,
+                "must_change_password": False,
+                "database_status": "initializing",
+            }
+        raise
+    except Exception:
+        # Other database errors - re-raise
+        raise
 
 
 @public_router.post("/login")
 def login(payload: LoginIn, response: Response, request: Request) -> LoginOut:
-    db = get_db()
-    conn = db.connect()
     try:
-        row = conn.execute(
-            "SELECT id, username, password_hash, password_salt, password_iter, must_change_password, disabled, role FROM admin_users WHERE username=?",
-            (payload.username.strip(),),
-        ).fetchone()
-        if not row:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-        if int(row["disabled"]) == 1:
-            raise HTTPException(status_code=403, detail="User disabled")
-        ph = hash_password(
-            payload.password,
-            salt=str(row["password_salt"]),
-            iterations=int(row["password_iter"]),
-        )
-        if not constant_time_equals(ph, str(row["password_hash"])):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+        db = get_db()
+        conn = db.connect()
+        try:
+            # Check if admin_users table exists first
+            conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='admin_users'"
+            ).fetchone()
+            row = conn.execute(
+                "SELECT id, username, password_hash, password_salt, password_iter, must_change_password, disabled, role FROM admin_users WHERE username=?",
+                (payload.username.strip(),),
+            ).fetchone()
+            if not row:
+                raise HTTPException(status_code=401, detail="Invalid credentials")
+            if int(row["disabled"]) == 1:
+                raise HTTPException(status_code=403, detail="User disabled")
+            ph = hash_password(
+                payload.password,
+                salt=str(row["password_salt"]),
+                iterations=int(row["password_iter"]),
+            )
+            if not constant_time_equals(ph, str(row["password_hash"])):
+                raise HTTPException(status_code=401, detail="Invalid credentials")
 
-        # Generate legacy token for backward compatibility
-        token = _issue_token(int(row["id"]))
+            # Generate legacy token for backward compatibility
+            token = _issue_token(int(row["id"]))
 
-        # Generate JWT tokens
-        admin_data = {
-            "user_id": int(row["id"]),
-            "username": str(row["username"]),
-            "role": str(row["role"]),
-        }
-        access_token = create_access_token(admin_data)
-        refresh_token = create_refresh_token(admin_data)
+            # Generate JWT tokens
+            admin_data = {
+                "user_id": int(row["id"]),
+                "username": str(row["username"]),
+                "role": str(row["role"]),
+            }
+            access_token = create_access_token(admin_data)
+            refresh_token = create_refresh_token(admin_data)
 
-        logger.info(
-            f"Generated JWT tokens for user '{row['username']}': access_token length={len(access_token)}, refresh_token length={len(refresh_token)}"
-        )
+            logger.info(
+                f"Generated JWT tokens for user '{row['username']}': access_token length={len(access_token)}, refresh_token length={len(refresh_token)}"
+            )
 
-        # Set JWT cookies
-        _set_jwt_cookies(
-            response, access_token, refresh_token, username=payload.username
-        )
+            # Set JWT cookies
+            _set_jwt_cookies(
+                response, access_token, refresh_token, username=payload.username
+            )
 
-        # Also set legacy cookie for backward compatibility
-        ttl_min = int(os.getenv("ADMIN_TOKEN_TTL_MIN", "720"))
-        cookie_secure = os.getenv("ADMIN_COOKIE_SECURE", "false").lower() in (
-            "1",
-            "true",
-            "yes",
-        )
-        response.set_cookie(
-            _ADMIN_COOKIE_NAME,
-            token,
-            httponly=True,
-            samesite="lax",
-            secure=cookie_secure,
-            max_age=int(ttl_min * 60),
-            path="/",
-        )
+            # Also set legacy cookie for backward compatibility
+            ttl_min = int(os.getenv("ADMIN_TOKEN_TTL_MIN", "720"))
+            cookie_secure = os.getenv("ADMIN_COOKIE_SECURE", "false").lower() in (
+                "1",
+                "true",
+                "yes",
+            )
+            response.set_cookie(
+                _ADMIN_COOKIE_NAME,
+                token,
+                httponly=True,
+                samesite="lax",
+                secure=cookie_secure,
+                max_age=int(ttl_min * 60),
+                path="/",
+            )
 
-        return LoginOut(
-            access_token=access_token,
-            refresh_token=refresh_token,
-            token_type="bearer",
-            expires_in=get_settings().jwt_access_token_expire_minutes * 60,
-            must_change_password=bool(int(row["must_change_password"])),
-        )
-    finally:
-        conn.close()
+            return LoginOut(
+                access_token=access_token,
+                refresh_token=refresh_token,
+                token_type="bearer",
+                expires_in=get_settings().jwt_access_token_expire_minutes * 60,
+                must_change_password=bool(int(row["must_change_password"])),
+            )
+        finally:
+            conn.close()
+    except sqlite3.OperationalError as e:
+        if "no such table" in str(e):
+            # Database not initialized yet - return graceful error
+            raise HTTPException(
+                status_code=503, detail="Database initializing - please try again"
+            )
+        raise
+    except Exception:
+        # Other database errors - re-raise
+        raise
 
 
 class ChangePasswordIn(BaseModel):

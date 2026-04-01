@@ -428,7 +428,6 @@ class VKBot:
     async def _handle_consent(self, user_id: int, peer_id: int, payload: dict):
         """Handle consent button response."""
         command = payload.get("command", "")
-        r = get_redis()
 
         # Handle refusal
         if command == "consent:refuse":
@@ -704,6 +703,7 @@ _vk_webhook_bot: Optional["VKBot"] = None
 def set_vk_config(access_token: str, group_id: int, api_version: str = "5.131"):
     """Set VK config for webhook processing (async-safe)."""
     global _vk_webhook_bot
+    global _vk_config
     _vk_config = {
         "access_token": access_token,
         "group_id": group_id,

@@ -1,16 +1,20 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Api } from './api';
 import { ConsentTable } from './components/ConsentTable';
 import { ProfileDeletion } from './components/ProfileDeletion';
 
 export function ComplianceView() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<'consents' | 'delete'>('consents');
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | undefined>();
 
   return (
     <div className="grid gap-6">
       <div className="row">
-        <h1 style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>Комплаенс</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>
+          {t('compliance.title')}
+        </h1>
       </div>
 
       <div
@@ -44,7 +48,7 @@ export function ComplianceView() {
           }}
           onClick={() => setTab('consents')}
         >
-          Согласия
+          {t('compliance.consents')}
         </button>
         <button
           style={{
@@ -69,7 +73,7 @@ export function ComplianceView() {
           }}
           onClick={() => setTab('delete')}
         >
-          Удаление профилей
+          {t('compliance.profileDeletion')}
         </button>
       </div>
 
@@ -77,7 +81,7 @@ export function ComplianceView() {
         <div className="grid gap-6">
           <div className="row">
             <h2 style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text)' }}>
-              Регистрация согласий
+              {t('compliance.consentRegistration')}
             </h2>
           </div>
 
@@ -91,7 +95,7 @@ export function ComplianceView() {
         <div className="grid gap-6">
           <div className="row">
             <h2 style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text)' }}>
-              Удаление профиля пользователя
+              {t('compliance.userProfileDeletion')}
             </h2>
           </div>
 
@@ -106,11 +110,11 @@ export function ComplianceView() {
                   marginBottom: 8,
                 }}
               >
-                Введите ID пользователя для удаления:
+                {t('compliance.enterUserIdToDelete')}:
               </label>
               <input
                 type="number"
-                placeholder="ID пользователя"
+                placeholder={t('compliance.userIdPlaceholder')}
                 className="input w-full"
                 style={{ padding: 12 }}
                 onChange={(e) => setSelectedCustomerId(parseInt(e.target.value) || undefined)}

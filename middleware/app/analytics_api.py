@@ -153,22 +153,31 @@ def get_dashboard_overview(
             (start_str, end_str),
         ).fetchone()[0]
 
-        # Total revenue
-        total_revenue = conn.execute(
-            "SELECT COALESCE(SUM(total_amount), 0) FROM transactions"
-        ).fetchone()[0]
+        # Total revenue (divide by 100 to convert from cents to rubles)
+        total_revenue = (
+            conn.execute(
+                "SELECT COALESCE(SUM(total_amount), 0) FROM transactions"
+            ).fetchone()[0]
+            / 100
+        )
 
-        # Revenue in time range
-        revenue = conn.execute(
-            "SELECT COALESCE(SUM(total_amount), 0) FROM transactions WHERE created_at BETWEEN ? AND ?",
-            (start_str, end_str),
-        ).fetchone()[0]
+        # Revenue in time range (divide by 100 to convert from cents to rubles)
+        revenue = (
+            conn.execute(
+                "SELECT COALESCE(SUM(total_amount), 0) FROM transactions WHERE created_at BETWEEN ? AND ?",
+                (start_str, end_str),
+            ).fetchone()[0]
+            / 100
+        )
 
-        # Average check
-        avg_check = conn.execute(
-            "SELECT COALESCE(AVG(total_amount), 0) FROM transactions WHERE created_at BETWEEN ? AND ?",
-            (start_str, end_str),
-        ).fetchone()[0]
+        # Average check (divide by 100 to convert from cents to rubles)
+        avg_check = (
+            conn.execute(
+                "SELECT COALESCE(AVG(total_amount), 0) FROM transactions WHERE created_at BETWEEN ? AND ?",
+                (start_str, end_str),
+            ).fetchone()[0]
+            / 100
+        )
 
         # Loyalty points redeemed
         points_redeemed = conn.execute(
@@ -362,7 +371,8 @@ def get_marketing_analytics():
                     ).fetchone()[0]
                     if total_customers > 0
                     else 524880
-                ),
+                )
+                / 100,  # Divide by 100 to convert from cents to rubles
                 "avg_order_value": avg_ltv * 0.083,  # Approximate based on LTV
                 "purchase_frequency": 2.3,
                 "customer_retention": 78,
@@ -461,7 +471,8 @@ def get_sales_chart(
                 {
                     "date": row[0],
                     "transactions": row[1],
-                    "revenue": row[2],
+                    "revenue": row[2]
+                    / 100,  # Divide by 100 to convert from cents to rubles
                     "points_redeemed": row[3],
                     "points_earned": row[4],
                 }
@@ -878,7 +889,8 @@ def get_loyalty_detailed_report(
                     "full_name": row[1],
                     "phone": row[2],
                     "transaction_count": row[3],
-                    "total_spent": row[4],
+                    "total_spent": row[4]
+                    / 100,  # Divide by 100 to convert from cents to rubles
                     "points_earned": row[5],
                     "points_redeemed": row[6],
                     "last_transaction": row[7],
@@ -1198,7 +1210,8 @@ def get_customer_segmentation():
                     "phone": row[2],
                     "recency": recency,
                     "frequency": row[4],
-                    "monetary": row[5],
+                    "monetary": row[5]
+                    / 100,  # Divide by 100 to convert from cents to rubles
                     "balance_points": row[6],
                 }
             )
@@ -1400,7 +1413,8 @@ def get_external_sales_report(
                 {
                     "date": row[0],
                     "transactions": row[1],
-                    "revenue": row[2],
+                    "revenue": row[2]
+                    / 100,  # Divide by 100 to convert from cents to rubles
                     "points_redeemed": row[3],
                     "points_earned": row[4],
                 }

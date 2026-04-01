@@ -197,7 +197,7 @@ def send_broadcast(text: str) -> dict:
 
                 # Sleep to respect rate limits
                 await asyncio.sleep(0.1)
-            except Exception as e:
+            except Exception:
                 failed += 1
 
         return {"sent": ok, "failed": failed, "total": total}
@@ -342,37 +342,6 @@ def send_document_message(
 
 
 @celery_app.task
-def send_media_group_message(
-    chat_id: int, media_items: list, campaign_id: int = None, customer_id: int = None
-) -> dict:
-    async def runner() -> dict:
-        bot = create_bot()
-        ok = await send_media_group(bot, int(chat_id), media_items)
-
-        # Track delivery event
-        if campaign_id and customer_id:
-            db = get_db()
-            conn = db.connect()
-            try:
-                conn.execute(
-                    "INSERT INTO marketing_events (campaign_id, user_id, event_type, event_data) VALUES (?, ?, ?, ?)",
-                    (
-                        campaign_id,
-                        customer_id,
-                        "delivered",
-                        json.dumps({"channel": "telegram"}),
-                    ),
-                )
-                conn.commit()
-            finally:
-                conn.close()
-
-        return {"sent": bool(ok), "chat_id": int(chat_id)}
-
-    return asyncio.run(runner())
-
-
-@celery_app.task
 def deliver_webhook_event(integration_id: int, event_type: str, payload: dict) -> dict:
     db = get_db()
     conn = db.connect()
@@ -427,8 +396,8 @@ async def safe_send(bot, chat_id: int, text: str) -> bool:
     try:
         await bot.send_message(chat_id=chat_id, text=text)
         return True
-    except Exception as e:
-        # In production: log error, handle blocking/deactivation
+    except Exception:
+        logger.warning("Failed to send message to chat_id=%s", chat_id, exc_info=True)
         return False
 
 
@@ -442,8 +411,8 @@ async def safe_send_photo(
         photo = FSInputFile(photo_path)
         await bot(SendPhoto(chat_id=chat_id, photo=photo, caption=caption))
         return True
-    except Exception as e:
-        # In production: log error, handle blocking/deactivation
+    except Exception:
+        logger.warning("Failed to send photo to chat_id=%s", chat_id, exc_info=True)
         return False
 
 
@@ -457,8 +426,8 @@ async def safe_send_video(
         video = FSInputFile(video_path)
         await bot(SendVideo(chat_id=chat_id, video=video, caption=caption))
         return True
-    except Exception as e:
-        # In production: log error, handle blocking/deactivation
+    except Exception:
+        logger.warning("Failed to send video to chat_id=%s", chat_id, exc_info=True)
         return False
 
 
@@ -472,8 +441,8 @@ async def safe_send_document(
         document = FSInputFile(document_path)
         await bot(SendDocument(chat_id=chat_id, document=document, caption=caption))
         return True
-    except Exception as e:
-        # In production: log error, handle blocking/deactivation
+    except Exception:
+        logger.warning("Failed to send document to chat_id=%s", chat_id, exc_info=True)
         return False
 
 
@@ -496,8 +465,8 @@ async def send_media_group(bot, chat_id: int, media_items: list) -> bool:
 
         await bot(SendMediaGroup(chat_id=chat_id, media=media_group.build()))
         return True
-    except Exception as e:
-        # In production: log error, handle blocking/deactivation
+    except Exception:
+        logger.warning("Failed to send media group to chat_id=%s", chat_id, exc_info=True)
         return False
 
 

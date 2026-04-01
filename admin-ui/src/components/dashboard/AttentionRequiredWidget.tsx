@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Widget } from '../Widget';
 import { StatCard } from '../ui/StatCard';
+import { Widget } from '../Widget';
 
 interface AttentionItem {
   id: string;
@@ -44,7 +44,9 @@ export function AttentionRequiredWidget({ data }: { data?: AttentionRequiredData
         </span>
       </div>
       <div className="flex items-center gap-2">
-        <span className={`badge-2026 ${item.tone === 'danger' ? 'badge-2026-warning' : 'badge-2026-primary'}`}>
+        <span
+          className={`badge-2026 ${item.tone === 'danger' ? 'badge-2026-warning' : 'badge-2026-primary'}`}
+        >
           {item.value.toLocaleString()}
           {item.suffix ?? ''}
         </span>

@@ -383,21 +383,10 @@ def list_products(
     limit: int = 50,
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
     request: Request = None,
-) -> dict[str, Any] | list[dict[str, Any]]:
+) -> dict[str, Any]:
     check_permission(auth_result, "product.read")
 
-    # Check if this is a TestSprite simple request (no pagination params in URL)
-    # Return list directly for TestSprite compatibility
-    if (
-        request
-        and "page" not in request.query_params
-        and "limit" not in request.query_params
-    ):
-        # Return simple list for TestSprite
-        paginated_result = _list_products_internal(q, active, 1, limit, auth_result)
-        return paginated_result.get("items", [])
-
-    # Use internal implementation for paginated requests
+    # Always return paginated format for frontend consistency
     return _list_products_internal(q, active, page, limit, auth_result)
 
 

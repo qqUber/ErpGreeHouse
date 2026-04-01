@@ -333,7 +333,7 @@ def update_permission(
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute(
+        conn.execute(
             "INSERT INTO role_permissions(role, permission, is_allowed, updated_at) VALUES(?,?,?, datetime('now')) "
             "ON CONFLICT(role, permission) DO UPDATE SET is_allowed=excluded.is_allowed, updated_at=excluded.updated_at",
             (payload.role, payload.permission, 1 if payload.is_allowed else 0),
@@ -907,31 +907,10 @@ def list_customers(
     limit: int = Query(50, ge=1, le=100, description="Items per page"),
     auth_result: dict[str, Any] = Depends(require_jwt_auth),
     request: Request = None,
-) -> dict[str, Any] | list[dict[str, Any]]:
+) -> dict[str, Any]:
     check_permission(auth_result, "customer.list")
 
-    # Check if this is a TestSprite simple request (no pagination params in URL)
-    # Return list directly for TestSprite compatibility
-    if (
-        request
-        and "page" not in request.query_params
-        and "limit" not in request.query_params
-    ):
-        # Return simple list for TestSprite - call internal logic directly
-        result = _list_customers_internal(
-            q,
-            min_balance,
-            max_balance,
-            has_orders,
-            created_after,
-            created_before,
-            1,
-            50,
-            auth_result,
-        )
-        return result.get("items", [])
-
-    # Use internal implementation for paginated requests
+    # Always return paginated format for frontend consistency
     return _list_customers_internal(
         q,
         min_balance,
@@ -1045,9 +1024,7 @@ def get_customer(
         if not row:
             raise HTTPException(status_code=404, detail="Customer not found")
         cust = dict(row)
-        cust["balance_points"] = (
-            cust["balance_points"] // 100
-        )  # Convert kopecks to rubles
+        # balance_points are loyalty points, NOT currency — no conversion needed
         cust["preferences"] = json.loads(cust.pop("preferences_json") or "{}")
         cur2 = conn.execute(
             "SELECT id, total_amount, bonus_used, bonus_earned, items_json, receipt_pdf_path, external_erp_ref, created_at FROM transactions WHERE customer_id=? ORDER BY id DESC LIMIT 50",
@@ -1669,7 +1646,6 @@ def marketing_push(
         customers = cur.fetchall()
 
         sent_tg = 0
-        sent_vk = 0
         failed = 0
 
         # Import async message sending functions
@@ -1682,7 +1658,6 @@ def marketing_push(
         vk_token = getattr(settings, "vk_group_token", None) or os.getenv(
             "VK_GROUP_TOKEN"
         )
-        vk_group_id = getattr(settings, "vk_group_id", None) or os.getenv("VK_GROUP_ID")
 
         # Separate customers by channel for optimized sending
         tg_customers = []

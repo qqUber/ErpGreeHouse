@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Api, ConsentRecord } from '../api';
 
 export function ConsentTable({ customerId }: { customerId?: number }) {
+  const { t } = useTranslation();
   const [consents, setConsents] = useState<ConsentRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedConsent, setSelectedConsent] = useState<ConsentRecord | null>(null);
@@ -33,11 +35,11 @@ export function ConsentTable({ customerId }: { customerId?: number }) {
       <table className="table" style={{ minWidth: '100%' }}>
         <thead>
           <tr>
-            <th>Дата и время</th>
-            <th>Тип согласия</th>
-            <th>Версия политики</th>
-            <th>Источник</th>
-            <th>Текст согласия</th>
+            <th>{t('compliance.dateTime')}</th>
+            <th>{t('compliance.consentType')}</th>
+            <th>{t('compliance.policyVersion')}</th>
+            <th>{t('compliance.source')}</th>
+            <th>{t('compliance.consentText')}</th>
           </tr>
         </thead>
         <tbody>
@@ -52,7 +54,7 @@ export function ConsentTable({ customerId }: { customerId?: number }) {
                   fontSize: 'var(--font-size-sm)',
                 }}
               >
-                Загрузка...
+                {t('compliance.loading')}
               </td>
             </tr>
           ) : consents.length === 0 ? (
@@ -66,7 +68,7 @@ export function ConsentTable({ customerId }: { customerId?: number }) {
                   fontSize: 'var(--font-size-sm)',
                 }}
               >
-                Нет записей о согласиях
+                {t('compliance.noConsentRecords')}
               </td>
             </tr>
           ) : (
@@ -89,10 +91,10 @@ export function ConsentTable({ customerId }: { customerId?: number }) {
                   }}
                 >
                   {consent.consent_type === 'data_processing'
-                    ? 'Обработка данных'
+                    ? t('compliance.dataProcessingConsent')
                     : consent.consent_type === 'marketing'
-                      ? 'Маркетинговые коммуникации'
-                      : 'Оба типа'}
+                      ? t('compliance.marketingConsent')
+                      : t('compliance.bothTypes')}
                 </td>
                 <td
                   style={{
@@ -145,7 +147,7 @@ export function ConsentTable({ customerId }: { customerId?: number }) {
           )}
         </tbody>
       </table>
-      
+
       {/* Consent Details Modal */}
       {showModal && selectedConsent && (
         <div
@@ -174,9 +176,16 @@ export function ConsentTable({ customerId }: { customerId?: number }) {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 16,
+              }}
+            >
               <h3 style={{ margin: 0, fontSize: 18, fontWeight: 'bold' }}>
-                Детали согласия
+                {t('compliance.consentDetails')}
               </h3>
               <button
                 type="button"
@@ -193,50 +202,53 @@ export function ConsentTable({ customerId }: { customerId?: number }) {
                 ×
               </button>
             </div>
-            
+
             <div style={{ display: 'grid', gap: 12 }}>
               <div>
-                <strong>Версия соглашения:</strong> {selectedConsent.consent_version}
+                <strong>{t('compliance.agreementVersion')}:</strong>{' '}
+                {selectedConsent.consent_version}
               </div>
               <div>
-                <strong>Дата принятия:</strong> {new Date(selectedConsent.accepted_at).toLocaleString()}
+                <strong>{t('compliance.acceptanceDate')}:</strong>{' '}
+                {new Date(selectedConsent.accepted_at).toLocaleString()}
               </div>
               <div>
-                <strong>Тип согласия:</strong> {selectedConsent.consent_type === 'data_processing'
-                  ? 'Обработка данных'
+                <strong>{t('compliance.consentType')}:</strong>{' '}
+                {selectedConsent.consent_type === 'data_processing'
+                  ? t('compliance.dataProcessingConsent')
                   : selectedConsent.consent_type === 'marketing'
-                    ? 'Маркетинговые коммуникации'
-                    : 'Оба типа'}
+                    ? t('compliance.marketingConsent')
+                    : t('compliance.bothTypes')}
               </div>
               <div>
-                <strong>Источник:</strong> {selectedConsent.source === 'tg' ? 'Telegram' : 'VK'}
+                <strong>{t('compliance.source')}:</strong>{' '}
+                {selectedConsent.source === 'tg' ? 'Telegram' : 'VK'}
               </div>
               <div>
-                <strong>IP адрес:</strong> {(selectedConsent as any).ip_address || 'Не указан'}
+                <strong>{t('compliance.ipAddress')}:</strong>{' '}
+                {(selectedConsent as any).ip_address || t('compliance.notSpecified')}
               </div>
               <div>
-                <strong>Текст согласия:</strong>
-                <div style={{
-                  marginTop: 8,
-                  padding: 12,
-                  backgroundColor: 'var(--background)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 4,
-                  fontSize: 'var(--font-size-sm)',
-                  whiteSpace: 'pre-wrap',
-                }}>
+                <strong>{t('compliance.consentText')}:</strong>
+                <div
+                  style={{
+                    marginTop: 8,
+                    padding: 12,
+                    backgroundColor: 'var(--background)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 4,
+                    fontSize: 'var(--font-size-sm)',
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
                   {selectedConsent.consent_text}
                 </div>
               </div>
             </div>
-            
+
             <div style={{ marginTop: 20, textAlign: 'right' }}>
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className="btn btnPrimary"
-              >
-                Закрыть
+              <button type="button" onClick={() => setShowModal(false)} className="btn btnPrimary">
+                {t('common.close')}
               </button>
             </div>
           </div>

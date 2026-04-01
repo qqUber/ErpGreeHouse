@@ -66,47 +66,55 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
 
 // Menu item definitions with available template variables documentation
 const TELEGRAM_MENU_DEFINITIONS = [
-  { 
-    id: 'balance_card', 
-    label: 'Баланс и карта', 
+  {
+    id: 'balance_card',
+    label: 'Баланс и карта',
     description: 'Баланс, QR и дополнительные медиа',
-    availableVars: ['{qr_token}', '{customer_id}', '{full_name}', '{balance}', '{bonus_balance}', '{total_purchases}', '{loyalty_level}']
+    availableVars: [
+      '{qr_token}',
+      '{customer_id}',
+      '{full_name}',
+      '{balance}',
+      '{bonus_balance}',
+      '{total_purchases}',
+      '{loyalty_level}',
+    ],
   },
-  { 
-    id: 'menu_addresses', 
-    label: 'Меню и адреса', 
+  {
+    id: 'menu_addresses',
+    label: 'Меню и адреса',
     description: 'Меню, адреса и кнопка перехода',
-    availableVars: ['{city}'] // City-based content
+    availableVars: ['{city}'], // City-based content
   },
   {
     id: 'open_coffee_shop',
     label: 'Открыть кофейню',
     description: 'Запуск приложения или каталога',
-    availableVars: [] // No variables, just media/video
+    availableVars: [], // No variables, just media/video
   },
-  { 
-    id: 'ask_question', 
-    label: 'Задать вопрос', 
+  {
+    id: 'ask_question',
+    label: 'Задать вопрос',
     description: 'Сообщение для связи с клиентом',
-    availableVars: [] // Static text only
+    availableVars: [], // Static text only
   },
-  { 
-    id: 'leave_feedback', 
-    label: 'Оставить отзыв', 
+  {
+    id: 'leave_feedback',
+    label: 'Оставить отзыв',
     description: 'Сообщение для сбора отзывов',
-    availableVars: [] // Static text only
+    availableVars: [], // Static text only
   },
-  { 
-    id: 'vacancies', 
-    label: 'Вакансии', 
+  {
+    id: 'vacancies',
+    label: 'Вакансии',
     description: 'Текст и медиа про вакансии',
-    availableVars: [] // Static text only
+    availableVars: [], // Static text only
   },
   {
     id: 'about_club',
     label: 'Что такое клуб Green House?',
     description: 'Описание клуба и преимуществ',
-    availableVars: [] // Static text only
+    availableVars: [], // Static text only
   },
 ] as const;
 

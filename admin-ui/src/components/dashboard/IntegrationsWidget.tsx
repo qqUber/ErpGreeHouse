@@ -14,12 +14,22 @@ export function IntegrationsWidget({ data }: { data?: any }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const integrations = data?.integrations ?? [];
-  const uniqueIntegrations = integrations.filter((integration: any, index: number, array: any[]) => {
-    const key = `${integration.kind ?? 'kind'}-${integration.name ?? 'name'}-${integration.status ?? 'status'}`;
-    return array.findIndex((candidate: any) => `${candidate.kind ?? 'kind'}-${candidate.name ?? 'name'}-${candidate.status ?? 'status'}` === key) === index;
-  });
+  const uniqueIntegrations = integrations.filter(
+    (integration: any, index: number, array: any[]) => {
+      const key = `${integration.kind ?? 'kind'}-${integration.name ?? 'name'}-${integration.status ?? 'status'}`;
+      return (
+        array.findIndex(
+          (candidate: any) =>
+            `${candidate.kind ?? 'kind'}-${candidate.name ?? 'name'}-${candidate.status ?? 'status'}` ===
+            key
+        ) === index
+      );
+    }
+  );
   const total = integrations.length;
-  const active = uniqueIntegrations.filter((integration: any) => integration.status === 'online').length;
+  const active = uniqueIntegrations.filter(
+    (integration: any) => integration.status === 'online'
+  ).length;
   const pendingCount = Number(data?.pendingCount ?? 0);
   const lastDelivery = data?.recentDeliveries?.[0]?.created_at;
   const lastSync = lastDelivery
@@ -27,7 +37,12 @@ export function IntegrationsWidget({ data }: { data?: any }) {
     : t('widgets.integrations.twoMinutesAgo');
   const allConnected = pendingCount === 0;
 
-  const renderSummaryMetric = (label: string, value: React.ReactNode, helper?: string, tone: 'primary' | 'success' | 'warning' | 'info' = 'primary') => (
+  const renderSummaryMetric = (
+    label: string,
+    value: React.ReactNode,
+    helper?: string,
+    tone: 'primary' | 'success' | 'warning' | 'info' = 'primary'
+  ) => (
     <div className={`crm-summary-card crm-detail-card--accent-${tone}`}>
       <div className="crm-summary-label">{label}</div>
       <div className="crm-summary-value">{value}</div>
@@ -47,10 +62,30 @@ export function IntegrationsWidget({ data }: { data?: any }) {
     <div className="crm-drawer-stack">
       <section className="crm-detail-card crm-detail-card--accent-warning">
         <div className="crm-summary-grid">
-          {renderSummaryMetric(t('widgets.integrations.totalIntegrations'), total, total > 0 ? 'Configured connectors' : 'No integrations configured', 'primary')}
-          {renderSummaryMetric(t('widgets.common.active'), active, active > 0 ? 'Online now' : 'No active integrations', 'success')}
-          {renderSummaryMetric(t('widgets.common.pending', 'Pending'), pendingCount, allConnected ? 'All connected' : 'Pending deliveries exist', 'warning')}
-          {renderSummaryMetric(t('widgets.integrations.lastSync'), lastSync, allConnected ? 'All connected' : 'Pending deliveries exist', 'info')}
+          {renderSummaryMetric(
+            t('widgets.integrations.totalIntegrations'),
+            total,
+            total > 0 ? 'Configured connectors' : 'No integrations configured',
+            'primary'
+          )}
+          {renderSummaryMetric(
+            t('widgets.common.active'),
+            active,
+            active > 0 ? 'Online now' : 'No active integrations',
+            'success'
+          )}
+          {renderSummaryMetric(
+            t('widgets.common.pending', 'Pending'),
+            pendingCount,
+            allConnected ? 'All connected' : 'Pending deliveries exist',
+            'warning'
+          )}
+          {renderSummaryMetric(
+            t('widgets.integrations.lastSync'),
+            lastSync,
+            allConnected ? 'All connected' : 'Pending deliveries exist',
+            'info'
+          )}
         </div>
       </section>
       <section className="crm-collapsible-section">

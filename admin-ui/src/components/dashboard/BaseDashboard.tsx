@@ -1,6 +1,6 @@
 import {
-    DashboardHomeViewModel,
-    dashboardAnalyticsService,
+  DashboardHomeViewModel,
+  dashboardAnalyticsService,
 } from '../../services/dashboard-analytics.service';
 import { Role } from '../../types/roles';
 import { WidgetGrid } from '../WidgetGrid';
@@ -14,13 +14,46 @@ interface BaseDashboardProps {
 function buildWidgetData(data: DashboardHomeViewModel | null) {
   if (!data) {
     return {
-      sales: { revenue: 0, transactions: 0, avgCheck: 0, peakHour: null, peakHourTransactions: 0, topProducts: [] },
-      customers: { totalCustomers: 0, newCustomers: 0, repeatCustomers: 0, reachableCustomers: 0, consentRate: 0, topCustomers: [], priorityActions: [] },
+      sales: {
+        revenue: 0,
+        transactions: 0,
+        avgCheck: 0,
+        peakHour: null,
+        peakHourTransactions: 0,
+        topProducts: [],
+      },
+      customers: {
+        totalCustomers: 0,
+        newCustomers: 0,
+        repeatCustomers: 0,
+        reachableCustomers: 0,
+        consentRate: 0,
+        topCustomers: [],
+        priorityActions: [],
+      },
       products: { totalProducts: 0, topProducts: [], categoryTrend: [], topProductName: '—' },
-      marketing: { activeCampaigns: 0, upcomingCount: 0, needsAttention: 0, messagesSent24h: 0, recentEvents: [] },
-      loyalty: { pointsEarned: 0, pointsRedeemed: 0, redemptionRate: 0, avgOrderValue: 0, revenue: 0 },
+      marketing: {
+        activeCampaigns: 0,
+        upcomingCount: 0,
+        needsAttention: 0,
+        messagesSent24h: 0,
+        recentEvents: [],
+      },
+      loyalty: {
+        pointsEarned: 0,
+        pointsRedeemed: 0,
+        redemptionRate: 0,
+        avgOrderValue: 0,
+        revenue: 0,
+      },
       attention: { items: [], priority: null },
-      integrations: { integrations: [], recentDeliveries: [], deliveryStats24h: {}, successRate: 0, pendingCount: 0 },
+      integrations: {
+        integrations: [],
+        recentDeliveries: [],
+        deliveryStats24h: {},
+        successRate: 0,
+        pendingCount: 0,
+      },
     };
   }
 

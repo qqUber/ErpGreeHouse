@@ -19,7 +19,7 @@ from .admin_auth_api import public_router as auth_public_router
 from .admin_api import router as admin_router
 from .admin_api import public_router as public_router
 from .middlewares import rate_limit_middleware
-from .db import init_db, get_db
+from .db import get_db
 from .config import get_settings
 import logging
 import logging.config
@@ -79,8 +79,8 @@ mimetypes.add_type("text/css", ".css")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    settings = get_settings()
-    
+    get_settings()
+
     # Verify database connection (migrations and seeding done by init container)
     db = get_db()
     conn = db.connect()
@@ -90,7 +90,7 @@ async def lifespan(app: FastAPI):
         logger.info("Database connection verified")
     finally:
         conn.close()
-    
+
     # Load VK config from database if available
     _load_vk_config()
 

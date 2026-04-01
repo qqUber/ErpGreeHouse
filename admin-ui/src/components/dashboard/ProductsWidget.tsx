@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Widget } from '../Widget';
 import { StatCard } from '../ui/StatCard';
+import { Widget } from '../Widget';
 
 type ProductsData = {
   totalProducts?: number;
@@ -101,15 +101,10 @@ export function ProductsWidget({ data }: { data?: any }) {
     revenue?: number;
     growth_percent?: number;
   }) => (
-    <div
-      key={`${product.code ?? product.name}`}
-      className="row-item-2026"
-    >
+    <div key={`${product.code ?? product.name}`} className="row-item-2026">
       <div className="flex items-center gap-3">
         <span className="font-mono text-sm text-gray-500">{product.code ?? '--'}</span>
-        <span className="font-medium">
-          {product.name ?? t('widgets.products.unnamedProduct')}
-        </span>
+        <span className="font-medium">{product.name ?? t('widgets.products.unnamedProduct')}</span>
       </div>
       <div className="flex items-center gap-2">
         {Number.isFinite(Number(product.quantity)) && (
@@ -134,44 +129,85 @@ export function ProductsWidget({ data }: { data?: any }) {
   const expandedContent = (
     <div className="dashboard-widget-2026">
       <section className="mb-4">
-        <h3 className="section-title-2026">{t('widgets.products.summaryTitle', 'Product overview')}</h3>
+        <h3 className="section-title-2026">
+          {t('widgets.products.summaryTitle', 'Product overview')}
+        </h3>
         <div className="crm-summary-grid grid grid-cols-2 gap-4">
-          <StatCard variant="primary" value={total.toLocaleString()} label={t('widgets.products.totalProducts', 'Total Products')} className="stat-card-gradient stat-card-gradient-primary" />
-          <StatCard variant="info" value={trendingCount.toLocaleString()} label={t('widgets.products.trendingNow')} className="stat-card-gradient stat-card-gradient-info" />
-          <StatCard variant="warning" value={demandSignal.toLocaleString()} label={t('widgets.products.demandSignal')} className="stat-card-gradient stat-card-gradient-warning" />
-          <StatCard variant={lowStock > 0 ? 'warning' : 'success'} value={(lowStock > 0 ? lowStock : 0).toLocaleString()} label={t('widgets.products.lowStock')} className={`stat-card-gradient stat-card-gradient-${lowStock > 0 ? 'warning' : 'success'}`} />
+          <StatCard
+            variant="primary"
+            value={total.toLocaleString()}
+            label={t('widgets.products.totalProducts', 'Total Products')}
+            className="stat-card-gradient stat-card-gradient-primary"
+          />
+          <StatCard
+            variant="info"
+            value={trendingCount.toLocaleString()}
+            label={t('widgets.products.trendingNow')}
+            className="stat-card-gradient stat-card-gradient-info"
+          />
+          <StatCard
+            variant="warning"
+            value={demandSignal.toLocaleString()}
+            label={t('widgets.products.demandSignal')}
+            className="stat-card-gradient stat-card-gradient-warning"
+          />
+          <StatCard
+            variant={lowStock > 0 ? 'warning' : 'success'}
+            value={(lowStock > 0 ? lowStock : 0).toLocaleString()}
+            label={t('widgets.products.lowStock')}
+            className={`stat-card-gradient stat-card-gradient-${lowStock > 0 ? 'warning' : 'success'}`}
+          />
         </div>
       </section>
 
       <section className="mb-4">
-        <h3 className="section-title-2026">{t('widgets.products.topProductsTitle', 'Top products')}</h3>
+        <h3 className="section-title-2026">
+          {t('widgets.products.topProductsTitle', 'Top products')}
+        </h3>
         <div className="space-y-2">
           {topProducts.length ? (
             topProducts.slice(0, 5).map((product: any, index: number) => (
               <div key={`${product.code ?? product.name}-${index}`} className="row-item-2026">
                 <div className="flex items-center gap-3">
                   <span className="font-mono text-sm text-gray-500">{product.code ?? '--'}</span>
-                  <span className="font-medium">{product.name ?? t('widgets.products.unnamedProduct')}</span>
+                  <span className="font-medium">
+                    {product.name ?? t('widgets.products.unnamedProduct')}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {Number.isFinite(Number(product.quantity)) && <span className="badge-2026 badge-2026-primary">{t('widgets.products.quantity')} {Number(product.quantity ?? 0)}</span>}
-                  {Number.isFinite(Number(product.revenue)) && <span className="badge-2026 badge-2026-success">{t('widgets.products.revenue')} {Number(product.revenue ?? 0).toLocaleString()}</span>}
-                  {Number.isFinite(Number(product.growth_percent)) && <span className="badge-2026 badge-2026-info">{t('widgets.products.trend')} {Number(product.growth_percent ?? 0)}%</span>}
+                  {Number.isFinite(Number(product.quantity)) && (
+                    <span className="badge-2026 badge-2026-primary">
+                      {t('widgets.products.quantity')} {Number(product.quantity ?? 0)}
+                    </span>
+                  )}
+                  {Number.isFinite(Number(product.revenue)) && (
+                    <span className="badge-2026 badge-2026-success">
+                      {t('widgets.products.revenue')}{' '}
+                      {Number(product.revenue ?? 0).toLocaleString()}
+                    </span>
+                  )}
+                  {Number.isFinite(Number(product.growth_percent)) && (
+                    <span className="badge-2026 badge-2026-info">
+                      {t('widgets.products.trend')} {Number(product.growth_percent ?? 0)}%
+                    </span>
+                  )}
                 </div>
               </div>
             ))
           ) : (
-            <div className="crm-empty-state">{t('widgets.products.noTopProducts', 'No top products available.')}</div>
+            <div className="crm-empty-state">
+              {t('widgets.products.noTopProducts', 'No top products available.')}
+            </div>
           )}
         </div>
       </section>
 
       {lowStockItems.length > 0 && (
         <section className="mb-4">
-          <h3 className="section-title-2026 text-amber-600">{t('widgets.products.lowStockTitle', 'Low stock risk')} ({lowStock})</h3>
-          <div className="space-y-2">
-            {lowStockItems.map(renderLowStockRow)}
-          </div>
+          <h3 className="section-title-2026 text-amber-600">
+            {t('widgets.products.lowStockTitle', 'Low stock risk')} ({lowStock})
+          </h3>
+          <div className="space-y-2">{lowStockItems.map(renderLowStockRow)}</div>
         </section>
       )}
     </div>

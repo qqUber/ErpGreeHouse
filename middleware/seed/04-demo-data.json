@@ -18,6 +18,36 @@
       "name": "Orange Juice",
       "kind": "drink",
       "price": 200
+    },
+    {
+      "code": "ESP-001",
+      "name": "Espresso",
+      "kind": "coffee",
+      "price": 250
+    },
+    {
+      "code": "CAP-001",
+      "name": "Cappuccino",
+      "kind": "coffee",
+      "price": 350
+    },
+    {
+      "code": "LAT-001",
+      "name": "Latte",
+      "kind": "coffee",
+      "price": 400
+    },
+    {
+      "code": "CRO-001",
+      "name": "Croissant",
+      "kind": "food",
+      "price": 200
+    },
+    {
+      "code": "MUF-001",
+      "name": "Muffin",
+      "kind": "food",
+      "price": 250
     }
   ],
   "marketing_segments": [

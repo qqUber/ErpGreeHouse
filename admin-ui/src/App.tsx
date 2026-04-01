@@ -3,23 +3,23 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsView } from './AnalyticsView';
 import {
-    AdminMe,
-    Api,
-    CreateSaleRequest,
-    CustomerDetails,
-    CustomerListItem,
-    Integration,
-    IntegrationDelivery,
-    IntegrationTemplate,
-    RolePermissions,
-    setAdminSecret,
+  AdminMe,
+  Api,
+  CreateSaleRequest,
+  CustomerDetails,
+  CustomerListItem,
+  Integration,
+  IntegrationDelivery,
+  IntegrationTemplate,
+  RolePermissions,
+  setAdminSecret,
 } from './api';
 import { ComplianceView } from './ComplianceView';
 import { DashboardView } from './components/dashboard/DashboardView';
 import { IntegrationSettings } from './components/IntegrationSettings';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ProductImport } from './components/ProductImport';
-import { ThemeSwitcher, type ThemeMode } from './components/ThemeSwitcher';
+import { type ThemeMode, ThemeSwitcher } from './components/ThemeSwitcher';
 import { ErrorMessage, SuccessMessage, WarningMessage } from './components/ui';
 import { useDashboardData } from './hooks/useDashboardData';
 import { useViewportMode } from './hooks/useViewportMode';
@@ -344,10 +344,10 @@ function App() {
 
   async function loadCustomers(query?: string, page: number = 1, limit: number = 15) {
     setError(null);
-    
+
     // Enhanced search parsing
     let enhancedQuery = query || '';
-    
+
     if (enhancedQuery) {
       // Handle numeric ID search (pure numbers)
       if (/^\d+$/.test(enhancedQuery.trim())) {
@@ -374,7 +374,7 @@ function App() {
         }
       }
       // Handle phone numbers
-      else if (/^[\d\s\-\+\(\)]+$/.test(enhancedQuery.trim())) {
+      else if (/^[\d\s\-+()]+$/.test(enhancedQuery.trim())) {
         enhancedQuery = `phone:${enhancedQuery.trim()}`;
       }
       // Default to name search for text
@@ -382,7 +382,7 @@ function App() {
         enhancedQuery = `name:${enhancedQuery.trim()}`;
       }
     }
-    
+
     const res = await Api.customers(enhancedQuery, page, limit);
     setCustomers(res.items);
     setCustomerTotal(res.pagination.total);
@@ -879,10 +879,15 @@ function App() {
               searchSuggestions={searchSuggestions}
               showSuggestions={showSuggestions}
               onSearchChange={searchCustomers}
+              setShowSuggestions={setShowSuggestions}
               onSuggestionSelect={(customer) => {
                 handleSelectCustomer(customer.id);
-                setQ(customer.full_name || customer.phone || `Клиент #${customer.id}`);
+                const customerName =
+                  customer.full_name || customer.phone || `Клиент #${customer.id}`;
+                setQ(customerName);
                 setShowSuggestions(false);
+                // Also filter the main customer list
+                loadCustomers(customerName, 1, customerLimit);
               }}
               qrCodeUrl={qrCodeUrl}
             />
@@ -1128,6 +1133,7 @@ type CustomersViewProps = {
   onSearchChange: (query: string) => void;
   onSuggestionSelect: (customer: CustomerListItem) => void;
   qrCodeUrl: string;
+  setShowSuggestions: (show: boolean) => void;
 };
 
 function CustomersView({
@@ -1148,6 +1154,7 @@ function CustomersView({
   onSearchChange,
   onSuggestionSelect,
   qrCodeUrl,
+  setShowSuggestions,
 }: CustomersViewProps) {
   const { t, i18n } = useTranslation();
 
@@ -1195,6 +1202,12 @@ function CustomersView({
             onChange={(e) => {
               setQ(e.target.value);
               onSearchChange(e.target.value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                search();
+                setShowSuggestions(false);
+              }
             }}
             onFocus={() => {
               if (q.trim()) {

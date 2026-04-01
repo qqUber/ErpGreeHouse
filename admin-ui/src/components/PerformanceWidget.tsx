@@ -59,7 +59,12 @@ export function PerformanceWidget({ data }: PerformanceWidgetProps) {
         textStyle: { color: '#374151' },
       },
       legend: {
-        data: [t('analytics.transactions'), t('analytics.revenue'), t('analytics.pointsEarned'), t('analytics.pointsRedeemed')],
+        data: [
+          t('analytics.transactions'),
+          t('analytics.revenue'),
+          t('analytics.pointsEarned'),
+          t('analytics.pointsRedeemed'),
+        ],
         bottom: 0,
       },
       grid: {

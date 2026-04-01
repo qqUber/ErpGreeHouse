@@ -562,7 +562,7 @@ def seed_test_data(
             telegram_id = next_telegram_id
             next_telegram_id += 1
 
-            cur = conn.execute(
+            conn.execute(
                 """INSERT INTO customers
                    (phone, full_name, telegram_id, qr_token, balance_points, birthday,
                     marketing_allowed, data_processing_allowed, created_at, updated_at)

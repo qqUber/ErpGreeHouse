@@ -40,7 +40,7 @@
 }
 
 .stat-card::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 55%);
@@ -67,19 +67,19 @@
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(255, 255, 255, 0.98));
 }
 
-html[data-theme='dark'] .stat-card-gradient-primary {
+html[data-theme="dark"] .stat-card-gradient-primary {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.34), rgba(15, 23, 42, 0.96));
 }
 
-html[data-theme='dark'] .stat-card-gradient-success {
+html[data-theme="dark"] .stat-card-gradient-success {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.34), rgba(15, 23, 42, 0.96));
 }
 
-html[data-theme='dark'] .stat-card-gradient-warning {
+html[data-theme="dark"] .stat-card-gradient-warning {
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.34), rgba(15, 23, 42, 0.96));
 }
 
-html[data-theme='dark'] .stat-card-gradient-info {
+html[data-theme="dark"] .stat-card-gradient-info {
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.32), rgba(15, 23, 42, 0.96));
 }
 
