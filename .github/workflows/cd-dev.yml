@@ -76,13 +76,13 @@ jobs:
       - name: coverage gate (security/auth)
         working-directory: middleware
         run: |
-          pytest -q \
+          pytest tests/unit/test_security.py tests/unit/test_rate_limiter.py tests/unit/test_request_context.py tests/unit/test_runtime.py tests/unit/test_admin_auth_api.py -q \
             --cov=app.admin_auth_api \
             --cov=app.security \
             --cov=app.rate_limiter \
             --cov=app.request_context \
             --cov=app.runtime \
-            --cov-report=term \
+            --cov-report=term-missing \
             --cov-fail-under=80
 
       - name: docker build middleware
