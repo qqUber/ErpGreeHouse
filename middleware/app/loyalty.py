@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
+from sqlite3 import Connection
 from typing import List, Optional, Tuple
 
 import redis
@@ -15,6 +18,23 @@ USER_SCORES_KEY = "crm:user:scores"
 _redis_client: Optional[redis.Redis] = None
 
 logger = logging.getLogger(__name__)
+
+
+def _setting_int(conn: Connection, key: str, default: int) -> int:
+    row = conn.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
+    if not row:
+        return default
+    try:
+        return int(str(row[0]))
+    except (TypeError, ValueError):
+        return default
+
+
+def _setting_text(conn: Connection, key: str, default: str) -> str:
+    row = conn.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
+    if not row or row[0] is None:
+        return default
+    return str(row[0])
 
 
 def _get_redis() -> Optional[redis.Redis]:
@@ -38,6 +58,89 @@ def _get_redis() -> Optional[redis.Redis]:
             )
             _redis_client = None
     return _redis_client
+
+
+def get_loyalty_rules(conn: Connection | None = None) -> LoyaltyRules:
+    if conn is None:
+        return LoyaltyRules()
+    rows = conn.execute(
+        """
+        SELECT name, min_spent, accrual_percent, max_redeem_percent
+        FROM loyalty_tiers
+        WHERE active=1
+        ORDER BY sort_order ASC, min_spent ASC
+        """
+    ).fetchall()
+    if not rows:
+        return LoyaltyRules(
+            min_amount_for_accrual=max(0, _setting_int(conn, "min_amount_for_accrual", 100)),
+        )
+    tiers = [
+        Tier(
+            name=str(r[0]),
+            min_spent=int(r[1]),
+            accrual_percent=int(r[2]),
+            max_redeem_percent=int(r[3]),
+        )
+        for r in rows
+    ]
+    min_amount = max(0, _setting_int(conn, "min_amount_for_accrual", 100))
+    return LoyaltyRules(min_amount_for_accrual=min_amount, tiers=tiers)
+
+
+def get_tier_with_referrals(conn: Connection, spent_amount: int, referral_count: int) -> Tier:
+    rows = conn.execute(
+        """
+        SELECT name, min_spent, accrual_percent, max_redeem_percent, min_referrals
+        FROM loyalty_tiers
+        WHERE active=1
+        ORDER BY sort_order ASC, min_spent ASC
+        """
+    ).fetchall()
+    if not rows:
+        return get_tier(spent_amount, get_loyalty_rules(conn))
+    picked: Optional[Tier] = None
+    for row in rows:
+        min_spent = int(row[1] or 0)
+        min_referrals = int(row[4] or 0)
+        if spent_amount >= min_spent or referral_count >= min_referrals:
+            picked = Tier(
+                name=str(row[0]),
+                min_spent=min_spent,
+                accrual_percent=int(row[2] or 0),
+                max_redeem_percent=int(row[3] or 0),
+            )
+    return picked or Tier(
+        name=str(rows[0][0]),
+        min_spent=int(rows[0][1] or 0),
+        accrual_percent=int(rows[0][2] or 0),
+        max_redeem_percent=int(rows[0][3] or 0),
+    )
+
+
+def recalculate_customer_tier(conn: Connection, customer_id: int) -> tuple[Optional[int], Optional[str]]:
+    spent_row = conn.execute(
+        "SELECT COALESCE(SUM(total_amount), 0) FROM transactions WHERE customer_id=?",
+        (customer_id,),
+    ).fetchone()
+    spent_amount_cents = int(spent_row[0] or 0) if spent_row else 0
+    spent_amount = spent_amount_cents // 100
+    ref_row = conn.execute(
+        "SELECT COUNT(*) FROM referrals WHERE referrer_id=? AND status='converted'",
+        (customer_id,),
+    ).fetchone()
+    referral_count = int(ref_row[0] or 0) if ref_row else 0
+    tier = get_tier_with_referrals(conn, spent_amount, referral_count)
+    tier_row = conn.execute(
+        "SELECT id FROM loyalty_tiers WHERE name=? AND active=1 LIMIT 1",
+        (tier.name,),
+    ).fetchone()
+    tier_id = int(tier_row[0]) if tier_row else None
+    conn.execute(
+        "UPDATE customers SET current_tier_id=?, updated_at=datetime('now') WHERE id=?",
+        (tier_id, customer_id),
+    )
+    return tier_id, tier.name
 
 
 @dataclass(frozen=True)
@@ -108,21 +211,35 @@ def calc_earned_points(
 
 
 def clamp_redeem_points(
-    total_amount: int,
-    spent_amount: int,
+    total_kopecks: int,
+    spent_amount_rubles: int,
     requested_points: int,
     available_points: int,
     rules: LoyaltyRules,
 ) -> int:
-    """Clamps points mapping them directly to maximum percent allowed per Tier."""
-    if total_amount <= 0:
+    """Clamps points to redeem based on tier max_redeem_percent.
+    
+    Args:
+        total_kopecks: Transaction total in kopecks (for percent calc)
+        spent_amount_rubles: Historical spent in rubles (for tier lookup)
+        requested_points: Points customer wants to use
+        available_points: Customer's current balance
+        rules: Loyalty rules
+    
+    Returns:
+        Points to deduct (in points, not rubles)
+    """
+    if total_kopecks <= 0:
         return 0
     if requested_points <= 0 or available_points <= 0:
         return 0
 
-    tier = get_tier(spent_amount, rules)
-    max_allowed = (total_amount * tier.max_redeem_percent) // 100
-    return max(0, min(requested_points, available_points, max_allowed))
+    tier = get_tier(spent_amount_rubles, rules)
+    total_rubles = total_kopecks // 100
+    max_allowed_rubles = (total_rubles * tier.max_redeem_percent) // 100
+    # In this system: 1 point = 1 ruble redemption value
+    max_allowed_points = max_allowed_rubles
+    return max(0, min(requested_points, available_points, max_allowed_points))
 
 
 def get_next_tier(spent_amount: int, rules: LoyaltyRules) -> Optional[Tier]:

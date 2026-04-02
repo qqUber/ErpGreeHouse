@@ -24,7 +24,12 @@ from .db import get_db
 from .identify import normalize_name, normalize_phone
 from .integration_events import dispatch_event
 from .integrations.pos.erpnext_client import ERPClient
-from .loyalty import LoyaltyRules, calc_earned_points, clamp_redeem_points
+from .loyalty import (
+    calc_earned_points,
+    clamp_redeem_points,
+    get_loyalty_rules,
+    recalculate_customer_tier,
+)
 from .pdfgen import ReceiptLine, write_simple_receipt_pdf
 from .runtime import is_debug
 from .storage import get_redis
@@ -155,6 +160,16 @@ def _cache_set_json(key: str, value: Any, ttl_seconds: int) -> None:
         r.set(key, json.dumps(value, ensure_ascii=False), ex=ttl_seconds)
     except Exception:
         return
+
+
+def _setting_int(conn, key: str, default: int) -> int:
+    row = conn.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
+    if not row:
+        return default
+    try:
+        return int(str(row[0]))
+    except (TypeError, ValueError):
+        return default
 
 
 def _cache_del_prefix(prefix: str) -> None:
@@ -1376,29 +1391,39 @@ def create_sale(
     conn = db.connect()
     try:
         cur = conn.execute(
-            "SELECT id, balance_points, telegram_id, phone, full_name, qr_token FROM customers WHERE id=?",
+            "SELECT id, balance_points, telegram_id, phone, full_name, qr_token, referred_by FROM customers WHERE id=?",
             (payload.customer_id,),
         )
         cust = cur.fetchone()
         if not cust:
             raise HTTPException(status_code=404, detail="Customer not found")
 
+        tx_count_row = conn.execute(
+            "SELECT COUNT(*) FROM transactions WHERE customer_id=?",
+            (payload.customer_id,),
+        ).fetchone()
+        tx_count_before_sale = int(tx_count_row[0] or 0) if tx_count_row else 0
+
         spent_row = conn.execute(
             "SELECT SUM(total_amount) FROM transactions WHERE customer_id=?",
             (payload.customer_id,),
         ).fetchone()
-        spent_amount = int(spent_row[0]) if spent_row and spent_row[0] else 0
+        spent_amount_cents = int(spent_row[0]) if spent_row and spent_row[0] else 0
+        spent_amount_rubles = spent_amount_cents // 100
 
-        rules = LoyaltyRules()
+        total_rubles = total // 100
+
+        rules = get_loyalty_rules(conn)
         bonus_used = clamp_redeem_points(
             total,
-            spent_amount,
+            spent_amount_rubles,
             payload.requested_bonus,
             int(cust["balance_points"]),
             rules,
         )
-        payable = total - bonus_used
-        bonus_earned = calc_earned_points(payable, spent_amount, rules)
+        payable = total - (bonus_used * 100)
+        payable_rubles = payable // 100
+        bonus_earned = calc_earned_points(payable_rubles, spent_amount_rubles, rules)
 
         receipt_dir = os.getenv("RECEIPTS_DIR", "receipts")
         receipt_name = (
@@ -1413,7 +1438,7 @@ def create_sale(
                 )
             )
         lines.append(ReceiptLine(text=f"Сумма: {format_currency(total)}"))
-        lines.append(ReceiptLine(text=f"Списано: {bonus_used}"))
+        lines.append(ReceiptLine(text=f"Списано: {format_currency(bonus_used * 100)}"))
         lines.append(ReceiptLine(text=f"К оплате: {format_currency(payable)}"))
         lines.append(ReceiptLine(text=f"Начислено: {bonus_earned}"))
         lines.append(ReceiptLine(text=f"Баланс до: {int(cust['balance_points'])}"))
@@ -1442,10 +1467,67 @@ def create_sale(
                 receipt_path,
             ),
         )
+
+        ttl_months = max(0, _setting_int(conn, "points_ttl_months", 12))
+        expiry_expr = f"+{ttl_months} months"
+        if bonus_earned > 0:
+            conn.execute(
+                """
+                INSERT INTO points_ledger(customer_id, amount, source, source_ref_id, expires_at)
+                VALUES (?, ?, 'purchase_earned', ?, CASE WHEN ? = 0 THEN NULL ELSE datetime('now', ?) END)
+                """,
+                (payload.customer_id, bonus_earned, int(cur2.lastrowid), ttl_months, expiry_expr),
+            )
+        if bonus_used > 0:
+            conn.execute(
+                """
+                INSERT INTO points_ledger(customer_id, amount, source, source_ref_id, expires_at)
+                VALUES (?, ?, 'purchase_redeemed', ?, NULL)
+                """,
+                (payload.customer_id, -bonus_used, int(cur2.lastrowid)),
+            )
+
+        if tx_count_before_sale == 0 and cust["referred_by"]:
+            referrer_id = int(cust["referred_by"])
+            referred_bonus = max(0, _setting_int(conn, "referral_bonus_referred", 100))
+            referrer_bonus = max(0, _setting_int(conn, "referral_bonus_referrer", 100))
+            min_purchase = max(1, _setting_int(conn, "referral_min_purchase", 1))
+            if total_rubles >= min_purchase:
+                conn.execute(
+                    """
+                    UPDATE referrals
+                    SET status='converted', bonus_awarded=1, first_purchase_tx_id=?
+                    WHERE referrer_id=? AND referred_id=? AND bonus_awarded=0
+                    """,
+                    (int(cur2.lastrowid), referrer_id, payload.customer_id),
+                )
+                if referrer_bonus > 0:
+                    conn.execute(
+                        "UPDATE customers SET balance_points = balance_points + ?, updated_at=datetime('now') WHERE id=?",
+                        (referrer_bonus, referrer_id),
+                    )
+                    conn.execute(
+                        "INSERT INTO points_ledger(customer_id, amount, source, source_ref_id, expires_at) VALUES (?, ?, 'referral_bonus_referrer', ?, NULL)",
+                        (referrer_id, referrer_bonus, payload.customer_id),
+                    )
+                if referred_bonus > 0:
+                    conn.execute(
+                        "UPDATE customers SET balance_points = balance_points + ?, updated_at=datetime('now') WHERE id=?",
+                        (referred_bonus, payload.customer_id),
+                    )
+                    conn.execute(
+                        "INSERT INTO points_ledger(customer_id, amount, source, source_ref_id, expires_at) VALUES (?, ?, 'referral_bonus_referred', ?, NULL)",
+                        (payload.customer_id, referred_bonus, referrer_id),
+                    )
+                    new_balance += referred_bonus
+
+        # Persist final balance after all bonus calculations
         conn.execute(
             "UPDATE customers SET balance_points=?, updated_at=datetime('now') WHERE id=?",
             (new_balance, payload.customer_id),
         )
+
+        recalculate_customer_tier(conn, payload.customer_id)
         conn.commit()
         tx_id = int(cur2.lastrowid)  # type: ignore[arg-type]
         # Invalidate all dashboard-related caches on new transaction
@@ -1488,8 +1570,8 @@ def create_sale(
         result = {
             "transaction_id": tx_id,
             "total": total // 100,  # Convert kopecks to rubles for API response
-            "bonus_used": bonus_used // 100,  # Convert kopecks to rubles
-            "bonus_earned": bonus_earned // 100,  # Convert kopecks to rubles
+            "bonus_used": bonus_used,
+            "bonus_earned": bonus_earned,
             "payable": payable // 100,  # Convert kopecks to rubles
             "balance": new_balance,
             "receipt_pdf_path": receipt_path,
