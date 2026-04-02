@@ -145,12 +145,40 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.issues.create({
+            // Search for existing open CD failure issues
+            const { data: existingIssues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `CD failed (development): ${context.sha}`,
-              body: `Run: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`
-            })
+              state: 'open',
+              labels: 'cd-failure',
+              per_page: 5
+            });
+            
+            // Check if there's already a recent CD failure issue
+            const recentIssue = existingIssues.find(issue => 
+              issue.title.startsWith('CD failed (development)') &&
+              new Date(issue.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000) // 24 hours
+            );
+            
+            if (recentIssue) {
+              // Add comment to existing issue instead of creating new one
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: recentIssue.number,
+                body: `Another failure: ${context.sha}\nRun: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`
+              });
+              console.log(`Added comment to existing issue #${recentIssue.number}`);
+            } else {
+              // Create new issue only if no recent one exists
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `CD failed (development): ${context.sha}`,
+                body: `Run: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+                labels: ['cd-failure']
+              });
+            }
 
       - name: upload debug artifacts
         if: always()
