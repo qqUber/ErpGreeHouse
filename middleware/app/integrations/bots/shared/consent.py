@@ -5,32 +5,20 @@ Provides platform-agnostic functions for storing, retrieving, and managing
 user consent for data processing and marketing communications.
 """
 
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Optional
 
 from ....db import get_db
 from ....storage import get_redis
 from .keys import consent_key, registration_key
+from .sources import Source, resolve_source_column
 
 # Current policy version for 152-ФЗ compliance
 CURRENT_POLICY_VERSION = "1.0.0"
 
-# Valid platform sources
-Source = Literal["tg", "vk"]
-
-# Whitelist for column name mapping to prevent SQL injection
-ID_COLUMN_MAPPINGS: dict[Source, str] = {
-    "tg": "telegram_id",
-    "vk": "vk_id",
-}
-
 
 def _get_id_column(source: Source) -> str:
     """Get database column name for platform source with validation."""
-    if source not in ID_COLUMN_MAPPINGS:
-        raise ValueError(
-            f"Invalid source: {source}. Must be one of: {list(ID_COLUMN_MAPPINGS.keys())}"
-        )
-    return ID_COLUMN_MAPPINGS[source]
+    return resolve_source_column(source)
 
 
 def get_consents(customer_id: int, conn=None) -> list[Dict[str, Any]]:

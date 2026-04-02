@@ -651,7 +651,8 @@
     "search": "Search customers",
     "list": "Customer list",
     "details": "Customer details",
-    "selectCustomer": "Select customer from list"
+    "selectCustomer": "Select customer from list",
+    "unnamed": "Customer #{{id}}"
   },
   "pagination": {
     "showing": "Showing {{start}}-{{end}} of {{total}}",

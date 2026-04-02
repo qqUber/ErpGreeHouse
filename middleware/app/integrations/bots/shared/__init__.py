@@ -34,12 +34,25 @@ from .keyboards import (
 )
 from .keys import cart_key, consent_key, registration_key
 from .registration import RegistrationFlow, get_consent_text, get_marketing_consent_text
+from .sources import (
+    Source,
+    get_source_column_mappings,
+    get_supported_sources,
+    normalize_source,
+    resolve_source_column,
+)
 
 __all__ = [
     # Keys
     "consent_key",
     "registration_key",
     "cart_key",
+    # Sources
+    "Source",
+    "normalize_source",
+    "resolve_source_column",
+    "get_supported_sources",
+    "get_source_column_mappings",
     # Consent
     "store_consent",
     "get_customer_consents",

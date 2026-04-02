@@ -8,6 +8,7 @@ from typing import List, Optional, Tuple
 import redis
 
 from .config import get_settings
+from .utils.money import subunits_to_main
 
 # Redis key prefixes for sorted sets
 LEADERBOARD_KEY = "crm:leaderboard:spent"
@@ -21,7 +22,9 @@ logger = logging.getLogger(__name__)
 
 
 def _setting_int(conn: Connection, key: str, default: int) -> int:
-    row = conn.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
+    row = conn.execute(
+        "SELECT value FROM system_settings WHERE key=?", (key,)
+    ).fetchone()
     if not row:
         return default
     try:
@@ -31,7 +34,9 @@ def _setting_int(conn: Connection, key: str, default: int) -> int:
 
 
 def _setting_text(conn: Connection, key: str, default: str) -> str:
-    row = conn.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
+    row = conn.execute(
+        "SELECT value FROM system_settings WHERE key=?", (key,)
+    ).fetchone()
     if not row or row[0] is None:
         return default
     return str(row[0])
@@ -73,7 +78,9 @@ def get_loyalty_rules(conn: Connection | None = None) -> LoyaltyRules:
     ).fetchall()
     if not rows:
         return LoyaltyRules(
-            min_amount_for_accrual=max(0, _setting_int(conn, "min_amount_for_accrual", 100)),
+            min_amount_for_accrual=max(
+                0, _setting_int(conn, "min_amount_for_accrual", 100)
+            ),
         )
     tiers = [
         Tier(
@@ -88,7 +95,9 @@ def get_loyalty_rules(conn: Connection | None = None) -> LoyaltyRules:
     return LoyaltyRules(min_amount_for_accrual=min_amount, tiers=tiers)
 
 
-def get_tier_with_referrals(conn: Connection, spent_amount: int, referral_count: int) -> Tier:
+def get_tier_with_referrals(
+    conn: Connection, spent_amount: int, referral_count: int
+) -> Tier:
     rows = conn.execute(
         """
         SELECT name, min_spent, accrual_percent, max_redeem_percent, min_referrals
@@ -118,13 +127,15 @@ def get_tier_with_referrals(conn: Connection, spent_amount: int, referral_count:
     )
 
 
-def recalculate_customer_tier(conn: Connection, customer_id: int) -> tuple[Optional[int], Optional[str]]:
+def recalculate_customer_tier(
+    conn: Connection, customer_id: int
+) -> tuple[Optional[int], Optional[str]]:
     spent_row = conn.execute(
         "SELECT COALESCE(SUM(total_amount), 0) FROM transactions WHERE customer_id=?",
         (customer_id,),
     ).fetchone()
-    spent_amount_cents = int(spent_row[0] or 0) if spent_row else 0
-    spent_amount = spent_amount_cents // 100
+    spent_amount_subunits = int(spent_row[0] or 0) if spent_row else 0
+    spent_amount = subunits_to_main(spent_amount_subunits)
     ref_row = conn.execute(
         "SELECT COUNT(*) FROM referrals WHERE referrer_id=? AND status='converted'",
         (customer_id,),
@@ -211,32 +222,31 @@ def calc_earned_points(
 
 
 def clamp_redeem_points(
-    total_kopecks: int,
-    spent_amount_rubles: int,
+    total_amount: int,
+    spent_amount: int,
     requested_points: int,
     available_points: int,
     rules: LoyaltyRules,
 ) -> int:
     """Clamps points to redeem based on tier max_redeem_percent.
-    
+
     Args:
-        total_kopecks: Transaction total in kopecks (for percent calc)
-        spent_amount_rubles: Historical spent in rubles (for tier lookup)
+        total_amount: Transaction total in rubles (for percent calc)
+        spent_amount: Historical spent in rubles (for tier lookup)
         requested_points: Points customer wants to use
         available_points: Customer's current balance
         rules: Loyalty rules
-    
+
     Returns:
         Points to deduct (in points, not rubles)
     """
-    if total_kopecks <= 0:
+    if total_amount <= 0:
         return 0
     if requested_points <= 0 or available_points <= 0:
         return 0
 
-    tier = get_tier(spent_amount_rubles, rules)
-    total_rubles = total_kopecks // 100
-    max_allowed_rubles = (total_rubles * tier.max_redeem_percent) // 100
+    tier = get_tier(spent_amount, rules)
+    max_allowed_rubles = (total_amount * tier.max_redeem_percent) // 100
     # In this system: 1 point = 1 ruble redemption value
     max_allowed_points = max_allowed_rubles
     return max(0, min(requested_points, available_points, max_allowed_points))

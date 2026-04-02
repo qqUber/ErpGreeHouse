@@ -62,6 +62,8 @@ export interface Theme {
     xl: string;
     '2xl': string;
     '3xl': string;
+    '4xl': string;
+    '5xl': string;
   };
   border: {
     radius: {
@@ -190,6 +192,8 @@ export const theme: Theme = {
     xl: '1280px',
     '2xl': '1536px',
     '3xl': '1920px', // Full HD monitor
+    '4xl': '2560px', // 2K / QHD
+    '5xl': '3840px', // 4K / UHD
   },
   border: {
     radius: {
@@ -263,9 +267,13 @@ export const mediaQueries = {
   xl: `(min-width: ${theme.breakpoints.xl})`,
   '2xl': `(min-width: ${theme.breakpoints['2xl']})`,
   '3xl': `(min-width: ${theme.breakpoints['3xl']})`, // Full HD monitor
+  '4xl': `(min-width: ${theme.breakpoints['4xl']})`, // 2K / QHD
+  '5xl': `(min-width: ${theme.breakpoints['5xl']})`, // 4K / UHD
   maxSm: `(max-width: 767px)`,
   maxMd: `(max-width: 1023px)`,
   maxLg: `(max-width: 1279px)`,
   maxXl: `(max-width: 1535px)`,
   max2xl: `(max-width: 1919px)`,
+  max3xl: `(max-width: 2559px)`,
+  max4xl: `(max-width: 3839px)`,
 };

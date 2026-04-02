@@ -222,6 +222,30 @@ class DB:
             conn.execute("ALTER TABLE customers ADD COLUMN preferred_language TEXT")
         except sqlite3.OperationalError:
             pass
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN current_tier_id INTEGER")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN referral_code TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN referred_by INTEGER")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute(
+                "ALTER TABLE customers ADD COLUMN welcome_bonus_awarded INTEGER NOT NULL DEFAULT 0"
+            )
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute(
+                "ALTER TABLE customers ADD COLUMN birthday_bonus_last_year INTEGER"
+            )
+        except sqlite3.OperationalError:
+            pass
 
         # Migration for consent_type column
         try:
@@ -254,6 +278,198 @@ class DB:
             )
         except sqlite3.OperationalError:
             pass
+
+        conn.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS points_ledger (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_id INTEGER NOT NULL,
+                amount INTEGER NOT NULL,
+                source TEXT NOT NULL,
+                source_ref_id INTEGER,
+                expires_at TEXT,
+                expired INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_points_ledger_customer_id ON points_ledger(customer_id);
+            CREATE INDEX IF NOT EXISTS idx_points_ledger_expires_at ON points_ledger(expires_at);
+
+            CREATE TABLE IF NOT EXISTS loyalty_tiers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                min_spent INTEGER NOT NULL,
+                accrual_percent INTEGER NOT NULL,
+                max_redeem_percent INTEGER NOT NULL,
+                min_referrals INTEGER NOT NULL DEFAULT 0,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_loyalty_tiers_sort_order ON loyalty_tiers(sort_order);
+
+            CREATE TABLE IF NOT EXISTS referrals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                referrer_id INTEGER NOT NULL,
+                referred_id INTEGER,
+                referral_code TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'invited',
+                bonus_awarded INTEGER NOT NULL DEFAULT 0,
+                first_purchase_tx_id INTEGER,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(referrer_id) REFERENCES customers(id) ON DELETE CASCADE,
+                FOREIGN KEY(referred_id) REFERENCES customers(id) ON DELETE SET NULL,
+                FOREIGN KEY(first_purchase_tx_id) REFERENCES transactions(id) ON DELETE SET NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_referrals_referrer_id ON referrals(referrer_id);
+            CREATE INDEX IF NOT EXISTS idx_referrals_referral_code ON referrals(referral_code);
+            CREATE INDEX IF NOT EXISTS idx_referrals_referred_id ON referrals(referred_id);
+
+            CREATE TABLE IF NOT EXISTS certificates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT NOT NULL UNIQUE,
+                type TEXT NOT NULL,
+                value INTEGER NOT NULL,
+                currency TEXT NOT NULL DEFAULT 'RUB',
+                status TEXT NOT NULL DEFAULT 'active',
+                sender_id INTEGER,
+                recipient_id INTEGER,
+                recipient_phone TEXT,
+                message TEXT,
+                expires_at TEXT,
+                redeemed_at TEXT,
+                redeemed_tx_id INTEGER,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(sender_id) REFERENCES customers(id) ON DELETE SET NULL,
+                FOREIGN KEY(recipient_id) REFERENCES customers(id) ON DELETE SET NULL,
+                FOREIGN KEY(redeemed_tx_id) REFERENCES transactions(id) ON DELETE SET NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_certificates_code ON certificates(code);
+            CREATE INDEX IF NOT EXISTS idx_certificates_status ON certificates(status);
+
+            CREATE TABLE IF NOT EXISTS reward_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                product_id INTEGER NOT NULL,
+                points_cost INTEGER NOT NULL,
+                stock_limit INTEGER,
+                active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_reward_items_product_id ON reward_items(product_id);
+            CREATE INDEX IF NOT EXISTS idx_reward_items_active ON reward_items(active);
+
+            CREATE TABLE IF NOT EXISTS reviews (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_id INTEGER NOT NULL,
+                transaction_id INTEGER,
+                location_id INTEGER,
+                rating INTEGER NOT NULL,
+                comment TEXT,
+                status TEXT NOT NULL DEFAULT 'new',
+                admin_reply TEXT,
+                replied_at TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+                FOREIGN KEY(transaction_id) REFERENCES transactions(id) ON DELETE SET NULL,
+                FOREIGN KEY(location_id) REFERENCES locations(id) ON DELETE SET NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_reviews_customer_id ON reviews(customer_id);
+            CREATE INDEX IF NOT EXISTS idx_reviews_rating ON reviews(rating);
+            CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON reviews(created_at);
+
+            CREATE TABLE IF NOT EXISTS news_articles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                body TEXT NOT NULL,
+                image_url TEXT,
+                type TEXT NOT NULL DEFAULT 'news',
+                published_at TEXT,
+                valid_from TEXT,
+                valid_until TEXT,
+                promo_code TEXT,
+                status TEXT NOT NULL DEFAULT 'draft',
+                author_id INTEGER,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(author_id) REFERENCES admin_users(id) ON DELETE SET NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_news_articles_status ON news_articles(status);
+            CREATE INDEX IF NOT EXISTS idx_news_articles_type ON news_articles(type);
+
+            CREATE TABLE IF NOT EXISTS security_alerts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                alert_type TEXT NOT NULL,
+                severity TEXT NOT NULL DEFAULT 'medium',
+                details_json TEXT NOT NULL DEFAULT '{}',
+                resolved INTEGER NOT NULL DEFAULT 0,
+                resolved_by INTEGER,
+                resolved_at TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(resolved_by) REFERENCES admin_users(id) ON DELETE SET NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_security_alerts_resolved ON security_alerts(resolved);
+            CREATE INDEX IF NOT EXISTS idx_security_alerts_created_at ON security_alerts(created_at);
+
+            CREATE TABLE IF NOT EXISTS employee_metrics (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                employee_id INTEGER NOT NULL,
+                metric_type TEXT NOT NULL,
+                value REAL NOT NULL,
+                period TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                UNIQUE(employee_id, metric_type, period)
+            );
+            CREATE INDEX IF NOT EXISTS idx_employee_metrics_period ON employee_metrics(period);
+            """
+        )
+
+        defaults = [
+            ("welcome_bonus_points", "100"),
+            ("birthday_bonus_points", "200"),
+            ("birthday_bonus_days_before", "0"),
+            ("points_ttl_months", "12"),
+            ("points_extend_on_purchase", "1"),
+            ("loyalty_mode", "cashback"),
+            ("base_accrual_percent", "5"),
+            ("max_pay_by_points_percent", "30"),
+            ("referral_bonus_referrer", "100"),
+            ("referral_bonus_referred", "100"),
+            ("referral_min_purchase", "1"),
+            ("auto_reply_enabled", "0"),
+            ("auto_reply_delay_minutes", "10"),
+        ]
+        for key, value in defaults:
+            conn.execute(
+                """
+                INSERT INTO system_settings (key, value, updated_at)
+                VALUES (?, ?, datetime('now'))
+                ON CONFLICT(key) DO NOTHING
+                """,
+                (key, value),
+            )
+
+        tier_count = conn.execute("SELECT COUNT(*) FROM loyalty_tiers").fetchone()[0]
+        if int(tier_count or 0) == 0:
+            conn.executemany(
+                """
+                INSERT INTO loyalty_tiers (name, min_spent, accrual_percent, max_redeem_percent, min_referrals, sort_order, active)
+                VALUES (?, ?, ?, ?, ?, ?, 1)
+                """,
+                [
+                    ("Базовый", 0, 5, 30, 0, 1),
+                    ("Серебро", 10000, 7, 50, 0, 2),
+                    ("Золото", 50000, 10, 100, 0, 3),
+                    ("Платина", 100000, 15, 100, 0, 4),
+                ],
+            )
+
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_customers_referral_code ON customers(referral_code)"
+        )
+
+        conn.commit()
 
         return conn
 

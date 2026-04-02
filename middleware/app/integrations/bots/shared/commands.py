@@ -6,28 +6,16 @@ VK and Telegram handlers. The platform-specific adapters handle
 the actual message sending.
 """
 
-from typing import Any, Callable, Dict, Literal, Optional
+from typing import Any, Callable, Dict, Optional
 
 from ....db import get_db
 from .consent import CURRENT_POLICY_VERSION, store_consent, update_consent
-
-# Valid platform sources with column mappings
-Source = Literal["tg", "vk"]
-
-# Whitelist for column name mapping to prevent SQL injection
-COLUMN_MAPPINGS: dict[Source, str] = {
-    "tg": "telegram_id",
-    "vk": "vk_id",
-}
+from .sources import Source, resolve_source_column
 
 
 def _get_id_column(source: Source) -> str:
     """Get database column name for platform source with validation."""
-    if source not in COLUMN_MAPPINGS:
-        raise ValueError(
-            f"Invalid source: {source}. Must be one of: {list(COLUMN_MAPPINGS.keys())}"
-        )
-    return COLUMN_MAPPINGS[source]
+    return resolve_source_column(source)
 
 
 # Message callback type - platform-specific function to send messages

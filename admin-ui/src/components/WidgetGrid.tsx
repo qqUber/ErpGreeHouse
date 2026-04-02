@@ -25,6 +25,32 @@ interface WidgetGridProps {
 export function WidgetGrid({ role, widgets, onLayoutChange, data }: WidgetGridProps) {
   const { getLayout, saveLayout } = useWidgetLayout();
   const viewport = useViewportMode();
+
+  const rowHeight =
+    viewport.mode === 'mobile'
+      ? 76
+      : viewport.mode === 'tablet'
+        ? 86
+        : viewport.mode === 'desktop-4k'
+          ? 120
+          : viewport.mode === 'desktop-2k'
+            ? 108
+            : 96;
+
+  const margin: [number, number] =
+    viewport.mode === 'mobile'
+      ? [8, 8]
+      : viewport.mode === 'desktop-2k' || viewport.mode === 'desktop-4k'
+        ? [16, 16]
+        : [12, 12];
+
+  const containerPadding: [number, number] =
+    viewport.mode === 'mobile'
+      ? [0, 0]
+      : viewport.mode === 'desktop-2k' || viewport.mode === 'desktop-4k'
+        ? [12, 12]
+        : [4, 4];
+
   const initialLayout = getLayout(role);
   const defaultLayout = widgets.map((widget, index) => ({
     i: widget.id,
@@ -60,11 +86,11 @@ export function WidgetGrid({ role, widgets, onLayoutChange, data }: WidgetGridPr
     <ResponsiveGridLayout
       className="layout dashboard-grid"
       layouts={{ lg: initialLayout.length > 0 ? initialLayout : defaultLayout }}
-      breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-      cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 } as { [key: string]: number }}
-      rowHeight={viewport.mode === 'mobile' ? 76 : viewport.mode === 'tablet' ? 86 : 96}
-      margin={viewport.mode === 'mobile' ? [8, 8] : [12, 12]}
-      containerPadding={viewport.mode === 'mobile' ? [0, 0] : [4, 4]}
+      breakpoints={{ '4k': 3840, xxl: 2560, lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+      cols={{ '4k': 24, xxl: 18, lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 } as { [key: string]: number }}
+      rowHeight={rowHeight}
+      margin={margin}
+      containerPadding={containerPadding}
       compactType="vertical"
       preventCollision={false}
       draggableHandle=".widget-header"

@@ -10,7 +10,7 @@ The platform-specific adapters (VK, Telegram) handle the actual message sending
 while this module handles the state management and business logic.
 """
 
-from typing import Any, Dict, Literal, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from ....customer_identity import get_customer_row, resolve_or_create_customer
 from ....db import get_db
@@ -18,9 +18,7 @@ from ....identify import normalize_name, normalize_phone
 from ....storage import get_redis
 from .consent import CURRENT_POLICY_VERSION, store_consent
 from .keys import consent_key
-
-# Valid platform sources
-Source = Literal["tg", "vk"]
+from .sources import Source
 
 # Registration TTL in seconds (1 hour)
 REGISTRATION_TTL = 3600
@@ -42,6 +40,13 @@ class RegistrationFlow:
     STEP_NAME = "name"
     STEP_PHONE = "phone"
     STEP_MARKETING = "marketing"
+
+    def _platform_identity_kwargs(self, user_id: int) -> dict[str, int | None]:
+        if self.source == "tg":
+            return {"telegram_id": int(user_id), "vk_id": None}
+        if self.source == "vk":
+            return {"telegram_id": None, "vk_id": int(user_id)}
+        return {"telegram_id": None, "vk_id": None}
 
     def __init__(self, source: Source):
         """
@@ -185,10 +190,11 @@ class RegistrationFlow:
         db = get_db()
         conn = db.connect()
         try:
+            platform_identity = self._platform_identity_kwargs(user_id)
             customer_id, is_new = resolve_or_create_customer(
                 conn,
-                telegram_id=int(user_id) if self.source == "tg" else None,
-                vk_id=int(user_id) if self.source == "vk" else None,
+                telegram_id=platform_identity["telegram_id"],
+                vk_id=platform_identity["vk_id"],
                 phone=normalized_phone,
                 full_name=normalized_name,
                 marketing_allowed=marketing_allowed,

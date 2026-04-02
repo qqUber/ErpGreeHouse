@@ -2,7 +2,7 @@
 trigger: always_on
 ---
 ## NO LOCAL TESTS ## 
-- All tests MUST run in Docker only | ❌ Never run `pytest`, `npm test`, `vitest` locally |
+- All tests MUST run in Docker only into WSL2| ❌ Never run `pytest`, `npm test`, `vitest` locally |
 ## DOCKER DAEMON MODE ## 
 - Always use detached mode | ❌ Never use `docker compose up` without `-d` |
 ## DOCKER LOG SNIFFING ## 

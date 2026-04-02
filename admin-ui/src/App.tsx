@@ -3,16 +3,16 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsView } from './AnalyticsView';
 import {
-  AdminMe,
-  Api,
-  CreateSaleRequest,
-  CustomerDetails,
-  CustomerListItem,
-  Integration,
-  IntegrationDelivery,
-  IntegrationTemplate,
-  RolePermissions,
-  setAdminSecret,
+    AdminMe,
+    Api,
+    CreateSaleRequest,
+    CustomerDetails,
+    CustomerListItem,
+    Integration,
+    IntegrationDelivery,
+    IntegrationTemplate,
+    RolePermissions,
+    setAdminSecret,
 } from './api';
 import { ComplianceView } from './ComplianceView';
 import { DashboardView } from './components/dashboard/DashboardView';
@@ -46,13 +46,27 @@ type PublicStatus = {
 type NoticeLevel = 'ok' | 'warn' | 'err';
 type Notice = { level: NoticeLevel; message: string; visible: boolean };
 
-function money(n: number) {
-  return new Intl.NumberFormat('ru-RU').format(n);
+function money(n: number, locale?: string) {
+  const storedLocale =
+    typeof window !== 'undefined' ? window.localStorage.getItem('i18nextLng') || undefined : undefined;
+  const appLocale = (locale || storedLocale || 'en').toLowerCase();
+  const localeMap: Record<string, string> = {
+    en: 'en-US',
+    ru: 'ru-RU',
+    srb: 'sr-RS',
+  };
+  const resolvedLocale = localeMap[appLocale] || appLocale;
+
+  try {
+    return new Intl.NumberFormat(resolvedLocale).format(n);
+  } catch {
+    return new Intl.NumberFormat('en-US').format(n);
+  }
 }
 
 function App() {
   // Use auth context for authentication state
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const viewport = useViewportMode();
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     if (typeof window === 'undefined') return 'light';
@@ -883,7 +897,7 @@ function App() {
               onSuggestionSelect={(customer) => {
                 handleSelectCustomer(customer.id);
                 const customerName =
-                  customer.full_name || customer.phone || `Клиент #${customer.id}`;
+                  customer.full_name || customer.phone || t('customers.unnamed', { id: customer.id });
                 setQ(customerName);
                 setShowSuggestions(false);
                 // Also filter the main customer list
@@ -1271,7 +1285,7 @@ function CustomersView({
                   }}
                 >
                   <div style={{ fontWeight: '500' }}>
-                    {customer.full_name || `Клиент #${customer.id}`}
+                    {customer.full_name || t('customers.unnamed', { id: customer.id })}
                   </div>
                   {customer.phone && (
                     <div style={{ fontSize: '12px', color: '#6b7280' }}>{customer.phone}</div>
@@ -1870,7 +1884,7 @@ function CustomersView({
                             fontSize: '14px',
                           }}
                         >
-                          {money(tx.total_amount)} ₽
+                          {money(tx.total_amount, i18n.language)} ₽
                         </div>
                       </div>
                     ))}
@@ -1941,7 +1955,7 @@ type PosViewProps = {
 };
 
 function PosView({ refreshCustomers, products, reloadProducts, onSaleDone }: PosViewProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [customerId, setCustomerId] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
   const [qty, setQty] = useState('1');
@@ -2032,7 +2046,7 @@ function PosView({ refreshCustomers, products, reloadProducts, onSaleDone }: Pos
               ?.filter((p) => p.active)
               .map((p) => (
                 <option key={p.id} value={String(p.id)}>
-                  {p.code} - {p.name} ({money(p.price)} ₽)
+                  {p.code} - {p.name} ({money(p.price, i18n.language)} ₽)
                 </option>
               )) ?? <option value="">{t('sales.noProducts')}</option>}
           </select>
@@ -2385,7 +2399,7 @@ function ProductsView({
   create,
   setShowProductImport,
 }: ProductsViewProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [kind, setKind] = useState('');
@@ -2489,7 +2503,7 @@ function ProductsView({
                   {p.code} · {p.kind}
                 </div>
               </div>
-              <div>{money(p.price)} ₽</div>
+              <div>{money(p.price, i18n.language)} ₽</div>
               <span className={`pill ${p.active ? 'pillGood' : 'pillWarn'}`}>
                 {p.active ? 'active' : 'inactive'}
               </span>

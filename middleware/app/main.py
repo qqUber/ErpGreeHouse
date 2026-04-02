@@ -18,8 +18,9 @@ from .admin_auth_api import router as auth_router
 from .admin_auth_api import public_router as auth_public_router
 from .admin_api import router as admin_router
 from .admin_api import public_router as public_router
+from .roadmap_api import router as roadmap_router
 from .middlewares import rate_limit_middleware
-from .db import get_db
+from .db import get_db, init_db
 from .config import get_settings
 import logging
 import logging.config
@@ -80,6 +81,9 @@ mimetypes.add_type("text/css", ".css")
 async def lifespan(app: FastAPI):
     # Startup
     get_settings()
+
+    if os.getenv("TEST_MODE", "false").lower() in ("1", "true", "yes"):
+        init_db()
 
     # Verify database connection (migrations and seeding done by init container)
     db = get_db()
@@ -311,6 +315,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(rate_limit_middleware)  # type: ignore[arg-type]
 
 app.include_router(admin_router)
+app.include_router(roadmap_router)
 app.include_router(public_router)
 app.include_router(auth_public_router)
 app.include_router(auth_router)

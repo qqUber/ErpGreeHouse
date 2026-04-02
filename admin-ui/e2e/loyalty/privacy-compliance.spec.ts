@@ -41,27 +41,27 @@ test.describe
     test('GDPR and 152-ФЗ compliance verification', async ({ page }) => {
       console.log('🔒 Testing GDPR and 152-ФЗ Compliance');
 
-      // Verify privacy policy page accessibility and content
+      // Verify privacy policy page accessibility and content using test IDs
       await page.goto('/privacy');
-      await expect(page.getByText('Privacy Policy')).toBeVisible();
+      await expect(page.getByTestId('privacy_policy_heading')).toBeVisible();
 
-      // Check for required compliance elements
-      await expect(page.getByText('GDPR')).toBeVisible();
-      await expect(page.getByText('152-ФЗ')).toBeVisible();
-      await expect(page.getByText('Data Processing')).toBeVisible();
-      await expect(page.getByText('User Rights')).toBeVisible();
+      // Check for required compliance elements using test IDs
+      await expect(page.getByTestId('compliance_gdpr')).toBeVisible();
+      await expect(page.getByTestId('compliance_152_fz')).toBeVisible();
+      await expect(page.getByTestId('compliance_data_processing')).toBeVisible();
+      await expect(page.getByTestId('compliance_user_rights')).toBeVisible();
 
-      // Verify legal basis for processing
-      await expect(page.getByText('Legal Basis')).toBeVisible();
-      await expect(page.getByText('Consent')).toBeVisible();
+      // Verify legal basis for processing using test IDs
+      await expect(page.getByTestId('legal_basis_section')).toBeVisible();
+      await expect(page.getByTestId('consent_section')).toBeVisible();
 
-      // Check data retention policies
-      await expect(page.getByText('Data Retention')).toBeVisible();
-      await expect(page.getByText('Storage Period')).toBeVisible();
+      // Check data retention policies using test IDs
+      await expect(page.getByTestId('data_retention_section')).toBeVisible();
+      await expect(page.getByTestId('storage_period_section')).toBeVisible();
 
-      // Verify contact information for data protection officer
-      await expect(page.getByText('Data Protection Officer')).toBeVisible();
-      await expect(page.getByText('Contact Information')).toBeVisible();
+      // Verify contact information for data protection officer using test IDs
+      await expect(page.getByTestId('dpo_section')).toBeVisible();
+      await expect(page.getByTestId('contact_info_section')).toBeVisible();
 
       // Test secure HTTPS serving
       const response = await page.request.get('/privacy');

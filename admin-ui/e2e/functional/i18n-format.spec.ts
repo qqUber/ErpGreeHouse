@@ -557,7 +557,8 @@ test.describe('Mobile Responsiveness Tests', () => {
 
     // Try to trigger a modal if any button exists
     // Common modals: add client, add product, etc.
-    const addButton = page.getByText('Добавить').first();
+    // Use test ID instead of text for localization resilience
+    const addButton = page.getByTestId('btn_add').first();
 
     if (await addButton.isVisible({ timeout: 2000 }).catch(() => false)) {
       await addButton.click();
@@ -612,8 +613,8 @@ test.describe('Combined i18n and Mobile Tests', () => {
     // Verify language changed
     await expect(page.locator('.language-switcher-button')).toContainText('EN');
 
-    // Verify English text is visible
-    await expect(page.getByText('Dashboard', { exact: true })).toBeVisible();
+    // Verify dashboard is visible using test ID instead of text
+    await expect(page.getByTestId('admin_nav_dashboard')).toBeVisible();
   });
 
   test('should display dates correctly on mobile in different languages', async ({ page }) => {

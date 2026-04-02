@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 
-export type ViewportMode = 'mobile' | 'tablet' | 'desktop';
-export type ViewDensity = 'compact' | 'comfortable';
+export type ViewportMode =
+  | 'mobile'
+  | 'tablet'
+  | 'desktop'
+  | 'desktop-xl'
+  | 'desktop-2k'
+  | 'desktop-4k';
+export type ViewDensity = 'compact' | 'comfortable' | 'spacious';
 
 type ViewportState = {
   width: number;
@@ -13,11 +19,16 @@ type ViewportState = {
 function detectMode(width: number): ViewportMode {
   if (width < 768) return 'mobile';
   if (width < 1200) return 'tablet';
-  return 'desktop';
+  if (width < 1920) return 'desktop';
+  if (width < 2560) return 'desktop-xl';
+  if (width < 3840) return 'desktop-2k';
+  return 'desktop-4k';
 }
 
 function detectDensity(width: number): ViewDensity {
-  return width >= 1600 ? 'comfortable' : 'compact';
+  if (width < 1600) return 'compact';
+  if (width < 2560) return 'comfortable';
+  return 'spacious';
 }
 
 function readWindowSize() {

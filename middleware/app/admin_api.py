@@ -35,7 +35,7 @@ from .runtime import is_debug
 from .storage import get_redis
 from .trigger_engine import evaluate_and_queue_triggers
 from .utils.currency import format_currency
-from .utils.money import to_cents
+from .utils.money import main_to_subunits, subunits_to_main, to_cents
 from .worker import send_customer_message
 
 
@@ -163,7 +163,9 @@ def _cache_set_json(key: str, value: Any, ttl_seconds: int) -> None:
 
 
 def _setting_int(conn, key: str, default: int) -> int:
-    row = conn.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
+    row = conn.execute(
+        "SELECT value FROM system_settings WHERE key=?", (key,)
+    ).fetchone()
     if not row:
         return default
     try:
@@ -1404,26 +1406,32 @@ def create_sale(
         ).fetchone()
         tx_count_before_sale = int(tx_count_row[0] or 0) if tx_count_row else 0
 
+        tx_count_row = conn.execute(
+            "SELECT COUNT(*) FROM transactions WHERE customer_id=?",
+            (payload.customer_id,),
+        ).fetchone()
+        tx_count_before_sale = int(tx_count_row[0] or 0) if tx_count_row else 0
+
         spent_row = conn.execute(
             "SELECT SUM(total_amount) FROM transactions WHERE customer_id=?",
             (payload.customer_id,),
         ).fetchone()
-        spent_amount_cents = int(spent_row[0]) if spent_row and spent_row[0] else 0
-        spent_amount_rubles = spent_amount_cents // 100
+        spent_amount_subunits = int(spent_row[0]) if spent_row and spent_row[0] else 0
+        spent_amount_main = subunits_to_main(spent_amount_subunits)
 
-        total_rubles = total // 100
+        # Convert total from subunits to main currency unit for internal calculations
+        total_main = subunits_to_main(total)
 
         rules = get_loyalty_rules(conn)
         bonus_used = clamp_redeem_points(
-            total,
-            spent_amount_rubles,
+            total_main,
+            spent_amount_main,
             payload.requested_bonus,
             int(cust["balance_points"]),
             rules,
         )
-        payable = total - (bonus_used * 100)
-        payable_rubles = payable // 100
-        bonus_earned = calc_earned_points(payable_rubles, spent_amount_rubles, rules)
+        payable_main = total_main - bonus_used
+        bonus_earned = calc_earned_points(payable_main, spent_amount_main, rules)
 
         receipt_dir = os.getenv("RECEIPTS_DIR", "receipts")
         receipt_name = (
@@ -1437,9 +1445,9 @@ def create_sale(
                     text=f"{it.name} x{it.qty} = {format_currency(it.price * it.qty)}"
                 )
             )
-        lines.append(ReceiptLine(text=f"Сумма: {format_currency(total)}"))
-        lines.append(ReceiptLine(text=f"Списано: {format_currency(bonus_used * 100)}"))
-        lines.append(ReceiptLine(text=f"К оплате: {format_currency(payable)}"))
+        lines.append(ReceiptLine(text=f"Сумма: {format_currency(total_main)}"))
+        lines.append(ReceiptLine(text=f"Списано: {format_currency(bonus_used)}"))
+        lines.append(ReceiptLine(text=f"К оплате: {format_currency(payable_main)}"))
         lines.append(ReceiptLine(text=f"Начислено: {bonus_earned}"))
         lines.append(ReceiptLine(text=f"Баланс до: {int(cust['balance_points'])}"))
         lines.append(
@@ -1460,7 +1468,7 @@ def create_sale(
             "INSERT INTO transactions(customer_id, total_amount, bonus_used, bonus_earned, items_json, receipt_pdf_path) VALUES(?,?,?,?,?,?)",
             (
                 payload.customer_id,
-                total,
+                main_to_subunits(total_main),  # Store in subunits for DB compatibility
                 bonus_used,
                 bonus_earned,
                 items_json,
@@ -1476,7 +1484,13 @@ def create_sale(
                 INSERT INTO points_ledger(customer_id, amount, source, source_ref_id, expires_at)
                 VALUES (?, ?, 'purchase_earned', ?, CASE WHEN ? = 0 THEN NULL ELSE datetime('now', ?) END)
                 """,
-                (payload.customer_id, bonus_earned, int(cur2.lastrowid), ttl_months, expiry_expr),
+                (
+                    payload.customer_id,
+                    bonus_earned,
+                    int(cur2.lastrowid),
+                    ttl_months,
+                    expiry_expr,
+                ),
             )
         if bonus_used > 0:
             conn.execute(
@@ -1492,7 +1506,7 @@ def create_sale(
             referred_bonus = max(0, _setting_int(conn, "referral_bonus_referred", 100))
             referrer_bonus = max(0, _setting_int(conn, "referral_bonus_referrer", 100))
             min_purchase = max(1, _setting_int(conn, "referral_min_purchase", 1))
-            if total_rubles >= min_purchase:
+            if total_main >= min_purchase:
                 conn.execute(
                     """
                     UPDATE referrals
@@ -1539,7 +1553,7 @@ def create_sale(
         # Evaluate triggers
         event_data = {
             "transaction_id": tx_id,
-            "total_amount": total,
+            "total_amount": total_main,
             "bonus_used": bonus_used,
             "bonus_earned": bonus_earned,
         }
@@ -1550,7 +1564,7 @@ def create_sale(
         tg_id = cust["telegram_id"]
         if tg_id:
             msg_lines = [
-                f"Покупка: {format_currency(total)}",
+                f"Покупка: {format_currency(total_main)}",
                 f"Списано: {bonus_used}",
                 f"Начислено: {bonus_earned}",
                 f"Баланс: {new_balance}",
@@ -1569,10 +1583,10 @@ def create_sale(
 
         result = {
             "transaction_id": tx_id,
-            "total": total // 100,  # Convert kopecks to rubles for API response
+            "total": total_main,
             "bonus_used": bonus_used,
             "bonus_earned": bonus_earned,
-            "payable": payable // 100,  # Convert kopecks to rubles
+            "payable": payable_main,
             "balance": new_balance,
             "receipt_pdf_path": receipt_path,
             "external_erp_ref": erp_ref,

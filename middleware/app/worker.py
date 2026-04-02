@@ -13,8 +13,21 @@ from typing import Any
 import json
 import asyncio
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+
+def _setting_int(conn, key: str, default: int) -> int:
+    row = conn.execute(
+        "SELECT value FROM system_settings WHERE key=?", (key,)
+    ).fetchone()
+    if not row:
+        return default
+    try:
+        return int(str(row[0]))
+    except (TypeError, ValueError):
+        return default
 
 
 settings = get_settings()
@@ -392,6 +405,11 @@ def deliver_webhook_event(integration_id: int, event_type: str, payload: dict) -
         conn.close()
 
 
+@celery_app.task
+def process_periodic_marketing() -> dict:
+    return _process_periodic_marketing_impl()
+
+
 async def safe_send(bot, chat_id: int, text: str) -> bool:
     try:
         await bot.send_message(chat_id=chat_id, text=text)
@@ -466,7 +484,9 @@ async def send_media_group(bot, chat_id: int, media_items: list) -> bool:
         await bot(SendMediaGroup(chat_id=chat_id, media=media_group.build()))
         return True
     except Exception:
-        logger.warning("Failed to send media group to chat_id=%s", chat_id, exc_info=True)
+        logger.warning(
+            "Failed to send media group to chat_id=%s", chat_id, exc_info=True
+        )
         return False
 
 
@@ -566,24 +586,40 @@ def execute_marketing_trigger(
     return asyncio.run(runner())
 
 
-@celery_app.task
-def process_periodic_marketing() -> dict:
+def _process_periodic_marketing_impl() -> dict:
     """Scans for birthdays and inactive customers to fire triggers."""
     from app import trigger_engine
 
     db = get_db()
     conn = db.connect()
     try:
-        # Birthday triggers
-        # SQLite: strftime('%m-%d', 'now')
+        birthday_bonus = max(0, _setting_int(conn, "birthday_bonus_points", 200))
+        birthday_year = int(
+            conn.execute("SELECT strftime('%Y', 'now')").fetchone()[0]
+            or datetime.utcnow().year
+        )
+
+        # Birthday triggers + points bonus
         rows = conn.execute(
             """
-            SELECT id FROM customers
+            SELECT id, telegram_id, birthday_bonus_last_year FROM customers
             WHERE birthday IS NOT NULL
             AND strftime('%m-%d', birthday) = strftime('%m-%d', 'now')
         """
         ).fetchall()
         for r in rows:
+            if (
+                birthday_bonus > 0
+                and int(r["birthday_bonus_last_year"] or 0) != birthday_year
+            ):
+                conn.execute(
+                    "UPDATE customers SET balance_points = balance_points + ?, birthday_bonus_last_year=?, updated_at=datetime('now') WHERE id=?",
+                    (birthday_bonus, birthday_year, int(r["id"])),
+                )
+                conn.execute(
+                    "INSERT INTO points_ledger(customer_id, amount, source, source_ref_id, expires_at) VALUES (?, ?, 'birthday_bonus', NULL, NULL)",
+                    (int(r["id"]), birthday_bonus),
+                )
             trigger_engine.evaluate_and_queue_triggers(
                 int(r["id"]), "customer.birthday", {}
             )
@@ -606,27 +642,75 @@ def process_periodic_marketing() -> dict:
                 {"days_inactive": int(r["days_inactive"])},
             )
 
-        # Welcome message triggers for new customers
+        welcome_bonus = max(0, _setting_int(conn, "welcome_bonus_points", 100))
+
+        # Welcome message triggers + points bonus for new customers
         rows = conn.execute(
             """
-            SELECT id FROM customers
+            SELECT id, welcome_bonus_awarded FROM customers
             WHERE created_at >= datetime('now', '-24 hours')
         """
         ).fetchall()
         for r in rows:
+            if welcome_bonus > 0 and int(r["welcome_bonus_awarded"] or 0) == 0:
+                conn.execute(
+                    "UPDATE customers SET balance_points = balance_points + ?, welcome_bonus_awarded=1, updated_at=datetime('now') WHERE id=?",
+                    (welcome_bonus, int(r["id"])),
+                )
+                conn.execute(
+                    "INSERT INTO points_ledger(customer_id, amount, source, source_ref_id, expires_at) VALUES (?, ?, 'welcome_bonus', NULL, NULL)",
+                    (int(r["id"]), welcome_bonus),
+                )
             trigger_engine.evaluate_and_queue_triggers(
                 int(r["id"]), "customer.welcome", {}
             )
 
-        # Points expiration triggers
-        # Check for points that will expire in next 7 days
+        # Expire ledger points that reached expires_at and were not expired
+        expiring_now_rows = conn.execute(
+            """
+            SELECT customer_id, SUM(amount) AS amount_to_expire
+            FROM points_ledger
+            WHERE expired = 0
+              AND amount > 0
+              AND expires_at IS NOT NULL
+              AND expires_at <= datetime('now')
+            GROUP BY customer_id
+            HAVING amount_to_expire > 0
+            """
+        ).fetchall()
+        for row in expiring_now_rows:
+            customer_id = int(row["customer_id"])
+            amount_to_expire = int(row["amount_to_expire"] or 0)
+            if amount_to_expire <= 0:
+                continue
+            conn.execute(
+                "UPDATE customers SET balance_points = MAX(0, balance_points - ?), updated_at=datetime('now') WHERE id=?",
+                (amount_to_expire, customer_id),
+            )
+            conn.execute(
+                """
+                UPDATE points_ledger
+                SET expired = 1
+                WHERE customer_id=?
+                  AND expired = 0
+                  AND amount > 0
+                  AND expires_at IS NOT NULL
+                  AND expires_at <= datetime('now')
+                """,
+                (customer_id,),
+            )
+
+        # Points expiration triggers (notify points expiring in next 7 days)
         rows = conn.execute(
             """
-            SELECT c.id, SUM(t.bonus_earned - t.bonus_used) as points_to_expire
-            FROM customers c
-            LEFT JOIN transactions t ON c.id = t.customer_id
-            WHERE t.created_at <= datetime('now', '-365 days')
-            GROUP BY c.id
+            SELECT customer_id AS id, SUM(amount) as points_to_expire
+            FROM points_ledger
+            WHERE expired = 0
+              AND amount > 0
+              AND expires_at IS NOT NULL
+              AND expires_at > datetime('now')
+              AND expires_at <= datetime('now', '+7 days')
+            GROUP BY customer_id
             HAVING points_to_expire > 0
         """
         ).fetchall()
@@ -636,6 +720,8 @@ def process_periodic_marketing() -> dict:
                 "points.expiration",
                 {"points_to_expire": int(r["points_to_expire"])},
             )
+
+        conn.commit()
 
         return {"processed": True}
     except Exception as e:

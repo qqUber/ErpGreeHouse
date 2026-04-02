@@ -110,9 +110,10 @@ else:
 os.environ["TEST_MODE"] = "true"
 os.environ["ERP_MOCK_MODE"] = "true"
 os.environ["REDIS_URL"] = os.getenv("REDIS_URL", "redis://localhost:6379/1")
-# Use /app/data in Docker, otherwise use .local/ relative to middleware dir
+# Use container-local tmp dir in Docker to avoid file locking/disk I/O issues
+# on bind-mounted volumes during frequent create/delete cycles in tests.
 if os.path.isdir("/app"):
-    _test_db_dir = "/app/data"
+    _test_db_dir = "/tmp/erp_tests"
 else:
     _test_db_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".local")
 os.makedirs(_test_db_dir, exist_ok=True)
@@ -223,6 +224,15 @@ def clean_database(test_db_path: str) -> Generator[str, None, None]:
     # This is faster and avoids locking issues with DROP TABLE
     with db.connect() as conn:
         tables = [
+            "employee_metrics",
+            "security_alerts",
+            "news_articles",
+            "reviews",
+            "reward_items",
+            "certificates",
+            "referrals",
+            "points_ledger",
+            "loyalty_tiers",
             "marketing_trigger_events",
             "marketing_events",
             "marketing_campaigns",

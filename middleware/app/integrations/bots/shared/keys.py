@@ -5,10 +5,7 @@ Provides platform-agnostic key generation for consent, registration,
 and cart data stored in Redis.
 """
 
-from typing import Literal
-
-# Valid platform sources
-Source = Literal["tg", "vk"]
+from .sources import Source, normalize_source
 
 
 def consent_key(source: Source, user_id: int) -> str:
@@ -22,7 +19,8 @@ def consent_key(source: Source, user_id: int) -> str:
     Returns:
         Redis key string in format "crm:consent:{source}:{user_id}"
     """
-    return f"crm:consent:{source}:{user_id}"
+    source_key = normalize_source(source)
+    return f"crm:consent:{source_key}:{user_id}"
 
 
 def registration_key(source: Source, user_id: int) -> str:
@@ -36,7 +34,8 @@ def registration_key(source: Source, user_id: int) -> str:
     Returns:
         Redis key string in format "crm:reg:{source}:{user_id}"
     """
-    return f"crm:reg:{source}:{user_id}"
+    source_key = normalize_source(source)
+    return f"crm:reg:{source_key}:{user_id}"
 
 
 def cart_key(source: Source, user_id: int) -> str:
@@ -50,7 +49,8 @@ def cart_key(source: Source, user_id: int) -> str:
     Returns:
         Redis key string in format "crm:cart:{source}:{user_id}"
     """
-    return f"crm:cart:{source}:{user_id}"
+    source_key = normalize_source(source)
+    return f"crm:cart:{source_key}:{user_id}"
 
 
 # Legacy key functions for backward compatibility

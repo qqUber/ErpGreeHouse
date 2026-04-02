@@ -669,7 +669,8 @@
     "actions": "Действия",
     "viewDetails": "Просмотр",
     "noCustomers": "Нет клиентов",
-    "id": "ID"
+    "id": "ID",
+    "unnamed": "Клиент #{{id}}"
   },
   "pagination": {
     "showing": "Показано {{start}}-{{end}} из {{total}}",

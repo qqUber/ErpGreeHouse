@@ -7,14 +7,12 @@ remains separate while common business logic is centralized.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Literal
+from typing import Any, Dict
 
 from .consent import get_customer_consents
 from .keys import consent_key, registration_key
 from .registration import RegistrationFlow
-
-# Valid platform sources
-Source = Literal["tg", "vk"]
+from .sources import Source
 
 
 class BaseBotAdapter(ABC):

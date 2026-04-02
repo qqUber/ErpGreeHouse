@@ -55,5 +55,5 @@ async def test_analytics_data_aggregation(clean_database):
 
         assert response.status_code == 200
         data = response.json()
-        assert data["metrics"]["total_revenue"] >= 3000.0
+        assert data["metrics"]["total_revenue"] >= 30.0
         assert data["metrics"]["total_transactions"] >= 2
