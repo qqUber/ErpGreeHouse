@@ -5102,6 +5102,117 @@ textarea {
   color: var(--muted) !important;
 }
 
+/* Operational Widget - replaces inline styles */
+.operational-widget {
+  display: grid !important;
+  gap: var(--spacing-lg) !important;
+}
+
+.operational-widget-title {
+  font-weight: var(--font-weight-extrabold) !important;
+  font-size: var(--font-size-xl) !important;
+}
+
+.operational-widget-date {
+  font-size: var(--font-size-sm) !important;
+  color: var(--muted) !important;
+}
+
+.operational-metric-label {
+  font-size: var(--font-size-sm) !important;
+  color: var(--muted) !important;
+}
+
+.operational-metric-value {
+  font-size: var(--font-size-2xl) !important;
+  font-weight: var(--font-weight-extrabold) !important;
+  margin-top: var(--spacing-xs) !important;
+}
+
+.operational-peak-card {
+  background: var(--primary-light) !important;
+  border-color: rgba(59, 130, 246, 0.25) !important;
+}
+
+.operational-peak-label {
+  font-size: var(--font-size-sm) !important;
+  color: var(--primary) !important;
+}
+
+.operational-peak-value {
+  font-size: var(--font-size-2xl) !important;
+  font-weight: var(--font-weight-extrabold) !important;
+  margin-top: var(--spacing-xs) !important;
+  color: var(--primary) !important;
+}
+
+.operational-section-title {
+  font-size: var(--font-size-sm) !important;
+  font-weight: var(--font-weight-semibold) !important;
+  color: var(--text) !important;
+  margin-bottom: var(--spacing-sm) !important;
+}
+
+.operational-product-row {
+  padding: var(--spacing-sm) !important;
+  border-radius: var(--radius-md) !important;
+  background: var(--brand-light) !important;
+  border: 1px solid var(--border) !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.operational-product-row:hover {
+  background: var(--primary-light) !important;
+  transform: translateX(4px) !important;
+}
+
+.operational-product-name {
+  font-size: var(--font-size-sm) !important;
+  font-weight: var(--font-weight-semibold) !important;
+  color: var(--text) !important;
+}
+
+.operational-product-code {
+  font-size: var(--font-size-xs) !important;
+  color: var(--muted) !important;
+}
+
+.operational-product-qty {
+  font-size: var(--font-size-sm) !important;
+  font-weight: var(--font-weight-bold) !important;
+  color: var(--text) !important;
+}
+
+.operational-product-revenue {
+  font-size: var(--font-size-xs) !important;
+  color: var(--muted) !important;
+}
+
+.operational-hourly-section {
+  margin-top: var(--spacing-xl) !important;
+}
+
+.operational-hourly-card {
+  background: var(--brand-light) !important;
+  overflow-x: auto !important;
+}
+
+.operational-hourly-grid {
+  min-width: 720px !important;
+}
+
+.operational-hour-label {
+  font-size: var(--font-size-xs) !important;
+  color: var(--muted) !important;
+}
+
+.operational-hour-value {
+  font-size: var(--font-size-sm) !important;
+  font-weight: var(--font-weight-bold) !important;
+  color: var(--text) !important;
+}
+
 /* Responsive design */
 @media (max-width: 1024px) {
   .customers-main-content {

@@ -40,130 +40,58 @@ export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) =>
       aria-label="Operational Data"
     >
       <div className="row mb-4">
-        <div
-          style={{
-            fontWeight: 'var(--font-weight-extrabold)',
-            fontSize: 'var(--font-size-xl)',
-          }}
-        >
+        <div className="operational-widget-title">
           Оперативные данные
         </div>
-        <span
-          style={{
-            fontSize: 'var(--font-size-sm)',
-            color: 'var(--muted)',
-          }}
-        >
+        <span className="operational-widget-date">
           Дата: {new Date(data.date).toLocaleDateString('ru-RU')}
         </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Key Metrics */}
-        <div style={{ display: 'grid', gap: 'var(--spacing-lg)' }}>
+        <div className="operational-widget">
           <div className="grid grid-cols-2 gap-4">
             <div className="card cardCompact">
-              <div
-                style={{
-                  fontSize: 'var(--font-size-sm)',
-                  color: 'var(--muted)',
-                }}
-              >
+              <div className="operational-metric-label">
                 Активный персонал
               </div>
-              <div
-                style={{
-                  fontSize: 'var(--font-size-2xl)',
-                  fontWeight: 'var(--font-weight-extrabold)',
-                  marginTop: 'var(--spacing-xs)',
-                }}
-              >
+              <div className="operational-metric-value">
                 {data.active_staff}
               </div>
             </div>
             <div className="card cardCompact">
-              <div
-                style={{
-                  fontSize: 'var(--font-size-sm)',
-                  color: 'var(--muted)',
-                }}
-              >
+              <div className="operational-metric-label">
                 Всего транз.
               </div>
-              <div
-                style={{
-                  fontSize: 'var(--font-size-2xl)',
-                  fontWeight: 'var(--font-weight-extrabold)',
-                  marginTop: 'var(--spacing-xs)',
-                }}
-              >
+              <div className="operational-metric-value">
                 {data.total_transactions}
               </div>
             </div>
             <div className="card cardCompact">
-              <div
-                style={{
-                  fontSize: 'var(--font-size-sm)',
-                  color: 'var(--muted)',
-                }}
-              >
+              <div className="operational-metric-label">
                 {t('analytics.revenue')}
               </div>
-              <div
-                style={{
-                  fontSize: 'var(--font-size-2xl)',
-                  fontWeight: 'var(--font-weight-extrabold)',
-                  marginTop: 'var(--spacing-xs)',
-                }}
-              >
+              <div className="operational-metric-value">
                 {(data.total_revenue || 0).toFixed(2)} ₽
               </div>
             </div>
             <div className="card cardCompact">
-              <div
-                style={{
-                  fontSize: 'var(--font-size-sm)',
-                  color: 'var(--muted)',
-                }}
-              >
+              <div className="operational-metric-label">
                 {t('analytics.averageCheck')}
               </div>
-              <div
-                style={{
-                  fontSize: 'var(--font-size-2xl)',
-                  fontWeight: 'var(--font-weight-extrabold)',
-                  marginTop: 'var(--spacing-xs)',
-                }}
-              >
+              <div className="operational-metric-value">
                 {(data.average_check || 0).toFixed(2)} ₽
               </div>
             </div>
           </div>
 
           {/* Peak Hour */}
-          <div
-            className="card cardCompact"
-            style={{
-              background: 'var(--primary-light)',
-              borderColor: 'rgba(59, 130, 246, 0.25)',
-            }}
-          >
-            <div
-              style={{
-                fontSize: 'var(--font-size-sm)',
-                color: 'var(--primary)',
-              }}
-            >
+          <div className="card cardCompact operational-peak-card">
+            <div className="operational-peak-label">
               Пиковый час
             </div>
-            <div
-              style={{
-                fontSize: 'var(--font-size-2xl)',
-                fontWeight: 'var(--font-weight-extrabold)',
-                marginTop: 'var(--spacing-xs)',
-                color: 'var(--primary)',
-              }}
-            >
+            <div className="operational-peak-value">
               {data.peak_hour}:00 ({data.peak_hour_transactions} транз.)
             </div>
           </div>
@@ -171,73 +99,28 @@ export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) =>
 
         {/* Top Products */}
         <div>
-          <div
-            style={{
-              fontSize: 'var(--font-size-sm)',
-              fontWeight: 'var(--font-weight-semibold)',
-              color: 'var(--text)',
-              marginBottom: 'var(--spacing-sm)',
-            }}
-          >
+          <div className="operational-section-title">
             Топ товаров
           </div>
-          <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
+          <div className="operational-widget">
             {(data.top_products || []).slice(0, 5).map((product: any) => (
               <div
                 key={product.code}
-                className="row"
-                style={{
-                  padding: 'var(--spacing-sm)',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--brand-light)',
-                  border: '1px solid var(--border)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--primary-light)';
-                  e.currentTarget.style.transform = 'translateX(4px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'var(--brand-light)';
-                  e.currentTarget.style.transform = 'translateX(0)';
-                }}
+                className="row operational-product-row"
               >
-                <div style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      fontSize: 'var(--font-size-sm)',
-                      fontWeight: 'var(--font-weight-semibold)',
-                      color: 'var(--text)',
-                    }}
-                  >
+                <div className="flex-1">
+                  <div className="operational-product-name">
                     {product.name}
                   </div>
-                  <div
-                    style={{
-                      fontSize: 'var(--font-size-xs)',
-                      color: 'var(--muted)',
-                    }}
-                  >
+                  <div className="operational-product-code">
                     {product.code}
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div
-                    style={{
-                      fontSize: 'var(--font-size-sm)',
-                      fontWeight: 'var(--font-weight-bold)',
-                      color: 'var(--text)',
-                    }}
-                  >
+                <div className="text-right">
+                  <div className="operational-product-qty">
                     {product.quantity} шт
                   </div>
-                  <div
-                    style={{
-                      fontSize: 'var(--font-size-xs)',
-                      color: 'var(--muted)',
-                    }}
-                  >
+                  <div className="operational-product-revenue">
                     {(product.revenue || 0).toFixed(2)} ₽
                   </div>
                 </div>
@@ -249,42 +132,18 @@ export const OperationalWidget: React.FC<OperationalWidgetProps> = ({ data }) =>
 
       {/* Hourly Breakdown */}
       {(data.hourly_breakdown || []).length > 0 && (
-        <div style={{ marginTop: 'var(--spacing-xl)' }}>
-          <div
-            style={{
-              fontSize: 'var(--font-size-sm)',
-              fontWeight: 'var(--font-weight-semibold)',
-              color: 'var(--text)',
-              marginBottom: 'var(--spacing-sm)',
-            }}
-          >
+        <div className="operational-hourly-section">
+          <div className="operational-section-title">
             {t('analytics.salesByHour')}
           </div>
-          <div
-            className="card cardCompact"
-            style={{
-              background: 'var(--brand-light)',
-              overflowX: 'auto',
-            }}
-          >
-            <div className="grid grid-cols-12 gap-2" style={{ minWidth: 720 }}>
+          <div className="card cardCompact operational-hourly-card">
+            <div className="grid grid-cols-12 gap-2 operational-hourly-grid">
               {data.hourly_breakdown.map((hourData: any) => (
-                <div key={hourData.hour} style={{ textAlign: 'center' }}>
-                  <div
-                    style={{
-                      fontSize: 'var(--font-size-xs)',
-                      color: 'var(--muted)',
-                    }}
-                  >
+                <div key={hourData.hour} className="text-center">
+                  <div className="operational-hour-label">
                     {hourData.hour}:00
                   </div>
-                  <div
-                    style={{
-                      fontSize: 'var(--font-size-sm)',
-                      fontWeight: 'var(--font-weight-bold)',
-                      color: 'var(--text)',
-                    }}
-                  >
+                  <div className="operational-hour-value">
                     {hourData.transactions}
                   </div>
                 </div>
