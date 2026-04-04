@@ -4497,6 +4497,278 @@ textarea {
   margin-top: var(--spacing-xs) !important;
 }
 
+/* Integration Settings - replaces inline styles */
+.integration-section {
+  display: grid !important;
+  gap: var(--spacing-md) !important;
+}
+
+.integration-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: var(--spacing-sm) !important;
+}
+
+.integration-icon {
+  font-size: 24px !important;
+}
+
+.integration-title {
+  font-weight: 800 !important;
+  font-size: var(--font-size-md) !important;
+}
+
+.integration-subtitle {
+  font-size: var(--font-size-xs) !important;
+  color: var(--muted) !important;
+}
+
+.integration-toggle {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  cursor: pointer !important;
+}
+
+.integration-form-row {
+  display: flex !important;
+  gap: var(--spacing-sm) !important;
+  align-items: center !important;
+}
+
+.integration-form-row-wrap {
+  display: flex !important;
+  gap: var(--spacing-sm) !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+}
+
+.integration-label {
+  font-size: var(--font-size-xs) !important;
+  font-weight: 600 !important;
+  margin-bottom: 4px !important;
+}
+
+.integration-input-full {
+  width: 100% !important;
+}
+
+.integration-status-success {
+  font-size: var(--font-size-xs) !important;
+  color: var(--success) !important;
+}
+
+.integration-status-error {
+  font-size: var(--font-size-xs) !important;
+  color: var(--danger) !important;
+}
+
+/* Menu Configurator */
+.menu-config-panel {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: var(--spacing-md) !important;
+  display: grid !important;
+  gap: var(--spacing-md) !important;
+}
+
+.menu-config-grid {
+  display: grid !important;
+  grid-template-columns: 280px 1fr !important;
+  gap: var(--spacing-md) !important;
+}
+
+@media (max-width: 1024px) {
+  .menu-config-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.menu-config-sidebar {
+  display: grid !important;
+  gap: var(--spacing-sm) !important;
+  align-content: start !important;
+}
+
+.menu-item-panel {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: var(--spacing-sm) !important;
+  display: grid !important;
+  gap: var(--spacing-xs) !important;
+}
+
+.menu-item-name {
+  font-weight: 700 !important;
+}
+
+.menu-item-desc {
+  font-size: var(--font-size-xs) !important;
+  color: var(--muted) !important;
+}
+
+.menu-checkbox-label {
+  display: flex !important;
+  gap: var(--spacing-xs) !important;
+  align-items: center !important;
+  cursor: pointer !important;
+}
+
+/* Media Upload */
+.media-upload-zone {
+  border: 1px dashed var(--border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: var(--spacing-md) !important;
+  display: grid !important;
+  gap: var(--spacing-sm) !important;
+}
+
+.media-upload-header {
+  font-size: var(--font-size-xs) !important;
+  font-weight: 600 !important;
+}
+
+.media-upload-hint {
+  font-size: var(--font-size-xs) !important;
+  color: var(--muted) !important;
+}
+
+.media-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: var(--spacing-sm) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: var(--spacing-xs) !important;
+}
+
+.media-item-url {
+  font-size: var(--font-size-xs) !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.media-empty {
+  font-size: var(--font-size-xs) !important;
+  color: var(--muted) !important;
+}
+
+/* City Entries */
+.city-section {
+  display: grid !important;
+  gap: var(--spacing-md) !important;
+}
+
+.city-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+.city-header-title {
+  font-size: var(--font-size-xs) !important;
+  font-weight: 700 !important;
+}
+
+.city-entry {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: var(--spacing-sm) !important;
+  display: grid !important;
+  gap: var(--spacing-xs) !important;
+}
+
+.city-entry-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: var(--spacing-sm) !important;
+}
+
+.city-media-zone {
+  border: 1px dashed var(--border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: var(--spacing-sm) !important;
+  display: grid !important;
+  gap: var(--spacing-xs) !important;
+}
+
+.city-media-row {
+  display: flex !important;
+  gap: var(--spacing-sm) !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+}
+
+.city-input-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: var(--spacing-sm) !important;
+}
+
+.city-empty {
+  font-size: var(--font-size-xs) !important;
+  color: var(--muted) !important;
+}
+
+/* Two column form */
+.form-two-col {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: var(--spacing-sm) !important;
+}
+
+/* Info Banner */
+.info-banner {
+  background-color: var(--info-bg) !important;
+  padding: var(--spacing-sm) !important;
+  margin-bottom: var(--spacing-sm) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+.info-banner-close {
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-size: var(--font-size-lg) !important;
+  color: var(--muted) !important;
+}
+
+/* Variables hint */
+.vars-hint {
+  font-size: 11px !important;
+  color: var(--muted) !important;
+  margin-top: 4px !important;
+}
+
+/* Instructions */
+.instructions-title {
+  font-weight: 800 !important;
+  margin-bottom: var(--spacing-sm) !important;
+}
+
+.instructions-body {
+  font-size: var(--font-size-sm) !important;
+  color: var(--muted) !important;
+}
+
+.instructions-section {
+  margin-bottom: var(--spacing-md) !important;
+}
+
+.instructions-list {
+  margin-top: 5px !important;
+  padding-left: 20px !important;
+}
+
+/* Button row */
+.btn-row {
+  display: flex !important;
+  gap: var(--spacing-sm) !important;
+}
+
 /* Responsive design */
 @media (max-width: 1024px) {
   .customers-main-content {

@@ -604,14 +604,12 @@ export function IntegrationSettings() {
   return (
     <div className="grid">
       {info && (
-        <div
-          className="card"
-          style={{ backgroundColor: 'var(--info-bg)', padding: '10px', marginBottom: 10 }}
-        >
-          {info}
+        <div className="card info-banner">
+          <span>{info}</span>
           <button
             onClick={() => setInfo(null)}
-            style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}
+            className="info-banner-close"
+            aria-label="Close"
           >
             ×
           </button>
@@ -621,17 +619,17 @@ export function IntegrationSettings() {
       {/* Telegram Section */}
       <div className="card cardWide">
         <div className="row" style={{ marginBottom: 15 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 24 }}>✈️</span>
+          <div className="integration-header">
+            <span className="integration-icon">✈️</span>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 16 }}>Telegram</div>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+              <div className="integration-title">Telegram</div>
+              <div className="integration-subtitle">
                 {telegramStatus?.enabled ? 'Подключено' : 'Не подключено'}
               </div>
             </div>
           </div>
           <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
+            <label className="integration-toggle">
               <input
                 type="checkbox"
                 checked={telegramEnabled}
@@ -642,19 +640,18 @@ export function IntegrationSettings() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gap: 10 }}>
+        <div className="integration-section">
           <div>
-            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Bot Token</div>
+            <div className="integration-label">Bot Token</div>
             <input
-              className="input"
+              className="input integration-input-full"
               value={telegramToken}
               onChange={(e) => setTelegramToken(e.target.value)}
               placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
-              style={{ width: '100%' }}
             />
           </div>
 
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div className="integration-form-row">
             <button
               className="btn"
               onClick={validateTelegram}
@@ -665,7 +662,7 @@ export function IntegrationSettings() {
             {getStatusBadge(telegramValidateStatus)}
             {telegramValidationResult && (
               <span
-                style={{ fontSize: 12, color: telegramValidationResult.valid ? 'green' : 'red' }}
+                className={telegramValidationResult.valid ? 'integration-status-success' : 'integration-status-error'}
               >
                 {telegramValidationResult.valid
                   ? `@${telegramValidationResult.bot_username} (ID: ${telegramValidationResult.bot_id})`
@@ -675,37 +672,25 @@ export function IntegrationSettings() {
           </div>
 
           <div>
-            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-              Support Chat / Channel ID
-            </div>
+            <div className="integration-label">Support Chat / Channel ID</div>
             <input
-              className="input"
+              className="input integration-input-full"
               value={telegramSupportChatId}
               onChange={(e) => setTelegramSupportChatId(e.target.value)}
               placeholder="-1001234567890"
-              style={{ width: '100%' }}
             />
           </div>
 
-          <div
-            style={{
-              border: '1px solid var(--border)',
-              borderRadius: 10,
-              padding: 12,
-              display: 'grid',
-              gap: 12,
-            }}
-          >
+          <div className="menu-config-panel">
             <div style={{ fontSize: 13, fontWeight: 700 }}>Конфигуратор меню Telegram</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 12 }}>
-              <div style={{ display: 'grid', gap: 10, alignContent: 'start' }}>
+            <div className="menu-config-grid">
+              <div className="menu-config-sidebar">
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Раздел меню</div>
+                  <div className="integration-label">Раздел меню</div>
                   <select
-                    className="input"
+                    className="input integration-input-full"
                     value={selectedTelegramMenuItemId}
                     onChange={(e) => setSelectedTelegramMenuItemId(e.target.value)}
-                    style={{ width: '100%' }}
                   >
                     {telegramMenuItems.map((item) => (
                       <option key={item.id} value={item.id}>
@@ -715,24 +700,16 @@ export function IntegrationSettings() {
                   </select>
                 </div>
                 {selectedTelegramMenuItem && (
-                  <div
-                    style={{
-                      border: '1px solid var(--border)',
-                      borderRadius: 8,
-                      padding: 10,
-                      display: 'grid',
-                      gap: 8,
-                    }}
-                  >
-                    <div style={{ fontWeight: 700 }}>{selectedTelegramMenuItem.label}</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                  <div className="menu-item-panel">
+                    <div className="menu-item-name">{selectedTelegramMenuItem.label}</div>
+                    <div className="menu-item-desc">
                       {
                         TELEGRAM_MENU_DEFINITIONS.find(
                           (definition) => definition.id === selectedTelegramMenuItem.id
                         )?.description
                       }
                     </div>
-                    <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <label className="menu-checkbox-label">
                       <input
                         type="checkbox"
                         checked={selectedTelegramMenuItem.use_text}
@@ -746,7 +723,7 @@ export function IntegrationSettings() {
                       />
                       Текст
                     </label>
-                    <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <label className="menu-checkbox-label">
                       <input
                         type="checkbox"
                         checked={selectedTelegramMenuItem.use_media}
@@ -760,7 +737,7 @@ export function IntegrationSettings() {
                       />
                       Медиа
                     </label>
-                    <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <label className="menu-checkbox-label">
                       <input
                         type="checkbox"
                         checked={selectedTelegramMenuItem.use_button}
@@ -774,7 +751,7 @@ export function IntegrationSettings() {
                       />
                       Кнопка
                     </label>
-                    <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <label className="menu-checkbox-label">
                       <input
                         type="checkbox"
                         checked={selectedTelegramMenuItem.use_city_list}
@@ -788,7 +765,7 @@ export function IntegrationSettings() {
                       />
                       Список по городам
                     </label>
-                    <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <label className="menu-checkbox-label">
                       <input
                         type="checkbox"
                         checked={selectedTelegramMenuItem.use_support_forward}
@@ -807,20 +784,12 @@ export function IntegrationSettings() {
               </div>
 
               {selectedTelegramMenuItem && (
-                <div
-                  style={{
-                    border: '1px solid var(--border)',
-                    borderRadius: 8,
-                    padding: 10,
-                    display: 'grid',
-                    gap: 10,
-                  }}
-                >
+                <div className="menu-item-panel">
                   {selectedTelegramMenuItem.use_text && (
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Текст</div>
+                      <div className="integration-label">Текст</div>
                       <textarea
-                        className="input"
+                        className="input integration-input-full"
                         value={selectedTelegramMenuItem.text}
                         onChange={(e) =>
                           updateTelegramMenuItem(
@@ -831,7 +800,6 @@ export function IntegrationSettings() {
                         }
                         placeholder="Введите текст сообщения..."
                         rows={4}
-                        style={{ width: '100%' }}
                       />
                       {(() => {
                         const definition = TELEGRAM_MENU_DEFINITIONS.find(
@@ -840,7 +808,7 @@ export function IntegrationSettings() {
                         const vars = definition?.availableVars || [];
                         if (vars.length === 0) return null;
                         return (
-                          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+                          <div className="vars-hint">
                             Доступные переменные: {vars.join(', ')}
                           </div>
                         );
@@ -850,25 +818,17 @@ export function IntegrationSettings() {
 
                   {selectedTelegramMenuItem.use_media && (
                     <div
+                      className="media-upload-zone"
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => void handleTelegramDrop(selectedTelegramMenuItem.id, e)}
-                      style={{
-                        border: '1px dashed var(--border)',
-                        borderRadius: 8,
-                        padding: 12,
-                        display: 'grid',
-                        gap: 8,
-                      }}
                     >
                       <div>
-                        <div style={{ fontSize: 12, fontWeight: 600 }}>Медиа</div>
-                        <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                        <div className="media-upload-header">Медиа</div>
+                        <div className="media-upload-hint">
                           Перетащите файлы сюда или выберите их вручную
                         </div>
                       </div>
-                      <div
-                        style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}
-                      >
+                      <div className="integration-form-row-wrap">
                         <input
                           id={`telegram-media-${selectedTelegramMenuItem.id}`}
                           type="file"
@@ -881,30 +841,11 @@ export function IntegrationSettings() {
                           telegramUploadStatus[selectedTelegramMenuItem.id] || 'idle'
                         )}
                       </div>
-                      <div style={{ display: 'grid', gap: 6 }}>
+                      <div className="integration-section">
                         {selectedTelegramMenuItem.media_urls.length ? (
                           selectedTelegramMenuItem.media_urls.map((mediaUrl) => (
-                            <div
-                              key={mediaUrl}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                gap: 10,
-                                border: '1px solid var(--border)',
-                                borderRadius: 6,
-                                padding: 8,
-                              }}
-                            >
-                              <div
-                                style={{
-                                  fontSize: 12,
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                }}
-                              >
-                                {mediaUrl}
-                              </div>
+                            <div key={mediaUrl} className="media-item">
+                              <div className="media-item-url">{mediaUrl}</div>
                               <button
                                 className="btn"
                                 onClick={() =>
@@ -916,22 +857,18 @@ export function IntegrationSettings() {
                             </div>
                           ))
                         ) : (
-                          <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                            Медиа ещё не загружены
-                          </div>
+                          <div className="media-empty">Медиа ещё не загружены</div>
                         )}
                       </div>
                     </div>
                   )}
 
                   {selectedTelegramMenuItem.use_button && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div className="form-two-col">
                       <div>
-                        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                          Текст кнопки
-                        </div>
+                        <div className="integration-label">Текст кнопки</div>
                         <input
-                          className="input"
+                          className="input integration-input-full"
                           value={selectedTelegramMenuItem.button_text}
                           onChange={(e) =>
                             updateTelegramMenuItem(
@@ -941,15 +878,12 @@ export function IntegrationSettings() {
                             )
                           }
                           placeholder="Открыть каталог"
-                          style={{ width: '100%' }}
                         />
                       </div>
                       <div>
-                        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-                          URL кнопки
-                        </div>
+                        <div className="integration-label">URL кнопки</div>
                         <input
-                          className="input"
+                          className="input integration-input-full"
                           value={selectedTelegramMenuItem.button_url}
                           onChange={(e) =>
                             updateTelegramMenuItem(
@@ -959,22 +893,15 @@ export function IntegrationSettings() {
                             )
                           }
                           placeholder="https://..."
-                          style={{ width: '100%' }}
                         />
                       </div>
                     </div>
                   )}
 
                   {selectedTelegramMenuItem.use_city_list && (
-                    <div style={{ display: 'grid', gap: 10 }}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <div style={{ fontSize: 12, fontWeight: 700 }}>Города</div>
+                    <div className="city-section">
+                      <div className="city-header">
+                        <div className="city-header-title">Города</div>
                         <button
                           className="btn"
                           onClick={() => addTelegramCityEntry(selectedTelegramMenuItem.id)}
@@ -986,25 +913,10 @@ export function IntegrationSettings() {
                         selectedTelegramMenuItem.city_entries.map((entry, index) => {
                           const uploadKey = `${selectedTelegramMenuItem.id}:city:${index}`;
                           return (
-                            <div
-                              key={`${selectedTelegramMenuItem.id}-${index}`}
-                              style={{
-                                border: '1px solid var(--border)',
-                                borderRadius: 8,
-                                padding: 10,
-                                display: 'grid',
-                                gap: 8,
-                              }}
-                            >
-                              <div
-                                style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  gap: 10,
-                                }}
-                              >
+                            <div key={`${selectedTelegramMenuItem.id}-${index}`} className="city-entry">
+                              <div className="city-entry-row">
                                 <input
-                                  className="input"
+                                  className="input integration-input-full"
                                   value={entry.city}
                                   onChange={(e) =>
                                     updateTelegramCityEntry(
@@ -1015,7 +927,6 @@ export function IntegrationSettings() {
                                     )
                                   }
                                   placeholder="Москва"
-                                  style={{ width: '100%' }}
                                 />
                                 <button
                                   className="btn"
@@ -1027,7 +938,7 @@ export function IntegrationSettings() {
                                 </button>
                               </div>
                               <textarea
-                                className="input"
+                                className="input integration-input-full"
                                 value={entry.text}
                                 onChange={(e) =>
                                   updateTelegramCityEntry(
@@ -1039,29 +950,15 @@ export function IntegrationSettings() {
                                 }
                                 placeholder="Текст для выбранного города"
                                 rows={3}
-                                style={{ width: '100%' }}
                               />
                               <div
+                                className="city-media-zone"
                                 onDragOver={(e) => e.preventDefault()}
                                 onDrop={(e) =>
                                   void handleTelegramCityDrop(selectedTelegramMenuItem.id, index, e)
                                 }
-                                style={{
-                                  border: '1px dashed var(--border)',
-                                  borderRadius: 8,
-                                  padding: 10,
-                                  display: 'grid',
-                                  gap: 8,
-                                }}
                               >
-                                <div
-                                  style={{
-                                    display: 'flex',
-                                    gap: 10,
-                                    alignItems: 'center',
-                                    flexWrap: 'wrap',
-                                  }}
-                                >
+                                <div className="city-media-row">
                                   <input
                                     type="file"
                                     multiple
@@ -1077,24 +974,8 @@ export function IntegrationSettings() {
                                 </div>
                                 {entry.media_urls.length ? (
                                   entry.media_urls.map((mediaUrl) => (
-                                    <div
-                                      key={mediaUrl}
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        gap: 10,
-                                      }}
-                                    >
-                                      <div
-                                        style={{
-                                          fontSize: 12,
-                                          overflow: 'hidden',
-                                          textOverflow: 'ellipsis',
-                                        }}
-                                      >
-                                        {mediaUrl}
-                                      </div>
+                                    <div key={mediaUrl} className="media-item">
+                                      <div className="media-item-url">{mediaUrl}</div>
                                       <button
                                         className="btn"
                                         onClick={() =>
@@ -1110,16 +991,12 @@ export function IntegrationSettings() {
                                     </div>
                                   ))
                                 ) : (
-                                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                                    Нет медиа для города
-                                  </div>
+                                  <div className="city-empty">Нет медиа для города</div>
                                 )}
                               </div>
-                              <div
-                                style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}
-                              >
+                              <div className="city-input-grid">
                                 <input
-                                  className="input"
+                                  className="input integration-input-full"
                                   value={entry.button_text}
                                   onChange={(e) =>
                                     updateTelegramCityEntry(
@@ -1130,10 +1007,9 @@ export function IntegrationSettings() {
                                     )
                                   }
                                   placeholder="Текст кнопки"
-                                  style={{ width: '100%' }}
                                 />
                                 <input
-                                  className="input"
+                                  className="input integration-input-full"
                                   value={entry.button_url}
                                   onChange={(e) =>
                                     updateTelegramCityEntry(
@@ -1144,14 +1020,13 @@ export function IntegrationSettings() {
                                     )
                                   }
                                   placeholder="https://..."
-                                  style={{ width: '100%' }}
                                 />
                               </div>
                             </div>
                           );
                         })
                       ) : (
-                        <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                        <div className="city-empty">
                           Добавьте города для раздела «Меню и адреса»
                         </div>
                       )}
@@ -1162,7 +1037,7 @@ export function IntegrationSettings() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div className="btn-row">
             <button
               className="btn btnPrimary"
               onClick={saveTelegram}
@@ -1181,18 +1056,18 @@ export function IntegrationSettings() {
       {/* VK Section */}
       <div className="card cardWide">
         <div className="row" style={{ marginBottom: 15 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 24 }}>📱</span>
+          <div className="integration-header">
+            <span className="integration-icon">📱</span>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 16 }}>VK (VKontakte)</div>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+              <div className="integration-title">VK (VKontakte)</div>
+              <div className="integration-subtitle">
                 {vkStatus?.enabled ? 'Подключено' : 'Не подключено'}
                 {vkStatus?.group_id && ` • Группа ID: ${vkStatus.group_id}`}
               </div>
             </div>
           </div>
           <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
+            <label className="integration-toggle">
               <input
                 type="checkbox"
                 checked={vkEnabled}
@@ -1203,43 +1078,40 @@ export function IntegrationSettings() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gap: 10 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div className="integration-section">
+          <div className="form-two-col">
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Group ID</div>
+              <div className="integration-label">Group ID</div>
               <input
-                className="input"
+                className="input integration-input-full"
                 value={vkGroupId}
                 onChange={(e) => setVkGroupId(e.target.value)}
                 placeholder="123456789"
                 type="number"
-                style={{ width: '100%' }}
               />
             </div>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>API Version</div>
+              <div className="integration-label">API Version</div>
               <input
-                className="input"
+                className="input integration-input-full"
                 value={vkApiVersion}
                 onChange={(e) => setVkApiVersion(e.target.value)}
                 placeholder="5.131"
-                style={{ width: '100%' }}
               />
             </div>
           </div>
 
           <div>
-            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Access Token</div>
+            <div className="integration-label">Access Token</div>
             <input
-              className="input"
+              className="input integration-input-full"
               value={vkToken}
               onChange={(e) => setVkToken(e.target.value)}
               placeholder="vk1.a.XXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-              style={{ width: '100%' }}
             />
           </div>
 
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div className="integration-form-row">
             <button
               className="btn"
               onClick={validateVk}
@@ -1249,7 +1121,7 @@ export function IntegrationSettings() {
             </button>
             {getStatusBadge(vkValidateStatus)}
             {vkValidationResult && (
-              <span style={{ fontSize: 12, color: vkValidationResult.valid ? 'green' : 'red' }}>
+              <span className={vkValidationResult.valid ? 'integration-status-success' : 'integration-status-error'}>
                 {vkValidationResult.valid
                   ? `${vkValidationResult.group_name} (ID: ${vkValidationResult.group_id})`
                   : vkValidationResult.error || 'Ошибка'}
@@ -1257,7 +1129,7 @@ export function IntegrationSettings() {
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div className="btn-row">
             <button
               className="btn btnPrimary"
               onClick={saveVk}
@@ -1275,12 +1147,12 @@ export function IntegrationSettings() {
 
       {/* Instructions */}
       <div className="card cardWide">
-        <div style={{ fontWeight: 800, marginBottom: 10 }}>Инструкции по настройке</div>
+        <div className="instructions-title">Инструкции по настройке</div>
 
-        <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-          <div style={{ marginBottom: 15 }}>
+        <div className="instructions-body">
+          <div className="instructions-section">
             <strong>Telegram:</strong>
-            <ol style={{ marginTop: 5, paddingLeft: 20 }}>
+            <ol className="instructions-list">
               <li>Создайте бота через @BotFather в Telegram</li>
               <li>Скопируйте токен бота (формат: 1234567890:ABC...)</li>
               <li>Вставьте токен в поле выше и нажмите "Проверить токен"</li>
@@ -1291,7 +1163,7 @@ export function IntegrationSettings() {
 
           <div>
             <strong>VK (VKontakte):</strong>
-            <ol style={{ marginTop: 5, paddingLeft: 20 }}>
+            <ol className="instructions-list">
               <li>Создайте сообщество (группу) в VK</li>
               <li>Перейдите в "Управление" → "Работа с API"</li>
               <li>Создайте ключ доступа с правами "messages"</li>
