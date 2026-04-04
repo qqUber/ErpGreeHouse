@@ -3,12 +3,12 @@ import { TFunction } from 'i18next';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Api,
-  ChartData,
-  CustomerSegmentation,
-  DashboardOverview,
-  LoyaltyDetailedReport,
-  LoyaltyReportOverview,
+    Api,
+    ChartData,
+    CustomerSegmentation,
+    DashboardOverview,
+    LoyaltyDetailedReport,
+    LoyaltyReportOverview,
 } from './api';
 
 // Factory function to create common chart configuration
@@ -147,33 +147,18 @@ export function AnalyticsView() {
   if (loading && !overview && !salesChart) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div style={{ color: 'var(--muted)' }}>{t('analytics.collecting')}</div>
+        <div className="analytics-loading">{t('analytics.collecting')}</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div
-        style={{
-          padding: 16,
-          background: 'var(--error-light)',
-          border: '1px solid var(--error)',
-          borderRadius: 'var(--radius-md)',
-        }}
-      >
-        <div style={{ color: 'var(--error)' }}>{error}</div>
+      <div className="analytics-error-box">
+        <div className="analytics-error-text">{error}</div>
         <button
           onClick={loadAnalyticsData}
-          style={{
-            marginTop: 8,
-            fontSize: 14,
-            color: 'var(--error)',
-            textDecoration: 'underline',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-          }}
+          className="analytics-error-btn"
           data-testid="analytics_retry_button"
         >
           {t('common.refresh')}
@@ -183,33 +168,23 @@ export function AnalyticsView() {
   }
 
   return (
-    <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div className="analytics-container">
       {/* Header */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="analytics-header">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>
+          <h1 className="analytics-title">
             {t('analytics.dashboardTitle')}
           </h1>
-          <p style={{ color: 'var(--muted)', marginTop: 4 }}>{t('analytics.dashboardDesc')}</p>
+          <p className="analytics-desc">{t('analytics.dashboardDesc')}</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <label
-            style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)', whiteSpace: 'nowrap' }}
-          >
+        <div className="analytics-controls">
+          <label className="analytics-label">
             {t('analytics.timeRange')}:
           </label>
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
-            style={{
-              padding: '8px 16px',
-              border: '1px solid var(--border)',
-              borderRadius: 6,
-              background: 'var(--panel)',
-              color: 'var(--text)',
-              fontSize: 14,
-              minWidth: 160,
-            }}
+            className="analytics-select"
           >
             <option value="24h">{t('analytics.timeFilter.24hours')}</option>
             <option value="7d">{t('analytics.timeFilter.7days')}</option>
@@ -218,53 +193,26 @@ export function AnalyticsView() {
             <option value="1y">{t('analytics.timeFilter.1year')}</option>
           </select>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)' }}>
+        <div className="analytics-export-row">
+          <span className="analytics-export-label">
             {t('analytics.export')}:
           </span>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="analytics-btn-group">
             <button
               onClick={() => handleExport('loyalty')}
-              style={{
-                padding: '8px 16px',
-                background: 'var(--primary)',
-                color: 'white',
-                border: 'none',
-                borderRadius: 6,
-                cursor: 'pointer',
-                fontSize: 14,
-                fontWeight: 500,
-              }}
+              className="analytics-btn-primary"
             >
               {t('analytics.exportLoyalty')}
             </button>
             <button
               onClick={() => handleExport('sales')}
-              style={{
-                padding: '8px 16px',
-                background: 'var(--good)',
-                color: 'white',
-                border: 'none',
-                borderRadius: 6,
-                cursor: 'pointer',
-                fontSize: 14,
-                fontWeight: 500,
-              }}
+              className="analytics-btn-success"
             >
               {t('analytics.exportSales')}
             </button>
             <button
               onClick={() => handleExport('customers')}
-              style={{
-                padding: '8px 16px',
-                background: 'var(--info)',
-                color: 'white',
-                border: 'none',
-                borderRadius: 6,
-                cursor: 'pointer',
-                fontSize: 14,
-                fontWeight: 500,
-              }}
+              className="analytics-btn-info"
             >
               {t('analytics.exportCustomers')}
             </button>
@@ -273,28 +221,14 @@ export function AnalyticsView() {
       </div>
 
       {exportError ? (
-        <div
-          style={{
-            borderRadius: 8,
-            border: '1px solid var(--error)',
-            background: 'var(--error-light)',
-            padding: 12,
-            color: 'var(--error)',
-          }}
-        >
+        <div className="analytics-export-error">
           {exportError}
         </div>
       ) : null}
 
       {/* Key Metrics Overview */}
       {overview && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: 24,
-          }}
-        >
+        <div className="analytics-metrics-grid">
           {[
             {
               icon: '👥',
@@ -321,28 +255,17 @@ export function AnalyticsView() {
               color: 'var(--warn)',
             },
           ].map((metric, i) => (
-            <div key={i} className="card dashboard-widget-2026" style={{ padding: 24 }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div key={i} className="card dashboard-widget-2026 analytics-metric-card">
+              <div className="analytics-metric-row">
                 <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    background: metric.color,
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+                  className="analytics-metric-icon"
+                  style={{ background: metric.color }}
                 >
-                  <span style={{ color: 'white', fontWeight: 'bold' }}>{metric.icon}</span>
+                  <span>{metric.icon}</span>
                 </div>
-                <div style={{ marginLeft: 16 }}>
-                  <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>
-                    {metric.label}
-                  </p>
-                  <p style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)' }}>
-                    {metric.value}
-                  </p>
+                <div className="analytics-metric-content">
+                  <p className="analytics-metric-label">{metric.label}</p>
+                  <p className="analytics-metric-value">{metric.value}</p>
                 </div>
               </div>
             </div>
@@ -351,37 +274,27 @@ export function AnalyticsView() {
       )}
 
       {/* Charts Section */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-          gap: 24,
-        }}
-      >
+      <div className="analytics-charts-grid">
         {salesChart && (
-          <div className="card dashboard-widget-2026" style={{ padding: 24 }}>
-            <h3
-              style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text)', marginBottom: 16 }}
-            >
+          <div className="card dashboard-widget-2026 analytics-chart-card">
+            <h3 className="analytics-chart-title">
               {t('analytics.salesDynamics')}
             </h3>
             <ReactECharts
               option={getSalesChartOption(salesChart.data, t)}
-              style={{ height: '300px' }}
+              className="analytics-chart"
               opts={{ renderer: 'svg' }}
             />
           </div>
         )}
         {customerChart && (
-          <div className="card dashboard-widget-2026" style={{ padding: 24 }}>
-            <h3
-              style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--text)', marginBottom: 16 }}
-            >
+          <div className="card dashboard-widget-2026 analytics-chart-card">
+            <h3 className="analytics-chart-title">
               {t('analytics.customerDynamics')}
             </h3>
             <ReactECharts
               option={getCustomersChartOption(customerChart.data, t)}
-              style={{ height: '300px' }}
+              className="analytics-chart"
               opts={{ renderer: 'svg' }}
             />
           </div>
@@ -389,48 +302,42 @@ export function AnalyticsView() {
       </div>
 
       {/* Loyalty Section */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-          gap: 24,
-        }}
-      >
+      <div className="analytics-loyalty-grid">
         {loyaltyOverview && (
-          <div className="card dashboard-widget-2026" style={{ padding: 24 }}>
-            <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, color: 'var(--text)' }}>
+          <div className="card dashboard-widget-2026 analytics-loyalty-card">
+            <h3 className="analytics-loyalty-title">
               {t('analytics.loyalty')}
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="analytics-stats-grid">
               <div>
-                <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)' }}>
+                <p className="analytics-stat-label">
                   {t('analytics.pointsEarned')}
                 </p>
-                <p style={{ fontSize: 20, fontWeight: 'bold', color: 'var(--text)' }}>
+                <p className="analytics-stat-value">
                   {loyaltyOverview.metrics.points_earned}
                 </p>
               </div>
               <div>
-                <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)' }}>
+                <p className="analytics-stat-label">
                   {t('analytics.pointsRedeemed')}
                 </p>
-                <p style={{ fontSize: 20, fontWeight: 'bold', color: 'var(--text)' }}>
+                <p className="analytics-stat-value">
                   {loyaltyOverview.metrics.points_redeemed}
                 </p>
               </div>
               <div>
-                <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)' }}>
+                <p className="analytics-stat-label">
                   {t('analytics.redemptionRate')}
                 </p>
-                <p style={{ fontSize: 20, fontWeight: 'bold', color: 'var(--text)' }}>
+                <p className="analytics-stat-value">
                   {loyaltyOverview.metrics.redemption_rate.toFixed(1)}%
                 </p>
               </div>
               <div>
-                <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)' }}>
+                <p className="analytics-stat-label">
                   {t('analytics.avgPointsPerTransaction')}
                 </p>
-                <p style={{ fontSize: 20, fontWeight: 'bold', color: 'var(--text)' }}>
+                <p className="analytics-stat-value">
                   {loyaltyOverview.metrics.avg_points_per_transaction.toFixed(1)}
                 </p>
               </div>
@@ -438,13 +345,13 @@ export function AnalyticsView() {
           </div>
         )}
         {loyaltyChart && (
-          <div className="card dashboard-widget-2026" style={{ padding: 24 }}>
-            <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, color: 'var(--text)' }}>
+          <div className="card dashboard-widget-2026 analytics-loyalty-card">
+            <h3 className="analytics-loyalty-title">
               {t('analytics.loyaltyByDay')}
             </h3>
             <ReactECharts
               option={getLoyaltyChartOption(loyaltyChart.data, t)}
-              style={{ height: '300px' }}
+              className="analytics-chart"
               opts={{ renderer: 'svg' }}
             />
           </div>
@@ -454,36 +361,19 @@ export function AnalyticsView() {
       {/* Customer Segmentation */}
       {segmentation && (
         <div
-          className="card dashboard-widget-2026"
-          style={{ padding: 24, maxHeight: 400, overflow: 'auto' }}
+          className="card dashboard-widget-2026 analytics-segmentation-card"
         >
-          <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, color: 'var(--text)' }}>
+          <h3 className="analytics-segmentation-title">
             {t('analytics.customerSegmentation')}
           </h3>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
-              gap: 16,
-              minWidth: 600,
-            }}
-          >
+          <div className="analytics-segments-grid">
             {Object.entries(segmentation.segments).map(([segment, data]) => (
-              <div key={segment} className="card" style={{ padding: 16 }}>
-                <p
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: 'var(--muted)',
-                    textTransform: 'capitalize',
-                  }}
-                >
+              <div key={segment} className="card analytics-segment-card">
+                <p className="analytics-segment-name">
                   {getSegmentDisplayName(segment, t)}
                 </p>
-                <p style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--text)', marginTop: 4 }}>
-                  {data.count}
-                </p>
-                <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
+                <p className="analytics-segment-count">{data.count}</p>
+                <p className="analytics-segment-percent">
                   {((data.count / segmentation.total_customers) * 100).toFixed(1)}%
                 </p>
               </div>
@@ -494,14 +384,14 @@ export function AnalyticsView() {
 
       {/* Loyalty Details Table */}
       {loyaltyDetails && loyaltyDetails.customer_data.length > 0 && (
-        <div className="card dashboard-widget-2026" style={{ padding: 24 }}>
-          <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, color: 'var(--text)' }}>
+        <div className="card dashboard-widget-2026 analytics-loyalty-card">
+          <h3 className="analytics-loyalty-title">
             {t('analytics.customerDetails')}
           </h3>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="analytics-table-container">
+            <table className="analytics-table">
               <thead>
-                <tr style={{ background: 'var(--neutral-100)' }}>
+                <tr className="analytics-table-header">
                   {[
                     t('analytics.customer'),
                     t('analytics.phone'),
@@ -511,18 +401,7 @@ export function AnalyticsView() {
                     t('analytics.redeemed'),
                     t('analytics.lastTransaction'),
                   ].map((h, i) => (
-                    <th
-                      key={i}
-                      style={{
-                        padding: '12px 24px',
-                        textAlign: 'left',
-                        fontSize: 12,
-                        fontWeight: 500,
-                        color: 'var(--muted)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                      }}
-                    >
+                    <th key={i}>
                       {h}
                     </th>
                   ))}
@@ -532,71 +411,29 @@ export function AnalyticsView() {
                 {loyaltyDetails.customer_data.slice(0, 10).map((customer) => (
                   <tr
                     key={customer.customer_id}
-                    style={{ borderBottom: '1px solid var(--border)' }}
+                    className="analytics-table-row"
                   >
-                    <td style={{ padding: '16px 24px', whiteSpace: 'nowrap' }}>
-                      <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
+                    <td>
+                      <div className="analytics-table-customer">
                         {customer.full_name}
                       </div>
                     </td>
-                    <td
-                      style={{
-                        padding: '16px 24px',
-                        whiteSpace: 'nowrap',
-                        fontSize: 14,
-                        color: 'var(--text)',
-                      }}
-                    >
+                    <td>
                       {customer.phone}
                     </td>
-                    <td
-                      style={{
-                        padding: '16px 24px',
-                        whiteSpace: 'nowrap',
-                        fontSize: 14,
-                        color: 'var(--text)',
-                      }}
-                    >
+                    <td>
                       {customer.transaction_count}
                     </td>
-                    <td
-                      style={{
-                        padding: '16px 24px',
-                        whiteSpace: 'nowrap',
-                        fontSize: 14,
-                        color: 'var(--text)',
-                      }}
-                    >
+                    <td>
                       {new Intl.NumberFormat('ru-RU').format(customer.total_spent)} ₽
                     </td>
-                    <td
-                      style={{
-                        padding: '16px 24px',
-                        whiteSpace: 'nowrap',
-                        fontSize: 14,
-                        color: 'var(--text)',
-                      }}
-                    >
+                    <td>
                       {customer.points_earned}
                     </td>
-                    <td
-                      style={{
-                        padding: '16px 24px',
-                        whiteSpace: 'nowrap',
-                        fontSize: 14,
-                        color: 'var(--text)',
-                      }}
-                    >
+                    <td>
                       {customer.points_redeemed}
                     </td>
-                    <td
-                      style={{
-                        padding: '16px 24px',
-                        whiteSpace: 'nowrap',
-                        fontSize: 14,
-                        color: 'var(--text)',
-                      }}
-                    >
+                    <td>
                       {new Date(customer.last_transaction).toLocaleDateString('ru-RU')}
                     </td>
                   </tr>
@@ -605,7 +442,7 @@ export function AnalyticsView() {
             </table>
           </div>
           {loyaltyDetails.customer_data.length > 10 && (
-            <div style={{ marginTop: 16, fontSize: 14, color: 'var(--muted)' }}>
+            <div className="analytics-table-footer">
               {t('analytics.showingRecords', {
                 shown: 10,
                 total: loyaltyDetails.customer_data.length,
