@@ -618,7 +618,7 @@ export function IntegrationSettings() {
 
       {/* Telegram Section */}
       <div className="card cardWide">
-        <div className="row" style={{ marginBottom: 15 }}>
+        <div className="row mb-2">
           <div className="integration-header">
             <span className="integration-icon">✈️</span>
             <div>
@@ -682,7 +682,7 @@ export function IntegrationSettings() {
           </div>
 
           <div className="menu-config-panel">
-            <div style={{ fontSize: 13, fontWeight: 700 }}>Конфигуратор меню Telegram</div>
+            <div className="text-sm font-bold">Конфигуратор меню Telegram</div>
             <div className="menu-config-grid">
               <div className="menu-config-sidebar">
                 <div>
@@ -1055,7 +1055,7 @@ export function IntegrationSettings() {
 
       {/* VK Section */}
       <div className="card cardWide">
-        <div className="row" style={{ marginBottom: 15 }}>
+        <div className="row mb-2">
           <div className="integration-header">
             <span className="integration-icon">📱</span>
             <div>

@@ -21,6 +21,9 @@ from .admin_api import public_router as public_router
 from .roadmap_api import router as roadmap_router
 from .middlewares import rate_limit_middleware
 from .db import get_db, init_db
+from .config_api import router as config_router
+from .tenant_api import router as tenant_router
+from .assets_api import router as assets_router
 from .config import get_settings
 import logging
 import logging.config
@@ -314,6 +317,9 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 # Rate limiting middleware for auth endpoints
 app.add_middleware(rate_limit_middleware)  # type: ignore[arg-type]
 
+app.include_router(config_router)
+app.include_router(tenant_router)
+app.include_router(assets_router)
 app.include_router(admin_router)
 app.include_router(roadmap_router)
 app.include_router(public_router)

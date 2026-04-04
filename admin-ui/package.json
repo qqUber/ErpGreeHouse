@@ -27,7 +27,9 @@
     "screenshot:baseline": "node scripts/screenshot/capture.cjs --update-baseline",
     "screenshot:parallel": "node scripts/screenshot/capture.cjs --parallel 4",
     "screenshot:docker": "./scripts/docker-screenshot/run.sh",
-    "ngrok:backend": "dotenv -e ../.env -- node scripts/ngrok/backend.mjs"
+    "ngrok:backend": "dotenv -e ../.env -- node scripts/ngrok/backend.mjs",
+    "tokens:export": "node scripts/export-tokens.js",
+    "theme:validate": "node scripts/validate-theme.js"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.95.0",
@@ -46,7 +48,8 @@
     "react-modern-drawer": "^1.4.0",
     "react-qr-code": "^2.0.18",
     "react-refresh": "^0.18.0",
-    "react-router-dom": "^7.13.2"
+    "react-router-dom": "^7.13.2",
+    "framer-motion": "^11.0.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",

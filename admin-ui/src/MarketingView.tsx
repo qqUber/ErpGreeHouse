@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Api,
-  baseUrl,
-  injectAuthHeaders,
-  MarketingCampaign,
-  MarketingCampaignPreview,
-  MarketingSegment,
-  MarketingTrigger,
+    Api,
+    baseUrl,
+    injectAuthHeaders,
+    MarketingCampaign,
+    MarketingCampaignPreview,
+    MarketingSegment,
+    MarketingTrigger,
 } from './api';
 import { useMarketingData } from './hooks/useMarketingData';
 import { marketingService } from './services/marketing.service';
@@ -254,7 +254,9 @@ function CampaignsManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Тип</label>
+            <label className="block text-sm font-medium text-gray-700">
+            {t('marketingView.type')}
+          </label>
             <select
               className="input w-full"
               value={newType}
@@ -267,25 +269,29 @@ function CampaignsManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Лимит бюджета</label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t('marketingView.budgetLimit')}
+            </label>
             <input
               className="input w-full"
               type="number"
               min="0"
               value={newBudgetLimit}
               onChange={(e) => setNewBudgetLimit(e.target.value)}
-              placeholder="Например: 250"
+              placeholder={t('marketingView.budgetPlaceholder')}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Сегмент</label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t('marketingView.segment')}
+            </label>
             <select
               className="input w-full"
               value={newSegmentId}
               onChange={(e) => setNewSegmentId(Number(e.target.value))}
             >
-              <option value="">Выберите сегмент...</option>
+              <option value="">{t('marketingView.selectSegment')}</option>
               {segments.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -295,17 +301,19 @@ function CampaignsManager({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Тип контента</label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t('marketingView.contentType')}
+            </label>
             <select
               className="input w-full"
               value={newContentType}
               onChange={(e) => setNewContentType(e.target.value)}
             >
-              <option value="text">Текст</option>
-              <option value="photo">Фотография</option>
-              <option value="video">Видео</option>
-              <option value="document">Документ</option>
-              <option value="media_group">Альбом (несколько файлов)</option>
+              <option value="text">{t('marketingView.contentTypeText')}</option>
+              <option value="photo">{t('marketingView.contentTypePhoto')}</option>
+              <option value="video">{t('marketingView.contentTypeVideo')}</option>
+              <option value="document">{t('marketingView.contentTypeDocument')}</option>
+              <option value="media_group">{t('marketingView.contentTypeMediaGroup')}</option>
             </select>
           </div>
 
@@ -313,8 +321,8 @@ function CampaignsManager({
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 {newContentType === 'media_group'
-                  ? 'URLы медиа файлов (JSON массив)'
-                  : 'URL медиа файла'}
+                  ? t('marketingView.mediaUrlsJson')
+                  : t('marketingView.mediaUrls')}
               </label>
               <textarea
                 className="input w-full h-12"
@@ -322,8 +330,8 @@ function CampaignsManager({
                 onChange={(e) => setNewMediaUrls(e.target.value)}
                 placeholder={
                   newContentType === 'media_group'
-                    ? '[{"type":"photo","path":"https://example.com/image1.jpg"},{"type":"video","path":"https://example.com/video1.mp4"}]'
-                    : 'https://example.com/image.jpg'
+                    ? t('marketingView.mediaGroupPlaceholder')
+                    : t('marketingView.mediaUrlsPlaceholder')
                 }
               />
             </div>
@@ -331,34 +339,36 @@ function CampaignsManager({
 
           {newContentType !== 'text' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700">Подпись</label>
+              <label className="block text-sm font-medium text-gray-700">
+                {t('marketingView.caption')}
+              </label>
               <textarea
                 className="input w-full h-12"
                 value={newCaption}
                 onChange={(e) => setNewCaption(e.target.value)}
-                placeholder="Добавьте подпись..."
+                placeholder={t('marketingView.captionPlaceholder')}
               />
             </div>
           )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {newContentType === 'text' ? 'Текст сообщения' : 'Альтернативный текст'}
+              {newContentType === 'text' ? t('marketingView.messageText') : t('marketingView.altText')}
             </label>
             <textarea
               className="input w-full h-24"
               value={newContent}
               onChange={(e) => setNewContent(e.target.value)}
-              placeholder="Привет! У нас скидки..."
+              placeholder={t('marketingView.messagePlaceholder')}
             />
           </div>
 
           {preview ? (
             <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 grid gap-3">
               <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-sm">Preview</h4>
+                <h4 className="font-semibold text-sm">{t('marketingView.previewTitle')}</h4>
                 <span className="text-xs text-gray-500">
-                  Estimated recipients: {preview.estimated_recipients}
+                  {t('marketingView.estimatedRecipients')}: {preview.estimated_recipients}
                 </span>
               </div>
               <div className="grid gap-2">
@@ -373,7 +383,7 @@ function CampaignsManager({
                     </div>
                   ))
                 ) : (
-                  <div className="text-sm text-gray-500">No preview recipients available</div>
+                  <div className="text-sm text-gray-500">{t('marketingView.noPreviewRecipients')}</div>
                 )}
               </div>
             </div>
@@ -381,19 +391,19 @@ function CampaignsManager({
 
           <div className="flex gap-2 justify-end">
             <button className="btn btn-secondary" onClick={resetForm}>
-              Отмена
+              {t('marketingView.cancel')}
             </button>
             <button className="btn btn-outline" onClick={handlePreview} disabled={isPreviewing}>
-              {isPreviewing ? 'Просмотр...' : 'Preview'}
+              {isPreviewing ? t('marketingView.previewLoading') : t('marketingView.preview')}
             </button>
             <button className="btn btn-primary" onClick={handleCreate}>
-              Создать
+              {t('marketingView.create')}
             </button>
           </div>
         </div>
       ) : (
         <button className="btn btn-primary w-fit" onClick={() => setIsCreating(true)}>
-          + Создать кампанию
+          {t('marketingView.createCampaignButton')}
         </button>
       )}
 
@@ -401,13 +411,13 @@ function CampaignsManager({
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b">
-              <th className="p-2">ID</th>
-              <th className="p-2">Название</th>
-              <th className="p-2">Тип</th>
-              <th className="p-2">Статус</th>
-              <th className="p-2">Бюджет</th>
-              <th className="p-2">Создана</th>
-              <th className="p-2">Действия</th>
+              <th className="p-2">{t('marketingView.id')}</th>
+              <th className="p-2">{t('marketingView.name')}</th>
+              <th className="p-2">{t('marketingView.campaignType')}</th>
+              <th className="p-2">{t('marketingView.status')}</th>
+              <th className="p-2">{t('marketingView.budget')}</th>
+              <th className="p-2">{t('marketingView.created')}</th>
+              <th className="p-2">{t('marketingView.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -491,7 +501,7 @@ function CampaignsManager({
             {campaigns.length === 0 && (
               <tr>
                 <td colSpan={7} className="p-4 text-center text-gray-500">
-                  Нет кампаний
+                  {t('marketingView.noCampaigns')}
                 </td>
               </tr>
             )}
@@ -527,7 +537,7 @@ function SegmentsManager({
 
   async function handlePreview() {
     if (!newName) {
-      setError('Введите название сегмента');
+      setError(t('marketingView.enterSegmentName'));
       return;
     }
     try {
@@ -577,7 +587,7 @@ function SegmentsManager({
 
   async function handleCreate() {
     if (!newName) {
-      setError('Введите название сегмента');
+      setError(t('marketingView.enterSegmentName'));
       return;
     }
     try {
@@ -625,26 +635,30 @@ function SegmentsManager({
     <div className="grid gap-6">
       {isCreating ? (
         <div className="card p-4 grid gap-4 max-w-2xl">
-          <h3 className="font-bold">Новый сегмент</h3>
+          <h3 className="font-bold">{t('marketingView.newSegment')}</h3>
           {error && <div className="text-red-600 text-sm">{error}</div>}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Название</label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t('marketingView.segmentName')}
+            </label>
             <input
               className="input w-full"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="Например: VIP клиенты"
+              placeholder={t('marketingView.segmentNamePlaceholder')}
             />
           </div>
 
           <div className="border-t pt-4 mt-2">
-            <h4 className="text-sm font-bold mb-2">Критерии фильтрации</h4>
+            <h4 className="text-sm font-bold mb-2">{t('marketingView.filterCriteria')}</h4>
 
             <div className="grid gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-gray-500">Минимальный баланс баллов</label>
+                  <label className="block text-xs text-gray-500">
+                    {t('marketingView.minBalance')}
+                  </label>
                   <input
                     className="input w-full"
                     type="number"
@@ -655,7 +669,7 @@ function SegmentsManager({
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500">
-                    Дней с последнего визита (больше чем)
+                    {t('marketingView.daysSinceVisit')}
                   </label>
                   <input
                     className="input w-full"
@@ -669,7 +683,9 @@ function SegmentsManager({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-gray-500">Минимальная сумма покупки</label>
+                  <label className="block text-xs text-gray-500">
+                    {t('marketingView.minPurchaseAmount')}
+                  </label>
                   <input
                     className="input w-full"
                     type="number"
@@ -680,7 +696,7 @@ function SegmentsManager({
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500">
-                    Количество покупок (не менее)
+                    {t('marketingView.purchaseFrequency')}
                   </label>
                   <input
                     className="input w-full"
@@ -693,21 +709,21 @@ function SegmentsManager({
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500">Пол</label>
+                <label className="block text-xs text-gray-500">{t('marketingView.gender')}</label>
                 <select
                   className="input w-full"
                   value={selectedGender}
                   onChange={(e) => setSelectedGender(e.target.value)}
                 >
-                  <option value="">Не выбран</option>
-                  <option value="male">Мужской</option>
-                  <option value="female">Женский</option>
+                  <option value="">{t('marketingView.genderNotSelected')}</option>
+                  <option value="male">{t('marketingView.genderMale')}</option>
+                  <option value="female">{t('marketingView.genderFemale')}</option>
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-gray-500">Возраст от</label>
+                  <label className="block text-xs text-gray-500">{t('marketingView.ageFrom')}</label>
                   <input
                     className="input w-full"
                     type="number"
@@ -717,7 +733,7 @@ function SegmentsManager({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500">Возраст до</label>
+                  <label className="block text-xs text-gray-500">{t('marketingView.ageTo')}</label>
                   <input
                     className="input w-full"
                     type="number"
@@ -729,7 +745,7 @@ function SegmentsManager({
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500">Предпочтения (выберите)</label>
+                <label className="block text-xs text-gray-500">{t('marketingView.preferences')}</label>
                 <div className="grid grid-cols-3 gap-2 mt-1">
                   {['coffee', 'tea', 'pastries', 'breakfast', 'lunch'].map((preference) => (
                     <label key={preference} className="flex items-center gap-2 text-sm">
@@ -739,11 +755,11 @@ function SegmentsManager({
                         onChange={() => togglePreference(preference)}
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                      {preference === 'coffee' && 'Кофе'}
-                      {preference === 'tea' && 'Чай'}
-                      {preference === 'pastries' && 'Выпечка'}
-                      {preference === 'breakfast' && 'Завтрак'}
-                      {preference === 'lunch' && 'Обед'}
+                      {preference === 'coffee' && t('marketingView.preferenceCoffee')}
+                      {preference === 'tea' && t('marketingView.preferenceTea')}
+                      {preference === 'pastries' && t('marketingView.preferencePastries')}
+                      {preference === 'breakfast' && t('marketingView.preferenceBreakfast')}
+                      {preference === 'lunch' && t('marketingView.preferenceLunch')}
                     </label>
                   ))}
                 </div>
@@ -753,14 +769,14 @@ function SegmentsManager({
 
           {preview.length > 0 && (
             <div className="border-t pt-4 mt-2">
-              <h4 className="text-sm font-bold mb-2">Предварительный просмотр (10 клиентов)</h4>
+              <h4 className="text-sm font-bold mb-2">{t('marketingView.previewSegment')}</h4>
               <div className="max-h-48 overflow-y-auto border border-gray-200 rounded">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="bg-gray-50 border-b">
-                      <th className="p-2">Имя</th>
-                      <th className="p-2">Баланс</th>
-                      <th className="p-2">Последний визит</th>
+                      <th className="p-2">{t('marketingView.previewName')}</th>
+                      <th className="p-2">{t('marketingView.previewBalance')}</th>
+                      <th className="p-2">{t('marketingView.previewLastVisit')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -781,19 +797,19 @@ function SegmentsManager({
 
           <div className="flex gap-2 justify-end">
             <button className="btn btn-secondary" onClick={() => setIsCreating(false)}>
-              Отмена
+              {t('marketingView.cancel')}
             </button>
             <button className="btn btn-outline" onClick={handlePreview} disabled={isPreviewing}>
-              {isPreviewing ? 'Просмотр...' : 'Предварительный просмотр'}
+              {isPreviewing ? t('marketingView.previewLoading') : t('marketingView.preview')}
             </button>
             <button className="btn btn-primary" onClick={handleCreate}>
-              Создать
+              {t('marketingView.create')}
             </button>
           </div>
         </div>
       ) : (
         <button className="btn btn-primary w-fit" onClick={() => setIsCreating(true)}>
-          + Создать сегмент
+          {t('marketingView.createSegmentButton')}
         </button>
       )}
 
@@ -801,11 +817,11 @@ function SegmentsManager({
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b">
-              <th className="p-2">ID</th>
-              <th className="p-2">Название</th>
-              <th className="p-2">Критерии</th>
-              <th className="p-2">Обновлен</th>
-              <th className="p-2">Действия</th>
+              <th className="p-2">{t('marketingView.id')}</th>
+              <th className="p-2">{t('marketingView.name')}</th>
+              <th className="p-2">{t('marketingView.criteria')}</th>
+              <th className="p-2">{t('marketingView.updated')}</th>
+              <th className="p-2">{t('marketingView.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -834,7 +850,7 @@ function SegmentsManager({
                       }
                     }}
                   >
-                    Обновить
+                    {t('marketingView.refreshSegment')}
                   </button>
                 </td>
               </tr>
@@ -842,7 +858,7 @@ function SegmentsManager({
             {segments.length === 0 && (
               <tr>
                 <td colSpan={5} className="p-4 text-center text-gray-500">
-                  Нет сегментов
+                  {t('marketingView.noSegments')}
                 </td>
               </tr>
             )}
@@ -877,7 +893,7 @@ function TriggersManager({
 
   async function handleCreate() {
     if (!newName || !newMessage) {
-      setError('Введите название и текст сообщения');
+      setError(t('marketingView.enterTriggerNameMessage'));
       return;
     }
     try {
@@ -923,44 +939,44 @@ function TriggersManager({
       {isCreating ? (
         <div className="card p-4 grid gap-4 max-w-lg">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="font-bold text-lg">Конструктор триггера</h3>
-            <div className="pill pillGood">Visual Builder v2</div>
+            <h3 className="font-bold text-lg">{t('marketingView.triggerBuilder')}</h3>
+            <div className="pill pillGood">{t('marketingView.visualBuilder')}</div>
           </div>
           {error && <div className="text-red-600 text-sm p-2 bg-red-50 rounded">{error}</div>}
 
           <div className="grid gap-4 bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300">
             <div>
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                Название триггера
+                {t('marketingView.triggerName')}
               </label>
               <input
                 className="input w-full bg-white"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="Например: VIP Поздравление"
+                placeholder={t('marketingView.triggerNamePlaceholder')}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                  Событие-источник
+                  {t('marketingView.eventSource')}
                 </label>
                 <select
                   className="input w-full bg-white font-medium"
                   value={eventSource}
                   onChange={(e) => setEventSource(e.target.value)}
                 >
-                  <option value="pos.sale">🛒 Покупка на кассе</option>
-                  <option value="customer.birthday">🎂 День Рождения</option>
-                  <option value="customer.inactive">💤 Клиент "остыл"</option>
-                  <option value="customer.welcome">👋 Приветственное сообщение</option>
-                  <option value="points.expiration">⏰ Истечение баллов</option>
+                  <option value="pos.sale">{t('marketingView.eventPosSale')}</option>
+                  <option value="customer.birthday">{t('marketingView.eventBirthday')}</option>
+                  <option value="customer.inactive">{t('marketingView.eventInactive')}</option>
+                  <option value="customer.welcome">{t('marketingView.eventWelcome')}</option>
+                  <option value="points.expiration">{t('marketingView.eventPointsExpiration')}</option>
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                  Задержка (ч)
+                  {t('marketingView.delayHours')}
                 </label>
                 <input
                   className="input w-full bg-white"
@@ -974,13 +990,13 @@ function TriggersManager({
             <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm relative overflow-hidden">
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
               <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
-                <span>⚙️ Условие срабатывания</span>
+                <span>{t('marketingView.triggerCondition')}</span>
               </h4>
 
               {eventSource === 'pos.sale' && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-600">Сумма заказа ≥</span>
+                    <span className="text-sm text-gray-600">{t('marketingView.orderAmountMin')}</span>
                     <input
                       className="input w-32"
                       type="number"
@@ -993,25 +1009,25 @@ function TriggersManager({
                     </span>
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Категория покупки</label>
+                    <label className="block text-xs text-gray-500 mb-1">{t('marketingView.purchaseCategory')}</label>
                     <select
                       className="input w-full"
                       value={purchaseCategory}
                       onChange={(e) => setPurchaseCategory(e.target.value)}
                     >
-                      <option value="">Все категории</option>
-                      <option value="coffee">Кофе</option>
-                      <option value="tea">Чай</option>
-                      <option value="pastries">Выпечка</option>
-                      <option value="breakfast">Завтрак</option>
-                      <option value="lunch">Обед</option>
+                      <option value="">{t('marketingView.allCategories')}</option>
+                      <option value="coffee">{t('marketingView.categoryCoffee')}</option>
+                      <option value="tea">{t('marketingView.categoryTea')}</option>
+                      <option value="pastries">{t('marketingView.categoryPastries')}</option>
+                      <option value="breakfast">{t('marketingView.categoryBreakfast')}</option>
+                      <option value="lunch">{t('marketingView.categoryLunch')}</option>
                     </select>
                   </div>
                 </div>
               )}
               {eventSource === 'customer.inactive' && (
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600">Неактивен более</span>
+                  <span className="text-sm text-gray-600">{t('marketingView.inactiveDays')}</span>
                   <input
                     className="input w-24"
                     type="number"
@@ -1019,22 +1035,22 @@ function TriggersManager({
                     onChange={(e) => setDaysInactive(e.target.value)}
                     placeholder="30"
                   />
-                  <span className="text-sm text-gray-600">дней</span>
+                  <span className="text-sm text-gray-600">{t('marketingView.days')}</span>
                 </div>
               )}
               {eventSource === 'customer.birthday' && (
                 <div className="text-xs text-blue-600 italic bg-blue-50 p-2 rounded">
-                  Автоматическое срабатывание в 09:00 по местному времени в день рождения.
+                  {t('marketingView.birthdayAutoTrigger')}
                 </div>
               )}
               {eventSource === 'customer.welcome' && (
                 <div className="text-xs text-blue-600 italic bg-blue-50 p-2 rounded">
-                  Срабатывает для новых клиентов в течение 24 часов после регистрации.
+                  {t('marketingView.welcomeTrigger')}
                 </div>
               )}
               {eventSource === 'points.expiration' && (
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600">Баллы к истечению ≥</span>
+                  <span className="text-sm text-gray-600">{t('marketingView.pointsToExpire')}</span>
                   <input
                     className="input w-32"
                     type="number"
@@ -1048,24 +1064,24 @@ function TriggersManager({
 
             <div>
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                Тип медиа
+                {t('marketingView.mediaType')}
               </label>
               <select
                 className="input w-full bg-white"
                 value={newMediaType}
                 onChange={(e) => setNewMediaType(e.target.value)}
               >
-                <option value="">Нет медиа</option>
-                <option value="photo">Фотография</option>
-                <option value="video">Видео</option>
-                <option value="document">Документ</option>
+                <option value="">{t('marketingView.noMedia')}</option>
+                <option value="photo">{t('marketingView.mediaPhoto')}</option>
+                <option value="video">{t('marketingView.mediaVideo')}</option>
+                <option value="document">{t('marketingView.mediaDocument')}</option>
               </select>
             </div>
 
             {newMediaType && (
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                  URL медиа файла
+                  {t('marketingView.mediaUrl')}
                 </label>
                 <input
                   className="input w-full bg-white"
@@ -1079,39 +1095,39 @@ function TriggersManager({
             {newMediaType && (
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                  Подпись к медиа
+                  {t('marketingView.mediaCaption')}
                 </label>
                 <textarea
                   className="input w-full h-12 bg-white font-mono text-sm"
                   value={newCaption}
                   onChange={(e) => setNewCaption(e.target.value)}
-                  placeholder="Подпись к изображению..."
+                  placeholder={t('marketingView.mediaCaptionPlaceholder')}
                 />
               </div>
             )}
 
             <div>
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                Шаблон сообщения (Telegram)
+                {t('marketingView.messageTemplate')}
               </label>
               <textarea
                 className="input w-full h-24 bg-white font-mono text-sm"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Привет! Рады видеть тебя снова. Вот твой бонус..."
+                placeholder={t('marketingView.messageTemplatePlaceholder')}
               />
               <div className="mt-1 text-[10px] text-gray-400">
-                Доступные теги: {'{name}'}, {'{points}'}, {'{tier}'}
+                {t('marketingView.availableTags')}: {'{name}'}, {'{points}'}, {'{tier}'}
               </div>
             </div>
           </div>
 
           <div className="flex gap-2 justify-end mt-2">
             <button className="btn btn-secondary" onClick={() => setIsCreating(false)}>
-              Отмена
+              {t('marketingView.cancel')}
             </button>
             <button className="btn btn-primary px-8" onClick={handleCreate}>
-              Запустить триггер
+              {t('marketingView.startTrigger')}
             </button>
           </div>
         </div>
@@ -1121,10 +1137,10 @@ function TriggersManager({
             className="btn btn-primary shadow-lg hover:scale-[1.02] transition-transform"
             onClick={() => setIsCreating(true)}
           >
-            + Добавить новый триггер
+            {t('marketingView.addTriggerButton')}
           </button>
           <div className="text-xs text-gray-400">
-            Активных триггеров: {triggers.filter((t) => t.active).length}
+            {t('marketingView.activeTriggers')}: {triggers.filter((t) => t.active).length}
           </div>
         </div>
       )}
@@ -1133,29 +1149,29 @@ function TriggersManager({
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b">
-              <th className="p-2">ID</th>
-              <th className="p-2">Название</th>
-              <th className="p-2">Условие</th>
-              <th className="p-2">Задержка</th>
-              <th className="p-2">Статус</th>
+              <th className="p-2">{t('marketingView.id')}</th>
+              <th className="p-2">{t('marketingView.name')}</th>
+              <th className="p-2">{t('marketingView.condition')}</th>
+              <th className="p-2">{t('marketingView.delay')}</th>
+              <th className="p-2">{t('marketingView.status')}</th>
             </tr>
           </thead>
           <tbody>
-            {triggers.map((t) => (
-              <tr key={t.id} className="border-b last:border-0 hover:bg-gray-50">
-                <td className="p-2 text-gray-500">#{t.id}</td>
-                <td className="p-2 font-medium">{t.name}</td>
+            {triggers.map((trigger) => (
+              <tr key={trigger.id} className="border-b last:border-0 hover:bg-gray-50">
+                <td className="p-2 text-gray-500">#{trigger.id}</td>
+                <td className="p-2 font-medium">{trigger.name}</td>
                 <td className="p-2 text-xs text-gray-600 font-mono">
-                  {Object.keys(t.criteria_json).length > 0
-                    ? JSON.stringify(t.criteria_json)
-                    : 'Без условий'}
+                  {Object.keys(trigger.criteria_json).length > 0
+                    ? JSON.stringify(trigger.criteria_json)
+                    : t('marketingView.noConditions')}
                 </td>
-                <td className="p-2">{t.delay_hours} ч.</td>
+                <td className="p-2">{trigger.delay_hours} {t('marketingView.hoursSuffix')}</td>
                 <td className="p-2">
                   <span
-                    className={`px-2 py-0.5 rounded text-xs ${t.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+                    className={`px-2 py-0.5 rounded text-xs ${trigger.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
                   >
-                    {t.active ? 'Активен' : 'Отключен'}
+                    {trigger.active ? t('marketingView.triggerActive') : t('marketingView.triggerInactive')}
                   </span>
                 </td>
               </tr>
@@ -1163,7 +1179,7 @@ function TriggersManager({
             {triggers.length === 0 && (
               <tr>
                 <td colSpan={5} className="p-4 text-center text-gray-500">
-                  Нет триггеров
+                  {t('marketingView.noTriggers')}
                 </td>
               </tr>
             )}

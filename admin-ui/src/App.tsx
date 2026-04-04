@@ -642,7 +642,7 @@ function App() {
     <div className={`container app-shell mode-${viewport.mode} density-${viewport.density}`}>
       {!showLoginScreen ? (
         <header className="header">
-          <nav aria-label="Main navigation" style={{ width: '100%' }}>
+          <nav aria-label="Main navigation" className="app-nav-full">
             <div className="tabs" role="tablist" aria-label="Main navigation">
               {allowedTabs.includes('dashboard') ? (
                 <button
@@ -902,7 +902,7 @@ function App() {
           <div id="integrations-panel" role="tabpanel" aria-labelledby="integrations-tab">
             <div className="grid">
               <div className="card cardWide">
-                <div className="tabs" style={{ marginBottom: 15 }}>
+                <div className="tabs app-tabs-margin">
                   {canReadIntegrations ? (
                     <div
                       className={`tab ${integrationSubTab === 'settings' ? 'tabActive' : ''}`}
@@ -1011,7 +1011,7 @@ function App() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+                <div className="app-form-grid">
                   <div className="row">
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', gap: 8 }}>
@@ -1991,19 +1991,12 @@ function PosView({ refreshCustomers, products, reloadProducts, onSaleDone }: Pos
     <div className="grid">
       <div className="card cardFull">
         <div className="row">
-          <div style={{ fontWeight: 700 }}>{t('sales.title')}</div>
+          <div className="font-bold">{t('sales.title')}</div>
           <button className="btn" onClick={() => void reloadProducts()} type="button">
             {t('menu.products')}
           </button>
         </div>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-            gap: 8,
-            marginTop: 10,
-          }}
-        >
+        <div className="app-pos-grid">
           <input
             className="input"
             value={customerId}
@@ -2039,8 +2032,8 @@ function PosView({ refreshCustomers, products, reloadProducts, onSaleDone }: Pos
             {busy ? t('common.loading') : t('sales.createSale')}
           </button>
         </div>
-        {notice ? <div style={{ marginTop: 10, color: '#047857' }}>{notice}</div> : null}
-        {err ? <div style={{ marginTop: 10, color: '#8b0000' }}>{err}</div> : null}
+        {notice ? <div className="mt-3 text-success">{notice}</div> : null}
+        {err ? <div className="mt-3 text-error">{err}</div> : null}
       </div>
     </div>
   );
@@ -2160,23 +2153,17 @@ function IntegrationsView({
   }
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: 10,
-      }}
-    >
+    <div className="app-integrations-grid">
       <div className="card cardFull">
         <div className="row">
-          <div style={{ fontWeight: 700 }}>{t('integrations.connections')}</div>
+          <div className="font-bold">{t('integrations.connections')}</div>
           {canManage ? (
             <button className="btn" onClick={() => void reload()} type="button">
               {t('common.refresh')}
             </button>
           ) : null}
         </div>
-        <div style={{ display: 'grid', gap: 8, marginTop: 10 }}>
+        <div className="grid gap-2 mt-3">
           {canManage
             ? items?.map((i) => (
                 <button
@@ -2206,12 +2193,10 @@ function IntegrationsView({
               ))
             : null}
           {canManage && items?.length === 0 && !busy ? (
-            <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
-              {t('integrations.noConnections')}
-            </div>
+            <div className="text-muted text-sm">{t('integrations.noConnections')}</div>
           ) : null}
           {!canManage && canUseDevSale ? (
-            <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
+            <div className="text-muted text-sm">
               DEV cashier simulator is available without full integration management access.
             </div>
           ) : null}
@@ -2220,10 +2205,8 @@ function IntegrationsView({
 
       {canManage ? (
         <div className="card cardFull">
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>
-            {selected ? t('common.edit') : t('common.create')}
-          </div>
-          <div style={{ display: 'grid', gap: 8 }}>
+          <div className="font-bold mb-2">{selected ? t('common.edit') : t('common.create')}</div>
+          <div className="grid gap-2">
             <input
               className="input"
               value={name}
@@ -2236,7 +2219,7 @@ function IntegrationsView({
               onChange={(e) => setKind(e.target.value)}
               placeholder={t('common.type')}
             />
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <label className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={enabled}
@@ -2285,8 +2268,8 @@ function IntegrationsView({
                 </button>
               )}
             </div>
-            {err ? <div style={{ color: '#8b0000' }}>{err}</div> : null}
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {err ? <div className="text-error">{err}</div> : null}
+            <div className="flex gap-2 flex-wrap">
               {templates?.map((tpl) => (
                 <button
                   key={tpl.id}
@@ -2303,13 +2286,11 @@ function IntegrationsView({
               ))}
             </div>
             {selected && deliveries.length > 0 ? (
-              <div style={{ display: 'grid', gap: 6, marginTop: 8 }}>
+              <div className="grid gap-1 mt-2">
                 {deliveries.slice(0, 10).map((d) => (
                   <div key={d.id} className="card cardCompact">
-                    <div style={{ fontWeight: 700 }}>
-                      #{d.id} {d.event_type}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)' }}>
+                    <div className="font-bold">#{d.id} {d.event_type}</div>
+                    <div className="text-xs text-muted">
                       {d.status} {d.http_status ? `(${d.http_status})` : ''} ·{' '}
                       {new Date(d.created_at).toLocaleString()}
                     </div>
@@ -2323,8 +2304,8 @@ function IntegrationsView({
 
       {canUseDevSale ? (
         <div className="card cardFull" data-testid="admin_dev_create_sale_panel">
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>DEV Create Sale</div>
-          <div style={{ display: 'grid', gap: 8 }}>
+          <div className="font-bold mb-2">DEV Create Sale</div>
+          <div className="grid gap-2">
             <input
               className="input"
               value={saleQr}
@@ -2403,8 +2384,8 @@ function ProductsView({
     <div className="grid">
       <div className="card cardFull">
         <div className="row">
-          <div style={{ fontWeight: 700 }}>{t('menu.products')}</div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="font-bold">{t('menu.products')}</div>
+          <div className="flex gap-2">
             <button className="btn" onClick={() => void reload()} type="button">
               {t('common.refresh')}
             </button>
@@ -2414,14 +2395,7 @@ function ProductsView({
           </div>
         </div>
         {canEdit ? (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-              gap: 8,
-              marginTop: 10,
-            }}
-          >
+          <div className="app-products-grid">
             <input
               className="input"
               value={code}
@@ -2446,7 +2420,7 @@ function ProductsView({
               onChange={(e) => setPrice(e.target.value)}
               placeholder={t('products.price')}
             />
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <label className="flex items-center gap-1">
               <input
                 type="checkbox"
                 checked={active}
@@ -2464,16 +2438,16 @@ function ProductsView({
             </button>
           </div>
         ) : null}
-        {err ? <div style={{ marginTop: 10, color: '#8b0000' }}>{err}</div> : null}
+        {err ? <div className="mt-3 text-error">{err}</div> : null}
       </div>
 
       <div className="card cardFull">
-        <div style={{ display: 'grid', gap: 8 }}>
+        <div className="grid gap-2">
           {items?.map((p) => (
             <div key={p.id} className="row card cardCompact">
-              <div style={{ flex: 2 }}>
-                <div style={{ fontWeight: 700 }}>{p.name}</div>
-                <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)' }}>
+              <div className="flex-2">
+                <div className="font-bold">{p.name}</div>
+                <div className="text-xs text-muted">
                   {p.code} · {p.kind}
                 </div>
               </div>
@@ -2484,9 +2458,7 @@ function ProductsView({
             </div>
           ))}
           {items?.length === 0 ? (
-            <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13 }}>
-              {t('products.noProducts')}
-            </div>
+            <div className="text-muted text-sm">{t('products.noProducts')}</div>
           ) : null}
         </div>
       </div>
@@ -2578,21 +2550,21 @@ function PermissionsTable() {
   if (loading) return <div className="card cardFull">{t('common.loading')}</div>;
   if (err)
     return (
-      <div className="card cardFull" style={{ color: '#8b0000' }}>
+      <div className="card cardFull text-error">
         {err}
       </div>
     );
 
   return (
     <div className="card cardFull">
-      <div style={{ fontWeight: 800, marginBottom: 10 }}>{t('settings.permissions')}</div>
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div className="font-extrabold mb-2">{t('settings.permissions')}</div>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', padding: 8 }}>{t('settings.permission')}</th>
+              <th className="text-left p-2">{t('settings.permission')}</th>
               {roles.map((r) => (
-                <th key={r.role} style={{ textAlign: 'center', padding: 8 }}>
+                <th key={r.role} className="text-center p-2">
                   {t(`roles.${r.role}`)}
                 </th>
               ))}
@@ -2601,9 +2573,7 @@ function PermissionsTable() {
           <tbody>
             {allPermissions.map((permission) => (
               <tr key={permission}>
-                <td style={{ padding: 8, borderTop: '1px solid var(--border)' }}>
-                  {t(`settings.permissionNames.${permission}`, permission)}
-                </td>
+                <td className="p-2 border-t">{t(`settings.permissionNames.${permission}`, permission)}</td>
                 {roles.map((r) => {
                   const state =
                     r.permissions.find((p) => p.permission === permission)?.is_allowed ?? false;
@@ -2611,11 +2581,7 @@ function PermissionsTable() {
                   return (
                     <td
                       key={key}
-                      style={{
-                        textAlign: 'center',
-                        padding: 8,
-                        borderTop: '1px solid var(--border)',
-                      }}
+                      className="text-center p-2 border-t"
                     >
                       <input
                         type="checkbox"

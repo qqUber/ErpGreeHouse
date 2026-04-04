@@ -844,12 +844,37 @@ def init_db() -> None:
                 "ALTER TABLE admin_users ADD COLUMN password_iter INTEGER NOT NULL DEFAULT 200000"
             )
             conn.commit()
+        # Migration: add preferences columns to admin_users for UI config API
+        if "preferences" not in admin_cols:
+            conn.execute("ALTER TABLE admin_users ADD COLUMN preferences TEXT")
+            conn.commit()
+        if "dashboard_prefs" not in admin_cols:
+            conn.execute("ALTER TABLE admin_users ADD COLUMN dashboard_prefs TEXT")
+            conn.commit()
         # Migration: add description column to products if missing
         product_cols = [
             r["name"] for r in conn.execute("PRAGMA table_info(products)").fetchall()
         ]
         if "description" not in product_cols:
             conn.execute("ALTER TABLE products ADD COLUMN description TEXT")
+            conn.commit()
+
+        # Migration: create tenant_configs table for UI theming
+        tables = [r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()]
+        if "tenant_configs" not in tables:
+            conn.execute("""
+                CREATE TABLE tenant_configs (
+                    tenant_id TEXT PRIMARY KEY,
+                    config TEXT NOT NULL DEFAULT '{}',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.execute(
+                "INSERT INTO tenant_configs (tenant_id, config) VALUES ('default', '{}')"
+            )
             conn.commit()
     finally:
         conn.close()

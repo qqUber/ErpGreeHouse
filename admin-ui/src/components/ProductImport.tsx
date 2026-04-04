@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api, ImportPreview, ImportResult } from '../api';
 
 interface ProductImportProps {
@@ -9,6 +10,7 @@ interface ProductImportProps {
 type TabType = 'file' | 'url';
 
 export function ProductImport({ onImportComplete, onClose }: ProductImportProps) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('file');
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState('');
@@ -46,7 +48,7 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
         setResult(null);
         setError(null);
       } else {
-        setError('Поддерживаются только файлы CSV и XLSX');
+        setError(t('products.import.errors.unsupportedFormat') || 'Поддерживаются только файлы CSV и XLSX');
       }
     }
   }, []);
@@ -112,7 +114,7 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
 
   const handleImportUrl = async () => {
     if (!url.trim()) {
-      setError('Введите URL');
+      setError(t('productImport.errors.enterUrl'));
       return;
     }
 
@@ -153,9 +155,9 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
 
   return (
     <div className="modal-overlay" onClick={() => onClose?.()}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 700 }}>
+      <div className="modal product-import-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>Импорт товаров</h3>
+          <h3>{t('productImport.title')}</h3>
           <button className="btn-close" onClick={() => onClose?.()}>
             ×
           </button>
@@ -163,7 +165,7 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
 
         <div className="modal-body">
           {/* Tabs */}
-          <div className="tabs" style={{ marginBottom: 'var(--spacing-lg)' }}>
+          <div className="tabs product-import-tabs">
             <button
               className={`tab ${activeTab === 'file' ? 'active' : ''}`}
               onClick={() => {
@@ -171,7 +173,7 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                 handleReset();
               }}
             >
-              Загрузка файла
+              {t('productImport.fileTab')}
             </button>
             <button
               className={`tab ${activeTab === 'url' ? 'active' : ''}`}
@@ -180,78 +182,54 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                 handleReset();
               }}
             >
-              Импорт по URL
+              {t('productImport.urlTab')}
             </button>
           </div>
 
           {error && (
-            <div
-              style={{
-                padding: 'var(--spacing-md)',
-                background: 'var(--bad-light)',
-                color: 'var(--bad)',
-                borderRadius: 'var(--radius-md)',
-                marginBottom: 'var(--spacing-lg)',
-                border: '1px solid rgba(185, 28, 28, 0.25)',
-              }}
-            >
+            <div className="product-import-alert product-import-alert-error">
               {error}
             </div>
           )}
 
           {result && (
             <div
-              style={{
-                padding: 'var(--spacing-lg)',
-                background: result.errors.length > 0 ? 'var(--warn-light)' : 'var(--good-light)',
-                borderRadius: 'var(--radius-md)',
-                marginBottom: 'var(--spacing-lg)',
-                border:
-                  result.errors.length > 0
-                    ? '1px solid rgba(180, 83, 9, 0.25)'
-                    : '1px solid rgba(4, 120, 87, 0.25)',
-              }}
+              className={`product-import-result ${result.errors.length > 0 ? 'product-import-result-warning' : 'product-import-result-success'}`}
             >
-              <div
-                style={{
-                  fontWeight: 'var(--font-weight-semibold)',
-                  marginBottom: 'var(--spacing-sm)',
-                  fontSize: 'var(--font-size-base)',
-                }}
-              >
-                Результат импорта:
+              <div className="product-import-result-title">
+                {t('productImport.result.title')}
               </div>
-              <div style={{ display: 'flex', gap: 'var(--spacing-lg)', flexWrap: 'wrap' }}>
+              <div className="product-import-stats">
                 <div>
-                  Всего: <strong>{result.total}</strong>
+                  {t('productImport.result.total')} <strong>{result.total}</strong>
                 </div>
-                <div style={{ color: 'var(--good)' }}>
-                  Создано: <strong>{result.created}</strong>
+                <div className="product-import-stat-good">
+                  {t('productImport.result.created')} <strong>{result.created}</strong>
                 </div>
-                <div style={{ color: 'var(--primary)' }}>
-                  Обновлено: <strong>{result.updated}</strong>
+                <div className="product-import-stat-primary">
+                  {t('productImport.result.updated')} <strong>{result.updated}</strong>
                 </div>
                 {result.errors.length > 0 && (
-                  <div style={{ color: 'var(--bad)' }}>
-                    Ошибок: <strong>{result.errors.length}</strong>
+                  <div className="product-import-stat-error">
+                    {t('productImport.result.errors')} <strong>{result.errors.length}</strong>
                   </div>
                 )}
               </div>
 
               {result.errors.length > 0 && (
-                <div style={{ marginTop: 12 }}>
+                <div className="product-import-errors">
                   <details>
-                    <summary style={{ cursor: 'pointer', color: '#dc2626' }}>
-                      Показать ошибки ({result.errors.length})
+                    <summary className="product-import-error-summary">
+                      {t('productImport.result.showErrors', { count: result.errors.length })}
                     </summary>
-                    <ul style={{ marginTop: 8, paddingLeft: 20, fontSize: 13 }}>
+                    <ul className="product-import-error-list">
                       {result.errors.slice(0, 10).map((err, i) => (
-                        <li key={i} style={{ marginBottom: 4 }}>
+                        <li key={i} className="product-import-error-item">
                           {err}
                         </li>
                       ))}
                       {result.errors.length > 10 && (
-                        <li>... и ещё {result.errors.length - 10} ошибок</li>
+                        <li>{t('productImport.result.moreErrors', { count: result.errors.length - 10 })}</li>
                       )}
                     </ul>
                   </details>
@@ -259,23 +237,17 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
               )}
 
               {result.preview && result.preview.length > 0 && (
-                <div style={{ marginTop: 'var(--spacing-md)' }}>
-                  <div
-                    style={{
-                      fontWeight: 'var(--font-weight-semibold)',
-                      marginBottom: 'var(--spacing-sm)',
-                      fontSize: 'var(--font-size-sm)',
-                    }}
-                  >
-                    Предпросмотр:
+                <div className="product-import-preview">
+                  <div className="product-import-preview-title">
+                    {t('productImport.preview.title')}
                   </div>
                   <table className="table">
                     <thead>
                       <tr>
-                        <th>Название</th>
-                        <th>Артикул</th>
-                        <th>Категория</th>
-                        <th>Цена</th>
+                        <th>{t('productImport.tableHeaders.name')}</th>
+                        <th>{t('productImport.tableHeaders.sku')}</th>
+                        <th>{t('productImport.tableHeaders.category')}</th>
+                        <th>{t('productImport.tableHeaders.price')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -293,11 +265,10 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
               )}
 
               <button
-                className="btn"
-                style={{ marginTop: 'var(--spacing-md)' }}
+                className="btn product-import-btn-margin"
                 onClick={handleReset}
               >
-                Импортировать ещё
+                {t('productImport.buttons.importMore')}
               </button>
             </div>
           )}
@@ -308,62 +279,35 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
               {activeTab === 'file' && (
                 <div>
                   <div
-                    className={`dropzone ${dragActive ? 'active' : ''}`}
+                    className={`product-import-dropzone ${dragActive ? 'product-import-dropzone-active' : 'product-import-dropzone-inactive'}`}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}
                     onDragOver={handleDrag}
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
-                    style={{
-                      border: '2px dashed var(--border)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: 'var(--spacing-xl)',
-                      textAlign: 'center',
-                      cursor: 'pointer',
-                      background: dragActive ? 'var(--primary-light)' : 'var(--brand-light)',
-                      transition: 'all 0.2s',
-                      borderStyle: dragActive ? 'solid' : 'dashed',
-                    }}
                   >
                     {file ? (
                       <div>
-                        <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-sm)' }}>
+                        <div className="product-import-icon">
                           📄
                         </div>
-                        <div
-                          style={{
-                            fontWeight: 'var(--font-weight-semibold)',
-                            fontSize: 'var(--font-size-base)',
-                          }}
-                        >
+                        <div className="product-import-file-name">
                           {file.name}
                         </div>
-                        <div
-                          style={{
-                            fontSize: 'var(--font-size-xs)',
-                            color: 'var(--muted)',
-                            marginTop: 'var(--spacing-xs)',
-                          }}
-                        >
+                        <div className="product-import-file-size">
                           {(file.size / 1024).toFixed(1)} KB
                         </div>
                       </div>
                     ) : (
                       <div>
-                        <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-sm)' }}>
+                        <div className="product-import-icon">
                           📁
                         </div>
-                        <div style={{ fontSize: 'var(--font-size-base)' }}>
-                          Перетащите файл сюда или нажмите для выбора
+                        <div className="product-import-text">
+                          {t('productImport.dropzone.dropText')}
                         </div>
-                        <div
-                          style={{
-                            fontSize: 'var(--font-size-xs)',
-                            color: 'var(--muted)',
-                            marginTop: 'var(--spacing-xs)',
-                          }}
-                        >
-                          Поддерживаются CSV, XLSX, XLS
+                        <div className="product-import-hint">
+                          {t('productImport.dropzone.supportedFormats')}
                         </div>
                       </div>
                     )}
@@ -372,37 +316,31 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                       type="file"
                       accept=".csv,.xlsx,.xls"
                       onChange={handleFileChange}
-                      style={{ display: 'none' }}
+                      className="product-import-hidden-input"
                     />
                   </div>
 
                   {file && !preview && (
-                    <div style={{ marginTop: 'var(--spacing-lg)' }}>
+                    <div className="product-import-margin-top">
                       <button className="btn" onClick={handlePreview} disabled={busy}>
-                        {busy ? 'Загрузка...' : 'Предпросмотр'}
+                        {busy ? t('productImport.buttons.loading') : t('productImport.buttons.preview')}
                       </button>
                     </div>
                   )}
 
                   {preview && (
-                    <div style={{ marginTop: 'var(--spacing-lg)' }}>
-                      <div
-                        style={{
-                          fontWeight: 'var(--font-weight-semibold)',
-                          marginBottom: 'var(--spacing-sm)',
-                          fontSize: 'var(--font-size-sm)',
-                        }}
-                      >
-                        Предпросмотр ({preview.total_rows} строк)
+                    <div className="product-import-margin-top">
+                      <div className="product-import-preview-title">
+                        {t('productImport.preview.rows', { count: preview.total_rows })}
                       </div>
                       <table className="table">
                         <thead>
                           <tr>
-                            <th>Строка</th>
-                            <th>Название</th>
-                            <th>Артикул</th>
-                            <th>Категория</th>
-                            <th>Цена</th>
+                            <th>{t('productImport.preview.row')}</th>
+                            <th>{t('productImport.tableHeaders.name')}</th>
+                            <th>{t('productImport.tableHeaders.sku')}</th>
+                            <th>{t('productImport.tableHeaders.category')}</th>
+                            <th>{t('productImport.tableHeaders.price')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -420,24 +358,17 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                     </div>
                   )}
 
-                  <div
-                    style={{
-                      marginTop: 'var(--spacing-lg)',
-                      display: 'flex',
-                      gap: 'var(--spacing-sm)',
-                      flexWrap: 'wrap',
-                    }}
-                  >
+                  <div className="product-import-btn-row">
                     <button
                       className="btn btnPrimary"
                       onClick={handleImportFile}
                       disabled={!file || busy}
                     >
-                      {busy ? 'Импорт...' : 'Импортировать'}
+                      {busy ? t('productImport.buttons.importing') : t('productImport.buttons.import')}
                     </button>
                     {file && (
                       <button className="btn" onClick={handleReset} disabled={busy}>
-                        Сбросить
+                        {t('productImport.buttons.reset')}
                       </button>
                     )}
                   </div>
@@ -447,36 +378,22 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
               {/* URL Import Tab */}
               {activeTab === 'url' && (
                 <div>
-                  <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                    <label
-                      style={{
-                        display: 'block',
-                        marginBottom: 'var(--spacing-sm)',
-                        fontWeight: 'var(--font-weight-semibold)',
-                        fontSize: 'var(--font-size-sm)',
-                      }}
-                    >
-                      URL источника данных
+                  <div className="product-import-form-group">
+                    <label className="product-import-label">
+                      {t('productImport.url.label')}
                     </label>
                     <input
                       className="input"
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
-                      placeholder="https://example.com/products.json"
+                      placeholder={t('productImport.url.placeholder')}
                       disabled={busy}
                     />
                   </div>
 
-                  <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                    <label
-                      style={{
-                        display: 'block',
-                        marginBottom: 'var(--spacing-sm)',
-                        fontWeight: 'var(--font-weight-semibold)',
-                        fontSize: 'var(--font-size-sm)',
-                      }}
-                    >
-                      Формат данных
+                  <div className="product-import-form-group">
+                    <label className="product-import-label">
+                      {t('productImport.format.label')}
                     </label>
                     <select
                       className="input"
@@ -484,52 +401,28 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                       onChange={(e) => setFormat(e.target.value as 'json' | 'xml')}
                       disabled={busy}
                     >
-                      <option value="json">JSON</option>
-                      <option value="xml">XML</option>
+                      <option value="json">{t('productImport.format.json')}</option>
+                      <option value="xml">{t('productImport.format.xml')}</option>
                     </select>
                   </div>
 
-                  <div
-                    style={{
-                      padding: 'var(--spacing-md)',
-                      background: 'var(--primary-light)',
-                      borderRadius: 'var(--radius-md)',
-                      fontSize: 'var(--font-size-sm)',
-                      color: 'var(--primary)',
-                      border: '1px solid rgba(59, 130, 246, 0.25)',
-                    }}
-                  >
-                    <strong>Ожидаемый формат JSON:</strong>
-                    <pre
-                      style={{
-                        margin: 'var(--spacing-sm) 0 0',
-                        fontSize: 'var(--font-size-xs)',
-                        overflow: 'auto',
-                        background: 'var(--panel)',
-                        padding: 'var(--spacing-sm)',
-                        borderRadius: 'var(--radius-sm)',
-                      }}
-                    >
+                  <div className="product-import-info-box">
+                    <strong>{t('productImport.infoBox')}</strong>
+                    <pre className="product-import-code-block">
                       {`[
-  { "name": "Латте", "sku": "DRINK-001", "category": "Напитки", "price": 150 },
-  { "name": "Капучино", "sku": "DRINK-002", "category": "Напитки", "price": 140 }
+  { "name": "Latte", "sku": "DRINK-001", "category": "Drinks", "price": 150 },
+  { "name": "Cappuccino", "sku": "DRINK-002", "category": "Drinks", "price": 140 }
 ]`}
                     </pre>
                   </div>
 
-                  <div
-                    style={{
-                      marginTop: 'var(--spacing-lg)',
-                      display: 'flex',
-                      gap: 'var(--spacing-sm)',
-                    }}
-                  >
+                  <div className="product-import-btn-row">
                     <button
                       className="btn btnPrimary"
                       onClick={handleImportUrl}
                       disabled={!url.trim() || busy}
                     >
-                      {busy ? 'Импорт...' : 'Импортировать'}
+                      {busy ? t('productImport.buttons.importing') : t('productImport.buttons.import')}
                     </button>
                   </div>
                 </div>

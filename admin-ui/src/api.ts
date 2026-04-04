@@ -1209,4 +1209,89 @@ export const Api = {
       method: 'DELETE',
       headers: {},
     }),
+
+  // Config endpoints (Phase 1: Design Tokens, Preferences, Feature Flags)
+  getThemeConfig: () =>
+    api<{
+      tenantId: string;
+      brandName: string;
+      logoUrl: string | null;
+      faviconUrl: string | null;
+      tokens: {
+        primary: string;
+        primaryDark: string;
+        secondary: string;
+        secondaryDark: string;
+        success: string;
+        warning: string;
+        error: string;
+        info: string;
+        background: string;
+        backgroundDark: string;
+        surface: string;
+        surfaceDark: string;
+        text: string;
+        textDark: string;
+        textMuted: string;
+        textMutedDark: string;
+        border: string;
+        borderDark: string;
+      };
+      fontFamily: string;
+      borderRadius: 'none' | 'small' | 'medium' | 'large' | 'full';
+    }>('/api/v1/config/theme', { method: 'GET', headers: {} }),
+
+  getUserPreferences: () =>
+    api<{
+      userId: number;
+      preferences: {
+        theme: 'light' | 'dark' | 'auto';
+        density: 'compact' | 'comfortable' | 'spacious';
+        locale: 'en' | 'ru' | 'srb';
+        sidebarCollapsed: boolean;
+        dashboardLayout: Record<string, unknown>;
+      };
+    }>('/api/v1/config/preferences', { method: 'GET', headers: {} }),
+
+  updateUserPreferences: (preferences: {
+    theme: 'light' | 'dark' | 'auto';
+    density: 'compact' | 'comfortable' | 'spacious';
+    locale: 'en' | 'ru' | 'srb';
+    sidebarCollapsed: boolean;
+    dashboardLayout: Record<string, unknown>;
+  }) =>
+    api<{ userId: number; preferences: typeof preferences }>('/api/v1/config/preferences', {
+      method: 'PUT',
+      body: JSON.stringify(preferences),
+    }),
+
+  getFeatureFlags: () =>
+    api<{
+      flags: Record<string, boolean>;
+      tenantId: string;
+      version: string;
+    }>('/api/v1/config/features', { method: 'GET', headers: {} }),
+
+  getDashboardPreferences: () =>
+    api<{
+      widgets: {
+        visible: string[];
+        order: string[];
+        layouts: Record<string, unknown>;
+      };
+      refreshInterval: number;
+    }>('/api/v1/config/preferences/dashboard', { method: 'GET', headers: {} }),
+
+  updateDashboardPreferences: (preferences: {
+    widgets: {
+      visible: string[];
+      order: string[];
+      layouts: Record<string, unknown>;
+    };
+    refreshInterval: number;
+  }) =>
+    api<typeof preferences>('/api/v1/config/preferences/dashboard', {
+      method: 'PUT',
+      body: JSON.stringify(preferences),
+    }),
 };
