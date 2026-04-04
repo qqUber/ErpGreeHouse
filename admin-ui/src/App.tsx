@@ -764,49 +764,26 @@ function App() {
             </div>
           </nav>
           {authReady ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <ThemeSwitcher value={themeMode} onChange={setThemeMode} />
-              <LanguageSwitcher />
-              <div className="pill" style={{ whiteSpace: 'nowrap', minWidth: 'fit-content' }}>
-                {t('common.role')}: {roleLabel(me?.role || '')}
-              </div>
+            <div className="header-toolbar">
+            <ThemeSwitcher value={themeMode} onChange={setThemeMode} />
+            <LanguageSwitcher />
+            <div className="pill role-pill">
+              {t('common.role')}: {roleLabel(me?.role || '')}
             </div>
+          </div>
           ) : null}
         </header>
       ) : null}
       {/* Show login form when not authenticated OR when auth is still loading */}
       {showLoginScreen ? (
-        <div
-          className="grid"
-          style={{
-            minHeight: 'calc(100vh - 140px)',
-            display: 'grid',
-            alignItems: 'center',
-            justifyItems: 'center',
-          }}
-        >
-          <div
-            className="card"
-            style={{
-              width: '100%',
-              maxWidth: 380,
-              padding: 24,
-              borderRadius: 20,
-              boxShadow: 'var(--shadow-lg)',
-              display: 'grid',
-              gap: 16,
-            }}
-          >
-            <div style={{ display: 'grid', gap: 8, textAlign: 'center' }}>
-              <div style={{ fontWeight: 800, fontSize: 'var(--font-size-2xl)' }}>
-                {t('app.title')}
-              </div>
-              <div style={{ color: 'var(--muted)', fontSize: 'var(--font-size-sm)' }}>
-                {t('auth.login')}
-              </div>
+        <div className="login-page">
+          <div className="login-card">
+            <div className="login-header">
+              <div className="login-title">{t('app.title')}</div>
+              <div className="login-subtitle">{t('auth.login')}</div>
             </div>
 
-            <div style={{ display: 'grid', gap: 12 }}>
+            <div className="login-form">
               <input
                 className="input"
                 value={username}
@@ -816,35 +793,32 @@ function App() {
                 spellCheck={false}
                 data-testid="common_input_username_en"
               />
-              <div style={{ display: 'grid', gap: 8 }}>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input
-                    className="input"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t('auth.passwordPlaceholder')}
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    spellCheck={false}
-                    data-testid="common_input_password_en"
-                  />
-                  <button
-                    className="btn"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label={t('forms.labels.showPassword')}
-                    type="button"
-                    data-testid="common_btn_toggle_password_en"
-                  >
-                    {showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
-                  </button>
-                </div>
+              <div className="login-password-row">
+                <input
+                  className="input"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t('auth.passwordPlaceholder')}
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  spellCheck={false}
+                  data-testid="common_input_password_en"
+                />
+                <button
+                  className="btn"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={t('forms.labels.showPassword')}
+                  type="button"
+                  data-testid="common_btn_toggle_password_en"
+                >
+                  {showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                </button>
               </div>
               <button
-                className="btn btnPrimary"
+                className="btn btnPrimary login-submit"
                 onClick={() => void doLoginByPassword()}
                 disabled={!username.trim() || !password}
                 data-testid="common_btn_login_en"
-                style={{ width: '100%', justifyContent: 'center' }}
               >
                 {t('auth.loginButton')}
               </button>
@@ -1017,8 +991,8 @@ function App() {
               <div className="card cardFull" data-testid="settings_view_en">
                 <div className="row">
                   <div>
-                    <div style={{ fontWeight: 900, fontSize: 18 }}>{t('auth.accessSettings')}</div>
-                    <div style={{ color: 'rgba(0,0,0,0.55)', fontSize: 13, marginTop: 6 }}>
+                    <div className="settings-title">{t('auth.accessSettings')}</div>
+                    <div className="settings-desc">
                       {mustChangePassword
                         ? t('auth.requirePasswordChangeSettings')
                         : t('auth.accessSettingsDesc')}

@@ -62,7 +62,7 @@ export function Widget({
             data-testid="widget-toggle-button"
             aria-label={isExpanded ? t('widgets.hideDetails') : t('widgets.showDetails')}
           >
-            <span className="widget-toggle-label">{isExpanded ? 'Close' : 'Details'}</span>
+            <span className="widget-toggle-label">{isExpanded ? t('common.close') : t('widgets.details')}</span>
             <svg
               className={`arrow-icon ${isExpanded ? 'rotated' : ''}`}
               width="12"

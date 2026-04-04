@@ -1,4 +1,4 @@
-import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface SidebarProps {
   activeTab: string;
@@ -6,12 +6,13 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
+  const { t } = useTranslation();
   const tabs = [
-    { id: 'dashboard', label: 'Dashboard', testId: 'admin_nav_dashboard' },
-    { id: 'customers', label: 'Customers', testId: 'admin_nav_customers' },
-    { id: 'products', label: 'Products', testId: 'admin_nav_products' },
-    { id: 'integrations', label: 'Integrations', testId: 'admin_nav_integrations' },
-    { id: 'compliance', label: 'Compliance', testId: 'admin_nav_compliance' },
+    { id: 'dashboard', label: t('menu.dashboard'), testId: 'admin_nav_dashboard' },
+    { id: 'customers', label: t('menu.clients'), testId: 'admin_nav_customers' },
+    { id: 'products', label: t('menu.products'), testId: 'admin_nav_products' },
+    { id: 'integrations', label: t('menu.integrations'), testId: 'admin_nav_integrations' },
+    { id: 'compliance', label: t('menu.compliance'), testId: 'admin_nav_compliance' },
   ];
 
   return (

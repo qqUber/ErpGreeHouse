@@ -6,43 +6,23 @@
 export function WidgetSkeleton({ type }: { type: string }) {
   return (
     <div
-      style={{
-        padding: '20px',
-        background: '#f9fafb',
-        borderRadius: '12px',
-        border: '1px solid #e5e7eb',
-        minHeight: '200px',
-      }}
+      className="widget-skeleton"
       data-testid={`${type}-widget-skeleton`}
     >
       {/* Header skeleton */}
-      <div
-        style={{
-          height: '20px',
-          width: '40%',
-          background: '#e5e7eb',
-          borderRadius: '4px',
-          marginBottom: '16px',
-        }}
-      />
+      <div className="widget-skeleton-header" />
 
       {/* Content skeleton lines */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div
-          style={{ height: '16px', width: '100%', background: '#f3f4f6', borderRadius: '4px' }}
-        />
-        <div style={{ height: '16px', width: '80%', background: '#f3f4f6', borderRadius: '4px' }} />
-        <div style={{ height: '16px', width: '60%', background: '#f3f4f6', borderRadius: '4px' }} />
+      <div className="widget-skeleton-content">
+        <div className="widget-skeleton-line" style={{ width: '100%' }} />
+        <div className="widget-skeleton-line" style={{ width: '80%' }} />
+        <div className="widget-skeleton-line" style={{ width: '60%' }} />
       </div>
 
       {/* Number/stat skeleton */}
-      <div style={{ marginTop: '20px', display: 'flex', gap: '16px' }}>
-        <div
-          style={{ height: '40px', width: '80px', background: '#e5e7eb', borderRadius: '8px' }}
-        />
-        <div
-          style={{ height: '40px', width: '80px', background: '#e5e7eb', borderRadius: '8px' }}
-        />
+      <div className="widget-skeleton-stats">
+        <div className="widget-skeleton-stat" />
+        <div className="widget-skeleton-stat" />
       </div>
     </div>
   );
@@ -50,123 +30,39 @@ export function WidgetSkeleton({ type }: { type: string }) {
 
 export function SalesWidgetSkeleton() {
   return (
-    <div
-      style={{
-        padding: '24px',
-        background: '#f9fafb',
-        borderRadius: '12px',
-        border: '1px solid #e5e7eb',
-      }}
-      data-testid="sales-widget-skeleton"
-    >
-      <div
-        style={{
-          height: '24px',
-          width: '120px',
-          background: '#e5e7eb',
-          borderRadius: '4px',
-          marginBottom: '20px',
-        }}
-      />
-      <div style={{ display: 'flex', gap: '24px', marginBottom: '20px' }}>
-        <div
-          style={{ height: '60px', width: '100px', background: '#e5e7eb', borderRadius: '8px' }}
-        />
-        <div
-          style={{ height: '60px', width: '100px', background: '#e5e7eb', borderRadius: '8px' }}
-        />
+    <div className="widget-skeleton widget-skeleton-sales" data-testid="sales-widget-skeleton">
+      <div className="widget-skeleton-title" />
+      <div className="widget-skeleton-metrics">
+        <div className="widget-skeleton-metric" />
+        <div className="widget-skeleton-metric" />
       </div>
-      <div style={{ height: '80px', background: '#f3f4f6', borderRadius: '8px' }} />
+      <div className="widget-skeleton-chart" />
     </div>
   );
 }
 
 export function CustomersWidgetSkeleton() {
   return (
-    <div
-      style={{
-        padding: '24px',
-        background: '#f9fafb',
-        borderRadius: '12px',
-        border: '1px solid #e5e7eb',
-      }}
-      data-testid="customers-widget-skeleton"
-    >
-      <div
-        style={{
-          height: '24px',
-          width: '140px',
-          background: '#e5e7eb',
-          borderRadius: '4px',
-          marginBottom: '20px',
-        }}
-      />
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-        <div style={{ height: '50px', flex: 1, background: '#e5e7eb', borderRadius: '8px' }} />
-        <div style={{ height: '50px', flex: 1, background: '#e5e7eb', borderRadius: '8px' }} />
+    <div className="widget-skeleton widget-skeleton-customers" data-testid="customers-widget-skeleton">
+      <div className="widget-skeleton-title" />
+      <div className="widget-skeleton-cards">
+        <div className="widget-skeleton-card" />
+        <div className="widget-skeleton-card" />
       </div>
-      <div style={{ height: '120px', background: '#f3f4f6', borderRadius: '8px' }} />
+      <div className="widget-skeleton-list" />
     </div>
   );
 }
 
 export function ProductsWidgetSkeleton() {
   return (
-    <div
-      style={{
-        padding: '24px',
-        background: '#f9fafb',
-        borderRadius: '12px',
-        border: '1px solid #e5e7eb',
-      }}
-      data-testid="products-widget-skeleton"
-    >
-      <div
-        style={{
-          height: '24px',
-          width: '130px',
-          background: '#e5e7eb',
-          borderRadius: '4px',
-          marginBottom: '20px',
-        }}
-      />
-      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-        <div
-          style={{
-            height: '80px',
-            flex: '1 1 45%',
-            minWidth: '150px',
-            background: '#e5e7eb',
-            borderRadius: '8px',
-          }}
-        />
-        <div
-          style={{
-            height: '80px',
-            flex: '1 1 45%',
-            minWidth: '150px',
-            background: '#e5e7eb',
-            borderRadius: '8px',
-          }}
-        />
-        <div
-          style={{
-            height: '80px',
-            flex: '1 1 45%',
-            minWidth: '150px',
-            background: '#e5e7eb',
-            borderRadius: '8px',
-          }}
-        />
-        <div
-          style={{
-            height: '80px',
-            flex: '1 1 45%',
-            minWidth: '150px',
-            background: '#e5e7eb',
-            borderRadius: '8px',
-          }}
-        />
+    <div className="widget-skeleton widget-skeleton-products" data-testid="products-widget-skeleton">
+      <div className="widget-skeleton-title" />
+      <div className="widget-skeleton-grid">
+        <div className="widget-skeleton-grid-item" />
+        <div className="widget-skeleton-grid-item" />
+        <div className="widget-skeleton-grid-item" />
+        <div className="widget-skeleton-grid-item" />
       </div>
     </div>
   );
@@ -174,30 +70,11 @@ export function ProductsWidgetSkeleton() {
 
 export function CompactWidgetSkeleton() {
   return (
-    <div
-      style={{
-        padding: '16px',
-        background: '#f9fafb',
-        borderRadius: '8px',
-        border: '1px solid #e5e7eb',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-      }}
-      data-testid="compact-widget-skeleton"
-    >
-      <div style={{ height: '40px', width: '40px', background: '#e5e7eb', borderRadius: '8px' }} />
-      <div style={{ flex: 1 }}>
-        <div
-          style={{
-            height: '16px',
-            width: '60%',
-            background: '#e5e7eb',
-            borderRadius: '4px',
-            marginBottom: '8px',
-          }}
-        />
-        <div style={{ height: '12px', width: '40%', background: '#f3f4f6', borderRadius: '4px' }} />
+    <div className="widget-skeleton widget-skeleton-compact" data-testid="compact-widget-skeleton">
+      <div className="widget-skeleton-icon" />
+      <div className="widget-skeleton-text">
+        <div className="widget-skeleton-line-short" />
+        <div className="widget-skeleton-line-shorter" />
       </div>
     </div>
   );
