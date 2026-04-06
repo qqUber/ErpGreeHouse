@@ -24,6 +24,19 @@ jobs:
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build backend-test-unit
       
+      - name: Wait for Redis to be healthy
+        run: |
+          for i in {1..30}; do
+            docker compose -f docker-compose.yml -f docker-compose.test.yml ps redis | grep -q "healthy" && break
+            echo "Waiting for Redis to be healthy..."
+            sleep 2
+          done
+          if ! docker compose -f docker-compose.yml -f docker-compose.test.yml ps redis | grep -q "healthy"; then
+            echo "Redis failed to become healthy"
+            docker compose -f docker-compose.yml -f docker-compose.test.yml logs redis
+            exit 1
+          fi
+      
       - name: Monitor logs (RULE COMPLIANT)
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml logs -f --tail=50 backend-test-unit &
@@ -45,7 +58,7 @@ jobs:
 
       - name: Stop unit test stack
         if: always()
-        run: docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml down
 
       - name: Upload unit test report
         uses: actions/upload-artifact@v4
@@ -95,6 +108,25 @@ jobs:
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build e2e-runner
       
+      - name: Wait for E2E services to be healthy
+        run: |
+          for i in {1..60}; do
+            docker compose -f docker-compose.yml -f docker-compose.test.yml ps backend-e2e | grep -q "healthy" && \
+            docker compose -f docker-compose.yml -f docker-compose.test.yml ps frontend-e2e | grep -q "healthy" && break
+            echo "Waiting for E2E services to be healthy..."
+            sleep 2
+          done
+          if ! docker compose -f docker-compose.yml -f docker-compose.test.yml ps backend-e2e | grep -q "healthy"; then
+            echo "Backend E2E failed to become healthy"
+            docker compose -f docker-compose.yml -f docker-compose.test.yml logs backend-e2e
+            exit 1
+          fi
+          if ! docker compose -f docker-compose.yml -f docker-compose.test.yml ps frontend-e2e | grep -q "healthy"; then
+            echo "Frontend E2E failed to become healthy"
+            docker compose -f docker-compose.yml -f docker-compose.test.yml logs frontend-e2e
+            exit 1
+          fi
+      
       - name: Monitor E2E logs
         run: |
           timeout 45s docker compose -f docker-compose.yml -f docker-compose.test.yml logs -f --tail=50 e2e-runner
@@ -120,6 +152,7 @@ jobs:
           path: |
             admin-ui/playwright-report/
             admin-ui/test-results/
+          if-no-files-found: error
       - name: Stop E2E test stack
         if: always()
         run: docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
@@ -137,6 +170,19 @@ jobs:
       - name: Start integration tests in detached mode
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build backend-test-integration
+      
+      - name: Wait for Redis to be healthy
+        run: |
+          for i in {1..30}; do
+            docker compose -f docker-compose.yml -f docker-compose.test.yml ps redis | grep -q "healthy" && break
+            echo "Waiting for Redis to be healthy..."
+            sleep 2
+          done
+          if ! docker compose -f docker-compose.yml -f docker-compose.test.yml ps redis | grep -q "healthy"; then
+            echo "Redis failed to become healthy"
+            docker compose -f docker-compose.yml -f docker-compose.test.yml logs redis
+            exit 1
+          fi
       
       - name: Monitor integration test logs
         run: |
@@ -159,7 +205,7 @@ jobs:
 
       - name: Stop integration test stack
         if: always()
-        run: docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml down
 
       - name: Upload integration test report
         uses: actions/upload-artifact@v4
@@ -210,6 +256,7 @@ jobs:
         with:
           name: security-reports
           path: middleware/reports/
+          if-no-files-found: error
 
   # =============================================================================
   # Linting and Code Quality
@@ -292,6 +339,19 @@ jobs:
         working-directory: ./admin-ui
         run: |
           npm run build
+
+  # =============================================================================
+  # Cleanup - Remove volumes after all tests
+  # =============================================================================
+  cleanup:
+    name: Cleanup Volumes
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, e2e-tests, security-tests, linting, frontend-tests]
+    if: always()
+    steps:
+      - name: Remove test volumes
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
 
   # =============================================================================
   # MVP Demo Validation

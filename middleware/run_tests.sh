@@ -5,14 +5,17 @@ set -e
 
 echo "Running middleware tests..."
 
+# Ensure reports directory exists
+mkdir -p reports
+
 # Run unit tests
 echo "Running unit tests..."
 pytest -q \
   --cov=app \
   --cov-report=term-missing \
-  --cov-report=xml:../out/coverage.xml \
-  --cov-report=html:../out/coverage \
-  --html=../out/test-report.html \
+  --cov-report=xml:reports/coverage.xml \
+  --cov-report=html:reports/coverage \
+  --html=reports/test-report.html \
   --self-contained-html \
   tests/unit/
 
@@ -22,8 +25,8 @@ pytest -q \
   --cov=app \
   --cov-append \
   --cov-report=term-missing \
-  --cov-report=xml:../out/coverage-integration.xml \
-  --html=../out/test-integration-report.html \
+  --cov-report=xml:reports/coverage-integration.xml \
+  --html=reports/test-integration-report.html \
   --self-contained-html \
   tests/integrations/
 

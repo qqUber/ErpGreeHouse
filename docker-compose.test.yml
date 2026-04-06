@@ -34,8 +34,8 @@ services:
       sh -c "pytest tests/unit -v --tb=short --tb=line
       --cov=app
       --cov-report=term-missing
-      --cov-report=xml:reports/coverage.xml
-      --html=reports/unit_report.html
+      --cov-report=xml:/app/reports/coverage.xml
+      --html=/app/reports/unit_report.html
       --self-contained-html"
 
   backend-test-integration:
@@ -66,7 +66,7 @@ services:
         condition: service_healthy
     command: >
       sh -c "pytest tests/integration -v --tb=short --tb=line
-      --html=reports/integration_report.html
+      --html=/app/reports/integration_report.html
       --self-contained-html"
 
   backend-e2e:
