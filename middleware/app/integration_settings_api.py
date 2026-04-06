@@ -259,11 +259,7 @@ async def upload_telegram_media(
         file.file.close()
 
     base_url = settings.base_web_url.rstrip("/")
-    media_url = (
-        f"{base_url}/media/telegram/{safe_name}"
-        if base_url
-        else f"/media/telegram/{safe_name}"
-    )
+    media_url = f"{base_url}/media/telegram/{safe_name}" if base_url else f"/media/telegram/{safe_name}"
 
     return {"uploaded": True, "url": media_url, "name": original_name}
 
@@ -506,9 +502,7 @@ def save_telegram_texts(
     conn = db.connect()
     try:
         # Get existing config
-        cur = conn.execute(
-            "SELECT id, config_json FROM integrations WHERE kind='telegram' LIMIT 1"
-        )
+        cur = conn.execute("SELECT id, config_json FROM integrations WHERE kind='telegram' LIMIT 1")
         row = cur.fetchone()
 
         if row:

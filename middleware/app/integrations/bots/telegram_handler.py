@@ -101,9 +101,7 @@ def get_configured_telegram_token(include_disabled: bool = False) -> str:
     db = get_db()
     conn = db.connect()
     try:
-        row = conn.execute(
-            "SELECT enabled FROM integrations WHERE kind='telegram' ORDER BY id DESC LIMIT 1"
-        ).fetchone()
+        row = conn.execute("SELECT enabled FROM integrations WHERE kind='telegram' ORDER BY id DESC LIMIT 1").fetchone()
         if not stored_token:
             settings = get_settings()
             return settings.telegram_bot_token
@@ -272,9 +270,7 @@ class ConcurrentUserSessions:
             # Create new task - use TaskGroup pattern in Python 3.14+
             if self._has_taskgroup:
                 # In Python 3.14+, we can use create_task with proper context
-                self._tasks[user_id] = asyncio.create_task(
-                    coro, name=f"user_session_{user_id}"
-                )
+                self._tasks[user_id] = asyncio.create_task(coro, name=f"user_session_{user_id}")
             else:
                 self._tasks[user_id] = asyncio.create_task(coro)
 
@@ -364,9 +360,7 @@ class ConcurrentUserSessions:
 
             # Wait for all tasks to be cancelled
             if self._tasks:
-                await asyncio.gather(
-                    *[task for task in self._tasks.values()], return_exceptions=True
-                )
+                await asyncio.gather(*[task for task in self._tasks.values()], return_exceptions=True)
             self._tasks.clear()
 
 

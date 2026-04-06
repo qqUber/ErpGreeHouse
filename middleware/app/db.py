@@ -12,15 +12,11 @@ class DB:
         conn = sqlite3.connect(self.path, check_same_thread=False)
         # Migration for compliance fields
         try:
-            conn.execute(
-                "ALTER TABLE customers ADD COLUMN marketing_allowed INTEGER NOT NULL DEFAULT 0"
-            )
+            conn.execute("ALTER TABLE customers ADD COLUMN marketing_allowed INTEGER NOT NULL DEFAULT 0")
         except sqlite3.OperationalError:  # Column already exists
             pass
         try:
-            conn.execute(
-                "ALTER TABLE customers ADD COLUMN data_processing_allowed INTEGER NOT NULL DEFAULT 0"
-            )
+            conn.execute("ALTER TABLE customers ADD COLUMN data_processing_allowed INTEGER NOT NULL DEFAULT 0")
         except sqlite3.OperationalError:
             pass
         try:
@@ -40,9 +36,7 @@ class DB:
         except sqlite3.OperationalError:
             pass
         try:
-            conn.execute(
-                "ALTER TABLE customers ADD COLUMN onboarding_status TEXT DEFAULT 'registered'"
-            )
+            conn.execute("ALTER TABLE customers ADD COLUMN onboarding_status TEXT DEFAULT 'registered'")
         except sqlite3.OperationalError:
             pass
         try:
@@ -50,9 +44,7 @@ class DB:
         except sqlite3.OperationalError:
             pass
         try:
-            conn.execute(
-                "ALTER TABLE customers ADD COLUMN phone_verification_method TEXT"
-            )
+            conn.execute("ALTER TABLE customers ADD COLUMN phone_verification_method TEXT")
         except sqlite3.OperationalError:
             pass
         # Migration for country_id and city_id columns (location service)
@@ -66,9 +58,7 @@ class DB:
             pass
         # Analytics fields for customers
         try:
-            conn.execute(
-                "ALTER TABLE customers ADD COLUMN ltv REAL NOT NULL DEFAULT 0"
-            )  # Lifetime Value
+            conn.execute("ALTER TABLE customers ADD COLUMN ltv REAL NOT NULL DEFAULT 0")  # Lifetime Value
         except sqlite3.OperationalError:
             pass
         try:
@@ -84,15 +74,11 @@ class DB:
         except sqlite3.OperationalError:
             pass
         try:
-            conn.execute(
-                "ALTER TABLE customers ADD COLUMN last_purchase_date TEXT"
-            )  # Date of last purchase
+            conn.execute("ALTER TABLE customers ADD COLUMN last_purchase_date TEXT")  # Date of last purchase
         except sqlite3.OperationalError:
             pass
         try:
-            conn.execute(
-                "ALTER TABLE customers ADD COLUMN cohort_month TEXT"
-            )  # Month of first purchase (YYYY-MM)
+            conn.execute("ALTER TABLE customers ADD COLUMN cohort_month TEXT")  # Month of first purchase (YYYY-MM)
         except sqlite3.OperationalError:
             pass
         conn.commit()
@@ -106,9 +92,7 @@ class DB:
 
         # Media message fields migration
         try:
-            conn.execute(
-                "ALTER TABLE marketing_campaigns ADD COLUMN content_type TEXT DEFAULT 'text'"
-            )
+            conn.execute("ALTER TABLE marketing_campaigns ADD COLUMN content_type TEXT DEFAULT 'text'")
         except sqlite3.OperationalError:  # Column already exists
             pass
         try:
@@ -136,45 +120,31 @@ class DB:
         except sqlite3.OperationalError:
             pass
         try:
-            conn.execute(
-                "ALTER TABLE marketing_trigger_events ADD COLUMN delivery_data TEXT"
-            )
+            conn.execute("ALTER TABLE marketing_trigger_events ADD COLUMN delivery_data TEXT")
         except sqlite3.OperationalError:
             pass
         try:
-            conn.execute(
-                "ALTER TABLE marketing_trigger_events ADD COLUMN delivered_at TEXT"
-            )
+            conn.execute("ALTER TABLE marketing_trigger_events ADD COLUMN delivered_at TEXT")
         except sqlite3.OperationalError:
             pass
         try:
-            conn.execute(
-                "ALTER TABLE marketing_trigger_events ADD COLUMN opened_at TEXT"
-            )
+            conn.execute("ALTER TABLE marketing_trigger_events ADD COLUMN opened_at TEXT")
         except sqlite3.OperationalError:
             pass
         try:
-            conn.execute(
-                "ALTER TABLE marketing_trigger_events ADD COLUMN clicked_at TEXT"
-            )
+            conn.execute("ALTER TABLE marketing_trigger_events ADD COLUMN clicked_at TEXT")
         except sqlite3.OperationalError:
             pass
         try:
-            conn.execute(
-                "ALTER TABLE marketing_campaigns ADD COLUMN budget_limit INTEGER"
-            )
+            conn.execute("ALTER TABLE marketing_campaigns ADD COLUMN budget_limit INTEGER")
         except sqlite3.OperationalError:
             pass
         try:
-            conn.execute(
-                "ALTER TABLE marketing_campaigns ADD COLUMN budget_spent INTEGER NOT NULL DEFAULT 0"
-            )
+            conn.execute("ALTER TABLE marketing_campaigns ADD COLUMN budget_spent INTEGER NOT NULL DEFAULT 0")
         except sqlite3.OperationalError:
             pass
         try:
-            conn.execute(
-                "ALTER TABLE marketing_campaigns ADD COLUMN audience_count INTEGER NOT NULL DEFAULT 0"
-            )
+            conn.execute("ALTER TABLE marketing_campaigns ADD COLUMN audience_count INTEGER NOT NULL DEFAULT 0")
         except sqlite3.OperationalError:
             pass
         try:
@@ -235,23 +205,17 @@ class DB:
         except sqlite3.OperationalError:
             pass
         try:
-            conn.execute(
-                "ALTER TABLE customers ADD COLUMN welcome_bonus_awarded INTEGER NOT NULL DEFAULT 0"
-            )
+            conn.execute("ALTER TABLE customers ADD COLUMN welcome_bonus_awarded INTEGER NOT NULL DEFAULT 0")
         except sqlite3.OperationalError:
             pass
         try:
-            conn.execute(
-                "ALTER TABLE customers ADD COLUMN birthday_bonus_last_year INTEGER"
-            )
+            conn.execute("ALTER TABLE customers ADD COLUMN birthday_bonus_last_year INTEGER")
         except sqlite3.OperationalError:
             pass
 
         # Migration for consent_type column
         try:
-            conn.execute(
-                "ALTER TABLE consents ADD COLUMN consent_type TEXT DEFAULT 'data_processing'"
-            )
+            conn.execute("ALTER TABLE consents ADD COLUMN consent_type TEXT DEFAULT 'data_processing'")
         except sqlite3.OperationalError:  # Column already exists
             pass
 
@@ -267,20 +231,15 @@ class DB:
 
         # Add indexes for consents table
         try:
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_consents_customer_id ON consents(customer_id)"
-            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_consents_customer_id ON consents(customer_id)")
         except sqlite3.OperationalError:
             pass
         try:
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_consents_accepted_at ON consents(accepted_at)"
-            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_consents_accepted_at ON consents(accepted_at)")
         except sqlite3.OperationalError:
             pass
 
-        conn.executescript(
-            """
+        conn.executescript("""
             CREATE TABLE IF NOT EXISTS points_ledger (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 customer_id INTEGER NOT NULL,
@@ -422,8 +381,7 @@ class DB:
                 UNIQUE(employee_id, metric_type, period)
             );
             CREATE INDEX IF NOT EXISTS idx_employee_metrics_period ON employee_metrics(period);
-            """
-        )
+            """)
 
         defaults = [
             ("welcome_bonus_points", "100"),
@@ -465,9 +423,7 @@ class DB:
                 ],
             )
 
-        conn.execute(
-            "CREATE UNIQUE INDEX IF NOT EXISTS idx_customers_referral_code ON customers(referral_code)"
-        )
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_customers_referral_code ON customers(referral_code)")
 
         conn.commit()
 
@@ -495,8 +451,7 @@ def init_db() -> None:
     conn.execute("PRAGMA journal_mode = WAL")
     conn.execute("PRAGMA synchronous = NORMAL")
     try:
-        conn.executescript(
-            """
+        conn.executescript("""
             CREATE TABLE IF NOT EXISTS customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 phone TEXT UNIQUE,
@@ -808,41 +763,25 @@ def init_db() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_customer_visits_customer_id ON customer_visits(customer_id);
             CREATE INDEX IF NOT EXISTS idx_customer_visits_location_id ON customer_visits(location_id);
-            """
-        )
+            """)
         conn.commit()
-        cols = [
-            r["name"]
-            for r in conn.execute("PRAGMA table_info(transactions)").fetchall()
-        ]
+        cols = [r["name"] for r in conn.execute("PRAGMA table_info(transactions)").fetchall()]
         if "pos_receipt_id" not in cols:
             conn.execute("ALTER TABLE transactions ADD COLUMN pos_receipt_id TEXT")
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_transactions_pos_receipt_id ON transactions(pos_receipt_id)"
-            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_transactions_pos_receipt_id ON transactions(pos_receipt_id)")
             conn.commit()
-        admin_cols = [
-            r["name"] for r in conn.execute("PRAGMA table_info(admin_users)").fetchall()
-        ]
+        admin_cols = [r["name"] for r in conn.execute("PRAGMA table_info(admin_users)").fetchall()]
         if "role" not in admin_cols:
-            conn.execute(
-                "ALTER TABLE admin_users ADD COLUMN role TEXT NOT NULL DEFAULT 'owner'"
-            )
+            conn.execute("ALTER TABLE admin_users ADD COLUMN role TEXT NOT NULL DEFAULT 'owner'")
             conn.commit()
         if "disabled" not in admin_cols:
-            conn.execute(
-                "ALTER TABLE admin_users ADD COLUMN disabled INTEGER NOT NULL DEFAULT 0"
-            )
+            conn.execute("ALTER TABLE admin_users ADD COLUMN disabled INTEGER NOT NULL DEFAULT 0")
             conn.commit()
         if "password_salt" not in admin_cols:
-            conn.execute(
-                "ALTER TABLE admin_users ADD COLUMN password_salt TEXT NOT NULL DEFAULT ''"
-            )
+            conn.execute("ALTER TABLE admin_users ADD COLUMN password_salt TEXT NOT NULL DEFAULT ''")
             conn.commit()
         if "password_iter" not in admin_cols:
-            conn.execute(
-                "ALTER TABLE admin_users ADD COLUMN password_iter INTEGER NOT NULL DEFAULT 200000"
-            )
+            conn.execute("ALTER TABLE admin_users ADD COLUMN password_iter INTEGER NOT NULL DEFAULT 200000")
             conn.commit()
         # Migration: add preferences columns to admin_users for UI config API
         if "preferences" not in admin_cols:
@@ -852,34 +791,23 @@ def init_db() -> None:
             conn.execute("ALTER TABLE admin_users ADD COLUMN dashboard_prefs TEXT")
             conn.commit()
         # Migration: add description column to products if missing
-        product_cols = [
-            r["name"] for r in conn.execute("PRAGMA table_info(products)").fetchall()
-        ]
+        product_cols = [r["name"] for r in conn.execute("PRAGMA table_info(products)").fetchall()]
         if "description" not in product_cols:
             conn.execute("ALTER TABLE products ADD COLUMN description TEXT")
             conn.commit()
 
         # Migration: create tenant_configs table for UI theming
-        tables = [
-            r[0]
-            for r in conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
-            ).fetchall()
-        ]
+        tables = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
         if "tenant_configs" not in tables:
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE tenant_configs (
                     tenant_id TEXT PRIMARY KEY,
                     config TEXT NOT NULL DEFAULT '{}',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-            )
-            conn.execute(
-                "INSERT INTO tenant_configs (tenant_id, config) VALUES ('default', '{}')"
-            )
+            """)
+            conn.execute("INSERT INTO tenant_configs (tenant_id, config) VALUES ('default', '{}')")
             conn.commit()
     finally:
         conn.close()

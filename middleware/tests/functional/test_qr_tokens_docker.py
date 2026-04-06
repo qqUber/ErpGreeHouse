@@ -95,9 +95,7 @@ class QRTokenFunctionalTest:
         tokens = set()
         for i in range(100):
             # Simulate customer creation
-            test_db.execute(
-                "INSERT INTO customers (phone) VALUES (?)", (f"+79{i:010d}",)
-            )
+            test_db.execute("INSERT INTO customers (phone) VALUES (?)", (f"+79{i:010d}",))
 
             token = generate_unique_qr_token(test_db)
             tokens.add(token)
@@ -133,16 +131,12 @@ class QRTokenFunctionalTest:
         assert customer_id > 0
 
         # Verify QR token was assigned
-        row = test_db.execute(
-            "SELECT qr_token FROM customers WHERE id = ?", (customer_id,)
-        ).fetchone()
+        row = test_db.execute("SELECT qr_token FROM customers WHERE id = ?", (customer_id,)).fetchone()
         assert row is not None
         assert len(row["qr_token"]) == 8
 
         # Update same customer
-        customer_id2, is_new2 = resolve_or_create_customer(
-            test_db, phone=phone, full_name="Updated User"  # Same phone
-        )
+        customer_id2, is_new2 = resolve_or_create_customer(test_db, phone=phone, full_name="Updated User")  # Same phone
 
         assert not is_new2
         assert customer_id2 == customer_id
@@ -182,9 +176,7 @@ class QRTokenFunctionalTest:
         )
 
         # Create first customer
-        customer_id1, _ = resolve_or_create_customer(
-            test_db, phone="+79123456789", full_name="User One"
-        )
+        customer_id1, _ = resolve_or_create_customer(test_db, phone="+79123456789", full_name="User One")
 
         # Create conflicting customer manually
         test_db.execute(
@@ -194,9 +186,7 @@ class QRTokenFunctionalTest:
 
         # Should detect conflict
         with pytest.raises(CustomerIdentityConflictError):
-            resolve_or_create_customer(
-                test_db, phone="+79123456789", telegram_id=987654321
-            )
+            resolve_or_create_customer(test_db, phone="+79123456789", telegram_id=987654321)
 
     def test_performance_functional(self, test_db):
         """Test performance with realistic data volumes"""
@@ -209,9 +199,7 @@ class QRTokenFunctionalTest:
 
         tokens = set()
         for i in range(1000):
-            test_db.execute(
-                "INSERT INTO customers (phone) VALUES (?)", (f"+79{i:010d}",)
-            )
+            test_db.execute("INSERT INTO customers (phone) VALUES (?)", (f"+79{i:010d}",))
             token = generate_unique_qr_token(test_db)
             tokens.add(token)
 
@@ -258,9 +246,7 @@ class QRTokenFunctionalTest:
 
         # Verify database consistency
         for customer_id in customer_ids:
-            row = test_db.execute(
-                "SELECT * FROM customers WHERE id = ?", (customer_id,)
-            ).fetchone()
+            row = test_db.execute("SELECT * FROM customers WHERE id = ?", (customer_id,)).fetchone()
             assert row is not None
             assert row["qr_token"] is not None
             assert len(row["qr_token"]) == 8
@@ -302,9 +288,7 @@ class QRTokenFunctionalTest:
 
         with self.benchmark_context("Generate 100 tokens"):
             for i in range(100):
-                test_db.execute(
-                    "INSERT INTO customers (phone) VALUES (?)", (f"+79{i:010d}",)
-                )
+                test_db.execute("INSERT INTO customers (phone) VALUES (?)", (f"+79{i:010d}",))
                 generate_unique_qr_token(test_db)
 
 

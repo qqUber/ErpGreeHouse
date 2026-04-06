@@ -44,21 +44,17 @@ def get_or_generate_base_guid_safe(conn: sqlite3.Connection) -> str:
     """Safely get or generate base GUID with proper transaction handling."""
     with database_transaction(conn):
         # Ensure table exists
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
             )
-        """
-        )
+        """)
 
         # Try to get existing GUID
-        row = conn.execute(
-            "SELECT value FROM system_settings WHERE key=?", (BASE_GUID_KEY,)
-        ).fetchone()
+        row = conn.execute("SELECT value FROM system_settings WHERE key=?", (BASE_GUID_KEY,)).fetchone()
 
         if row:
             return row[0]
@@ -95,9 +91,7 @@ def generate_unique_qr_token_safe(conn: sqlite3.Connection) -> str:
             token = f"{(token_uuid.int % 90_000_000) + 10_000_000:08d}"
 
             # Verify uniqueness
-            existing = conn.execute(
-                "SELECT id FROM customers WHERE qr_token=?", (token,)
-            ).fetchone()
+            existing = conn.execute("SELECT id FROM customers WHERE qr_token=?", (token,)).fetchone()
 
             if not existing:
                 logger.debug(f"Generated unique token: {token} (attempt {attempt + 1})")
@@ -112,9 +106,7 @@ def generate_unique_qr_token_safe(conn: sqlite3.Connection) -> str:
     return generate_secure_token()
 
 
-def resolve_or_create_customer_safe(
-    conn: sqlite3.Connection, **kwargs
-) -> tuple[int, bool]:
+def resolve_or_create_customer_safe(conn: sqlite3.Connection, **kwargs) -> tuple[int, bool]:
     """Thread-safe customer resolution with proper transaction handling."""
 
     for attempt in range(MAX_RETRY_ATTEMPTS):
@@ -143,9 +135,7 @@ def resolve_or_create_customer_safe(
                 raise
             continue
 
-    raise RuntimeError(
-        f"Failed to resolve/create customer after {MAX_RETRY_ATTEMPTS} attempts"
-    )
+    raise RuntimeError(f"Failed to resolve/create customer after {MAX_RETRY_ATTEMPTS} attempts")
 
 
 def _find_existing_customer(conn: sqlite3.Connection, **kwargs) -> Optional[int]:
@@ -156,32 +146,24 @@ def _find_existing_customer(conn: sqlite3.Connection, **kwargs) -> Optional[int]
     phone = kwargs.get("phone")
 
     if telegram_id is not None:
-        row = conn.execute(
-            "SELECT id FROM customers WHERE telegram_id=?", (telegram_id,)
-        ).fetchone()
+        row = conn.execute("SELECT id FROM customers WHERE telegram_id=?", (telegram_id,)).fetchone()
         if row:
             return row[0]
 
     if vk_id is not None:
-        row = conn.execute(
-            "SELECT id FROM customers WHERE vk_id=?", (vk_id,)
-        ).fetchone()
+        row = conn.execute("SELECT id FROM customers WHERE vk_id=?", (vk_id,)).fetchone()
         if row:
             return row[0]
 
     if phone:
-        row = conn.execute(
-            "SELECT id FROM customers WHERE phone=?", (phone,)
-        ).fetchone()
+        row = conn.execute("SELECT id FROM customers WHERE phone=?", (phone,)).fetchone()
         if row:
             return row[0]
 
     return None
 
 
-def _update_customer_if_changed(
-    conn: sqlite3.Connection, customer_id: int, **kwargs
-) -> None:
+def _update_customer_if_changed(conn: sqlite3.Connection, customer_id: int, **kwargs) -> None:
     """Update customer if data has changed."""
     # Implementation of update logic with proper field handling
 
@@ -219,9 +201,7 @@ def migrate_existing_tokens(conn: sqlite3.Connection) -> dict:
     try:
         with database_transaction(conn):
             # Check if we have tokens in old format that might collide
-            rows = conn.execute(
-                "SELECT id, qr_token FROM customers WHERE qr_token IS NOT NULL"
-            ).fetchall()
+            rows = conn.execute("SELECT id, qr_token FROM customers WHERE qr_token IS NOT NULL").fetchall()
 
             for row in rows:
                 customer_id, old_token = row
@@ -240,9 +220,7 @@ def migrate_existing_tokens(conn: sqlite3.Connection) -> dict:
                             (new_token, customer_id),
                         )
                         migrated["fixed"] += 1
-                        logger.info(
-                            f"Migrated customer {customer_id}: {old_token} -> {new_token}"
-                        )
+                        logger.info(f"Migrated customer {customer_id}: {old_token} -> {new_token}")
 
     except Exception as e:
         logger.error(f"Migration failed: {e}")

@@ -80,48 +80,36 @@ class TestIsBootstrapAllowed:
 
     def test_not_allowed_in_production(self):
         """Should return False in production environment."""
-        with patch.object(
-            admin_auth_module, "get_settings", return_value=MagicMock(environment="production")
-        ):
+        with patch.object(admin_auth_module, "get_settings", return_value=MagicMock(environment="production")):
             assert _is_bootstrap_allowed("ADMIN_BOOTSTRAP_DEFAULT") is False
 
     def test_allowed_when_env_true(self):
         """Should return True when env var is 'true'."""
-        with patch.object(
-            admin_auth_module, "get_settings", return_value=MagicMock(environment="development")
-        ):
+        with patch.object(admin_auth_module, "get_settings", return_value=MagicMock(environment="development")):
             with patch.dict(os.environ, {"ADMIN_BOOTSTRAP_DEFAULT": "true"}):
                 assert _is_bootstrap_allowed("ADMIN_BOOTSTRAP_DEFAULT") is True
 
     def test_allowed_when_env_1(self):
         """Should return True when env var is '1'."""
-        with patch.object(
-            admin_auth_module, "get_settings", return_value=MagicMock(environment="development")
-        ):
+        with patch.object(admin_auth_module, "get_settings", return_value=MagicMock(environment="development")):
             with patch.dict(os.environ, {"ADMIN_BOOTSTRAP_DEFAULT": "1"}):
                 assert _is_bootstrap_allowed("ADMIN_BOOTSTRAP_DEFAULT") is True
 
     def test_allowed_when_env_yes(self):
         """Should return True when env var is 'yes'."""
-        with patch.object(
-            admin_auth_module, "get_settings", return_value=MagicMock(environment="development")
-        ):
+        with patch.object(admin_auth_module, "get_settings", return_value=MagicMock(environment="development")):
             with patch.dict(os.environ, {"ADMIN_BOOTSTRAP_DEFAULT": "yes"}):
                 assert _is_bootstrap_allowed("ADMIN_BOOTSTRAP_DEFAULT") is True
 
     def test_not_allowed_when_env_false(self):
         """Should return False when env var is 'false'."""
-        with patch.object(
-            admin_auth_module, "get_settings", return_value=MagicMock(environment="development")
-        ):
+        with patch.object(admin_auth_module, "get_settings", return_value=MagicMock(environment="development")):
             with patch.dict(os.environ, {"ADMIN_BOOTSTRAP_DEFAULT": "false"}):
                 assert _is_bootstrap_allowed("ADMIN_BOOTSTRAP_DEFAULT") is False
 
     def test_not_allowed_when_env_missing(self):
         """Should return False when env var is missing."""
-        with patch.object(
-            admin_auth_module, "get_settings", return_value=MagicMock(environment="development")
-        ):
+        with patch.object(admin_auth_module, "get_settings", return_value=MagicMock(environment="development")):
             # Remove env var if present
             env_copy = {k: v for k, v in os.environ.items() if k != "ADMIN_BOOTSTRAP_DEFAULT"}
             with patch.dict(os.environ, env_copy, clear=True):
@@ -133,9 +121,7 @@ class TestGetJwtCookieSettings:
 
     def test_default_settings(self):
         """Should return correct default settings."""
-        with patch.object(
-            admin_auth_module, "get_settings", return_value=MagicMock(environment="development")
-        ):
+        with patch.object(admin_auth_module, "get_settings", return_value=MagicMock(environment="development")):
             settings = _get_jwt_cookie_settings()
             assert settings["httponly"] is True
             assert settings["samesite"] == "lax"
@@ -144,18 +130,14 @@ class TestGetJwtCookieSettings:
 
     def test_secure_true_when_env_set(self):
         """Should set secure=True when ADMIN_COOKIE_SECURE=true."""
-        with patch.object(
-            admin_auth_module, "get_settings", return_value=MagicMock(environment="development")
-        ):
+        with patch.object(admin_auth_module, "get_settings", return_value=MagicMock(environment="development")):
             with patch.dict(os.environ, {"ADMIN_COOKIE_SECURE": "true"}):
                 settings = _get_jwt_cookie_settings()
                 assert settings["secure"] is True
 
     def test_domain_added_when_set(self):
         """Should add domain when ADMIN_COOKIE_DOMAIN is set."""
-        with patch.object(
-            admin_auth_module, "get_settings", return_value=MagicMock(environment="development")
-        ):
+        with patch.object(admin_auth_module, "get_settings", return_value=MagicMock(environment="development")):
             with patch.dict(os.environ, {"ADMIN_COOKIE_DOMAIN": "example.com"}):
                 settings = _get_jwt_cookie_settings()
                 assert settings["domain"] == "example.com"
@@ -173,9 +155,7 @@ class TestCheckRateLimit:
             with patch.object(
                 admin_auth_module,
                 "get_settings",
-                return_value=MagicMock(
-                    recovery_rate_limit_attempts=5, recovery_rate_limit_window_seconds=3600
-                ),
+                return_value=MagicMock(recovery_rate_limit_attempts=5, recovery_rate_limit_window_seconds=3600),
             ):
                 is_allowed, remaining = _check_rate_limit("192.168.1.1")
                 assert is_allowed is True
@@ -190,9 +170,7 @@ class TestCheckRateLimit:
             with patch.object(
                 admin_auth_module,
                 "get_settings",
-                return_value=MagicMock(
-                    recovery_rate_limit_attempts=5, recovery_rate_limit_window_seconds=3600
-                ),
+                return_value=MagicMock(recovery_rate_limit_attempts=5, recovery_rate_limit_window_seconds=3600),
             ):
                 is_allowed, remaining = _check_rate_limit("192.168.1.1")
                 assert is_allowed is False
@@ -207,9 +185,7 @@ class TestCheckRateLimit:
             with patch.object(
                 admin_auth_module,
                 "get_settings",
-                return_value=MagicMock(
-                    recovery_rate_limit_attempts=5, recovery_rate_limit_window_seconds=3600
-                ),
+                return_value=MagicMock(recovery_rate_limit_attempts=5, recovery_rate_limit_window_seconds=3600),
             ):
                 is_allowed, remaining = _check_rate_limit("192.168.1.1")
                 assert is_allowed is True

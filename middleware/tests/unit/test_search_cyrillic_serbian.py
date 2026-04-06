@@ -31,15 +31,13 @@ class TestSearchCyrillicSerbian:
         conn.execute("PRAGMA foreign_keys = ON")
 
         # Create customers table
-        conn.executescript(
-            """
+        conn.executescript("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 phone TEXT UNIQUE,
                 full_name TEXT
             );
-        """
-        )
+        """)
 
         # Insert test data with various character sets
         test_customers = [
@@ -58,9 +56,7 @@ class TestSearchCyrillicSerbian:
         ]
 
         for phone, name in test_customers:
-            conn.execute(
-                "INSERT INTO customers (phone, full_name) VALUES (?, ?)", (phone, name)
-            )
+            conn.execute("INSERT INTO customers (phone, full_name) VALUES (?, ?)", (phone, name))
 
         conn.commit()
         yield path
@@ -73,9 +69,7 @@ class TestSearchCyrillicSerbian:
         conn = sqlite3.connect(test_db)
 
         # Search for "John"
-        cursor = conn.execute(
-            "SELECT full_name FROM customers WHERE full_name LIKE ?", ("%John%",)
-        )
+        cursor = conn.execute("SELECT full_name FROM customers WHERE full_name LIKE ?", ("%John%",))
         results = [row[0] for row in cursor.fetchall()]
 
         assert "John Smith" in results
@@ -86,9 +80,7 @@ class TestSearchCyrillicSerbian:
         conn = sqlite3.connect(test_db)
 
         # Search for exact Cyrillic name
-        cursor = conn.execute(
-            "SELECT full_name FROM customers WHERE full_name LIKE ?", ("%Иван%",)
-        )
+        cursor = conn.execute("SELECT full_name FROM customers WHERE full_name LIKE ?", ("%Иван%",))
         results = [row[0] for row in cursor.fetchall()]
 
         # Should find Иван Петров and Мария Иванова (contains Иван)
@@ -136,9 +128,7 @@ class TestSearchCyrillicSerbian:
         ]
 
         for search_term, expected in test_cases:
-            cursor = conn.execute(
-                "SELECT full_name FROM customers WHERE full_name LIKE ?", (search_term,)
-            )
+            cursor = conn.execute("SELECT full_name FROM customers WHERE full_name LIKE ?", (search_term,))
             results = [row[0] for row in cursor.fetchall()]
             print(f"Search '{search_term}': {results}")
 
@@ -167,9 +157,7 @@ class TestSearchCyrillicSerbian:
 
         # ILIKE doesn't exist in SQLite - this will fail
         try:
-            cursor = conn.execute(
-                "SELECT full_name FROM customers WHERE full_name ILIKE ?", ("%иван%",)
-            )
+            cursor = conn.execute("SELECT full_name FROM customers WHERE full_name ILIKE ?", ("%иван%",))
             results = [row[0] for row in cursor.fetchall()]
             print(f"ILIKE results: {results}")
         except sqlite3.OperationalError as e:
@@ -215,9 +203,7 @@ def test_real_search_functionality():
 
     print("\nSearch results:")
     for term, desc in search_tests:
-        cursor = conn.execute(
-            "SELECT full_name FROM customers WHERE full_name LIKE ?", (term,)
-        )
+        cursor = conn.execute("SELECT full_name FROM customers WHERE full_name LIKE ?", (term,))
         results = [row[0] for row in cursor.fetchall()]
         print(f"  {desc} ('{term}'): {results}")
 

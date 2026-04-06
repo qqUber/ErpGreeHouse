@@ -99,9 +99,7 @@ class TestJWTLoginFlow:
 
     def test_jwt_login_missing_fields(self, client):
         """Test login with missing fields"""
-        response = client.post(
-            "/api/v1/public/auth/login", json={"username": "test"}  # Missing password
-        )
+        response = client.post("/api/v1/public/auth/login", json={"username": "test"})  # Missing password
 
         assert response.status_code == 422  # Validation error
 
@@ -163,9 +161,7 @@ class TestJWTProtectedEndpoints:
             "iat": datetime.now(timezone.utc) - timedelta(hours=2),
         }
 
-        expired_token = jwt.encode(
-            payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
-        )
+        expired_token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
         client.cookies.set("access_token", expired_token)
 
         response = client.get("/api/v1/dashboard")
@@ -258,9 +254,7 @@ class TestJWTRefreshFlow:
             "iat": datetime.now(timezone.utc) - timedelta(hours=2),
         }
 
-        expired_refresh_token = jwt.encode(
-            payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
-        )
+        expired_refresh_token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
         client.cookies.set("refresh_token", expired_refresh_token)
 
         response = client.post("/api/v1/public/auth/refresh")
@@ -312,9 +306,7 @@ class TestJWTAuthStatus:
             "iat": datetime.now(timezone.utc) - timedelta(hours=2),
         }
 
-        expired_token = jwt.encode(
-            payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
-        )
+        expired_token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
         client.cookies.set("access_token", expired_token)
 
         response = client.get("/api/v1/public/auth/status")
@@ -340,9 +332,7 @@ class TestJWTMixedAuthentication:
     def test_legacy_header_with_jwt_cookies(self, auth_client_with_refresh):
         """Test legacy header with JWT cookies"""
         # Set x-admin-secret header
-        response = auth_client_with_refresh.get(
-            "/api/v1/dashboard", headers={"x-admin-secret": "test-secret-key"}
-        )
+        response = auth_client_with_refresh.get("/api/v1/dashboard", headers={"x-admin-secret": "test-secret-key"})
 
         # Should work with legacy header even if JWT cookies are present
         # The exact status depends on the current auth implementation
@@ -353,9 +343,7 @@ class TestJWTMixedAuthentication:
         # Create valid JWT
         access_token = create_access_token(admin_user)
 
-        response = client.get(
-            "/api/v1/dashboard", headers={"Authorization": f"Bearer {access_token}"}
-        )
+        response = client.get("/api/v1/dashboard", headers={"Authorization": f"Bearer {access_token}"})
 
         # Should not be unauthorized
         assert response.status_code != 401
@@ -366,15 +354,11 @@ class TestJWTMixedAuthentication:
         access_token = create_access_token(admin_user)
 
         # Test with Bearer header (should work)
-        response = client.get(
-            "/api/v1/dashboard", headers={"Authorization": f"Bearer {access_token}"}
-        )
+        response = client.get("/api/v1/dashboard", headers={"Authorization": f"Bearer {access_token}"})
         assert response.status_code != 401
 
         # Test with x-admin-secret header (should work if legacy is enabled)
-        response = client.get(
-            "/api/v1/dashboard", headers={"x-admin-secret": "test-secret-key"}
-        )
+        response = client.get("/api/v1/dashboard", headers={"x-admin-secret": "test-secret-key"})
         # Status depends on current implementation
 
 
@@ -434,14 +418,10 @@ class TestJWTErrorScenarios:
 
         # Decode token to check expiration
         settings = get_settings()
-        payload = jwt.decode(
-            access_token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
-        )
+        payload = jwt.decode(access_token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
 
         assert "exp" in payload  # Token should have expiration
-        assert (
-            payload["exp"] > datetime.now(timezone.utc).timestamp()
-        )  # Should expire in future
+        assert payload["exp"] > datetime.now(timezone.utc).timestamp()  # Should expire in future
 
 
 if __name__ == "__main__":

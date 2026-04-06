@@ -52,9 +52,7 @@ def test_identify_and_sale_flow(client: TestClient) -> None:
     assert payload["bonus_used"] == 0
     assert payload["bonus_earned"] == 20
 
-    c = client.get(
-        f"/api/v1/customers/{customer_id}", headers={"x-admin-secret": "test-admin"}
-    )
+    c = client.get(f"/api/v1/customers/{customer_id}", headers={"x-admin-secret": "test-admin"})
     assert c.status_code == 200
     data = c.json()
     assert data["customer"]["balance_points"] == 20

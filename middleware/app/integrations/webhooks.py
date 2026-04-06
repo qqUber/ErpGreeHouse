@@ -33,9 +33,7 @@ async def erpnext_webhook(request: Request):
         # Parse request body
         payload = await request.json()
 
-        logger.info(
-            f"Received ERPNext webhook: {payload.get('doctype')} - {payload.get('event')}"
-        )
+        logger.info(f"Received ERPNext webhook: {payload.get('doctype')} - {payload.get('event')}")
 
         # Get database session
         db = next(get_db())
@@ -52,9 +50,7 @@ async def erpnext_webhook(request: Request):
             if event in ["create", "update"]:
                 logger.info(f"Customer {event} event: {data.get('name')}")
                 # Trigger customer sync
-                result = sync_service.sync_customers(
-                    db, modified_after=datetime.now() - datetime.timedelta(minutes=15)
-                )
+                result = sync_service.sync_customers(db, modified_after=datetime.now() - datetime.timedelta(minutes=15))
                 logger.info(f"Customer sync result: {result}")
             elif event == "delete":
                 logger.info(f"Customer delete event: {data.get('name')}")

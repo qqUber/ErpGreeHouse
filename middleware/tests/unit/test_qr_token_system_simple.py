@@ -23,24 +23,20 @@ class TestImprovedQRTokenSystem:
     def test_uuid5_overflow_protection(self):
         """Test that the numeric generator stays within valid 8-digit bounds."""
         conn = sqlite3.connect(":memory:")
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 qr_token TEXT
             )
-        """
-        )
-        conn.execute(
-            """
+        """)
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-        """
-        )
+        """)
 
         # Set a fixed base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
@@ -68,16 +64,14 @@ class TestImprovedQRTokenSystem:
     def test_base_guid_generation(self):
         """Test base GUID generation and retrieval."""
         conn = sqlite3.connect(":memory:")
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-        """
-        )
+        """)
 
         # First call should generate new GUID
         guid1 = get_or_generate_base_guid(conn)
@@ -94,24 +88,20 @@ class TestImprovedQRTokenSystem:
     def test_token_uniqueness(self):
         """Test that generated tokens are unique."""
         conn = sqlite3.connect(":memory:")
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 qr_token TEXT UNIQUE
             )
-        """
-        )
-        conn.execute(
-            """
+        """)
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-        """
-        )
+        """)
 
         # Set base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
@@ -138,11 +128,8 @@ class TestImprovedQRTokenSystem:
     def test_customer_creation_and_update(self):
         """Test customer creation and update logic."""
         conn = sqlite3.connect(":memory:")
-        conn.row_factory = (
-            sqlite3.Row
-        )  # Set row factory to match real database behavior
-        conn.execute(
-            """
+        conn.row_factory = sqlite3.Row  # Set row factory to match real database behavior
+        conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 phone TEXT UNIQUE,
@@ -164,18 +151,15 @@ class TestImprovedQRTokenSystem:
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
             )
-        """
-        )
-        conn.execute(
-            """
+        """)
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-        """
-        )
+        """)
 
         # Set base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
@@ -223,9 +207,7 @@ class TestImprovedQRTokenSystem:
     def test_secure_token_generation(self):
         """Test that token generation uses unique numeric method."""
         conn = sqlite3.connect(":memory:")
-        conn.execute(
-            "CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)"
-        )
+        conn.execute("CREATE TABLE customers (id INTEGER PRIMARY KEY, qr_token TEXT UNIQUE)")
 
         token1 = generate_unique_qr_token(conn)
         token2 = generate_unique_qr_token(conn)
@@ -244,24 +226,20 @@ class TestImprovedQRTokenSystem:
     def test_fallback_to_secure_random(self):
         """Test fallback to secure random when UUID5 fails."""
         conn = sqlite3.connect(":memory:")
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 qr_token TEXT
             )
-        """
-        )
-        conn.execute(
-            """
+        """)
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-        """
-        )
+        """)
 
         # Set base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
@@ -278,11 +256,8 @@ class TestImprovedQRTokenSystem:
     def test_customer_conflict_error(self):
         """Test CustomerIdentityConflictError for conflicting identifiers."""
         conn = sqlite3.connect(":memory:")
-        conn.row_factory = (
-            sqlite3.Row
-        )  # Set row factory to match real database behavior
-        conn.execute(
-            """
+        conn.row_factory = sqlite3.Row  # Set row factory to match real database behavior
+        conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 phone TEXT UNIQUE,
@@ -304,18 +279,15 @@ class TestImprovedQRTokenSystem:
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
             )
-        """
-        )
-        conn.execute(
-            """
+        """)
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-        """
-        )
+        """)
 
         # Set base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
@@ -353,24 +325,20 @@ class TestImprovedQRTokenSystem:
     def test_token_collision_retry(self):
         """Test retry logic when token collision occurs."""
         conn = sqlite3.connect(":memory:")
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 qr_token TEXT UNIQUE
             )
-        """
-        )
-        conn.execute(
-            """
+        """)
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-        """
-        )
+        """)
 
         # Set base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
@@ -398,24 +366,20 @@ class TestImprovedQRTokenSystem:
     def test_performance_large_scale(self):
         """Test performance with large number of token generations."""
         conn = sqlite3.connect(":memory:")
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 qr_token TEXT UNIQUE
             )
-        """
-        )
-        conn.execute(
-            """
+        """)
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-        """
-        )
+        """)
 
         # Set base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
@@ -447,16 +411,14 @@ class TestEdgeCases:
     def test_empty_database(self):
         """Test token generation with empty customers table."""
         conn = sqlite3.connect(":memory:")
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-        """
-        )
+        """)
 
         # Set base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"
@@ -473,14 +435,12 @@ class TestEdgeCases:
     def test_no_base_guid(self):
         """Test token generation when no base GUID exists."""
         conn = sqlite3.connect(":memory:")
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 qr_token TEXT UNIQUE
             )
-        """
-        )
+        """)
         # No system_settings table initially
 
         # Should create base GUID automatically
@@ -496,24 +456,20 @@ class TestEdgeCases:
     def test_max_retry_exceeded(self):
         """Test behavior when max retry attempts are exceeded."""
         conn = sqlite3.connect(":memory:")
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 qr_token TEXT UNIQUE
             )
-        """
-        )
-        conn.execute(
-            """
+        """)
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-        """
-        )
+        """)
 
         # Set base GUID
         base_guid = "550e8400-e29b-41d4-a716-446655440000"

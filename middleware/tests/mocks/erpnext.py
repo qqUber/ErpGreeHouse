@@ -12,9 +12,7 @@ class ERPNextMock:
         self.base_url = base_url
         self.mock = respx.mock(base_url=self.base_url)
 
-    def mock_get_customer(
-        self, telegram_id: str, data: Optional[Dict[str, Any]] = None
-    ):
+    def mock_get_customer(self, telegram_id: str, data: Optional[Dict[str, Any]] = None):
         """Mock GET request for a customer by telegram_id."""
         if data is None:
             data = {
@@ -33,9 +31,7 @@ class ERPNextMock:
         url = f'/api/resource/Telegram Client?filters={filters}&fields=["name", "telegram_id", "first_name", "balance", "customer_link"]'
         self.mock.get(url).mock(return_value=Response(200, json=data))
 
-    def mock_get_customer_by_phone(
-        self, phone: str, data: Optional[Dict[str, Any]] = None
-    ):
+    def mock_get_customer_by_phone(self, phone: str, data: Optional[Dict[str, Any]] = None):
         """Mock GET request for a customer by phone."""
         if data is None:
             data = {"data": []}  # No customer found
@@ -52,9 +48,7 @@ class ERPNextMock:
                 "customer_name": "New Customer",
             }
         }
-        self.mock.post("/api/resource/Customer").mock(
-            return_value=Response(201, json=data)
-        )
+        self.mock.post("/api/resource/Customer").mock(return_value=Response(201, json=data))
 
     def mock_create_customer(self, telegram_id: str, name: str):
         """Mock POST request to create a customer."""
@@ -65,15 +59,11 @@ class ERPNextMock:
                 "first_name": name,
             }
         }
-        self.mock.post("/api/resource/Telegram Client").mock(
-            return_value=Response(201, json=data)
-        )
+        self.mock.post("/api/resource/Telegram Client").mock(return_value=Response(201, json=data))
 
     def mock_create_loyalty_transaction(self):
         """Mock POST request to create a loyalty transaction."""
-        self.mock.post("/api/resource/Loyalty Transaction").mock(
-            return_value=Response(201)
-        )
+        self.mock.post("/api/resource/Loyalty Transaction").mock(return_value=Response(201))
 
     def mock_error(self, method: str, url: str, status_code: int = 500):
         """Mock an error response."""

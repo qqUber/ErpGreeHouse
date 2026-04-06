@@ -110,8 +110,6 @@ PROD1;Updated Name;150;goods
 
     db = get_db()
     with db.connect() as conn:
-        row = conn.execute(
-            "SELECT name, price FROM products WHERE code='PROD1'"
-        ).fetchone()
+        row = conn.execute("SELECT name, price FROM products WHERE code='PROD1'").fetchone()
         assert row["name"] == "Updated Name"
         assert row["price"] == 15000  # 150 rubles in kopecks

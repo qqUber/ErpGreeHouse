@@ -58,9 +58,7 @@ def list_integrations(
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute(
-            "SELECT id, name, kind, enabled, secret, config_json FROM integrations ORDER BY id DESC"
-        )
+        cur = conn.execute("SELECT id, name, kind, enabled, secret, config_json FROM integrations ORDER BY id DESC")
         items = []
         for r in cur.fetchall():
             try:
@@ -263,9 +261,7 @@ class DevCreateSaleIn(BaseModel):
 def ingest_pos_receipt(
     integration_id: int,
     payload: ReceiptIn,
-    x_integration_secret: str | None = Header(
-        default=None, alias="x-integration-secret"
-    ),
+    x_integration_secret: str | None = Header(default=None, alias="x-integration-secret"),
 ) -> dict[str, Any]:
     db = get_db()
     conn = db.connect()
@@ -283,9 +279,7 @@ def ingest_pos_receipt(
             raise HTTPException(status_code=403, detail="Integration disabled")
         require_integration_secret(x_integration_secret, str(integ["secret"]))
 
-        existing = conn.execute(
-            "SELECT id FROM transactions WHERE pos_receipt_id=?", (payload.receipt_id,)
-        ).fetchone()
+        existing = conn.execute("SELECT id FROM transactions WHERE pos_receipt_id=?", (payload.receipt_id,)).fetchone()
         if existing:
             return {
                 "accepted": True,
@@ -313,9 +307,7 @@ def ingest_pos_receipt(
         rules = LoyaltyRules()
         available = int(cust["balance_points"])
         requested_used = int(payload.bonus_used or 0)
-        bonus_used = clamp_redeem_points(
-            int(total), spent_amount, requested_used, available, rules
-        )
+        bonus_used = clamp_redeem_points(int(total), spent_amount, requested_used, available, rules)
         payable = int(total) - bonus_used
         bonus_earned = (
             int(payload.bonus_earned)
@@ -324,9 +316,7 @@ def ingest_pos_receipt(
         )
         new_balance = available - bonus_used + bonus_earned
 
-        items_json = json.dumps(
-            [i.model_dump() for i in payload.items], ensure_ascii=False
-        )
+        items_json = json.dumps([i.model_dump() for i in payload.items], ensure_ascii=False)
         cur2 = conn.execute(
             "INSERT INTO transactions(customer_id, total_amount, bonus_used, bonus_earned, items_json, pos_receipt_id, created_at) VALUES(?,?,?,?,?,?,?)",
             (
@@ -352,9 +342,7 @@ def ingest_pos_receipt(
 
         tg_id = cust["telegram_id"]
         if tg_id:
-            send_customer_message.delay(
-                int(tg_id), f"Покупка: {format_currency(total)}\nБаланс: {new_balance}"
-            )
+            send_customer_message.delay(int(tg_id), f"Покупка: {format_currency(total)}\nБаланс: {new_balance}")
 
         dispatch_event(
             "pos.receipt.ingested",
@@ -390,9 +378,7 @@ def create_dev_sale(
         raise HTTPException(status_code=404, detail="Not found")
 
     role = str(auth_result.get("role") or "")
-    if not (
-        has_permission(role, "pos.sale") or has_permission(role, "integration.update")
-    ):
+    if not (has_permission(role, "pos.sale") or has_permission(role, "integration.update")):
         raise HTTPException(
             status_code=403,
             detail="Forbidden: missing permission 'pos.sale' or 'integration.update'",
@@ -409,9 +395,7 @@ def create_dev_sale(
             "SELECT id, secret FROM integrations WHERE kind='pos_webhook' AND enabled=1 ORDER BY id DESC"
         ).fetchall()
         if not integrations:
-            raise HTTPException(
-                status_code=404, detail="Enabled pos_webhook integration not found"
-            )
+            raise HTTPException(status_code=404, detail="Enabled pos_webhook integration not found")
         if len(integrations) > 1:
             raise HTTPException(
                 status_code=409,
@@ -431,9 +415,7 @@ def create_dev_sale(
         conn.close()
 
     now = datetime.now()
-    transaction_id = (
-        f"POS-KAF-{now.strftime('%Y%m%d-%H%M%S-%f')}-{secrets.token_hex(3).upper()}"
-    )
+    transaction_id = f"POS-KAF-{now.strftime('%Y%m%d-%H%M%S-%f')}-{secrets.token_hex(3).upper()}"
     pos_payload = {
         "transactionId": transaction_id,
         "posDeviceId": "KAFANA-BG-01",
@@ -501,17 +483,13 @@ def create_dev_sale(
 
 def _find_or_create_customer(conn, cust: ReceiptCustomer) -> int:
     if cust.qr_token:
-        row = conn.execute(
-            "SELECT id FROM customers WHERE qr_token=?", (cust.qr_token.strip(),)
-        ).fetchone()
+        row = conn.execute("SELECT id FROM customers WHERE qr_token=?", (cust.qr_token.strip(),)).fetchone()
         if row:
             return int(row[0])
     if cust.phone:
         phone = normalize_phone(cust.phone)
         if phone:
-            row = conn.execute(
-                "SELECT id FROM customers WHERE phone=?", (phone,)
-            ).fetchone()
+            row = conn.execute("SELECT id FROM customers WHERE phone=?", (phone,)).fetchone()
             if row:
                 return int(row[0])
             customer_id, _ = resolve_or_create_customer(
@@ -523,9 +501,7 @@ def _find_or_create_customer(conn, cust: ReceiptCustomer) -> int:
             )
             return customer_id
     if cust.telegram_id:
-        row = conn.execute(
-            "SELECT id FROM customers WHERE telegram_id=?", (int(cust.telegram_id),)
-        ).fetchone()
+        row = conn.execute("SELECT id FROM customers WHERE telegram_id=?", (int(cust.telegram_id),)).fetchone()
         if row:
             return int(row[0])
         customer_id, _ = resolve_or_create_customer(

@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import contextvars
 
-_admin_session_token: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "admin_session_token", default=None
-)
+_admin_session_token: contextvars.ContextVar[str | None] = contextvars.ContextVar("admin_session_token", default=None)
 
 
 def set_admin_session_token(token: str | None) -> contextvars.Token[str | None]:

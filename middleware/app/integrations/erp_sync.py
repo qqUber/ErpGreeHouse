@@ -61,12 +61,8 @@ class Gauge:
         return type("MockValue", (), {"get": lambda self: 0})()
 
 
-SYNC_SUCCESS = Counter(
-    "erp_sync_success", "Number of successful ERP sync operations", ["sync_type"]
-)
-SYNC_FAILURE = Counter(
-    "erp_sync_failure", "Number of failed ERP sync operations", ["sync_type"]
-)
+SYNC_SUCCESS = Counter("erp_sync_success", "Number of successful ERP sync operations", ["sync_type"])
+SYNC_FAILURE = Counter("erp_sync_failure", "Number of failed ERP sync operations", ["sync_type"])
 
 
 # Create a wrapper for Histogram to fix decorator issue
@@ -86,9 +82,7 @@ class HistogramWrapper:
 
 
 SYNC_DURATION = HistogramWrapper(
-    Histogram(
-        "erp_sync_duration_seconds", "Duration of ERP sync operations", ["sync_type"]
-    )
+    Histogram("erp_sync_duration_seconds", "Duration of ERP sync operations", ["sync_type"])
 )
 DLQ_SIZE = Gauge("erp_sync_dlq_size", "Number of events in dead letter queue")
 
@@ -122,9 +116,7 @@ class ERPSyncService:
 
     def __init__(self):
         self.erp_client = ERPNextClient(
-            base_url=os.getenv(
-                "ERP_NEXT_BASE_URL", "https://your-erpnext-instance.com"
-            ),
+            base_url=os.getenv("ERP_NEXT_BASE_URL", "https://your-erpnext-instance.com"),
             api_key=os.getenv("ERP_NEXT_API_KEY", ""),
             api_secret=os.getenv("ERP_NEXT_API_SECRET", ""),
         )
@@ -153,9 +145,7 @@ class ERPSyncService:
             )()
 
     @SYNC_DURATION.labels(sync_type="customer_sync")
-    def sync_customers(
-        self, db, modified_after: Optional[datetime] = None
-    ) -> Dict[str, Any]:
+    def sync_customers(self, db, modified_after: Optional[datetime] = None) -> Dict[str, Any]:
         """
         Sync customer data between ErpGreeHouse and ERPNext
 
@@ -182,9 +172,7 @@ class ERPSyncService:
 
             SYNC_SUCCESS.labels(sync_type="customer_sync").inc(_success_count)
 
-            logger.info(
-                f"Customer sync completed: {_success_count} successful, {failed_count} failed"
-            )
+            logger.info(f"Customer sync completed: {_success_count} successful, {failed_count} failed")
 
             return {
                 "success": True,
@@ -204,9 +192,7 @@ class ERPSyncService:
                 {
                     "sync_type": "customer_sync",
                     "operation": "sync_customers",
-                    "modified_after": (
-                        modified_after.isoformat() if modified_after else None
-                    ),
+                    "modified_after": (modified_after.isoformat() if modified_after else None),
                     "timestamp": start_time.isoformat(),
                 },
                 str(e),
@@ -223,9 +209,7 @@ class ERPSyncService:
             }
 
     @SYNC_DURATION.labels(sync_type="purchase_import")
-    def import_purchases(
-        self, db, posting_date_from: Optional[datetime] = None
-    ) -> Dict[str, Any]:
+    def import_purchases(self, db, posting_date_from: Optional[datetime] = None) -> Dict[str, Any]:
         """
         Import purchase data from ERPNext for loyalty point calculation
 
@@ -252,9 +236,7 @@ class ERPSyncService:
 
             SYNC_SUCCESS.labels(sync_type="purchase_import").inc(_success_count)
 
-            logger.info(
-                f"Purchase import completed: {_success_count} successful, {failed_count} failed"
-            )
+            logger.info(f"Purchase import completed: {_success_count} successful, {failed_count} failed")
 
             return {
                 "success": True,
@@ -274,9 +256,7 @@ class ERPSyncService:
                 {
                     "sync_type": "purchase_import",
                     "operation": "import_purchases",
-                    "posting_date_from": (
-                        posting_date_from.isoformat() if posting_date_from else None
-                    ),
+                    "posting_date_from": (posting_date_from.isoformat() if posting_date_from else None),
                     "timestamp": start_time.isoformat(),
                 },
                 str(e),
@@ -293,9 +273,7 @@ class ERPSyncService:
             }
 
     @SYNC_DURATION.labels(sync_type="loyalty_export")
-    def export_loyalty_data(
-        self, db, export_date: Optional[datetime] = None
-    ) -> Dict[str, Any]:
+    def export_loyalty_data(self, db, export_date: Optional[datetime] = None) -> Dict[str, Any]:
         """
         Export loyalty program data to ERPNext for reporting
 
@@ -389,30 +367,20 @@ class ERPSyncService:
                 msg[b"error"].decode("utf-8")
                 retry_count = int(msg[b"retry_count"])
 
-                logger.info(
-                    f"Processing event: {event['operation']} (retry {retry_count + 1}/{max_retries})"
-                )
+                logger.info(f"Processing event: {event['operation']} (retry {retry_count + 1}/{max_retries})")
 
                 if event["operation"] == "sync_customers":
                     modified_after = (
-                        datetime.fromisoformat(event["modified_after"])
-                        if event["modified_after"]
-                        else None
+                        datetime.fromisoformat(event["modified_after"]) if event["modified_after"] else None
                     )
                     self.sync_customers(db, modified_after)
                 elif event["operation"] == "import_purchases":
                     posting_date_from = (
-                        datetime.fromisoformat(event["posting_date_from"])
-                        if event["posting_date_from"]
-                        else None
+                        datetime.fromisoformat(event["posting_date_from"]) if event["posting_date_from"] else None
                     )
                     self.import_purchases(db, posting_date_from)
                 elif event["operation"] == "export_loyalty_data":
-                    export_date = (
-                        datetime.fromisoformat(event["export_date"])
-                        if event["export_date"]
-                        else None
-                    )
+                    export_date = datetime.fromisoformat(event["export_date"]) if event["export_date"] else None
                     self.export_loyalty_data(db, export_date)
 
                 self.redis_client.xdel("erp_sync_dlq", msg_id)
@@ -423,15 +391,11 @@ class ERPSyncService:
                 retry_count = int(msg[b"retry_count"]) + 1
 
                 if retry_count >= max_retries:
-                    logger.error(
-                        f"Event failed after {max_retries} retries: {event['operation']}"
-                    )
+                    logger.error(f"Event failed after {max_retries} retries: {event['operation']}")
                     self.redis_client.xdel("erp_sync_dlq", msg_id)
                     DLQ_SIZE.dec()
                 else:
-                    logger.warning(
-                        f"Event retry {retry_count} failed: {event['operation']} - {str(e)}"
-                    )
+                    logger.warning(f"Event retry {retry_count} failed: {event['operation']} - {str(e)}")
                     msg[b"retry_count"] = str(retry_count).encode("utf-8")
                     self.redis_client.xadd("erp_sync_dlq", msg, id=msg_id)
 

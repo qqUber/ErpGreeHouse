@@ -77,10 +77,7 @@ def format_vk_keyboard(buttons: List[Dict[str, Any]]) -> Dict[str, Any]:
                         "payload": '{"command": "' + btn["callback_data"] + '"}',
                     },
                     "color": (
-                        "positive"
-                        if "agree" in btn["callback_data"]
-                        or "yes" in btn["callback_data"]
-                        else "negative"
+                        "positive" if "agree" in btn["callback_data"] or "yes" in btn["callback_data"] else "negative"
                     ),
                 }
             ]
@@ -101,9 +98,4 @@ def format_telegram_keyboard(
     Returns:
         Telegram InlineKeyboardMarkup compatible nested list
     """
-    return [
-        [
-            {"text": btn["text"], "callback_data": btn["callback_data"]}
-            for btn in buttons
-        ]
-    ]
+    return [[{"text": btn["text"], "callback_data": btn["callback_data"]} for btn in buttons]]

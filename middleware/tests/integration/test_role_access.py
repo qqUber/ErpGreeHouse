@@ -73,9 +73,7 @@ def expired_tokens(fixtures_dir: Path) -> dict[str, Any]:
 
 
 @pytest.fixture
-def client(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> Generator[TestClient, None, None]:
+def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Generator[TestClient, None, None]:
     """Create a test client with fresh database."""
     # Set JWT_SECRET_KEY before importing app modules
     test_jwt_secret = "test_jwt_secret_key_for_testing_only_12345"
@@ -457,9 +455,7 @@ class TestEdgeCaseValidation:
     ) -> None:
         """Test validation for empty required fields in customer creation."""
         headers = {"Authorization": f"Bearer {owner_token}"}
-        response = client.post(
-            "/api/v1/customers", json=test_case["input"], headers=headers
-        )
+        response = client.post("/api/v1/customers", json=test_case["input"], headers=headers)
 
         # Should return validation error (422 for FastAPI validation, or 400)
         assert response.status_code in [
@@ -513,9 +509,7 @@ class TestEdgeCaseValidation:
             ),
         ],
     )
-    def test_invalid_phone_formats(
-        self, client: TestClient, test_case: dict[str, Any], owner_token: str
-    ) -> None:
+    def test_invalid_phone_formats(self, client: TestClient, test_case: dict[str, Any], owner_token: str) -> None:
         """Test validation for invalid phone number formats."""
         headers = {"Authorization": f"Bearer {owner_token}"}
         response = client.post(
@@ -567,9 +561,7 @@ class TestEdgeCaseValidation:
             ),
         ],
     )
-    def test_invalid_email_formats(
-        self, client: TestClient, test_case: dict[str, Any], owner_token: str
-    ) -> None:
+    def test_invalid_email_formats(self, client: TestClient, test_case: dict[str, Any], owner_token: str) -> None:
         """Test validation for invalid email formats."""
         headers = {"Authorization": f"Bearer {owner_token}"}
         response = client.post(
@@ -641,9 +633,7 @@ class TestEdgeCaseValidation:
     ) -> None:
         """Test validation for empty required fields in product creation."""
         headers = {"Authorization": f"Bearer {owner_token}"}
-        response = client.post(
-            "/api/v1/products", json=test_case["input"], headers=headers
-        )
+        response = client.post("/api/v1/products", json=test_case["input"], headers=headers)
 
         # Should return validation error
         assert response.status_code in [
@@ -672,9 +662,7 @@ class TestEdgeCaseValidation:
             ),
         ],
     )
-    def test_invalid_product_prices(
-        self, client: TestClient, test_case: dict[str, Any], owner_token: str
-    ) -> None:
+    def test_invalid_product_prices(self, client: TestClient, test_case: dict[str, Any], owner_token: str) -> None:
         """Test validation for invalid product prices."""
         headers = {"Authorization": f"Bearer {owner_token}"}
         response = client.post(
@@ -713,9 +701,7 @@ class TestEdgeCaseValidation:
                     "name": "Zero quantity",
                     "input": {
                         "customer_id": 1,
-                        "items": [
-                            {"code": "TEST-001", "name": "Prod", "qty": 0, "price": 100}
-                        ],
+                        "items": [{"code": "TEST-001", "name": "Prod", "qty": 0, "price": 100}],
                         "requested_bonus": 0,
                     },
                     "expected_error": "Input should be greater than or equal to 1",
@@ -724,9 +710,7 @@ class TestEdgeCaseValidation:
             ),
         ],
     )
-    def test_invalid_order_data(
-        self, client: TestClient, test_case: dict[str, Any], operator_token: str
-    ) -> None:
+    def test_invalid_order_data(self, client: TestClient, test_case: dict[str, Any], operator_token: str) -> None:
         """Test validation for invalid order data."""
         # Ensure customer exists
         db = get_db()
@@ -737,9 +721,7 @@ class TestEdgeCaseValidation:
             conn.commit()
 
         headers = {"Authorization": f"Bearer {operator_token}"}
-        response = client.post(
-            "/api/v1/pos/sale", json=test_case["input"], headers=headers
-        )
+        response = client.post("/api/v1/pos/sale", json=test_case["input"], headers=headers)
 
         # Should return validation error
         assert response.status_code in [
@@ -759,9 +741,7 @@ class TestEdgeCaseValidation:
             pytest.param("<b>Test</b> Customer", id="html_tags"),
         ],
     )
-    def test_sql_injection_and_xss_protection(
-        self, client: TestClient, test_input: str, owner_token: str
-    ) -> None:
+    def test_sql_injection_and_xss_protection(self, client: TestClient, test_input: str, owner_token: str) -> None:
         """Test that SQL injection and XSS attempts are properly sanitized."""
         headers = {"Authorization": f"Bearer {owner_token}"}
 
@@ -783,9 +763,7 @@ class TestEdgeCaseValidation:
         if response.status_code == 200:
             response_data = response.json()
             # The system should sanitize input, not reflect it verbatim
-            assert "<script>" not in str(
-                response_data.get("customer_name", "")
-            ), "XSS not sanitized"
+            assert "<script>" not in str(response_data.get("customer_name", "")), "XSS not sanitized"
 
 
 # =============================================================================
@@ -856,9 +834,7 @@ class TestJWTTokenValidation:
             ),
         ],
     )
-    def test_expired_access_tokens(
-        self, client: TestClient, test_case: dict[str, Any]
-    ) -> None:
+    def test_expired_access_tokens(self, client: TestClient, test_case: dict[str, Any]) -> None:
         """Test that expired access tokens are rejected."""
         token = generate_token(test_case["payload"])
         headers = {"Authorization": f"Bearer {token}"}
@@ -902,9 +878,7 @@ class TestJWTTokenValidation:
             ),
         ],
     )
-    def test_expired_refresh_tokens(
-        self, client: TestClient, test_case: dict[str, Any]
-    ) -> None:
+    def test_expired_refresh_tokens(self, client: TestClient, test_case: dict[str, Any]) -> None:
         """Test that expired refresh tokens are rejected."""
         token = generate_token(test_case["payload"])
         headers = {"Authorization": f"Bearer {token}"}
@@ -950,9 +924,7 @@ class TestJWTTokenValidation:
             ),
         ],
     )
-    def test_invalid_token_types(
-        self, client: TestClient, test_case: dict[str, Any]
-    ) -> None:
+    def test_invalid_token_types(self, client: TestClient, test_case: dict[str, Any]) -> None:
         """Test that tokens with wrong type are rejected."""
         token = generate_token(test_case["payload"])
 
@@ -1008,9 +980,7 @@ class TestJWTTokenValidation:
             ),
         ],
     )
-    def test_malformed_tokens(
-        self, client: TestClient, test_case: dict[str, Any]
-    ) -> None:
+    def test_malformed_tokens(self, client: TestClient, test_case: dict[str, Any]) -> None:
         """Test that malformed tokens are rejected."""
         token = test_case["token"]
 
@@ -1085,9 +1055,7 @@ class TestJWTTokenValidation:
             ),
         ],
     )
-    def test_tokens_with_wrong_user(
-        self, client: TestClient, test_case: dict[str, Any]
-    ) -> None:
+    def test_tokens_with_wrong_user(self, client: TestClient, test_case: dict[str, Any]) -> None:
         """Test that tokens for non-existent users are handled correctly."""
         token = generate_token(test_case["payload"])
         headers = {"Authorization": f"Bearer {token}"}
@@ -1146,8 +1114,7 @@ class TestJWTTokenValidation:
                         "role": "owner",
                         "type": "access",
                         "exp": datetime.now(timezone.utc) + timedelta(hours=1),
-                        "iat": datetime.now(timezone.utc)
-                        + timedelta(hours=1),  # Future iat
+                        "iat": datetime.now(timezone.utc) + timedelta(hours=1),  # Future iat
                     },
                     "notes": "Token issued in the future - possible manipulation",
                 },
@@ -1155,9 +1122,7 @@ class TestJWTTokenValidation:
             ),
         ],
     )
-    def test_token_payload_edge_cases(
-        self, client: TestClient, test_case: dict[str, Any]
-    ) -> None:
+    def test_token_payload_edge_cases(self, client: TestClient, test_case: dict[str, Any]) -> None:
         """Test edge cases in token payload."""
         token = generate_token(test_case["payload"])
         headers = {"Authorization": f"Bearer {token}"}
@@ -1196,11 +1161,7 @@ class TestAuthenticationIntegration:
         assert response.status_code == 200
 
         data = response.json()
-        assert (
-            "customers_total" in data
-            or "total_customers" in data
-            or isinstance(data, dict)
-        )
+        assert "customers_total" in data or "total_customers" in data or isinstance(data, dict)
 
     def test_token_refresh_flow(self, client: TestClient, refresh_token: str) -> None:
         """Test token refresh flow."""
@@ -1255,9 +1216,7 @@ class TestAuthenticationIntegration:
         response = client.get("/api/v1/roles/permissions", headers=headers)
         assert response.status_code == 403
 
-    def test_dev_create_sale_reuses_receipt_ingestion(
-        self, client: TestClient, operator_token: str
-    ) -> None:
+    def test_dev_create_sale_reuses_receipt_ingestion(self, client: TestClient, operator_token: str) -> None:
         """Test DEV sale simulator endpoint with operator permission."""
         db = get_db()
         with db.connect() as conn:
@@ -1296,9 +1255,7 @@ class TestAuthenticationIntegration:
         assert int(tx["total_amount"]) == 630
         assert str(tx["pos_receipt_id"]) == data["receipt_id"]
 
-    def test_dev_create_sale_rejects_unknown_customer_qr(
-        self, client: TestClient, operator_token: str
-    ) -> None:
+    def test_dev_create_sale_rejects_unknown_customer_qr(self, client: TestClient, operator_token: str) -> None:
         db = get_db()
         with db.connect() as conn:
             conn.execute(
@@ -1344,10 +1301,7 @@ class TestAuthenticationIntegration:
         )
 
         assert response.status_code == 409, response.text
-        assert (
-            "Multiple enabled pos_webhook integrations found"
-            in response.json()["detail"]
-        )
+        assert "Multiple enabled pos_webhook integrations found" in response.json()["detail"]
 
 
 # =============================================================================

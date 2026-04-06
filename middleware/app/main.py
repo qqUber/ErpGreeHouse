@@ -46,9 +46,7 @@ logging.config.dictConfig(
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
-            "standard": {
-                "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            },
+            "standard": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"},
         },
         "handlers": {
             "console": {
@@ -271,9 +269,7 @@ async def _security_headers(request: Request, call_next):
 async def _unhandled_exception_handler(request: Request, exc: Exception):
     if is_debug():
         return JSONResponse(status_code=500, content={"detail": str(exc)})
-    return JSONResponse(
-        status_code=500, content={"detail": "Внутренняя ошибка. Попробуйте позже."}
-    )
+    return JSONResponse(status_code=500, content={"detail": "Внутренняя ошибка. Попробуйте позже."})
 
 
 @app.exception_handler(HTTPException)
@@ -344,9 +340,7 @@ app.mount("/media", StaticFiles(directory=media_root), name="media")
 
 admin_dist_override = os.getenv("ADMIN_UI_DIST", "").strip()
 admin_dist = (
-    Path(admin_dist_override)
-    if admin_dist_override
-    else (Path(__file__).resolve().parents[2] / "admin-ui" / "dist")
+    Path(admin_dist_override) if admin_dist_override else (Path(__file__).resolve().parents[2] / "admin-ui" / "dist")
 )
 
 
@@ -357,9 +351,7 @@ async def _root() -> RedirectResponse:
     return RedirectResponse(url="/docs")
 
 
-def verify_webhook_secret(
-    secret_header: str | None, expected: str, admin_secret: str = ""
-) -> None:
+def verify_webhook_secret(secret_header: str | None, expected: str, admin_secret: str = "") -> None:
     """Verify the webhook secret header against expected secret or ADMIN_SECRET.
 
     Allows authentication via either:
@@ -378,15 +370,11 @@ def verify_webhook_secret(
     """
     # Development mode: allow webhooks without secret if no secrets configured
     if not expected and not admin_secret:
-        logger.warning(
-            "[WEBHOOK] No webhook secret configured - allowing webhook request (dev mode)"
-        )
+        logger.warning("[WEBHOOK] No webhook secret configured - allowing webhook request (dev mode)")
         return
 
     if not secret_header:
-        raise HTTPException(
-            status_code=HTTP_401_UNAUTHORIZED, detail="Missing webhook secret"
-        )
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Missing webhook secret")
 
     # Use constant-time comparison to prevent timing attacks
     from secrets import compare_digest
@@ -397,9 +385,7 @@ def verify_webhook_secret(
 
     if not (expected_match or admin_match):
         logger.warning("[WEBHOOK] Invalid webhook secret attempt")
-        raise HTTPException(
-            status_code=HTTP_401_UNAUTHORIZED, detail="Invalid webhook secret"
-        )
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid webhook secret")
 
 
 @app.get("/health", status_code=HTTP_200_OK)
@@ -413,9 +399,7 @@ async def telegram_webhook(
 ) -> dict:
     settings = get_settings()
     admin_secret = os.getenv("ADMIN_SECRET", "")
-    secret_header = request.headers.get(
-        "x-telegram-bot-api-secret-token"
-    ) or request.headers.get("x_webhook_secret")
+    secret_header = request.headers.get("x-telegram-bot-api-secret-token") or request.headers.get("x_webhook_secret")
     verify_webhook_secret(
         secret_header,
         settings.webhook_secret,
@@ -536,9 +520,7 @@ def _load_vk_config() -> None:
         db = get_db()
         conn = db.connect()
         try:
-            cur = conn.execute(
-                "SELECT access_token, group_id, api_version FROM vk_settings WHERE enabled = 1 LIMIT 1"
-            )
+            cur = conn.execute("SELECT access_token, group_id, api_version FROM vk_settings WHERE enabled = 1 LIMIT 1")
             row = cur.fetchone()
             if row and row["access_token"] and row["group_id"]:
                 set_vk_config(
@@ -597,9 +579,7 @@ def _initialize_country_settings(settings: Any) -> None:
                 f"force_single={result.get('force_single_country', False)}"
             )
         else:
-            logger.warning(
-                "[COUNTRY] Failed to initialize system country - no countries in database"
-            )
+            logger.warning("[COUNTRY] Failed to initialize system country - no countries in database")
     except Exception as e:
         logger.warning(f"[COUNTRY] Failed to initialize country settings: {e}")
 

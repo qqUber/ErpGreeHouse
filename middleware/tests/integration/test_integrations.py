@@ -28,9 +28,7 @@ def test_create_pos_integration_and_ingest_receipt(client: TestClient) -> None:
     assert r.status_code == 200
     integ_id = r.json()["id"]
 
-    g = client.get(
-        f"/api/v1/integrations/{integ_id}", headers={"x-admin-secret": "test-admin"}
-    )
+    g = client.get(f"/api/v1/integrations/{integ_id}", headers={"x-admin-secret": "test-admin"})
     assert g.status_code == 200
     secret = g.json()["integration"]["secret"]
 
@@ -58,9 +56,7 @@ def test_create_pos_integration_and_ingest_receipt(client: TestClient) -> None:
     assert w2.json().get("duplicate") is True
 
 
-def test_outbound_integration_dispatch(
-    monkeypatch: pytest.MonkeyPatch, client: TestClient
-) -> None:
+def test_outbound_integration_dispatch(monkeypatch: pytest.MonkeyPatch, client: TestClient) -> None:
     calls = []
 
     from app import integration_events

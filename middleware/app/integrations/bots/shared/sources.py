@@ -68,7 +68,5 @@ def resolve_source_column(source: Source) -> str:
     source_key = normalize_source(source)
     mapping = get_source_column_mappings()
     if source_key not in mapping:
-        raise ValueError(
-            f"Invalid source: {source_key}. Must be one of: {list(mapping.keys())}"
-        )
+        raise ValueError(f"Invalid source: {source_key}. Must be one of: {list(mapping.keys())}")
     return mapping[source_key]

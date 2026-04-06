@@ -46,9 +46,7 @@ def _resolve_time_range_bounds(time_range: str) -> tuple[datetime, datetime]:
     return start_date, end_date
 
 
-def _format_time_range_bounds(
-    start_date: datetime, end_date: datetime
-) -> tuple[str, str]:
+def _format_time_range_bounds(start_date: datetime, end_date: datetime) -> tuple[str, str]:
     return (
         start_date.strftime("%Y-%m-%d %H:%M:%S"),
         end_date.strftime("%Y-%m-%d %H:%M:%S"),
@@ -117,9 +115,7 @@ def _verify_external_api_key(api_key: str) -> None:
 # ------------------------------
 @router.get("/analytics/dashboard/overview", dependencies=[Depends(require_jwt_auth)])
 def get_dashboard_overview(
-    time_range: str = Query(
-        default="7d", description="Time range: 24h, 7d, 30d, 90d, 1y"
-    ),
+    time_range: str = Query(default="7d", description="Time range: 24h, 7d, 30d, 90d, 1y"),
 ):
     """Get real-time dashboard overview with key metrics"""
     cache_key = f"crm:cache:analytics:dashboard:overview:{time_range}"
@@ -143,9 +139,7 @@ def get_dashboard_overview(
         ).fetchone()[0]
 
         # Total transactions
-        total_transactions = conn.execute(
-            "SELECT COUNT(*) FROM transactions"
-        ).fetchone()[0]
+        total_transactions = conn.execute("SELECT COUNT(*) FROM transactions").fetchone()[0]
 
         # Transactions in time range
         transactions = conn.execute(
@@ -154,12 +148,7 @@ def get_dashboard_overview(
         ).fetchone()[0]
 
         # Total revenue (divide by 100 to convert from cents to rubles)
-        total_revenue = (
-            conn.execute(
-                "SELECT COALESCE(SUM(total_amount), 0) FROM transactions"
-            ).fetchone()[0]
-            / 100
-        )
+        total_revenue = conn.execute("SELECT COALESCE(SUM(total_amount), 0) FROM transactions").fetchone()[0] / 100
 
         # Revenue in time range (divide by 100 to convert from cents to rubles)
         revenue = (
@@ -216,9 +205,7 @@ def get_dashboard_overview(
                     prev_end.strftime("%Y-%m-%d %H:%M:%S"),
                 ),
             ).fetchone()[0]
-            retention_rate = (
-                (active_customers / prev_active) * 100 if prev_active > 0 else 0
-            )
+            retention_rate = (active_customers / prev_active) * 100 if prev_active > 0 else 0
         else:
             retention_rate = 0
 
@@ -260,36 +247,18 @@ def get_marketing_analytics():
     try:
         # Customer metrics
         total_customers = conn.execute("SELECT COUNT(*) FROM customers").fetchone()[0]
-        marketing_consent = conn.execute(
-            "SELECT COUNT(*) FROM customers WHERE marketing_allowed = 1"
-        ).fetchone()[0]
+        marketing_consent = conn.execute("SELECT COUNT(*) FROM customers WHERE marketing_allowed = 1").fetchone()[0]
 
         # LTV and balance averages
-        avg_ltv_result = conn.execute(
-            "SELECT AVG(ltv) FROM customers WHERE ltv IS NOT NULL"
-        ).fetchone()
-        avg_ltv = (
-            round(avg_ltv_result[0], 0)
-            if avg_ltv_result and avg_ltv_result[0]
-            else 14567
-        )
+        avg_ltv_result = conn.execute("SELECT AVG(ltv) FROM customers WHERE ltv IS NOT NULL").fetchone()
+        avg_ltv = round(avg_ltv_result[0], 0) if avg_ltv_result and avg_ltv_result[0] else 14567
 
-        avg_balance_result = conn.execute(
-            "SELECT AVG(balance_points) FROM customers"
-        ).fetchone()
-        avg_balance = (
-            round(avg_balance_result[0], 0)
-            if avg_balance_result and avg_balance_result[0]
-            else 1343
-        )
+        avg_balance_result = conn.execute("SELECT AVG(balance_points) FROM customers").fetchone()
+        avg_balance = round(avg_balance_result[0], 0) if avg_balance_result and avg_balance_result[0] else 1343
 
         # Customer segments based on LTV
         high_value = (
-            conn.execute("SELECT COUNT(*) FROM customers WHERE ltv > 15000").fetchone()[
-                0
-            ]
-            if total_customers > 0
-            else 8
+            conn.execute("SELECT COUNT(*) FROM customers WHERE ltv > 15000").fetchone()[0] if total_customers > 0 else 8
         )
         active = (
             conn.execute(
@@ -299,25 +268,19 @@ def get_marketing_analytics():
             else 12
         )
         new_customers = (
-            conn.execute(
-                "SELECT COUNT(*) FROM customers WHERE created_at > datetime('now', '-30 days')"
-            ).fetchone()[0]
+            conn.execute("SELECT COUNT(*) FROM customers WHERE created_at > datetime('now', '-30 days')").fetchone()[0]
             if total_customers > 0
             else 6
         )
 
         # Channel preferences
         telegram_count = (
-            conn.execute(
-                "SELECT COUNT(*) FROM customers WHERE telegram_id IS NOT NULL"
-            ).fetchone()[0]
+            conn.execute("SELECT COUNT(*) FROM customers WHERE telegram_id IS NOT NULL").fetchone()[0]
             if total_customers > 0
             else 15
         )
         vk_count = (
-            conn.execute(
-                "SELECT COUNT(*) FROM customers WHERE vk_id IS NOT NULL"
-            ).fetchone()[0]
+            conn.execute("SELECT COUNT(*) FROM customers WHERE vk_id IS NOT NULL").fetchone()[0]
             if total_customers > 0
             else 8
         )
@@ -330,9 +293,9 @@ def get_marketing_analytics():
         )
 
         # Campaign metrics
-        active_campaigns = conn.execute(
-            "SELECT COUNT(*) FROM marketing_campaigns WHERE status = 'active'"
-        ).fetchone()[0]
+        active_campaigns = conn.execute("SELECT COUNT(*) FROM marketing_campaigns WHERE status = 'active'").fetchone()[
+            0
+        ]
         upcoming_campaigns = conn.execute(
             "SELECT COUNT(*) FROM marketing_campaigns WHERE status = 'scheduled'"
         ).fetchone()[0]
@@ -366,9 +329,7 @@ def get_marketing_analytics():
             },
             "performance": {
                 "total_revenue": (
-                    conn.execute(
-                        "SELECT COALESCE(SUM(total_amount), 0) FROM transactions"
-                    ).fetchone()[0]
+                    conn.execute("SELECT COALESCE(SUM(total_amount), 0) FROM transactions").fetchone()[0]
                     if total_customers > 0
                     else 524880
                 )
@@ -471,8 +432,7 @@ def get_sales_chart(
                 {
                     "date": row[0],
                     "transactions": row[1],
-                    "revenue": row[2]
-                    / 100,  # Divide by 100 to convert from cents to rubles
+                    "revenue": row[2] / 100,  # Divide by 100 to convert from cents to rubles
                     "points_redeemed": row[3],
                     "points_earned": row[4],
                 }
@@ -700,9 +660,7 @@ def get_loyalty_chart(
 # ------------------------------
 # Loyalty Program Reports
 # ------------------------------
-@router.get(
-    "/analytics/reports/loyalty/overview", dependencies=[Depends(require_jwt_auth)]
-)
+@router.get("/analytics/reports/loyalty/overview", dependencies=[Depends(require_jwt_auth)])
 def get_loyalty_report_overview(
     time_range: str = Query(default="30d", description="Time range: 7d, 30d, 90d, 1y"),
 ):
@@ -753,9 +711,7 @@ def get_loyalty_report_overview(
             (start_str, end_str),
         ).fetchone()[0]
 
-        redemption_rate = (
-            (customers_redeeming / total_customers) * 100 if total_customers > 0 else 0
-        )
+        redemption_rate = (customers_redeeming / total_customers) * 100 if total_customers > 0 else 0
 
         # Average points per transaction
         avg_points_per_transaction = conn.execute(
@@ -813,12 +769,8 @@ def get_loyalty_report_overview(
                 "points_redeemed": points_redeemed,
                 "redemption_rate": round(redemption_rate, 2),
                 "avg_points_per_transaction": round(avg_points_per_transaction, 2),
-                "avg_points_redeemed_per_customer": round(
-                    avg_points_redeemed_per_customer, 2
-                ),
-                "avg_visits_per_redeeming_customer": round(
-                    avg_visits_per_redeeming_customer, 2
-                ),
+                "avg_points_redeemed_per_customer": round(avg_points_redeemed_per_customer, 2),
+                "avg_visits_per_redeeming_customer": round(avg_visits_per_redeeming_customer, 2),
                 "reminder_count": reminder_count,
             },
         }
@@ -830,9 +782,7 @@ def get_loyalty_report_overview(
         conn.close()
 
 
-@router.get(
-    "/analytics/reports/loyalty/detailed", dependencies=[Depends(require_jwt_auth)]
-)
+@router.get("/analytics/reports/loyalty/detailed", dependencies=[Depends(require_jwt_auth)])
 def get_loyalty_detailed_report(
     time_range: str = Query(default="30d", description="Time range: 7d, 30d, 90d, 1y"),
 ):
@@ -889,8 +839,7 @@ def get_loyalty_detailed_report(
                     "full_name": row[1],
                     "phone": row[2],
                     "transaction_count": row[3],
-                    "total_spent": row[4]
-                    / 100,  # Divide by 100 to convert from cents to rubles
+                    "total_spent": row[4] / 100,  # Divide by 100 to convert from cents to rubles
                     "points_earned": row[5],
                     "points_redeemed": row[6],
                     "last_transaction": row[7],
@@ -987,9 +936,7 @@ def export_loyalty_report_csv(
         return StreamingResponse(
             iter([output.getvalue()]),
             media_type="text/csv",
-            headers={
-                "Content-Disposition": f"attachment; filename=loyalty_report_{time_range}.csv"
-            },
+            headers={"Content-Disposition": f"attachment; filename=loyalty_report_{time_range}.csv"},
         )
 
     finally:
@@ -1067,9 +1014,7 @@ def export_sales_report_csv(
         return StreamingResponse(
             iter([output.getvalue()]),
             media_type="text/csv",
-            headers={
-                "Content-Disposition": f"attachment; filename=sales_report_{time_range}.csv"
-            },
+            headers={"Content-Disposition": f"attachment; filename=sales_report_{time_range}.csv"},
         )
 
     finally:
@@ -1151,9 +1096,7 @@ def export_customers_report_csv(
         return StreamingResponse(
             iter([output.getvalue()]),
             media_type="text/csv",
-            headers={
-                "Content-Disposition": f"attachment; filename=customers_report_{time_range}.csv"
-            },
+            headers={"Content-Disposition": f"attachment; filename=customers_report_{time_range}.csv"},
         )
 
     finally:
@@ -1163,9 +1106,7 @@ def export_customers_report_csv(
 # ------------------------------
 # Customer Behavior & Segmentation
 # ------------------------------
-@router.get(
-    "/analytics/customers/segmentation", dependencies=[Depends(require_jwt_auth)]
-)
+@router.get("/analytics/customers/segmentation", dependencies=[Depends(require_jwt_auth)])
 def get_customer_segmentation():
     """Get customer segmentation analysis"""
     cache_key = "crm:cache:analytics:customers:segmentation"
@@ -1210,8 +1151,7 @@ def get_customer_segmentation():
                     "phone": row[2],
                     "recency": recency,
                     "frequency": row[4],
-                    "monetary": row[5]
-                    / 100,  # Divide by 100 to convert from cents to rubles
+                    "monetary": row[5] / 100,  # Divide by 100 to convert from cents to rubles
                     "balance_points": row[6],
                 }
             )
@@ -1247,21 +1187,11 @@ def get_customer_segmentation():
             "new": {
                 "count": len(segments["new"]),
                 "avg_monetary": round(
-                    (
-                        sum(c["monetary"] for c in segments["new"])
-                        / len(segments["new"])
-                        if segments["new"]
-                        else 0
-                    ),
+                    (sum(c["monetary"] for c in segments["new"]) / len(segments["new"]) if segments["new"] else 0),
                     2,
                 ),
                 "avg_frequency": round(
-                    (
-                        sum(c["frequency"] for c in segments["new"])
-                        / len(segments["new"])
-                        if segments["new"]
-                        else 0
-                    ),
+                    (sum(c["frequency"] for c in segments["new"]) / len(segments["new"]) if segments["new"] else 0),
                     2,
                 ),
             },
@@ -1269,8 +1199,7 @@ def get_customer_segmentation():
                 "count": len(segments["active"]),
                 "avg_monetary": round(
                     (
-                        sum(c["monetary"] for c in segments["active"])
-                        / len(segments["active"])
+                        sum(c["monetary"] for c in segments["active"]) / len(segments["active"])
                         if segments["active"]
                         else 0
                     ),
@@ -1278,8 +1207,7 @@ def get_customer_segmentation():
                 ),
                 "avg_frequency": round(
                     (
-                        sum(c["frequency"] for c in segments["active"])
-                        / len(segments["active"])
+                        sum(c["frequency"] for c in segments["active"]) / len(segments["active"])
                         if segments["active"]
                         else 0
                     ),
@@ -1290,8 +1218,7 @@ def get_customer_segmentation():
                 "count": len(segments["at_risk"]),
                 "avg_monetary": round(
                     (
-                        sum(c["monetary"] for c in segments["at_risk"])
-                        / len(segments["at_risk"])
+                        sum(c["monetary"] for c in segments["at_risk"]) / len(segments["at_risk"])
                         if segments["at_risk"]
                         else 0
                     ),
@@ -1299,8 +1226,7 @@ def get_customer_segmentation():
                 ),
                 "avg_frequency": round(
                     (
-                        sum(c["frequency"] for c in segments["at_risk"])
-                        / len(segments["at_risk"])
+                        sum(c["frequency"] for c in segments["at_risk"]) / len(segments["at_risk"])
                         if segments["at_risk"]
                         else 0
                     ),
@@ -1311,8 +1237,7 @@ def get_customer_segmentation():
                 "count": len(segments["churned"]),
                 "avg_monetary": round(
                     (
-                        sum(c["monetary"] for c in segments["churned"])
-                        / len(segments["churned"])
+                        sum(c["monetary"] for c in segments["churned"]) / len(segments["churned"])
                         if segments["churned"]
                         else 0
                     ),
@@ -1320,8 +1245,7 @@ def get_customer_segmentation():
                 ),
                 "avg_frequency": round(
                     (
-                        sum(c["frequency"] for c in segments["churned"])
-                        / len(segments["churned"])
+                        sum(c["frequency"] for c in segments["churned"]) / len(segments["churned"])
                         if segments["churned"]
                         else 0
                     ),
@@ -1331,21 +1255,11 @@ def get_customer_segmentation():
             "vip": {
                 "count": len(segments["vip"]),
                 "avg_monetary": round(
-                    (
-                        sum(c["monetary"] for c in segments["vip"])
-                        / len(segments["vip"])
-                        if segments["vip"]
-                        else 0
-                    ),
+                    (sum(c["monetary"] for c in segments["vip"]) / len(segments["vip"]) if segments["vip"] else 0),
                     2,
                 ),
                 "avg_frequency": round(
-                    (
-                        sum(c["frequency"] for c in segments["vip"])
-                        / len(segments["vip"])
-                        if segments["vip"]
-                        else 0
-                    ),
+                    (sum(c["frequency"] for c in segments["vip"]) / len(segments["vip"]) if segments["vip"] else 0),
                     2,
                 ),
             },
@@ -1413,8 +1327,7 @@ def get_external_sales_report(
                 {
                     "date": row[0],
                     "transactions": row[1],
-                    "revenue": row[2]
-                    / 100,  # Divide by 100 to convert from cents to rubles
+                    "revenue": row[2] / 100,  # Divide by 100 to convert from cents to rubles
                     "points_redeemed": row[3],
                     "points_earned": row[4],
                 }

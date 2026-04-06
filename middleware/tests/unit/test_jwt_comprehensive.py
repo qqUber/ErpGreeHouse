@@ -43,9 +43,7 @@ class TestJWTTokenCreation:
 
         # Decode and verify payload
         settings = get_settings()
-        payload = jwt.decode(
-            token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
-        )
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
 
         assert payload["sub"] == "1"
         assert payload["username"] == "test_user"
@@ -94,9 +92,7 @@ class TestJWTTokenCreation:
 
         # Decode and verify payload
         settings = get_settings()
-        payload = jwt.decode(
-            token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
-        )
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
 
         assert payload["sub"] == "1"
         assert payload["type"] == "refresh"
@@ -113,12 +109,8 @@ class TestJWTTokenCreation:
 
         settings = get_settings()
 
-        access_payload = jwt.decode(
-            access_token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
-        )
-        refresh_payload = jwt.decode(
-            refresh_token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
-        )
+        access_payload = jwt.decode(access_token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        refresh_payload = jwt.decode(refresh_token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
 
         # Check expiration times are reasonable
         access_exp = datetime.fromtimestamp(access_payload["exp"], timezone.utc)
@@ -170,9 +162,7 @@ class TestJWTTokenValidation:
             "exp": expire,
             "iat": datetime.now(timezone.utc) - timedelta(hours=2),
         }
-        expired_token = jwt.encode(
-            payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
-        )
+        expired_token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
         result = validate_access_token(expired_token)
         assert result is None
@@ -247,9 +237,7 @@ class TestJWTDecode:
             "exp": expire,
             "iat": datetime.now(timezone.utc) - timedelta(hours=2),
         }
-        expired_token = jwt.encode(
-            payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
-        )
+        expired_token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
         from fastapi import HTTPException
 
@@ -428,9 +416,7 @@ class TestSecurityEdgeCases:
         # This should fail when validated with our expected algorithm
         try:
             # Create token with HS256 (our expected algorithm)
-            valid_token = jwt.encode(
-                payload, settings.jwt_secret_key, algorithm="HS256"
-            )
+            valid_token = jwt.encode(payload, settings.jwt_secret_key, algorithm="HS256")
             result = validate_access_token(valid_token)
             assert result is not None
 
@@ -536,9 +522,7 @@ class TestJWTIntegration:
             "exp": expire,
             "iat": datetime.now(timezone.utc) - timedelta(minutes=31),
         }
-        expired_token = jwt.encode(
-            expired_payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
-        )
+        expired_token = jwt.encode(expired_payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
         # Expired token should be invalid
         result = validate_access_token(expired_token)
@@ -561,9 +545,7 @@ class TestJWTErrorHandling:
             "exp": expire,
             "iat": datetime.now(timezone.utc) - timedelta(hours=2),
         }
-        expired_token = jwt.encode(
-            payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
-        )
+        expired_token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
         validate_access_token(expired_token)
 

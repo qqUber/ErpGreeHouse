@@ -49,9 +49,7 @@ async def test_cmd_register_invalid_format(telegram_mock):
 
     await handlers.cmd_register(message)
 
-    message.answer.assert_called_once_with(
-        "Используйте главное меню или /start для начала регистрации."
-    )
+    message.answer.assert_called_once_with("Используйте главное меню или /start для начала регистрации.")
 
 
 @pytest.mark.asyncio
@@ -62,9 +60,7 @@ async def test_cmd_register_valid(telegram_mock, redis_client):
     with patch("app.handlers.get_redis", return_value=redis_client):
         await handlers.cmd_register(message)
 
-    message.answer.assert_called_once_with(
-        "Используйте главное меню или /start для начала регистрации."
-    )
+    message.answer.assert_called_once_with("Используйте главное меню или /start для начала регистрации.")
 
 
 @pytest.mark.asyncio

@@ -93,9 +93,7 @@ class TestJWTTimingAttacks:
             "exp": datetime.now(timezone.utc) + timedelta(hours=1),
             "iat": datetime.now(timezone.utc),
         }
-        wrong_secret_token = jwt.encode(
-            wrong_secret_payload, "wrong_secret", algorithm=settings.jwt_algorithm
-        )
+        wrong_secret_token = jwt.encode(wrong_secret_payload, "wrong_secret", algorithm=settings.jwt_algorithm)
 
         # Measure validation timing
         valid_times = []
@@ -170,9 +168,7 @@ class TestJWTAlgorithmAttacks:
             try:
                 if algo.startswith("HS"):
                     # Symmetric algorithms
-                    token = jwt.encode(
-                        different_algo_payload, settings.jwt_secret_key, algorithm=algo
-                    )
+                    token = jwt.encode(different_algo_payload, settings.jwt_secret_key, algorithm=algo)
                 else:
                     # Asymmetric algorithms (would need different key handling)
                     continue
@@ -180,9 +176,7 @@ class TestJWTAlgorithmAttacks:
                 # Try to validate with our expected algorithm
                 result = validate_access_token(token)
                 # Should fail if we're strict about algorithm
-                assert (
-                    result is None or result["sub"] == "1"
-                ), "Algorithm confusion should be prevented"
+                assert result is None or result["sub"] == "1", "Algorithm confusion should be prevented"
 
             except Exception:
                 # Expected for incompatible algorithms
@@ -206,9 +200,7 @@ class TestJWTAlgorithmAttacks:
             "iat": datetime.now(timezone.utc),
         }
 
-        wrong_key_token = jwt.encode(
-            wrong_key_payload, "attacker_secret", algorithm=settings.jwt_algorithm
-        )
+        wrong_key_token = jwt.encode(wrong_key_payload, "attacker_secret", algorithm=settings.jwt_algorithm)
 
         # Should fail validation
         result = validate_access_token(wrong_key_token)
@@ -233,9 +225,7 @@ class TestJWTPayloadInjection:
 
         for tampered in tampered_tokens:
             result = validate_access_token(tampered)
-            assert (
-                result is None
-            ), f"Tampered token should be rejected: {tampered[:50]}..."
+            assert result is None, f"Tampered token should be rejected: {tampered[:50]}..."
 
         # Original token should still be valid
         assert validate_access_token(original_token) is not None
@@ -287,9 +277,7 @@ class TestJWTPayloadInjection:
 
         # Decode the original payload (for testing purposes)
         settings = get_settings()
-        original_payload = jwt.decode(
-            original_token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
-        )
+        original_payload = jwt.decode(original_token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
 
         # Try to add malicious claims
         malicious_payload = original_payload.copy()
@@ -301,9 +289,7 @@ class TestJWTPayloadInjection:
         # So any attempt to modify the payload should result in invalid token
         try:
             # This would fail without the secret key
-            malicious_token = jwt.encode(
-                malicious_payload, "wrong_secret", algorithm=settings.jwt_algorithm
-            )
+            malicious_token = jwt.encode(malicious_payload, "wrong_secret", algorithm=settings.jwt_algorithm)
             result = validate_access_token(malicious_token)
             assert result is None, "Malicious payload injection should fail"
         except Exception:
@@ -345,9 +331,7 @@ class TestJWTReplayAttacks:
             "iat": datetime.now(timezone.utc) - timedelta(hours=2),
         }
 
-        expired_token = jwt.encode(
-            payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
-        )
+        expired_token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
         # Should be invalid (expired)
         result = validate_access_token(expired_token)
@@ -394,9 +378,7 @@ class TestJWTCryptographicStrength:
         settings = get_settings()
 
         # Secret key should be sufficiently long (relaxed for test env)
-        assert (
-            len(settings.jwt_secret_key) >= 24
-        ), "Secret key should be at least 24 characters"
+        assert len(settings.jwt_secret_key) >= 24, "Secret key should be at least 24 characters"
 
         # Secret key should have good entropy (relaxed for test env)
         # (Basic check - in production use proper entropy analysis)
@@ -434,9 +416,7 @@ class TestJWTCryptographicStrength:
             signatures.append(signature)
 
         # All signatures should be unique
-        assert len(set(signatures)) == len(
-            signatures
-        ), "Signatures should be unique for different payloads"
+        assert len(set(signatures)) == len(signatures), "Signatures should be unique for different payloads"
 
     def test_token_uniqueness(self):
         """Test that different tokens are generated with different timestamps"""
@@ -488,9 +468,7 @@ class TestJWTErrorInformationLeakage:
                     "exp": expire,
                     "iat": datetime.now(timezone.utc) - timedelta(hours=2),
                 }
-                invalid_token = jwt.encode(
-                    payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
-                )
+                invalid_token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
             else:
                 invalid_token = token_desc
 
@@ -500,13 +478,9 @@ class TestJWTErrorInformationLeakage:
             except HTTPException as e:
                 # Error message should not contain sensitive info
                 error_detail = str(e.detail).lower()
-                assert (
-                    "secret" not in error_detail
-                ), f"Error message should not contain 'secret': {error_detail}"
+                assert "secret" not in error_detail, f"Error message should not contain 'secret': {error_detail}"
                 # The secret key should not be in the error message
-                assert (
-                    settings.jwt_secret_key.lower() not in error_detail
-                ), "Error should not contain actual secret"
+                assert settings.jwt_secret_key.lower() not in error_detail, "Error should not contain actual secret"
 
     def test_validation_failures_dont_exploit_structure(self):
         """Test that validation failures don't reveal token structure"""

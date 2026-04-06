@@ -15,13 +15,9 @@ class ThemeTokens(BaseModel):
     """Design token configuration for tenant theming."""
 
     primary: str = Field(default="#10b981", description="Primary brand color")
-    primaryDark: str = Field(
-        default="#059669", description="Primary color for dark mode"
-    )
+    primaryDark: str = Field(default="#059669", description="Primary color for dark mode")
     secondary: str = Field(default="#3b82f6", description="Secondary accent color")
-    secondaryDark: str = Field(
-        default="#2563eb", description="Secondary color for dark mode"
-    )
+    secondaryDark: str = Field(default="#2563eb", description="Secondary color for dark mode")
     success: str = Field(default="#22c55e")
     warning: str = Field(default="#f59e0b")
     error: str = Field(default="#ef4444")
@@ -47,9 +43,7 @@ class ThemeConfigResponse(BaseModel):
     faviconUrl: str | None = Field(default=None)
     tokens: ThemeTokens = Field(default_factory=ThemeTokens)
     fontFamily: str = Field(default="system-ui, -apple-system, sans-serif")
-    borderRadius: Literal["none", "small", "medium", "large", "full"] = Field(
-        default="medium"
-    )
+    borderRadius: Literal["none", "small", "medium", "large", "full"] = Field(default="medium")
 
 
 @router.get("/theme", response_model=ThemeConfigResponse)
@@ -72,9 +66,7 @@ class UserPreferences(BaseModel):
     """User preference settings."""
 
     theme: Literal["light", "dark", "auto"] = Field(default="auto")
-    density: Literal["compact", "comfortable", "spacious"] = Field(
-        default="comfortable"
-    )
+    density: Literal["compact", "comfortable", "spacious"] = Field(default="comfortable")
     locale: Literal["en", "ru", "srb"] = Field(default="en")
     sidebarCollapsed: bool = Field(default=False)
     dashboardLayout: dict[str, Any] = Field(default_factory=dict)
@@ -97,9 +89,7 @@ async def get_user_preferences(
     db = get_db()
     conn = db.connect()
     try:
-        cursor = conn.execute(
-            "SELECT preferences FROM admin_users WHERE id = ?", (user["id"],)
-        )
+        cursor = conn.execute("SELECT preferences FROM admin_users WHERE id = ?", (user["id"],))
         row = cursor.fetchone()
 
         prefs = UserPreferences()
@@ -203,9 +193,7 @@ class DashboardPreferences(BaseModel):
     """Complete dashboard preferences."""
 
     widgets: WidgetPreferences = Field(default_factory=WidgetPreferences)
-    refreshInterval: int = Field(
-        default=300, description="Auto-refresh interval in seconds"
-    )
+    refreshInterval: int = Field(default=300, description="Auto-refresh interval in seconds")
 
 
 @router.get("/preferences/dashboard", response_model=DashboardPreferences)
@@ -218,9 +206,7 @@ async def get_dashboard_preferences(
     db = get_db()
     conn = db.connect()
     try:
-        cursor = conn.execute(
-            "SELECT dashboard_prefs FROM admin_users WHERE id = ?", (user["id"],)
-        )
+        cursor = conn.execute("SELECT dashboard_prefs FROM admin_users WHERE id = ?", (user["id"],))
         row = cursor.fetchone()
 
         prefs = DashboardPreferences()

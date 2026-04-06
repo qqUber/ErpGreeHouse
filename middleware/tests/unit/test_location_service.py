@@ -171,9 +171,7 @@ class TestLocationService:
         assert "total" in result
         assert result["total"] == 2
 
-    def test_record_customer_visit_invalidates_cache_before_commit(
-        self, mock_db, mock_redis
-    ):
+    def test_record_customer_visit_invalidates_cache_before_commit(self, mock_db, mock_redis):
         """Test that cache is invalidated BEFORE database commit to prevent race condition."""
         mock_db_instance, mock_conn = mock_db
 
@@ -293,25 +291,12 @@ class TestLocationService:
         # Mock queries by SQL shape so additional INSERT/UPDATE statements do not break the test.
         def execute_side_effect(sql, params=None):
             sql_text = str(sql).lower()
-            if (
-                "select value from system_settings where key = 'default_country_id'"
-                in sql_text
-            ):
+            if "select value from system_settings where key = 'default_country_id'" in sql_text:
                 return Mock(fetchone=Mock(return_value=None))
-            if (
-                "select value from system_settings where key = 'default_currency_code'"
-                in sql_text
-            ):
+            if "select value from system_settings where key = 'default_currency_code'" in sql_text:
                 return Mock(fetchone=Mock(return_value=None))
-            if (
-                "select id, code, currency_code from countries where code = ? and active = 1"
-                in sql_text
-            ):
-                return Mock(
-                    fetchone=Mock(
-                        return_value={"id": 2, "code": "KZ", "currency_code": "KZT"}
-                    )
-                )
+            if "select id, code, currency_code from countries where code = ? and active = 1" in sql_text:
+                return Mock(fetchone=Mock(return_value={"id": 2, "code": "KZ", "currency_code": "KZT"}))
             if "select count(*) as count from countries where active = 1" in sql_text:
                 return Mock(fetchone=Mock(return_value={"count": 1}))
             return Mock(fetchone=Mock(return_value=None))

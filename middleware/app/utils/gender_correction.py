@@ -117,9 +117,7 @@ class GenderDetector:
 
         # Check if surname matches detected gender
         locale_data = self._name_data.get(locale, {})
-        surname_matches = self._surname_matches_gender(
-            surname, detected_gender, locale_data
-        )
+        surname_matches = self._surname_matches_gender(surname, detected_gender, locale_data)
 
         if surname_matches:
             return {
@@ -130,9 +128,7 @@ class GenderDetector:
             }
 
         # Suggest correction
-        corrected_surname = self._correct_surname_gender(
-            surname, detected_gender, locale_data
-        )
+        corrected_surname = self._correct_surname_gender(surname, detected_gender, locale_data)
         if corrected_surname and corrected_surname != surname:
             # Preserve middle names if present
             if len(parts) > 2:
@@ -169,9 +165,7 @@ class GenderDetector:
             "detected_gender": detected_gender,
         }
 
-    def _surname_matches_gender(
-        self, surname: str, gender: str, locale_data: Dict
-    ) -> bool:
+    def _surname_matches_gender(self, surname: str, gender: str, locale_data: Dict) -> bool:
         """Check if surname matches expected gender pattern."""
         surname_lower = surname.lower()
 
@@ -179,16 +173,12 @@ class GenderDetector:
             male_surnames = [s.lower() for s in locale_data.get("male_surnames", [])]
             return surname_lower in male_surnames
         elif gender == "female":
-            female_surnames = [
-                s.lower() for s in locale_data.get("female_surnames", [])
-            ]
+            female_surnames = [s.lower() for s in locale_data.get("female_surnames", [])]
             return surname_lower in female_surnames
 
         return False
 
-    def _correct_surname_gender(
-        self, surname: str, target_gender: str, locale_data: Dict
-    ) -> Optional[str]:
+    def _correct_surname_gender(self, surname: str, target_gender: str, locale_data: Dict) -> Optional[str]:
         """Correct surname to match target gender."""
         surname_lower = surname.lower()
 
@@ -229,10 +219,7 @@ class GenderDetector:
                 + len(locale_data.get("female_names", []))
                 + len(locale_data.get("neutral_names", []))
             ),
-            "total_surnames": (
-                len(locale_data.get("male_surnames", []))
-                + len(locale_data.get("female_surnames", []))
-            ),
+            "total_surnames": (len(locale_data.get("male_surnames", [])) + len(locale_data.get("female_surnames", []))),
         }
 
 

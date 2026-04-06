@@ -369,9 +369,7 @@ class TestPasswordRecoveryInvalidToken:
             with patch("app.admin_auth_api.get_db") as mock_get_db:
                 mock_db = MagicMock()
                 mock_conn = MagicMock()
-                mock_conn.execute.return_value.fetchone.return_value = (
-                    None  # User not found
-                )
+                mock_conn.execute.return_value.fetchone.return_value = None  # User not found
                 mock_db.connect.return_value = mock_conn
                 mock_get_db.return_value = mock_db
 
@@ -379,9 +377,7 @@ class TestPasswordRecoveryInvalidToken:
                     mock_rate_limit.return_value = (True, 4)
 
                     with pytest.raises(HTTPException) as exc_info:
-                        recover_password(
-                            mock_request, payload, x_admin_recovery="invalid_secret"
-                        )
+                        recover_password(mock_request, payload, x_admin_recovery="invalid_secret")
 
                     # Should fail due to invalid secret or user not found
                     assert exc_info.value.status_code in [401, 404]
@@ -539,9 +535,7 @@ class TestRBACPermissionMatrix:
                 "SELECT permission FROM role_permissions WHERE role = 'admin' AND permission = 'dashboard.read'"
             )
             result = cursor.fetchone()
-            assert (
-                result is not None
-            ), "Admin role missing dashboard.read from seeded data"
+            assert result is not None, "Admin role missing dashboard.read from seeded data"
         finally:
             conn.close()
 
@@ -615,9 +609,7 @@ class TestDatabasePermissionsSchema:
 
             # Verify required columns
             required_columns = {"role", "permission", "is_allowed"}
-            assert required_columns.issubset(
-                columns
-            ), f"Missing columns: {required_columns - columns}"
+            assert required_columns.issubset(columns), f"Missing columns: {required_columns - columns}"
 
         finally:
             conn.close()

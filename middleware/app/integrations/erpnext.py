@@ -5,7 +5,6 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -35,9 +34,7 @@ class ERPNextClient:
         }
 
     @circuit(failure_threshold=5, recovery_timeout=30)
-    def get_customers(
-        self, modified_after: Optional[datetime] = None
-    ) -> List[Dict[str, Any]]:
+    def get_customers(self, modified_after: Optional[datetime] = None) -> List[Dict[str, Any]]:
         """
         Get customers from ERPNext
 
@@ -62,9 +59,7 @@ class ERPNextClient:
         ]
 
     @circuit(failure_threshold=5, recovery_timeout=30)
-    def get_sales_invoices(
-        self, posting_date_from: Optional[datetime] = None
-    ) -> List[Dict[str, Any]]:
+    def get_sales_invoices(self, posting_date_from: Optional[datetime] = None) -> List[Dict[str, Any]]:
         """
         Get sales invoices (purchases) from ERPNext
 
@@ -85,9 +80,7 @@ class ERPNextClient:
         ]
 
     @circuit(failure_threshold=5, recovery_timeout=30)
-    def update_customer_loyalty(
-        self, customer_name: str, loyalty_points: int, loyalty_tier: str
-    ) -> Dict[str, Any]:
+    def update_customer_loyalty(self, customer_name: str, loyalty_points: int, loyalty_tier: str) -> Dict[str, Any]:
         """
         Update customer loyalty information in ERPNext
 

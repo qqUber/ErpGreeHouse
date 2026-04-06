@@ -124,15 +124,11 @@ class CurrencyFormatter:
             elif locale.startswith("sr"):
                 # Serbian: 1.000,00
                 formatted_number = (
-                    f"{amount:,.{self.config.decimal_places}f}".replace(",", "X")
-                    .replace(".", ",")
-                    .replace("X", ".")
+                    f"{amount:,.{self.config.decimal_places}f}".replace(",", "X").replace(".", ",").replace("X", ".")
                 )
             else:
                 # Russian/others: 1 000,00
-                formatted_number = f"{amount:,.{self.config.decimal_places}f}".replace(
-                    ",", " "
-                ).replace(".", ",")
+                formatted_number = f"{amount:,.{self.config.decimal_places}f}".replace(",", " ").replace(".", ",")
 
             # Add currency symbol
             if self.config.symbol_position == "before":

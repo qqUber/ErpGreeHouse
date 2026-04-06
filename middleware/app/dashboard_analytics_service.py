@@ -184,8 +184,7 @@ class DashboardAnalyticsService:
                 {
                     "hour": hour,
                     "transactions": int(row["cnt"] or 0),
-                    "revenue": int(row["revenue"] or 0)
-                    / 100,  # Divide by 100 to convert from cents to rubles
+                    "revenue": int(row["revenue"] or 0) / 100,  # Divide by 100 to convert from cents to rubles
                 }
             )
 
@@ -204,24 +203,19 @@ class DashboardAnalyticsService:
                 "code": row["code"],
                 "name": row["name"],
                 "quantity": int(row["total_qty"] or 0),
-                "revenue": int(row["total_revenue"] or 0)
-                / 100,  # Divide by 100 to convert from cents to rubles
+                "revenue": int(row["total_revenue"] or 0) / 100,  # Divide by 100 to convert from cents to rubles
             }
             for row in rows
         ]
 
-        staff = conn.execute(
-            "SELECT COUNT(*) as active_staff FROM admin_users WHERE disabled = 0"
-        ).fetchone()
+        staff = conn.execute("SELECT COUNT(*) as active_staff FROM admin_users WHERE disabled = 0").fetchone()
         summary = conn.execute(
             """SELECT COUNT(*) as total_tx, COALESCE(SUM(total_amount), 0) as total_revenue,
                       COALESCE(AVG(total_amount), 0) as avg_check
                FROM transactions WHERE date(created_at) = ?""",
             (today,),
         ).fetchone()
-        peak_hour = max(
-            hourly_data, key=lambda item: item["transactions"], default=None
-        )
+        peak_hour = max(hourly_data, key=lambda item: item["transactions"], default=None)
 
         return {
             "date": today,
@@ -229,16 +223,14 @@ class DashboardAnalyticsService:
             "top_products": top_products,
             "active_staff": int(staff["active_staff"] or 0),
             "total_transactions": int(summary["total_tx"] or 0),
-            "total_revenue": int(summary["total_revenue"] or 0)
-            / 100,  # Divide by 100 to convert from cents to rubles
+            "total_revenue": int(summary["total_revenue"] or 0) / 100,  # Divide by 100 to convert from cents to rubles
             "average_check": round(
                 float(summary["avg_check"] or 0) / 100, 2
             ),  # Divide by 100 to convert from cents to rubles
             "peak_hour": peak_hour["hour"] if peak_hour else None,
             "peak_hour_transactions": peak_hour["transactions"] if peak_hour else 0,
             "headline": {
-                "revenue": int(summary["total_revenue"] or 0)
-                / 100,  # Divide by 100 to convert from cents to rubles
+                "revenue": int(summary["total_revenue"] or 0) / 100,  # Divide by 100 to convert from cents to rubles
                 "transactions": int(summary["total_tx"] or 0),
                 "avgCheck": round(
                     float(summary["avg_check"] or 0) / 100, 2
@@ -274,8 +266,7 @@ class DashboardAnalyticsService:
                 "id": row["id"],
                 "name": row["full_name"],
                 "phone": row["phone"],
-                "total_spent": int(row["total_spent"] or 0)
-                / 100,  # Divide by 100 to convert from cents to rubles
+                "total_spent": int(row["total_spent"] or 0) / 100,  # Divide by 100 to convert from cents to rubles
                 "transactions": int(row["transaction_count"] or 0),
                 "telegram_id": row["telegram_id"],
                 "vk_id": row["vk_id"],
@@ -285,8 +276,7 @@ class DashboardAnalyticsService:
                 / 100,  # Divide by 100 to convert from cents to rubles
                 "last_purchase_date": row["last_purchase_date"],
             }
-            for row in conn.execute(
-                """SELECT c.id, c.full_name, c.phone, c.telegram_id, c.vk_id, c.marketing_allowed,
+            for row in conn.execute("""SELECT c.id, c.full_name, c.phone, c.telegram_id, c.vk_id, c.marketing_allowed,
                           c.balance_points, c.ltv, c.last_purchase_date,
                           COALESCE(SUM(t.total_amount), 0) as total_spent,
                           COUNT(t.id) as transaction_count
@@ -294,8 +284,7 @@ class DashboardAnalyticsService:
                    LEFT JOIN transactions t ON c.id = t.customer_id
                    GROUP BY c.id
                    ORDER BY total_spent DESC
-                   LIMIT 8"""
-            ).fetchall()
+                   LIMIT 8""").fetchall()
         ]
 
         loyalty_tiers = [
@@ -329,9 +318,7 @@ class DashboardAnalyticsService:
         marketing_consent = int(counts["marketing_consent"] or 0)
         reachable_customers = int(counts["reachable_customers"] or 0)
         repeat_customers = max(total_customers - int(counts["week_customers"] or 0), 0)
-        high_value_count = sum(
-            1 for customer in top_customers if int(customer["ltv"] or 0) >= 15000
-        )
+        high_value_count = sum(1 for customer in top_customers if int(customer["ltv"] or 0) >= 15000)
         consent_gap_count = max(total_customers - marketing_consent, 0)
         unreachable_count = max(total_customers - reachable_customers, 0)
 
@@ -343,11 +330,7 @@ class DashboardAnalyticsService:
             "repeatCustomers": repeat_customers,
             "reachableCustomers": reachable_customers,
             "marketingConsentCount": marketing_consent,
-            "consentRate": (
-                round((marketing_consent / total_customers) * 100)
-                if total_customers
-                else 0
-            ),
+            "consentRate": (round((marketing_consent / total_customers) * 100) if total_customers else 0),
             "topCustomers": top_customers,
             "segments": {
                 "high_value": high_value_count,
@@ -357,11 +340,7 @@ class DashboardAnalyticsService:
             "channels": {
                 "telegram": int(counts["telegram_customers"] or 0),
                 "vk": int(counts["vk_customers"] or 0),
-                "mixed": sum(
-                    1
-                    for customer in top_customers
-                    if customer["telegram_id"] and customer["vk_id"]
-                ),
+                "mixed": sum(1 for customer in top_customers if customer["telegram_id"] and customer["vk_id"]),
             },
             "avgLtv": round(float(counts["avg_ltv"] or 0), 0),
             "avgBalance": round(float(counts["avg_balance"] or 0), 0),
@@ -387,16 +366,13 @@ class DashboardAnalyticsService:
 
     def _get_product_metrics(self, conn) -> dict[str, Any]:
         today = datetime.now().strftime("%Y-%m-%d")
-        total_products_row = conn.execute(
-            "SELECT COUNT(*) as cnt FROM products WHERE active = 1"
-        ).fetchone()
+        total_products_row = conn.execute("SELECT COUNT(*) as cnt FROM products WHERE active = 1").fetchone()
         top_products = [
             {
                 "code": row["code"],
                 "name": row["name"],
                 "quantity": int(row["qty"] or 0),
-                "revenue": int(row["revenue"] or 0)
-                / 100,  # Divide by 100 to convert from cents to rubles
+                "revenue": int(row["revenue"] or 0) / 100,  # Divide by 100 to convert from cents to rubles
             }
             for row in conn.execute(
                 """SELECT json_extract(value, '$.code') as code, json_extract(value, '$.name') as name,
@@ -415,8 +391,7 @@ class DashboardAnalyticsService:
                 "category": row["kind"],
                 "transactions": int(row["transaction_count"] or 0),
                 "items_sold": int(row["items_sold"] or 0),
-                "revenue": int(row["revenue"] or 0)
-                / 100,  # Divide by 100 to convert from cents to rubles
+                "revenue": int(row["revenue"] or 0) / 100,  # Divide by 100 to convert from cents to rubles
             }
             for row in conn.execute(
                 """SELECT p.kind, COUNT(DISTINCT t.id) as transaction_count,
@@ -471,9 +446,7 @@ class DashboardAnalyticsService:
                 (yesterday,),
             ).fetchall()
         }
-        needs_attention = int(trigger_stats.get("failed", 0) or 0) + int(
-            trigger_stats.get("pending", 0) or 0
-        )
+        needs_attention = int(trigger_stats.get("failed", 0) or 0) + int(trigger_stats.get("pending", 0) or 0)
         messages_sent = sum(trigger_stats.values())
         return {
             "activeCampaigns": int(active_count["cnt"] or 0),
@@ -488,9 +461,7 @@ class DashboardAnalyticsService:
             "clickRate": 23,
         }
 
-    def _get_loyalty_metrics(
-        self, conn, date_range: DashboardDateRange
-    ) -> dict[str, Any]:
+    def _get_loyalty_metrics(self, conn, date_range: DashboardDateRange) -> dict[str, Any]:
         start_str = date_range.start.strftime("%Y-%m-%d %H:%M:%S")
         end_str = date_range.end.strftime("%Y-%m-%d %H:%M:%S")
         points_earned = conn.execute(
@@ -516,9 +487,7 @@ class DashboardAnalyticsService:
                WHERE bonus_used > 0 AND created_at BETWEEN ? AND ?""",
             (start_str, end_str),
         ).fetchone()[0]
-        redemption_rate = (
-            (customers_redeeming / total_customers) * 100 if total_customers else 0
-        )
+        redemption_rate = (customers_redeeming / total_customers) * 100 if total_customers else 0
         return {
             "pointsEarned": int(points_earned or 0),
             "pointsRedeemed": int(points_redeemed or 0),
@@ -526,8 +495,7 @@ class DashboardAnalyticsService:
             "avgOrderValue": round(
                 float(avg_order_value or 0) / 100, 2
             ),  # Divide by 100 to convert from cents to rubles
-            "revenue": int(revenue or 0)
-            / 100,  # Divide by 100 to convert from cents to rubles
+            "revenue": int(revenue or 0) / 100,  # Divide by 100 to convert from cents to rubles
         }
 
     def _get_attention_metrics(
@@ -579,9 +547,7 @@ class DashboardAnalyticsService:
                 "kind": row["kind"],
                 "status": "online" if row["enabled"] else "offline",
             }
-            for row in conn.execute(
-                "SELECT name, kind, enabled FROM integrations WHERE enabled = 1"
-            ).fetchall()
+            for row in conn.execute("SELECT name, kind, enabled FROM integrations WHERE enabled = 1").fetchall()
         ]
         yesterday = (datetime.now() - timedelta(hours=24)).isoformat()
         recent_deliveries = [
@@ -607,9 +573,7 @@ class DashboardAnalyticsService:
         }
         total = sum(delivery_stats.values())
         pending_count = int(delivery_stats.get("pending", 0) or 0)
-        success_rate = (
-            round((delivery_stats.get("success", 0) / total) * 100, 1) if total else 0
-        )
+        success_rate = round((delivery_stats.get("success", 0) / total) * 100, 1) if total else 0
         return {
             "integrations": integrations,
             "recentDeliveries": recent_deliveries,

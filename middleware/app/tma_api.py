@@ -34,9 +34,7 @@ def validate_init_data(init_data: str, bot_token: str) -> dict:
         # Compute HMAC
         bot_token_bytes = bot_token.encode()
         secret_key = hmac.new(b"WebAppData", bot_token_bytes, hashlib.sha256).digest()
-        calc_hash = hmac.new(
-            secret_key, data_check_string.encode(), hashlib.sha256
-        ).hexdigest()
+        calc_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
 
         if calc_hash != hash_val:
             raise ValueError("Invalid hash")
@@ -73,9 +71,7 @@ async def get_tma_me(req: InitDataRequest) -> dict[str, Any]:
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute(
-            "SELECT id, qr_token FROM customers WHERE telegram_id=?", (telegram_id,)
-        )
+        cur = conn.execute("SELECT id, qr_token FROM customers WHERE telegram_id=?", (telegram_id,))
         row = cur.fetchone()
         cust_id = row["id"] if row else None
         if not cust_id:

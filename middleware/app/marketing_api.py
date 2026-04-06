@@ -11,9 +11,7 @@ from .marketing_service import CampaignCreatePayload, MarketingCampaignService
 router = APIRouter(prefix="/api/v1/marketing")
 
 
-def get_customers_with_consent(
-    limit: int = 1000, offset: int = 0
-) -> List[Dict[str, Any]]:
+def get_customers_with_consent(limit: int = 1000, offset: int = 0) -> List[Dict[str, Any]]:
     """
     Get list of customers who have given marketing consent.
     Used for sending marketing campaigns (152-ФЗ compliance).

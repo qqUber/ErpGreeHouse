@@ -21,23 +21,19 @@ def get_or_generate_base_guid(conn: sqlite3.Connection) -> str:
     """Get base GUID from system settings or generate new one with proper transaction"""
     # Create system_settings table if not exists
     try:
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-        """
-        )
+        """)
     except sqlite3.Error:
         pass  # Table might already exist
 
     # Check if base GUID exists
-    guid_row = conn.execute(
-        "SELECT value FROM system_settings WHERE key=?", ("qr_token_base_guid",)
-    ).fetchone()
+    guid_row = conn.execute("SELECT value FROM system_settings WHERE key=?", ("qr_token_base_guid",)).fetchone()
 
     if not guid_row:
         # Generate and store new GUID
@@ -53,9 +49,7 @@ def get_or_generate_base_guid(conn: sqlite3.Connection) -> str:
             logger.info(f"Generated new base GUID: {base_guid}")
         except sqlite3.IntegrityError:
             # Handle race condition - another thread might have inserted it
-            guid_row = conn.execute(
-                "SELECT value FROM system_settings WHERE key=?", ("qr_token_base_guid",)
-            ).fetchone()
+            guid_row = conn.execute("SELECT value FROM system_settings WHERE key=?", ("qr_token_base_guid",)).fetchone()
             if guid_row:
                 base_guid = guid_row[0]
         return base_guid
@@ -68,9 +62,7 @@ def _merge_preferences(existing_json: str | None, patch: dict[str, Any]) -> str:
         current = json.loads(existing_json or "{}")
     except Exception:
         current = {}
-    current.update(
-        {key: value for key, value in patch.items() if value not in (None, "")}
-    )
+    current.update({key: value for key, value in patch.items() if value not in (None, "")})
     return json.dumps(current, ensure_ascii=False)
 
 
@@ -88,9 +80,7 @@ _ONBOARDING_STATUS_RANK = {
 }
 
 
-def _should_update_onboarding_status(
-    current_status: str | None, next_status: str | None
-) -> bool:
+def _should_update_onboarding_status(current_status: str | None, next_status: str | None) -> bool:
     candidate = str(next_status or "").strip()
     if not candidate:
         return False
@@ -162,9 +152,7 @@ def resolve_or_create_customer(
     customer_columns = _get_customer_table_columns(conn)
     normalized_phone = normalize_phone(phone or "") if phone else None
     name_result = normalize_name(full_name or "") if full_name else {"normalized": None}
-    normalized_name = (
-        name_result.get("normalized") if isinstance(name_result, dict) else name_result
-    )
+    normalized_name = name_result.get("normalized") if isinstance(name_result, dict) else name_result
     resolved_onboarding_status = onboarding_status or "registered"
 
     max_attempts = 10
@@ -203,9 +191,7 @@ def resolve_or_create_customer(
                 if len(customer_ids) > 1:
                     if not in_transaction:
                         conn.rollback()
-                    raise CustomerIdentityConflictError(
-                        "Provided identifiers are linked to different customers"
-                    )
+                    raise CustomerIdentityConflictError("Provided identifiers are linked to different customers")
 
             target = by_telegram or by_vk or by_phone
             if target:
@@ -243,19 +229,15 @@ def resolve_or_create_customer(
                 if city_id is not None and "city_id" in customer_columns:
                     updates.append("city_id = ?")
                     params.append(city_id)
-                if marketing_allowed is not None and int(
-                    target["marketing_allowed"] or 0
-                ) != int(marketing_allowed):
+                if marketing_allowed is not None and int(target["marketing_allowed"] or 0) != int(marketing_allowed):
                     updates.append("marketing_allowed = ?")
                     params.append(marketing_allowed)
-                if data_processing_allowed is not None and int(
-                    target["data_processing_allowed"] or 0
-                ) != int(data_processing_allowed):
+                if data_processing_allowed is not None and int(target["data_processing_allowed"] or 0) != int(
+                    data_processing_allowed
+                ):
                     updates.append("data_processing_allowed = ?")
                     params.append(data_processing_allowed)
-                if _should_update_onboarding_status(
-                    target["onboarding_status"], resolved_onboarding_status
-                ):
+                if _should_update_onboarding_status(target["onboarding_status"], resolved_onboarding_status):
                     updates.append("onboarding_status = ?")
                     params.append(resolved_onboarding_status)
                 if normalized_phone and phone_verification_method:
@@ -264,11 +246,7 @@ def resolve_or_create_customer(
                     params.append(phone_verification_method)
 
                 preferences_json = _merge_preferences(
-                    (
-                        target["preferences_json"]
-                        if "preferences_json" in target.keys()
-                        else None
-                    ),
+                    (target["preferences_json"] if "preferences_json" in target.keys() else None),
                     {
                         "telegram_username": username,
                         "telegram_first_name": first_name,
@@ -276,9 +254,7 @@ def resolve_or_create_customer(
                         "telegram_contact_user_id": telegram_id,
                     },
                 )
-                if "preferences_json" in target.keys() and preferences_json != (
-                    target["preferences_json"] or "{}"
-                ):
+                if "preferences_json" in target.keys() and preferences_json != (target["preferences_json"] or "{}"):
                     updates.append("preferences_json = ?")
                     params.append(preferences_json)
 
@@ -298,9 +274,7 @@ def resolve_or_create_customer(
                         if not in_transaction:
                             conn.rollback()
                         if "qr_token" in str(exc).lower():
-                            logger.warning(
-                                f"QR token collision, retrying (attempt {attempt + 1})"
-                            )
+                            logger.warning(f"QR token collision, retrying (attempt {attempt + 1})")
                             continue
                         raise
 
@@ -364,13 +338,8 @@ def resolve_or_create_customer(
                 insert_values.extend(
                     [
                         resolved_onboarding_status,
-                        (
-                            datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-                            if normalized_phone
-                            else None
-                        ),
-                        phone_verification_method
-                        or ("telegram_contact" if normalized_phone else None),
+                        (datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S") if normalized_phone else None),
+                        phone_verification_method or ("telegram_contact" if normalized_phone else None),
                     ]
                 )
                 cur = conn.execute(
@@ -384,9 +353,7 @@ def resolve_or_create_customer(
                 if not in_transaction:
                     conn.rollback()
                 if "qr_token" in str(exc).lower():
-                    logger.warning(
-                        f"QR token collision during insert, retrying (attempt {attempt + 1})"
-                    )
+                    logger.warning(f"QR token collision during insert, retrying (attempt {attempt + 1})")
                     continue
                 raise
 
@@ -400,16 +367,12 @@ def resolve_or_create_customer(
         except Exception as exc:
             if not conn.in_transaction:
                 conn.rollback()
-            logger.error(
-                f"Unexpected error in customer creation (attempt {attempt + 1}): {exc}"
-            )
+            logger.error(f"Unexpected error in customer creation (attempt {attempt + 1}): {exc}")
             if attempt == max_attempts - 1:
                 raise
             continue
 
-    raise RuntimeError(
-        f"Failed to resolve/create customer after {max_attempts} attempts"
-    )
+    raise RuntimeError(f"Failed to resolve/create customer after {max_attempts} attempts")
 
 
 def get_customer_row(conn: sqlite3.Connection, customer_id: int) -> dict[str, Any]:

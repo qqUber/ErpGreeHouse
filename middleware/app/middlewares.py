@@ -84,12 +84,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         client_ip = _get_client_ip(request)
 
-        is_allowed, remaining, current_count, rate_limit_unavailable = (
-            _check_sliding_window_rate_limit(
-                client_ip=client_ip,
-                max_requests=settings.rate_limit_requests,
-                window_seconds=settings.rate_limit_window_seconds,
-            )
+        is_allowed, remaining, current_count, rate_limit_unavailable = _check_sliding_window_rate_limit(
+            client_ip=client_ip,
+            max_requests=settings.rate_limit_requests,
+            window_seconds=settings.rate_limit_window_seconds,
         )
 
         reset_at = int(time.time() + settings.rate_limit_window_seconds)

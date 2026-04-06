@@ -124,9 +124,7 @@ def create_referral(
     db = get_db()
     conn = db.connect()
     try:
-        referrer = conn.execute(
-            "SELECT id FROM customers WHERE id=?", (payload.referrer_id,)
-        ).fetchone()
+        referrer = conn.execute("SELECT id FROM customers WHERE id=?", (payload.referrer_id,)).fetchone()
         if not referrer:
             raise HTTPException(status_code=404, detail="Referrer not found")
 
@@ -135,9 +133,7 @@ def create_referral(
         if payload.referred_phone:
             phone = normalize_phone(payload.referred_phone)
             if phone:
-                row = conn.execute(
-                    "SELECT id FROM customers WHERE phone=?", (phone,)
-                ).fetchone()
+                row = conn.execute("SELECT id FROM customers WHERE phone=?", (phone,)).fetchone()
                 if row:
                     referred_id = int(row["id"])
                     conn.execute(
@@ -162,8 +158,7 @@ def analytics_referrals(
     db = get_db()
     conn = db.connect()
     try:
-        rows = conn.execute(
-            """
+        rows = conn.execute("""
             SELECT r.referrer_id, c.full_name, COUNT(*) as total_invites,
                    SUM(CASE WHEN r.status='converted' THEN 1 ELSE 0 END) as converted
             FROM referrals r
@@ -171,8 +166,7 @@ def analytics_referrals(
             GROUP BY r.referrer_id, c.full_name
             ORDER BY converted DESC, total_invites DESC
             LIMIT 100
-            """
-        ).fetchall()
+            """).fetchall()
         items = []
         for r in rows:
             total = int(r["total_invites"] or 0)
@@ -183,9 +177,7 @@ def analytics_referrals(
                     "full_name": r["full_name"] or "",
                     "total_invites": total,
                     "converted": converted,
-                    "conversion_rate": (
-                        round((converted / total) * 100, 2) if total else 0
-                    ),
+                    "conversion_rate": (round((converted / total) * 100, 2) if total else 0),
                 }
             )
         return {"items": items, "pagination": {"total": len(items)}}
@@ -228,9 +220,7 @@ def list_certificates(
     db = get_db()
     conn = db.connect()
     try:
-        rows = conn.execute(
-            "SELECT * FROM certificates ORDER BY id DESC LIMIT 200"
-        ).fetchall()
+        rows = conn.execute("SELECT * FROM certificates ORDER BY id DESC LIMIT 200").fetchall()
         return {"items": [dict(r) for r in rows], "pagination": {"total": len(rows)}}
     finally:
         conn.close()
@@ -315,9 +305,7 @@ def reply_review(
 
 
 @router.post("/news")
-def create_news(
-    payload: NewsArticleIn, auth_result: dict[str, Any] = Depends(require_jwt_auth)
-) -> dict[str, Any]:
+def create_news(payload: NewsArticleIn, auth_result: dict[str, Any] = Depends(require_jwt_auth)) -> dict[str, Any]:
     db = get_db()
     conn = db.connect()
     try:
@@ -341,9 +329,7 @@ def create_news(
 
 
 @router.post("/news/{article_id}/publish")
-def publish_news(
-    article_id: int, auth_result: dict[str, Any] = Depends(require_jwt_auth)
-) -> dict[str, Any]:
+def publish_news(article_id: int, auth_result: dict[str, Any] = Depends(require_jwt_auth)) -> dict[str, Any]:
     db = get_db()
     conn = db.connect()
     try:
@@ -371,9 +357,7 @@ def list_news(
                 (status,),
             ).fetchall()
         else:
-            rows = conn.execute(
-                "SELECT * FROM news_articles ORDER BY id DESC LIMIT 200"
-            ).fetchall()
+            rows = conn.execute("SELECT * FROM news_articles ORDER BY id DESC LIMIT 200").fetchall()
         return {"items": [dict(r) for r in rows], "pagination": {"total": len(rows)}}
     finally:
         conn.close()
@@ -388,9 +372,7 @@ def list_security_alerts(
     conn = db.connect()
     try:
         if resolved is None:
-            rows = conn.execute(
-                "SELECT * FROM security_alerts ORDER BY id DESC LIMIT 500"
-            ).fetchall()
+            rows = conn.execute("SELECT * FROM security_alerts ORDER BY id DESC LIMIT 500").fetchall()
         else:
             rows = conn.execute(
                 "SELECT * FROM security_alerts WHERE resolved=? ORDER BY id DESC LIMIT 500",
@@ -452,9 +434,7 @@ def list_employee_metrics(
                 (period,),
             ).fetchall()
         else:
-            rows = conn.execute(
-                "SELECT * FROM employee_metrics ORDER BY created_at DESC LIMIT 500"
-            ).fetchall()
+            rows = conn.execute("SELECT * FROM employee_metrics ORDER BY created_at DESC LIMIT 500").fetchall()
         return {"items": [dict(r) for r in rows], "pagination": {"total": len(rows)}}
     finally:
         conn.close()
@@ -484,18 +464,14 @@ def import_customers(
     try:
         for row in reader:
             phone = normalize_phone((row.get("phone") or "").strip())
-            full_name = (row.get("full_name") or "").strip() or (
-                row.get("name") or ""
-            ).strip()
+            full_name = (row.get("full_name") or "").strip() or (row.get("name") or "").strip()
             if not phone and not full_name:
                 skipped += 1
                 continue
 
             existing = None
             if phone:
-                existing = conn.execute(
-                    "SELECT id FROM customers WHERE phone=?", (phone,)
-                ).fetchone()
+                existing = conn.execute("SELECT id FROM customers WHERE phone=?", (phone,)).fetchone()
 
             if existing:
                 conn.execute(
@@ -529,15 +505,13 @@ def run_fraud_scan(
     db = get_db()
     conn = db.connect()
     try:
-        rows = conn.execute(
-            """
+        rows = conn.execute("""
             SELECT customer_id, COUNT(*) AS tx_count, SUM(bonus_used) AS used_points
             FROM transactions
             WHERE created_at >= datetime('now', '-1 day')
             GROUP BY customer_id
             HAVING tx_count >= 5 OR used_points >= 1000
-            """
-        ).fetchall()
+            """).fetchall()
 
         created = 0
         for row in rows:

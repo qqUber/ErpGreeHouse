@@ -34,9 +34,7 @@ def erp_client(mock_settings):
 @pytest.mark.asyncio
 async def test_get_customer_by_telegram_id(erp_client):
     with patch.object(erp_client, "_request", new_callable=Mock) as mock_req:
-        mock_req.return_value = {
-            "data": [{"name": "CUST-001", "first_name": "Test", "balance": 100}]
-        }
+        mock_req.return_value = {"data": [{"name": "CUST-001", "first_name": "Test", "balance": 100}]}
 
         # Async mock setup
         async def async_req(*args, **kwargs):
@@ -66,9 +64,7 @@ async def test_create_customer(erp_client):
 
         erp_client._request = side_effect
 
-        result = await erp_client.create_customer(
-            12345, "Test User", "+1234567890", "Consent"
-        )
+        result = await erp_client.create_customer(12345, "Test User", "+1234567890", "Consent")
         assert result["name"] == "TG-CLIENT"
         assert result["customer_link"] == "CUST-NEW"
 

@@ -31,9 +31,7 @@ def generate_unique_token(conn: sqlite3.Connection, max_attempts: int = 100) -> 
 
         # Verify uniqueness in database
         try:
-            existing = conn.execute(
-                "SELECT id FROM customers WHERE qr_token=?", (qr_code,)
-            ).fetchone()
+            existing = conn.execute("SELECT id FROM customers WHERE qr_token=?", (qr_code,)).fetchone()
             if not existing:
                 return qr_code
         except sqlite3.OperationalError as e:
@@ -44,9 +42,7 @@ def generate_unique_token(conn: sqlite3.Connection, max_attempts: int = 100) -> 
                 raise
 
     # If we get here, something is wrong
-    raise ValueError(
-        f"Failed to generate unique QR token after {max_attempts} attempts"
-    )
+    raise ValueError(f"Failed to generate unique QR token after {max_attempts} attempts")
 
 
 def make_qr_image(customer_id: int, qr_token: str) -> BufferedInputFile:
@@ -131,6 +127,4 @@ def make_qr_image(customer_id: int, qr_token: str) -> BufferedInputFile:
     final_image = canvas.convert("RGB")
     buffer = io.BytesIO()
     final_image.save(buffer, format="PNG", optimize=True)
-    return BufferedInputFile(
-        buffer.getvalue(), filename=f"customer-card-{customer_id}.png"
-    )
+    return BufferedInputFile(buffer.getvalue(), filename=f"customer-card-{customer_id}.png")

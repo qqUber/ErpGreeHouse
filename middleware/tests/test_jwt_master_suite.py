@@ -99,9 +99,7 @@ class TestJWTSecurity:
             "iat": datetime.now(timezone.utc) - timedelta(hours=2),
             "type": "access",
         }
-        token = jwt.encode(
-            payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
-        )
+        token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
         # Validation should return None for expired tokens
         assert validate_access_token(token) is None
@@ -111,12 +109,8 @@ class TestJWTSecurity:
         token = create_access_token(mock_admin)
         # Tamper with the signature by using a different key
         wrong_key = "completely_wrong_secret_key_12345"
-        payload = jwt.decode(
-            token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
-        )
-        tampered_token = jwt.encode(
-            payload, wrong_key, algorithm=settings.jwt_algorithm
-        )
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        tampered_token = jwt.encode(payload, wrong_key, algorithm=settings.jwt_algorithm)
 
         assert validate_access_token(tampered_token) is None
 
@@ -134,11 +128,7 @@ class TestJWTSecurity:
         decoded_payload = json.loads(base64.urlsafe_b64decode(payload_b64 + padding))
         decoded_payload["role"] = "owner"  # Escalate privileges
 
-        new_payload_b64 = (
-            base64.urlsafe_b64encode(json.dumps(decoded_payload).encode())
-            .decode()
-            .rstrip("=")
-        )
+        new_payload_b64 = base64.urlsafe_b64encode(json.dumps(decoded_payload).encode()).decode().rstrip("=")
         tampered_token = f"{header}.{new_payload_b64}.{signature}"
 
         assert validate_access_token(tampered_token) is None
@@ -152,9 +142,7 @@ class TestJWTSecurity:
     def test_missing_claims(self, settings):
         """Ensure tokens missing required claims (sub, type) are rejected."""
         payload = {"username": "no_sub"}
-        token = jwt.encode(
-            payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
-        )
+        token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
         assert validate_access_token(token) is None
 
 
@@ -224,9 +212,7 @@ class TestJWTIntegration:
         # Refresh returns tokens in cookies, not in JSON body
         new_cookies = refresh_resp.cookies
         new_access_token = new_cookies.get("access_token")
-        assert (
-            new_access_token is not None
-        ), "access_token should be in cookies after refresh"
+        assert new_access_token is not None, "access_token should be in cookies after refresh"
         # Token should be different because 'iat' changed
         assert new_access_token != access_token
 

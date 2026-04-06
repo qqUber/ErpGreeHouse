@@ -209,35 +209,24 @@ def get_settings() -> Settings:
         redis_url=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
         webhook_secret=os.getenv("WEBHOOK_SECRET", ""),
         base_web_url=base_web_url,
-        erp_mock_mode=os.getenv("ERP_MOCK_MODE", "false").lower()
-        in ("1", "true", "yes"),
+        erp_mock_mode=os.getenv("ERP_MOCK_MODE", "false").lower() in ("1", "true", "yes"),
         # Country and Currency settings from ENV
         default_country_code=os.getenv("DEFAULT_COUNTRY_CODE", "").strip() or None,
         default_currency_code=os.getenv("DEFAULT_CURRENCY_CODE", "").strip() or None,
         # Rate limiting settings for password recovery
-        recovery_rate_limit_attempts=int(
-            os.getenv("RECOVERY_RATE_LIMIT_ATTEMPTS", "5")
-        ),
-        recovery_rate_limit_window_seconds=int(
-            os.getenv("RECOVERY_RATE_LIMIT_WINDOW_SECONDS", "60")
-        ),
+        recovery_rate_limit_attempts=int(os.getenv("RECOVERY_RATE_LIMIT_ATTEMPTS", "5")),
+        recovery_rate_limit_window_seconds=int(os.getenv("RECOVERY_RATE_LIMIT_WINDOW_SECONDS", "60")),
         # API Rate limiting settings
         rate_limit_requests=int(os.getenv("RATE_LIMIT_REQUESTS", "100")),
         rate_limit_window_seconds=int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60")),
         rate_limited_paths=configured_rate_limited_paths,
         rate_limited_prefixes=configured_rate_limited_prefixes,
         # Messaging rate limiting settings
-        telegram_rate_limit_per_chat=float(
-            os.getenv("TELEGRAM_RATE_LIMIT_PER_CHAT", "1.0")
-        ),
-        telegram_rate_limit_global=float(
-            os.getenv("TELEGRAM_RATE_LIMIT_GLOBAL", "30.0")
-        ),
+        telegram_rate_limit_per_chat=float(os.getenv("TELEGRAM_RATE_LIMIT_PER_CHAT", "1.0")),
+        telegram_rate_limit_global=float(os.getenv("TELEGRAM_RATE_LIMIT_GLOBAL", "30.0")),
         vk_rate_limit_per_chat=float(os.getenv("VK_RATE_LIMIT_PER_CHAT", "1.0")),
         vk_rate_limit_global=float(os.getenv("VK_RATE_LIMIT_GLOBAL", "0.333")),
-        mobile_rate_limit_per_chat=float(
-            os.getenv("MOBILE_RATE_LIMIT_PER_CHAT", "5.0")
-        ),
+        mobile_rate_limit_per_chat=float(os.getenv("MOBILE_RATE_LIMIT_PER_CHAT", "5.0")),
         mobile_rate_limit_global=float(os.getenv("MOBILE_RATE_LIMIT_GLOBAL", "100.0")),
         # JWT configuration
         # PRODUCTION: JWT_SECRET_KEY MUST be set (enforced above)
@@ -248,12 +237,8 @@ def get_settings() -> Settings:
         # Access token expiration (in minutes)
         # CRITICAL: Access tokens should be short-lived (15-30 minutes) for security
         # The old value of 43200 (30 days) was a security risk!
-        jwt_access_token_expire_minutes=int(
-            os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", str(default_access_expire))
-        ),
+        jwt_access_token_expire_minutes=int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", str(default_access_expire))),
         # Refresh token expiration (in days)
         # Refresh tokens can be longer-lived since they can be revoked
-        jwt_refresh_token_expire_days=int(
-            os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", str(default_refresh_expire))
-        ),
+        jwt_refresh_token_expire_days=int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", str(default_refresh_expire))),
     )

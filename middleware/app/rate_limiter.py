@@ -66,16 +66,12 @@ def _get_redis() -> Optional[redis.Redis]:
             # Test connection
             _redis_client.ping()
         except Exception as e:
-            logger.warning(
-                f"[RateLimiter] Redis unavailable, rate limiting disabled: {e}"
-            )
+            logger.warning(f"[RateLimiter] Redis unavailable, rate limiting disabled: {e}")
             _redis_client = None
     return _redis_client
 
 
-def check_rate_limit(
-    chat_id: int | str, channel: str, max_tokens: int, refill_rate: float
-) -> bool:
+def check_rate_limit(chat_id: int | str, channel: str, max_tokens: int, refill_rate: float) -> bool:
     r = _get_redis()
     if r is None:
         return True  # Allow sending if Redis is unavailable
@@ -100,9 +96,7 @@ def check_rate_limit(
         )
         return bool(int(allowed))
     except Exception as e:
-        logger.warning(
-            f"[RateLimiter] Lua script failed, allowing message as fallback: {e}"
-        )
+        logger.warning(f"[RateLimiter] Lua script failed, allowing message as fallback: {e}")
         return True
 
 

@@ -18,9 +18,7 @@ router = APIRouter(prefix="/api/v1/test")
 def _enabled() -> None:
     """Check if test mode is enabled. Raises 404 if not."""
     if os.getenv("E2E_TEST_MODE", "false").lower() not in ("1", "true", "yes"):
-        raise HTTPException(
-            status_code=404, detail="Test API disabled. Set E2E_TEST_MODE=true"
-        )
+        raise HTTPException(status_code=404, detail="Test API disabled. Set E2E_TEST_MODE=true")
 
 
 def _verify_admin_secret(x_admin_secret: Optional[str]) -> None:
@@ -108,9 +106,7 @@ def bootstrap_test_data(
             salt = new_salt()
             password_hash = hash_password(password, salt=salt, iterations=iterations)
             # Check if user exists
-            existing = conn.execute(
-                "SELECT id FROM admin_users WHERE username = ?", (username,)
-            ).fetchone()
+            existing = conn.execute("SELECT id FROM admin_users WHERE username = ?", (username,)).fetchone()
 
             if existing:
                 conn.execute(
@@ -275,9 +271,7 @@ def cleanup(
             removed_customers += int(cur.rowcount or 0)
 
         if payload.product_codes:
-            q = ",".join(
-                ["?"] * len(payload.product_codes)
-            )  # noqa: B608 - safe, parameterized placeholders
+            q = ",".join(["?"] * len(payload.product_codes))  # noqa: B608 - safe, parameterized placeholders
             cur = conn.execute(
                 f"DELETE FROM products WHERE code IN ({q})",
                 tuple(payload.product_codes),
@@ -605,11 +599,7 @@ def seed_test_data(
         for customer_id in customer_ids:
             for _ in range(random.randint(5, 15)):
                 total = random.randint(150, 2000)
-                bonus_used = (
-                    random.choice([0, 0, 0, 50, 100, 200, 300])
-                    if random.random() > 0.3
-                    else 0
-                )
+                bonus_used = random.choice([0, 0, 0, 50, 100, 200, 300]) if random.random() > 0.3 else 0
                 bonus_earned = int(total * 0.1)
 
                 items = []
@@ -767,9 +757,7 @@ def seed_test_data(
                     sent_at if sent_at else "-30 days",
                 ),
             )
-            campaign_ids.append(
-                conn.execute("SELECT last_insert_rowid()").fetchone()[0]
-            )
+            campaign_ids.append(conn.execute("SELECT last_insert_rowid()").fetchone()[0])
 
         stats["marketing_campaigns"] = len(campaigns)
 
@@ -777,9 +765,7 @@ def seed_test_data(
         for _ in range(250):
             trigger_id = random.choice(trigger_ids)
             customer_id = random.choice(customer_ids)
-            status = random.choices(
-                ["processed", "pending", "failed"], weights=[70, 20, 10]
-            )[0]
+            status = random.choices(["processed", "pending", "failed"], weights=[70, 20, 10])[0]
 
             conn.execute(
                 """INSERT INTO marketing_trigger_events
@@ -803,9 +789,7 @@ def seed_test_data(
 
             for _ in range(recipient_count):
                 customer_id = random.choice(customer_ids)
-                event_type = random.choices(
-                    ["sent", "delivered", "open", "click"], weights=[100, 90, 60, 15]
-                )[0]
+                event_type = random.choices(["sent", "delivered", "open", "click"], weights=[100, 90, 60, 15])[0]
 
                 conn.execute(
                     """INSERT INTO marketing_events
@@ -856,12 +840,8 @@ def seed_test_data(
         for _ in range(400):
             integration_id = random.choice(integration_ids)
             event_type = random.choice(event_types)
-            status = random.choices(
-                ["success", "failed", "pending"], weights=[80, 15, 5]
-            )[0]
-            http_status = (
-                200 if status == "success" else (500 if status == "failed" else None)
-            )
+            status = random.choices(["success", "failed", "pending"], weights=[80, 15, 5])[0]
+            http_status = 200 if status == "success" else (500 if status == "failed" else None)
 
             conn.execute(
                 """INSERT INTO integration_deliveries

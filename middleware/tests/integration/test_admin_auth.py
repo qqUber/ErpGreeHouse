@@ -18,33 +18,38 @@ def _build_client(
     monkeypatch.setenv("CRM_DB_PATH", str(db_path))
     monkeypatch.setenv("ENVIRONMENT", environment)
     monkeypatch.setenv("ADMIN_SECRET", "")
-    monkeypatch.setenv(
-        "ADMIN_BOOTSTRAP_DEFAULT", "true" if bootstrap_default else "false"
-    )
+    monkeypatch.setenv("ADMIN_BOOTSTRAP_DEFAULT", "true" if bootstrap_default else "false")
     monkeypatch.setenv("ADMIN_DEFAULT_USERNAME", "admin")
     monkeypatch.setenv("ADMIN_DEFAULT_PASSWORD", "ChangeMe123!")
-    monkeypatch.setenv(
-        "ADMIN_BOOTSTRAP_DEMO_USERS", "true" if bootstrap_demo_users else "false"
-    )
+    monkeypatch.setenv("ADMIN_BOOTSTRAP_DEMO_USERS", "true" if bootstrap_demo_users else "false")
     monkeypatch.setenv("ADMIN_RECOVERY_SECRET", "RecoverMe123!")
     monkeypatch.setenv("CORS_ORIGINS", "http://localhost:5173")
 
     # CRITICAL: Initialize database schema and load seed data before app loads
     from app.db import init_db
+
     init_db()
-    
+
     # Load seed files for test data (direct call to avoid argument parsing)
-    from app.db_init import run_migrations, discover_seed_files, bootstrap_demo_data_from_seed, bootstrap_admins_from_seed, bootstrap_reference_data_from_seed, bootstrap_products_from_seed
-    
+    from app.db_init import (
+        run_migrations,
+        discover_seed_files,
+        bootstrap_demo_data_from_seed,
+        bootstrap_admins_from_seed,
+        bootstrap_reference_data_from_seed,
+        bootstrap_products_from_seed,
+    )
+
     # Run migrations first
     run_migrations()
-    
+
     # Load and apply seed files
     seed_files = discover_seed_files()
     for seed_file in seed_files:
         from app.db_init import load_seed_file
+
         seed_data = load_seed_file(seed_file)
-        
+
         # Apply seed data based on file content
         reference_data = []
         if "countries" in seed_data:
@@ -55,16 +60,16 @@ def _build_client(
             reference_data.extend(seed_data["locations"])
         if "system_settings" in seed_data:
             reference_data.extend(seed_data["system_settings"])
-        
+
         if reference_data:
             bootstrap_reference_data_from_seed(reference_data)
-        
+
         if "products" in seed_data:
             bootstrap_products_from_seed({"products": seed_data["products"]})
-        
+
         if "admins" in seed_data and bootstrap_default and environment != "production":
             bootstrap_admins_from_seed({"admins": seed_data["admins"]})
-        
+
         if bootstrap_default and environment != "production":
             if "demo_customers" in seed_data or "demo_transactions" in seed_data:
                 bootstrap_demo_data_from_seed(seed_data)
@@ -137,9 +142,7 @@ def test_recover_password(client: TestClient) -> None:
     assert r.status_code == 200
 
 
-def test_disabled_user_cannot_login(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_disabled_user_cannot_login(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     db_path = tmp_path / "crm_test.db"
 
     with _build_client(
@@ -162,9 +165,7 @@ def test_disabled_user_cannot_login(
         assert r.status_code == 403
 
 
-def test_auth_status_does_not_create_default_admin_by_default(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_auth_status_does_not_create_default_admin_by_default(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     with _build_client(
         tmp_path,
         monkeypatch,
@@ -178,9 +179,7 @@ def test_auth_status_does_not_create_default_admin_by_default(
     assert status_response.json()["default_admin_present"] is False
 
 
-def test_login_does_not_bootstrap_accounts_on_request(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_login_does_not_bootstrap_accounts_on_request(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     with _build_client(
         tmp_path,
         monkeypatch,
@@ -198,9 +197,7 @@ def test_login_does_not_bootstrap_accounts_on_request(
     assert status_response.json()["default_admin_present"] is False
 
 
-def test_production_ignores_bootstrap_flags(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_production_ignores_bootstrap_flags(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     with _build_client(
         tmp_path,
         monkeypatch,

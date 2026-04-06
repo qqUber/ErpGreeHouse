@@ -41,9 +41,7 @@ def test_sales_stats_no_auth(client):
 
 def test_sales_stats_with_secret(client, clean_database):
     """Endpoint should return 200 with clean database."""
-    response = client.get(
-        "/api/v1/stats/sales", headers={"x-admin-secret": "test_admin_secret"}
-    )
+    response = client.get("/api/v1/stats/sales", headers={"x-admin-secret": "test_admin_secret"})
     assert response.status_code == 200
     data = response.json()
     assert "stats" in data

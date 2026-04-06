@@ -9,9 +9,7 @@ def dispatch_event(event_type: str, payload: dict[str, Any]) -> None:
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute(
-            "SELECT id, config_json FROM integrations WHERE enabled=1 AND kind='outbound_webhook'"
-        )
+        cur = conn.execute("SELECT id, config_json FROM integrations WHERE enabled=1 AND kind='outbound_webhook'")
         rows = cur.fetchall()
         for r in rows:
             try:

@@ -125,9 +125,7 @@ os.environ["JWT_SECRET_KEY"] = "test-jwt-secret-key-ci-2026-secure-random-entrop
 # Only set fake Telegram token if no real token is provided in environment
 # This allows integration tests to use real Telegram API when credentials are available
 if not os.getenv("TELEGRAM_BOT_TOKEN"):
-    os.environ["TELEGRAM_BOT_TOKEN"] = (
-        "test_token_123456789:AABBccDDeeFFggHHiiJJkkLLmmNNooP"
-    )
+    os.environ["TELEGRAM_BOT_TOKEN"] = "test_token_123456789:AABBccDDeeFFggHHiiJJkkLLmmNNooP"
 if not os.getenv("TELEGRAM_CHANNEL_ID"):
     os.environ["TELEGRAM_CHANNEL_ID"] = "-100123456789"
 
@@ -200,9 +198,7 @@ def clean_database(test_db_path: str) -> Generator[str, None, None]:
                         break
                     except Exception as rename_error:
                         # If even rename fails, skip cleanup but continue
-                        print(
-                            f"Warning: Failed to delete or rename database file {db_path}: {e}"
-                        )
+                        print(f"Warning: Failed to delete or rename database file {db_path}: {e}")
 
                 # Wait and retry with increasing delay
                 time.sleep(retry_delay)
@@ -395,9 +391,7 @@ def mock_erp_client() -> MagicMock:
         }
     )
 
-    mock_client.create_customer = AsyncMock(
-        return_value={"customer_id": "CRM-CUST-00002", "success": True}
-    )
+    mock_client.create_customer = AsyncMock(return_value={"customer_id": "CRM-CUST-00002", "success": True})
 
     # Mock loyalty methods
     mock_client.get_loyalty_balance = AsyncMock(
@@ -720,9 +714,7 @@ def test_jwt_token() -> str:
         "iat": int(time.time()),
     }
 
-    return jwt.encode(
-        payload, "test_jwt_secret_key_for_testing_only_12345", algorithm="HS256"
-    )
+    return jwt.encode(payload, "test_jwt_secret_key_for_testing_only_12345", algorithm="HS256")
 
 
 @pytest.fixture
@@ -793,9 +785,7 @@ def create_test_customer(
     }
 
 
-def create_test_order(
-    customer_id: str = "CRM-CUST-00001", total: float = 1000.0, items: list = None
-) -> Dict[str, Any]:
+def create_test_order(customer_id: str = "CRM-CUST-00001", total: float = 1000.0, items: list = None) -> Dict[str, Any]:
     """
     Helper function to create test order data.
     """
@@ -814,29 +804,32 @@ def create_test_order(
 # Seed Data Validation
 # =============================================================================
 
+
 @pytest.fixture(scope="function")
 def validate_seed_data():
     """Validate seed data integrity before tests run"""
     from app.db_init import discover_seed_files, load_seed_file
-    
+
     seed_files = discover_seed_files()
     for seed_file in seed_files:
         data = load_seed_file(seed_file)
-        
+
         # Validate product codes in demo transactions exist
         if "demo_transactions" in data:
             product_codes = {p["code"] for p in data.get("products", [])}
             for tx in data["demo_transactions"]:
                 for item in tx.get("items", []):
-                    assert item["code"] in product_codes, f"Product {item['code']} referenced in transaction but not defined"
-    
+                    assert (
+                        item["code"] in product_codes
+                    ), f"Product {item['code']} referenced in transaction but not defined"
+
     yield
 
 
 def get_seed_test_data(entity_type: str, index: int = 0):
     """Get test data from seed files"""
     from app.db_init import discover_seed_files, load_seed_file
-    
+
     for seed_file in discover_seed_files():
         data = load_seed_file(seed_file)
         if entity_type in data and len(data[entity_type]) > index:

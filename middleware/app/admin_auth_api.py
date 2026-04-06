@@ -109,18 +109,14 @@ def _notify_password_reset(username: str) -> None:
 
     # TODO: Implement actual notification channels (email, telegram, etc.)
     # For now, we log to console as per requirements
-    print(
-        f"🔐 PASSWORD RESET NOTIFICATION: User '{username}' - Your password has been reset by an administrator."
-    )
+    print(f"🔐 PASSWORD RESET NOTIFICATION: User '{username}' - Your password has been reset by an administrator.")
 
     # Attempt to get user contact info and notify via available channels
     db = get_db()
     conn = db.connect()
     try:
         # Check for telegram notification
-        tg_user = conn.execute(
-            "SELECT telegram_id FROM telegram_users WHERE username=?", (username,)
-        ).fetchone()
+        tg_user = conn.execute("SELECT telegram_id FROM telegram_users WHERE username=?", (username,)).fetchone()
 
         if tg_user and tg_user["telegram_id"]:
             # Log that we would send a telegram notification
@@ -173,9 +169,7 @@ def _get_jwt_cookie_settings() -> dict[str, Any]:
     return cookie_settings
 
 
-def _set_jwt_cookies(
-    response: Response, access_token: str, refresh_token: str, username: str = "unknown"
-) -> None:
+def _set_jwt_cookies(response: Response, access_token: str, refresh_token: str, username: str = "unknown") -> None:
     """Set JWT tokens in httpOnly cookies."""
     settings = get_settings()
     cookie_opts = _get_jwt_cookie_settings()
@@ -245,9 +239,7 @@ def _bootstrap_default_admin() -> None:
     db = get_db()
     conn = db.connect()
     try:
-        row = conn.execute(
-            "SELECT id FROM admin_users WHERE username=?", (username,)
-        ).fetchone()
+        row = conn.execute("SELECT id FROM admin_users WHERE username=?", (username,)).fetchone()
         if row:
             return
         salt = new_salt()
@@ -267,18 +259,10 @@ def _bootstrap_demo_users() -> None:
         return
 
     iterations = int(os.getenv("ADMIN_PBKDF2_ITER", "200000"))
-    operator_username = (
-        os.getenv("ADMIN_OPERATOR_USERNAME", "operator").strip() or "operator"
-    )
-    operator_password = (
-        os.getenv("ADMIN_OPERATOR_PASSWORD", "operator").strip() or "operator"
-    )
-    marketer_username = (
-        os.getenv("ADMIN_MARKETER_USERNAME", "manager").strip() or "manager"
-    )
-    marketer_password = (
-        os.getenv("ADMIN_MARKETER_PASSWORD", "manager").strip() or "manager"
-    )
+    operator_username = os.getenv("ADMIN_OPERATOR_USERNAME", "operator").strip() or "operator"
+    operator_password = os.getenv("ADMIN_OPERATOR_PASSWORD", "operator").strip() or "operator"
+    marketer_username = os.getenv("ADMIN_MARKETER_USERNAME", "manager").strip() or "manager"
+    marketer_password = os.getenv("ADMIN_MARKETER_PASSWORD", "manager").strip() or "manager"
 
     db = get_db()
     conn = db.connect()
@@ -289,9 +273,7 @@ def _bootstrap_demo_users() -> None:
         ):
             if not username:
                 continue
-            row = conn.execute(
-                "SELECT id FROM admin_users WHERE username=?", (username,)
-            ).fetchone()
+            row = conn.execute("SELECT id FROM admin_users WHERE username=?", (username,)).fetchone()
             if row:
                 continue
             salt = new_salt()
@@ -308,9 +290,7 @@ def _bootstrap_demo_users() -> None:
 def _issue_token(admin_user_id: int) -> str:
     token = secrets.token_urlsafe(32)
     ttl_min = int(os.getenv("ADMIN_TOKEN_TTL_MIN", "720"))
-    expires_at = (datetime.now(timezone.utc) + timedelta(minutes=ttl_min)).strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
+    expires_at = (datetime.now(timezone.utc) + timedelta(minutes=ttl_min)).strftime("%Y-%m-%d %H:%M:%S")
 
     db = get_db()
     conn = db.connect()
@@ -343,9 +323,7 @@ def _get_admin_by_token(token: str) -> dict[str, Any] | None:
             ).fetchone()
         if not row:
             return None
-        if str(row["expires_at"]) <= datetime.now(timezone.utc).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        ):
+        if str(row["expires_at"]) <= datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"):
             return None
         return dict(row)
     finally:
@@ -392,11 +370,7 @@ def require_admin_token_or_env(x_admin_secret: str | None) -> dict[str, Any]:
     try:
         # Check environment secret first (always valid)
         expected = os.getenv("ADMIN_SECRET", "").strip()
-        if (
-            expected
-            and x_admin_secret
-            and constant_time_equals(x_admin_secret, expected)
-        ):
+        if expected and x_admin_secret and constant_time_equals(x_admin_secret, expected):
             logger.info("Environment secret validation successful for user: env")
             return {
                 "user_id": 0,
@@ -417,15 +391,11 @@ def require_admin_token_or_env(x_admin_secret: str | None) -> dict[str, Any]:
             if payload:
                 admin_data = get_admin_from_jwt(payload)
                 admin_data["is_authenticated"] = True
-                logger.info(
-                    f"JWT validation successful for user: {admin_data.get('username')}"
-                )
+                logger.info(f"JWT validation successful for user: {admin_data.get('username')}")
                 return admin_data
             else:
                 # JWT validation failed - return 401 immediately, do NOT fall back to legacy
-                logger.warning(
-                    "JWT validation failed - returning 401, not falling back to legacy"
-                )
+                logger.warning("JWT validation failed - returning 401, not falling back to legacy")
                 return {
                     "is_authenticated": False,
                     "detail": "Invalid or expired JWT token",
@@ -441,9 +411,7 @@ def require_admin_token_or_env(x_admin_secret: str | None) -> dict[str, Any]:
             logger.warning(f"Disabled user attempted login: {admin.get('username')}")
             return {"is_authenticated": False, "detail": "User disabled"}
 
-        logger.info(
-            f"Legacy token validation successful for user: {admin.get('username')}"
-        )
+        logger.info(f"Legacy token validation successful for user: {admin.get('username')}")
         admin["is_authenticated"] = True
         return admin
     except Exception as e:
@@ -494,18 +462,14 @@ def require_jwt_auth(request: Request) -> dict[str, Any]:
                 payload = validate_access_token(access_token)
                 if payload:
                     if is_debug:
-                        logger.debug(
-                            f"JWT validation succeeded for user: {payload.get('sub')}"
-                        )
+                        logger.debug(f"JWT validation succeeded for user: {payload.get('sub')}")
                     admin_data = get_admin_from_jwt(payload)
                     admin_data["is_authenticated"] = True
                     return admin_data
                 else:
                     # JWT validation failed - return 401 immediately, do NOT fall back to legacy
                     if is_debug:
-                        logger.warning(
-                            "JWT validation failed - returning 401, not falling back to legacy"
-                        )
+                        logger.warning("JWT validation failed - returning 401, not falling back to legacy")
                     return {
                         "is_authenticated": False,
                         "detail": "Invalid or expired JWT token",
@@ -523,9 +487,7 @@ def require_jwt_auth(request: Request) -> dict[str, Any]:
 
             if legacy_token:
                 if is_debug:
-                    logger.debug(
-                        "No JWT provided, falling back to legacy token validation"
-                    )
+                    logger.debug("No JWT provided, falling back to legacy token validation")
                 legacy_result = require_admin_token_or_env(legacy_token)
                 if legacy_result.get("is_authenticated"):
                     return legacy_result
@@ -578,9 +540,7 @@ def auth_status(request: Request) -> dict[str, Any]:
         conn = db.connect()
         try:
             # Check if admin_users table exists first
-            conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='admin_users'"
-            ).fetchone()
+            conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='admin_users'").fetchone()
             row = conn.execute(
                 "SELECT id, must_change_password FROM admin_users WHERE username=?",
                 (username,),
@@ -589,9 +549,7 @@ def auth_status(request: Request) -> dict[str, Any]:
                 "bootstrap_enabled": _is_bootstrap_allowed("ADMIN_BOOTSTRAP_DEFAULT"),
                 "default_admin_present": bool(row),
                 "default_admin_username": username,
-                "must_change_password": (
-                    bool(int(row["must_change_password"])) if row else False
-                ),
+                "must_change_password": (bool(int(row["must_change_password"])) if row else False),
             }
         finally:
             conn.close()
@@ -618,9 +576,7 @@ def login(payload: LoginIn, response: Response, request: Request) -> LoginOut:
         conn = db.connect()
         try:
             # Check if admin_users table exists first
-            conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='admin_users'"
-            ).fetchone()
+            conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='admin_users'").fetchone()
             row = conn.execute(
                 "SELECT id, username, password_hash, password_salt, password_iter, must_change_password, disabled, role FROM admin_users WHERE username=?",
                 (payload.username.strip(),),
@@ -654,9 +610,7 @@ def login(payload: LoginIn, response: Response, request: Request) -> LoginOut:
             )
 
             # Set JWT cookies
-            _set_jwt_cookies(
-                response, access_token, refresh_token, username=payload.username
-            )
+            _set_jwt_cookies(response, access_token, refresh_token, username=payload.username)
 
             # Also set legacy cookie for backward compatibility
             ttl_min = int(os.getenv("ADMIN_TOKEN_TTL_MIN", "720"))
@@ -687,9 +641,7 @@ def login(payload: LoginIn, response: Response, request: Request) -> LoginOut:
     except sqlite3.OperationalError as e:
         if "no such table" in str(e):
             # Database not initialized yet - return graceful error
-            raise HTTPException(
-                status_code=503, detail="Database initializing - please try again"
-            )
+            raise HTTPException(status_code=503, detail="Database initializing - please try again")
         raise
     except Exception:
         # Other database errors - re-raise
@@ -734,9 +686,7 @@ def change_password(
             "UPDATE admin_users SET password_hash=?, password_salt=?, password_iter=?, must_change_password=0, updated_at=datetime('now') WHERE id=?",
             (new_hash, salt, iterations, int(admin["user_id"])),
         )
-        conn.execute(
-            "DELETE FROM admin_tokens WHERE admin_user_id=?", (int(admin["user_id"]),)
-        )
+        conn.execute("DELETE FROM admin_tokens WHERE admin_user_id=?", (int(admin["user_id"]),))
         conn.commit()
         return {"changed": True}
     finally:
@@ -749,9 +699,7 @@ def get_me(
 ) -> dict[str, Any]:
     """Get current user information."""
     if not auth_result.get("is_authenticated"):
-        raise HTTPException(
-            status_code=401, detail=auth_result.get("detail", "Unauthorized")
-        )
+        raise HTTPException(status_code=401, detail=auth_result.get("detail", "Unauthorized"))
 
     return {
         "user_id": auth_result["user_id"],
@@ -796,9 +744,7 @@ def refresh_token_public(response: Response, request: Request) -> dict[str, Any]
     new_refresh_token = create_refresh_token(admin_data)
 
     # Set new cookies only - tokens NOT returned in response body
-    _set_jwt_cookies(
-        response, new_access_token, new_refresh_token, username=admin["username"]
-    )
+    _set_jwt_cookies(response, new_access_token, new_refresh_token, username=admin["username"])
 
     return {"refreshed": True, "token_type": "bearer"}
 
@@ -909,9 +855,7 @@ def recover_password(
         )
 
     # Log rate limit info for debugging
-    logger.info(
-        f"Password recovery attempt for '{payload.username}' from {client_ip} (remaining: {remaining})"
-    )
+    logger.info(f"Password recovery attempt for '{payload.username}' from {client_ip} (remaining: {remaining})")
 
     expected = os.getenv("ADMIN_RECOVERY_SECRET", "")
     if not expected:
@@ -922,12 +866,8 @@ def recover_password(
             reset_by="admin_recovery",
             success=False,
         )
-        logger.critical(
-            "Password recovery attempted but ADMIN_RECOVERY_SECRET not configured"
-        )
-        raise HTTPException(
-            status_code=500, detail="ADMIN_RECOVERY_SECRET not configured"
-        )
+        logger.critical("Password recovery attempted but ADMIN_RECOVERY_SECRET not configured")
+        raise HTTPException(status_code=500, detail="ADMIN_RECOVERY_SECRET not configured")
 
     if not x_admin_recovery or not constant_time_equals(x_admin_recovery, expected):
         _log_password_reset_audit(
@@ -942,9 +882,7 @@ def recover_password(
     db = get_db()
     conn = db.connect()
     try:
-        row = conn.execute(
-            "SELECT id FROM admin_users WHERE username=?", (payload.username.strip(),)
-        ).fetchone()
+        row = conn.execute("SELECT id FROM admin_users WHERE username=?", (payload.username.strip(),)).fetchone()
         if not row:
             _log_password_reset_audit(
                 target_username=payload.username,
@@ -962,9 +900,7 @@ def recover_password(
             "UPDATE admin_users SET password_hash=?, password_salt=?, password_iter=?, must_change_password=0, updated_at=datetime('now') WHERE id=?",
             (new_hash, salt, iterations, int(row["id"])),
         )
-        conn.execute(
-            "DELETE FROM admin_tokens WHERE admin_user_id=?", (int(row["id"]),)
-        )
+        conn.execute("DELETE FROM admin_tokens WHERE admin_user_id=?", (int(row["id"]),))
         conn.commit()
 
         # Log successful password reset for audit

@@ -61,14 +61,10 @@ class TestVKConfig:
         from app.integrations.bots.vk_handler import VKBot, set_vk_config
 
         # Set config
-        set_vk_config(
-            access_token="test_token_123", group_id=123456789, api_version="5.131"
-        )
+        set_vk_config(access_token="test_token_123", group_id=123456789, api_version="5.131")
 
         # Verify bot can be created
-        bot = VKBot(
-            access_token="test_token_123", group_id=123456789, api_version="5.131"
-        )
+        bot = VKBot(access_token="test_token_123", group_id=123456789, api_version="5.131")
 
         assert bot.access_token == "test_token_123"
         assert bot.group_id == 123456789
@@ -406,9 +402,7 @@ class TestStoreConsent:
         )
         consent = cur.fetchone()
         assert consent is not None
-        assert (
-            consent["consent_text"] == "Я согласен на получение маркетинговых сообщений"
-        )
+        assert consent["consent_text"] == "Я согласен на получение маркетинговых сообщений"
         assert consent["source"] == "tg"
 
         conn.close()
@@ -440,9 +434,7 @@ class TestStoreConsent:
         store_consent(customer_id, "tg", "Consent marketing", "1.0.0", "marketing")
 
         # Verify both exist
-        cur = conn.execute(
-            "SELECT consent_type FROM consents WHERE customer_id = ?", (customer_id,)
-        )
+        cur = conn.execute("SELECT consent_type FROM consents WHERE customer_id = ?", (customer_id,))
         types = {row["consent_type"] for row in cur.fetchall()}
         assert "data_processing" in types
         assert "marketing" in types
@@ -713,9 +705,7 @@ class TestCleanupUserData:
             cur = conn.execute("SELECT * FROM customers WHERE telegram_id = 999002")
             assert cur.fetchone() is None
             # Since log_refusal=False, there should be no consent records
-            cur = conn.execute(
-                "SELECT * FROM consents WHERE customer_id = ?", (customer_id,)
-            )
+            cur = conn.execute("SELECT * FROM consents WHERE customer_id = ?", (customer_id,))
             assert cur.fetchone() is None
 
         # Mock Redis
@@ -736,9 +726,7 @@ class TestCleanupUserData:
         cur = conn.execute("SELECT * FROM customers WHERE telegram_id = 999002")
         assert cur.fetchone() is None
         # Since log_refusal=False, there should be no consent records
-        cur = conn.execute(
-            "SELECT * FROM consents WHERE customer_id = ?", (customer_id,)
-        )
+        cur = conn.execute("SELECT * FROM consents WHERE customer_id = ?", (customer_id,))
         assert cur.fetchone() is None
         conn.close()
 
@@ -1241,9 +1229,7 @@ class TestRegistrationFlowComplete:
         from app.integrations.bots.shared.registration import RegistrationFlow
 
         with patch("app.integrations.bots.shared.registration.get_redis"):
-            with patch(
-                "app.integrations.bots.shared.registration.get_db"
-            ) as mock_db, patch(
+            with patch("app.integrations.bots.shared.registration.get_db") as mock_db, patch(
                 "app.integrations.bots.shared.registration.resolve_or_create_customer",
                 return_value=(1, True),
             ), patch(
@@ -1271,9 +1257,7 @@ class TestRegistrationFlowComplete:
         from app.integrations.bots.shared.registration import RegistrationFlow
 
         with patch("app.integrations.bots.shared.registration.get_redis"):
-            with patch(
-                "app.integrations.bots.shared.registration.get_db"
-            ) as mock_db, patch(
+            with patch("app.integrations.bots.shared.registration.get_db") as mock_db, patch(
                 "app.integrations.bots.shared.registration.resolve_or_create_customer",
                 return_value=(2, True),
             ), patch(
@@ -1300,9 +1284,7 @@ class TestRegistrationFlowComplete:
         from app.integrations.bots.shared.registration import RegistrationFlow
 
         with patch("app.integrations.bots.shared.registration.get_redis"):
-            with patch(
-                "app.integrations.bots.shared.registration.get_db"
-            ) as mock_db, patch(
+            with patch("app.integrations.bots.shared.registration.get_db") as mock_db, patch(
                 "app.integrations.bots.shared.registration.resolve_or_create_customer",
                 return_value=(1, False),
             ), patch(
@@ -1315,9 +1297,7 @@ class TestRegistrationFlowComplete:
                 mock_db.return_value.connect.return_value = mock_conn
 
                 flow = RegistrationFlow("vk")
-                customer, is_new = flow.complete_registration(
-                    123456789, "New Name", "+79991234567", 1
-                )
+                customer, is_new = flow.complete_registration(123456789, "New Name", "+79991234567", 1)
 
                 assert is_new is False
 

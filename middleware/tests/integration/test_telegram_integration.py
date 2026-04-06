@@ -41,11 +41,7 @@ def _is_mocked() -> bool:
 
     # Check for test/fake tokens
     token_lower = token.lower()
-    if (
-        token_lower.startswith("test_")
-        or "dummy" in token_lower
-        or "mock" in token_lower
-    ):
+    if token_lower.startswith("test_") or "dummy" in token_lower or "mock" in token_lower:
         return True
 
     # Check if we're in the dedicated Telegram integration workflow
@@ -181,9 +177,7 @@ class TestTelegramBotConfiguration:
     def test_bot_can_access_channel(self):
         """Verify bot has access to the configured channel."""
         token, channel_id = _require_credentials()
-        response = requests.get(
-            f"{_get_telegram_api_base()}/getChat", params={"chat_id": channel_id}
-        )
+        response = requests.get(f"{_get_telegram_api_base()}/getChat", params={"chat_id": channel_id})
         data = response.json()
 
         assert data["ok"] is True, f"Failed to access channel: {data}"
@@ -300,9 +294,7 @@ class TestTelegramWebhookIntegration:
 
         client = TestClient(app)
         # We don't need a real bot token for this check if we mock get_settings
-        response = client.post(
-            "/telegram/set_webhook", headers={"x-webhook-secret": webhook_secret}
-        )
+        response = client.post("/telegram/set_webhook", headers={"x-webhook-secret": webhook_secret})
         # It might return 400 if token is missing, but it should exist
         assert response.status_code in [200, 400, 401]
         print(f"Set webhook response: {response.status_code}")
@@ -345,9 +337,7 @@ class TestTelegramOmnichannelStatus:
         bot_info = response.json()
 
         # Check channel access
-        response = requests.get(
-            f"{_get_telegram_api_base()}/getChat", params={"chat_id": channel_id}
-        )
+        response = requests.get(f"{_get_telegram_api_base()}/getChat", params={"chat_id": channel_id})
         channel_info = response.json()
 
         status = {
@@ -355,14 +345,8 @@ class TestTelegramOmnichannelStatus:
             "bot_username": bot_info["result"]["username"],
             "channel_name": channel_info["result"]["title"],
             "channel_id": channel_id,
-            "can_send_messages": channel_info["result"]["permissions"][
-                "can_send_messages"
-            ],
-            "status": (
-                "ACTIVE"
-                if channel_info["result"]["permissions"]["can_send_messages"]
-                else "INACTIVE"
-            ),
+            "can_send_messages": channel_info["result"]["permissions"]["can_send_messages"],
+            "status": ("ACTIVE" if channel_info["result"]["permissions"]["can_send_messages"] else "INACTIVE"),
         }
 
         print(f"\n=== Telegram Channel Status ===")

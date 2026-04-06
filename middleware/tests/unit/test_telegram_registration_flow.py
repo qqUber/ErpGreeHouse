@@ -99,9 +99,7 @@ class MockCallbackQuery:
 class TestStartCommand:
     """Test /start command behavior."""
 
-    def test_start_new_user_shows_welcome_and_consent_buttons(
-        self, setup_test_db, clean_redis, sample_user
-    ):
+    def test_start_new_user_shows_welcome_and_consent_buttons(self, setup_test_db, clean_redis, sample_user):
         """Test that /start for new user shows welcome message with consent buttons."""
         from app.handlers import cmd_start
 
@@ -141,9 +139,7 @@ class TestStartCommand:
                 # Since InlineKeyboardMarkup is mocked, we check if it was called/created
                 assert kb is not None
 
-    def test_start_existing_user_shows_balance_and_consent_status(
-        self, setup_test_db, clean_redis, sample_user
-    ):
+    def test_start_existing_user_shows_balance_and_consent_status(self, setup_test_db, clean_redis, sample_user):
         """Test that /start for existing user shows balance and consent status."""
         # First create a test customer in the database
         from app.db import get_db
@@ -193,9 +189,7 @@ class TestStartCommand:
 class TestConsentCallback:
     """Test consent callback handling (agree/refuse)."""
 
-    def test_consent_agree_proceeds_to_phone_request(
-        self, setup_test_db, clean_redis, sample_user
-    ):
+    def test_consent_agree_proceeds_to_phone_request(self, setup_test_db, clean_redis, sample_user):
         """Test that clicking consent button proceeds to phone request."""
         from app.handlers import cb_consent
 
@@ -214,15 +208,10 @@ class TestConsentCallback:
             cb.message.edit_text.assert_called_once()
             cb.message.answer.assert_called_once()
             call_args = cb.message.answer.call_args
-            assert (
-                "стран" in call_args[0][0].lower()
-                or "country" in call_args[0][0].lower()
-            )
+            assert "стран" in call_args[0][0].lower() or "country" in call_args[0][0].lower()
             mock_r.hset.assert_called_once()
 
-    def test_consent_refuse_cleans_user_data(
-        self, setup_test_db, clean_redis, sample_user
-    ):
+    def test_consent_refuse_cleans_user_data(self, setup_test_db, clean_redis, sample_user):
         """Test that clicking refuse button cleans all user data (152-ФЗ compliance)."""
         # First create a test customer that will be deleted
         from app.handlers import _cleanup_user_data, _upsert_local_customer, cb_consent
@@ -240,9 +229,7 @@ class TestConsentCallback:
 
         db = get_db()
         conn = db.connect()
-        cur = conn.execute(
-            "SELECT id FROM customers WHERE telegram_id = ?", (sample_user["id"],)
-        )
+        cur = conn.execute("SELECT id FROM customers WHERE telegram_id = ?", (sample_user["id"],))
         assert cur.fetchone() is not None
 
         # Mock Redis for cleanup
@@ -270,9 +257,7 @@ class TestConsentCallback:
             )
 
             # Verify customer was deleted from database
-            cur = conn.execute(
-                "SELECT id FROM customers WHERE telegram_id = ?", (sample_user["id"],)
-            )
+            cur = conn.execute("SELECT id FROM customers WHERE telegram_id = ?", (sample_user["id"],))
             assert cur.fetchone() is None
 
             conn.close()
@@ -281,9 +266,7 @@ class TestConsentCallback:
 class TestRegistrationMessage:
     """Test registration message handling."""
 
-    def test_phone_input_stores_phone_and_asks_for_full_name(
-        self, setup_test_db, clean_redis, sample_user
-    ):
+    def test_phone_input_stores_phone_and_asks_for_full_name(self, setup_test_db, clean_redis, sample_user):
         """Test that entering phone stores it and asks for full name."""
         from app.handlers import handle_registration_message
 
@@ -301,13 +284,9 @@ class TestRegistrationMessage:
             mock_r.hset.assert_called_once()
             message.answer.assert_called_once()
             call_args = message.answer.call_args
-            assert (
-                "имя" in call_args[0][0].lower() or "фамили" in call_args[0][0].lower()
-            )
+            assert "имя" in call_args[0][0].lower() or "фамили" in call_args[0][0].lower()
 
-    def test_full_name_input_stores_name_and_asks_for_gender(
-        self, setup_test_db, clean_redis, sample_user
-    ):
+    def test_full_name_input_stores_name_and_asks_for_gender(self, setup_test_db, clean_redis, sample_user):
         """Test that entering full name stores it and asks for gender."""
         from app.handlers import handle_registration_message
 
@@ -361,18 +340,13 @@ class TestRegistrationMessage:
             message.answer.assert_called_once()
             call_args = message.answer.call_args
 
-            assert (
-                "формат" in call_args[0][0].lower()
-                or "телефон" in call_args[0][0].lower()
-            )
+            assert "формат" in call_args[0][0].lower() or "телефон" in call_args[0][0].lower()
 
 
 class TestMarketingConsent:
     """Test marketing consent handling."""
 
-    def test_marketing_yes_creates_customer_with_marketing(
-        self, setup_test_db, clean_redis, sample_user
-    ):
+    def test_marketing_yes_creates_customer_with_marketing(self, setup_test_db, clean_redis, sample_user):
         """Test that accepting marketing creates customer with marketing_allowed=1."""
         from app.handlers import cb_marketing_consent
 
@@ -434,9 +408,7 @@ class TestMarketingConsent:
 
                 conn.close()
 
-    def test_marketing_no_creates_customer_without_marketing(
-        self, setup_test_db, clean_redis, sample_user
-    ):
+    def test_marketing_no_creates_customer_without_marketing(self, setup_test_db, clean_redis, sample_user):
         """Test that declining marketing creates customer with marketing_allowed=0."""
         from app.handlers import cb_marketing_consent
 
@@ -520,14 +492,10 @@ class TestCleanupUserData:
         db = get_db()
         conn = db.connect()
 
-        cur = conn.execute(
-            "SELECT id FROM customers WHERE telegram_id = ?", (sample_user["id"],)
-        )
+        cur = conn.execute("SELECT id FROM customers WHERE telegram_id = ?", (sample_user["id"],))
         assert cur.fetchone() is not None
 
-        cur = conn.execute(
-            "SELECT COUNT(*) as cnt FROM consents WHERE customer_id = ?", (customer_id,)
-        )
+        cur = conn.execute("SELECT COUNT(*) as cnt FROM consents WHERE customer_id = ?", (customer_id,))
         assert cur.fetchone()["cnt"] == 2
 
         # Mock Redis
@@ -540,9 +508,7 @@ class TestCleanupUserData:
             _cleanup_user_data(sample_user["id"])
 
             # Verify customer was deleted
-            cur = conn.execute(
-                "SELECT id FROM customers WHERE telegram_id = ?", (sample_user["id"],)
-            )
+            cur = conn.execute("SELECT id FROM customers WHERE telegram_id = ?", (sample_user["id"],))
             assert cur.fetchone() is None
 
             # Verify Redis was cleaned
@@ -555,9 +521,7 @@ class TestRegistrationFlow:
     """End-to-end registration flow tests."""
 
     @pytest.mark.asyncio
-    async def test_full_registration_flow_with_marketing(
-        self, setup_test_db, clean_redis, sample_user
-    ):
+    async def test_full_registration_flow_with_marketing(self, setup_test_db, clean_redis, sample_user):
         """Test complete registration flow: start → consent → name → phone → marketing yes."""
         from app.handlers import (
             cb_consent,
@@ -689,9 +653,7 @@ class TestRegistrationFlow:
                     conn.close()
 
     @pytest.mark.asyncio
-    async def test_registration_refusal_cleans_all_data(
-        self, setup_test_db, clean_redis, sample_user
-    ):
+    async def test_registration_refusal_cleans_all_data(self, setup_test_db, clean_redis, sample_user):
         """Test that refusing consent at any point cleans all data."""
         # First create a customer (simulating partially registered user)
         from app.handlers import _cleanup_user_data, _upsert_local_customer, cb_consent

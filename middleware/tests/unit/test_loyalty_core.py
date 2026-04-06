@@ -308,9 +308,7 @@ class TestTier:
 
     def test_tier_attributes(self):
         """Test tier has correct attributes."""
-        tier = Tier(
-            name="Тест", min_spent=1000, accrual_percent=10, max_redeem_percent=50
-        )
+        tier = Tier(name="Тест", min_spent=1000, accrual_percent=10, max_redeem_percent=50)
 
         assert tier.name == "Тест"
         assert tier.min_spent == 1000

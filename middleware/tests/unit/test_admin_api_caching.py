@@ -174,9 +174,7 @@ class TestHelperFunctions:
         """Test _get_product_names limits items to max_items."""
         from app.admin_api import _get_product_names
 
-        items_json = json.dumps(
-            [{"name": "Item1"}, {"name": "Item2"}, {"name": "Item3"}]
-        )
+        items_json = json.dumps([{"name": "Item1"}, {"name": "Item2"}, {"name": "Item3"}])
         result = _get_product_names(items_json, max_items=2)
 
         assert result == "Item1, Item2 +1"

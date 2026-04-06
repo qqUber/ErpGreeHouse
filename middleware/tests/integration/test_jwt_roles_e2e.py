@@ -192,10 +192,7 @@ class TestJWTRoleBasedE2E:
         assert response.status_code == 200
         # Check if cookies are set to be deleted (Set-Cookie with empty value or expires in past)
         # TestClient handles cookie deletion by removing them from its jar if instructed
-        assert (
-            "access_token" not in response.cookies
-            or response.cookies["access_token"] == ""
-        )
+        assert "access_token" not in response.cookies or response.cookies["access_token"] == ""
 
     def test_negative_invalid_tokens(self, client):
         """

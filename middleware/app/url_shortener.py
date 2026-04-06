@@ -13,9 +13,7 @@ def generate_short_code(url: str, campaign_id: int, customer_id: int) -> str:
     return short_code
 
 
-def store_short_url(
-    short_code: str, original_url: str, campaign_id: int, customer_id: int
-):
+def store_short_url(short_code: str, original_url: str, campaign_id: int, customer_id: int):
     """Store short URL mapping in database."""
     db = get_db()
     conn = db.connect()

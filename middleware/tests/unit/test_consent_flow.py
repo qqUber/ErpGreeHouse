@@ -70,14 +70,10 @@ def test_store_consent_with_type(setup_test_db):
     customer_id = cur.fetchone()["id"]
 
     # Store data processing consent
-    _store_consent(
-        customer_id, "Consent to process personal data", "1.0.0", "data_processing"
-    )
+    _store_consent(customer_id, "Consent to process personal data", "1.0.0", "data_processing")
 
     # Store marketing consent
-    _store_consent(
-        customer_id, "Consent to receive marketing messages", "1.0.0", "marketing"
-    )
+    _store_consent(customer_id, "Consent to receive marketing messages", "1.0.0", "marketing")
 
     # Verify both consents were stored
     cur = conn.execute(
@@ -166,12 +162,8 @@ def test_customers_table_has_required_columns(setup_test_db):
     cur = conn.execute("PRAGMA table_info(customers)")
     columns = {row["name"] for row in cur.fetchall()}
 
-    assert (
-        "marketing_allowed" in columns
-    ), "customers table must have marketing_allowed column"
-    assert (
-        "data_processing_allowed" in columns
-    ), "customers table must have data_processing_allowed column"
+    assert "marketing_allowed" in columns, "customers table must have marketing_allowed column"
+    assert "data_processing_allowed" in columns, "customers table must have data_processing_allowed column"
     conn.close()
 
 
@@ -179,9 +171,7 @@ def test_policy_version_constant():
     """Test that CURRENT_POLICY_VERSION constant is defined and in correct format."""
     from app.handlers import CURRENT_POLICY_VERSION
 
-    assert isinstance(
-        CURRENT_POLICY_VERSION, str
-    ), "CURRENT_POLICY_VERSION must be a string"
+    assert isinstance(CURRENT_POLICY_VERSION, str), "CURRENT_POLICY_VERSION must be a string"
 
     # Verify semver format (major.minor.patch)
     parts = CURRENT_POLICY_VERSION.split(".")

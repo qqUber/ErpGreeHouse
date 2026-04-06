@@ -76,26 +76,20 @@ class ProductRecommendationService:
             for row in cur.fetchall():
                 try:
                     items = json.loads(row["items_json"]) if row["items_json"] else []
-                    tx_time = datetime.fromisoformat(
-                        row["created_at"].replace("Z", "+00:00")
-                    )
+                    tx_time = datetime.fromisoformat(row["created_at"].replace("Z", "+00:00"))
                     hour = tx_time.hour
                     peak_hours[hour] = peak_hours.get(hour, 0) + 1
 
                     for item in items:
                         product_code = item.get("code", "unknown")
-                        product_frequency[product_code] = (
-                            product_frequency.get(product_code, 0) + 1
-                        )
+                        product_frequency[product_code] = product_frequency.get(product_code, 0) + 1
 
                         # Track category if available
                         category = item.get("kind", "general")
                         if category not in category_preferences:
                             category_preferences[category] = {"count": 0, "total": 0}
                         category_preferences[category]["count"] += 1
-                        category_preferences[category]["total"] += item.get(
-                            "price", 0
-                        ) * item.get("qty", 1)
+                        category_preferences[category]["total"] += item.get("price", 0) * item.get("qty", 1)
 
                     transactions.append(
                         {
@@ -115,18 +109,11 @@ class ProductRecommendationService:
             preferred_hour = max(peak_hours, key=peak_hours.get) if peak_hours else None
 
             # Get top products
-            sorted_products = sorted(
-                product_frequency.items(), key=lambda x: x[1], reverse=True
-            )
-            top_products = [
-                {"code": code, "count": count}
-                for code, count in sorted_products[:TOP_PRODUCTS_COUNT]
-            ]
+            sorted_products = sorted(product_frequency.items(), key=lambda x: x[1], reverse=True)
+            top_products = [{"code": code, "count": count} for code, count in sorted_products[:TOP_PRODUCTS_COUNT]]
 
             # Get top categories
-            sorted_categories = sorted(
-                category_preferences.items(), key=lambda x: x[1]["count"], reverse=True
-            )
+            sorted_categories = sorted(category_preferences.items(), key=lambda x: x[1]["count"], reverse=True)
             top_categories = [
                 {"category": cat, "count": data["count"], "total_spent": data["total"]}
                 for cat, data in sorted_categories[:TOP_CATEGORIES_COUNT]
@@ -134,32 +121,16 @@ class ProductRecommendationService:
 
             result = {
                 "customer_id": customer_id,
-                "purchase_frequency": (
-                    int(customer["purchase_frequency"])
-                    if customer["purchase_frequency"]
-                    else 0
-                ),
-                "average_check": (
-                    float(customer["average_check"]) if customer["average_check"] else 0
-                ),
-                "balance_points": (
-                    int(customer["balance_points"]) if customer["balance_points"] else 0
-                ),
+                "purchase_frequency": (int(customer["purchase_frequency"]) if customer["purchase_frequency"] else 0),
+                "average_check": (float(customer["average_check"]) if customer["average_check"] else 0),
+                "balance_points": (int(customer["balance_points"]) if customer["balance_points"] else 0),
                 "total_spent": total_spent,
                 "transaction_count": len(transactions),
                 "preferred_visit_hour": preferred_hour,
                 "top_products": top_products,
                 "top_categories": top_categories,
-                "last_purchase": (
-                    str(customer["last_purchase_date"])
-                    if customer["last_purchase_date"]
-                    else None
-                ),
-                "preferred_channel": (
-                    str(customer["preferred_channel"])
-                    if customer["preferred_channel"]
-                    else None
-                ),
+                "last_purchase": (str(customer["last_purchase_date"]) if customer["last_purchase_date"] else None),
+                "preferred_channel": (str(customer["preferred_channel"]) if customer["preferred_channel"] else None),
             }
 
             r.setex(cache_key, CACHE_TTL_LONG_SECONDS, json.dumps(result))
@@ -190,12 +161,8 @@ class ProductRecommendationService:
 
             if row:
                 # Calculate new score with decay
-                old_score = (
-                    float(row["preference_score"]) if row["preference_score"] else 0
-                )
-                new_score = (
-                    old_score * RECOMMENDATION_SCORE_DECAY
-                ) + score_boost  # Decay old scores
+                old_score = float(row["preference_score"]) if row["preference_score"] else 0
+                new_score = (old_score * RECOMMENDATION_SCORE_DECAY) + score_boost  # Decay old scores
 
                 conn.execute(
                     """UPDATE customer_product_preferences
@@ -244,9 +211,7 @@ class ProductRecommendationService:
         Get personalized product recommendations.
         Contexts: 'post_order', 'menu_open', 'daily_push', 'general'
         """
-        cache_key = (
-            f"recommendations:{customer_id}:{context}:{limit}:{int(exclude_recent)}"
-        )
+        cache_key = f"recommendations:{customer_id}:{context}:{limit}:{int(exclude_recent)}"
         r = get_redis()
         cached = r.get(cache_key)
         if cached:
@@ -270,10 +235,7 @@ class ProductRecommendationService:
                 recent_products = {row["code"] for row in cur.fetchall() if row["code"]}
 
             # Get customer's preferred categories
-            preferred_categories = [
-                c["category"]
-                for c in prefs.get("top_categories", [])[:PREFERRED_CATEGORIES_COUNT]
-            ]
+            preferred_categories = [c["category"] for c in prefs.get("top_categories", [])[:PREFERRED_CATEGORIES_COUNT]]
 
             # Get products from preferred categories
             recommendations = []
@@ -326,11 +288,7 @@ class ProductRecommendationService:
                         WHERE p.active = 1
                         AND p.code NOT IN ({0})
                         ORDER BY popularity DESC
-                        LIMIT ?""".format(
-                        ",".join(["?"] * len(existing_codes))
-                        if existing_codes
-                        else "''"
-                    ),
+                        LIMIT ?""".format(",".join(["?"] * len(existing_codes)) if existing_codes else "''"),
                     tuple(existing_codes) + (needed,),
                 )
 
@@ -357,9 +315,7 @@ class ProductRecommendationService:
 
             # Generate personalized message
             for rec in recommendations:
-                rec["message"] = self._generate_recommendation_message(
-                    rec["name"], rec["category"], prefs, context
-                )
+                rec["message"] = self._generate_recommendation_message(rec["name"], rec["category"], prefs, context)
 
             # Cache result
             r.setex(cache_key, CACHE_TTL_SHORT_SECONDS, json.dumps(recommendations))
@@ -381,9 +337,7 @@ class ProductRecommendationService:
 
         elif context == "menu_open":
             if category in top_cats:
-                return (
-                    f"☕ Your favorite {category} is calling! Try {product_name} today"
-                )
+                return f"☕ Your favorite {category} is calling! Try {product_name} today"
             return f"🌟 Discover {product_name} — our customers' top pick"
 
         elif context == "daily_push":
@@ -401,9 +355,7 @@ class ProductRecommendationService:
 
     # ============ Trigger Methods ============
 
-    def get_post_order_recommendations(
-        self, customer_id: int, order_items: list[dict]
-    ) -> list[dict[str, Any]]:
+    def get_post_order_recommendations(self, customer_id: int, order_items: list[dict]) -> list[dict[str, Any]]:
         """Get recommendations after successful order."""
         # Update preferences based on order
         for item in order_items:
@@ -429,13 +381,9 @@ class ProductRecommendationService:
         if r.get(cache_key):
             return None  # Already sent today
 
-        recommendations = self.get_recommendations(
-            customer_id, context="daily_push", limit=1
-        )
+        recommendations = self.get_recommendations(customer_id, context="daily_push", limit=1)
         if recommendations:
-            r.setex(
-                cache_key, DAILY_PUSH_COOLDOWN_SECONDS, "1"
-            )  # Mark as sent for 24 hours
+            r.setex(cache_key, DAILY_PUSH_COOLDOWN_SECONDS, "1")  # Mark as sent for 24 hours
             return {
                 "customer_id": customer_id,
                 "recommendation": recommendations[0],
@@ -443,9 +391,7 @@ class ProductRecommendationService:
             }
         return None
 
-    def get_customers_for_daily_push(
-        self, limit: int = DAILY_PUSH_CUSTOMERS_LIMIT
-    ) -> list[int]:
+    def get_customers_for_daily_push(self, limit: int = DAILY_PUSH_CUSTOMERS_LIMIT) -> list[int]:
         """Get list of customers eligible for daily push (active, opted-in)."""
         conn = self.db.connect()
         try:

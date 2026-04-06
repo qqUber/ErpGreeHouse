@@ -52,9 +52,7 @@ router = APIRouter(prefix="/api/v1")
 public_router = APIRouter(prefix="/api/v1/public")
 
 
-async def _send_vk_batch_task(
-    messages: list[dict], vk_token: str, expected_count: int
-) -> None:
+async def _send_vk_batch_task(messages: list[dict], vk_token: str, expected_count: int) -> None:
     """Background task to send VK messages in batch.
 
     This runs after the HTTP response is sent, so it doesn't block the client.
@@ -82,9 +80,7 @@ async def _send_vk_batch_task(
                 ) as resp:
                     result = await resp.json()
                     if result.get("error"):
-                        print(
-                            f"VK API error for user {msg['vk_id']}: {result['error']}"
-                        )
+                        print(f"VK API error for user {msg['vk_id']}: {result['error']}")
                         failed += 1
                     else:
                         sent += 1
@@ -97,9 +93,7 @@ async def _send_vk_batch_task(
                 print(f"Error sending VK message to {msg['vk_id']}: {e}")
                 failed += 1
 
-    print(
-        f"VK batch complete: {sent} sent, {failed} failed (expected: {expected_count})"
-    )
+    print(f"VK batch complete: {sent} sent, {failed} failed (expected: {expected_count})")
 
 
 def _parse_items_json(items_json: Optional[str]) -> list[dict[str, Any]]:
@@ -130,8 +124,7 @@ def public_status() -> dict[str, Any]:
         "api": "ok",
         "admin_auth_configured": admin_configured,
         "debug_mode": is_debug(),
-        "erp_sync_enabled": os.getenv("ERP_SYNC_ENABLED", "false").lower()
-        in ("1", "true", "yes"),
+        "erp_sync_enabled": os.getenv("ERP_SYNC_ENABLED", "false").lower() in ("1", "true", "yes"),
     }
 
 
@@ -163,9 +156,7 @@ def _cache_set_json(key: str, value: Any, ttl_seconds: int) -> None:
 
 
 def _setting_int(conn, key: str, default: int) -> int:
-    row = conn.execute(
-        "SELECT value FROM system_settings WHERE key=?", (key,)
-    ).fetchone()
+    row = conn.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
     if not row:
         return default
     try:
@@ -302,9 +293,7 @@ def list_permissions(
     conn = db.connect()
     try:
         # Get all configured permissions
-        cur = conn.execute(
-            "SELECT role, permission, is_allowed FROM role_permissions ORDER BY role, permission"
-        )
+        cur = conn.execute("SELECT role, permission, is_allowed FROM role_permissions ORDER BY role, permission")
         items = [dict(r) for r in cur.fetchall()]
 
         # Ensure we return a structure that includes defaults if not in DB?
@@ -318,9 +307,7 @@ def list_permissions(
 
         # Build a complete matrix
         matrix = []
-        configured = {
-            (r["role"], r["permission"]): bool(r["is_allowed"]) for r in items
-        }
+        configured = {(r["role"], r["permission"]): bool(r["is_allowed"]) for r in items}
 
         for role in known_roles:
             role_defaults = get_default_permissions(role)
@@ -331,9 +318,7 @@ def list_permissions(
                     if perm in role_defaults:
                         is_allowed = True
 
-                matrix.append(
-                    {"role": role, "permission": perm, "is_allowed": is_allowed}
-                )
+                matrix.append({"role": role, "permission": perm, "is_allowed": is_allowed})
 
         return {"items": matrix}
     finally:
@@ -418,9 +403,7 @@ def dashboard(
             if c["created_at"]:
                 try:
                     created_dt = datetime.fromisoformat(
-                        c["created_at"].replace("Z", "+00:00")
-                        if c["created_at"].endswith("Z")
-                        else c["created_at"]
+                        c["created_at"].replace("Z", "+00:00") if c["created_at"].endswith("Z") else c["created_at"]
                     )
                     if (datetime.now(created_dt.tzinfo) - created_dt).days <= 7:
                         new_this_week += 1
@@ -429,9 +412,7 @@ def dashboard(
 
         telegram_reachable = len([c for c in all_customers if c["telegram_id"]])
         vk_reachable = len([c for c in all_customers if c["vk_id"]])
-        marketing_consent = len(
-            [c for c in all_customers if c["marketing_allowed"] == 1]
-        )
+        marketing_consent = len([c for c in all_customers if c["marketing_allowed"] == 1])
 
         # Get products count
         cur_products = conn.execute("SELECT COUNT(*) as cnt FROM products")
@@ -581,13 +562,8 @@ def analytics_top_products(
                     product_sales[name] = {"qty": qty, "revenue": price * qty}
 
         # Sort by revenue and take top N
-        sorted_products = sorted(
-            product_sales.items(), key=lambda x: x[1]["revenue"], reverse=True
-        )[:limit]
-        data = [
-            {"name": name, "qty": stats["qty"], "revenue": stats["revenue"]}
-            for name, stats in sorted_products
-        ]
+        sorted_products = sorted(product_sales.items(), key=lambda x: x[1]["revenue"], reverse=True)[:limit]
+        data = [{"name": name, "qty": stats["qty"], "revenue": stats["revenue"]} for name, stats in sorted_products]
         result = {"top_products": data}
         _cache_set_json(cache_key, result, ttl_seconds=ANALYTICS_CACHE_TTL)
         return result
@@ -614,9 +590,7 @@ def analytics_category_distribution(
     try:
         # Get products to map codes to categories
         cur_products = conn.execute("SELECT code, kind FROM products WHERE active = 1")
-        product_categories = {
-            row["code"]: row["kind"] for row in cur_products.fetchall()
-        }
+        product_categories = {row["code"]: row["kind"] for row in cur_products.fetchall()}
 
         # Get transactions
         cur = conn.execute(
@@ -644,8 +618,7 @@ def analytics_category_distribution(
                     category_sales[category] = {"qty": qty, "revenue": price * qty}
 
         data = [
-            {"name": cat, "qty": stats["qty"], "revenue": stats["revenue"]}
-            for cat, stats in category_sales.items()
+            {"name": cat, "qty": stats["qty"], "revenue": stats["revenue"]} for cat, stats in category_sales.items()
         ]
         result = {"category_distribution": data}
         _cache_set_json(cache_key, result, ttl_seconds=ANALYTICS_CACHE_TTL)
@@ -665,8 +638,7 @@ def analytics_recalculate(
     conn = db.connect()
     try:
         # Get all customers with transactions
-        cur = conn.execute(
-            """
+        cur = conn.execute("""
             SELECT
                 c.id,
                 COALESCE(SUM(t.total_amount), 0) as ltv,
@@ -676,8 +648,7 @@ def analytics_recalculate(
             FROM customers c
             LEFT JOIN transactions t ON c.id = t.customer_id
             GROUP BY c.id
-            """
-        )
+            """)
 
         updated = 0
         for row in cur.fetchall():
@@ -749,15 +720,13 @@ def analytics_summary(
         sales = dict(cur.fetchone())
 
         # Customer summary
-        cur = conn.execute(
-            """
+        cur = conn.execute("""
             SELECT
                 COUNT(*) as total_customers,
                 COUNT(CASE WHEN created_at >= date('now', '-7 days') THEN 1 END) as new_this_week,
                 COUNT(CASE WHEN telegram_id IS NOT NULL THEN 1 END) as with_telegram
             FROM customers
-            """
-        )
+            """)
         customers = dict(cur.fetchone())
 
         return {
@@ -868,9 +837,7 @@ def _list_customers_internal(
             args.append(created_before)
 
         if has_orders:
-            where.append(
-                "EXISTS (SELECT 1 FROM transactions WHERE transactions.customer_id = customers.id)"
-            )
+            where.append("EXISTS (SELECT 1 FROM transactions WHERE transactions.customer_id = customers.id)")
 
         # Get total count
         count_sql = "SELECT COUNT(*) as total FROM customers"
@@ -1073,9 +1040,7 @@ def create_customer(
         if phone:
             cur = conn.execute("SELECT id FROM customers WHERE phone=?", (phone,))
             if cur.fetchone():
-                raise HTTPException(
-                    status_code=400, detail="Customer with this phone already exists"
-                )
+                raise HTTPException(status_code=400, detail="Customer with this phone already exists")
 
         token = generate_unique_qr_token(conn)
         prefs = json.dumps({"notes": payload.notes} if payload.notes else {})
@@ -1177,19 +1142,13 @@ def update_customer(
             phone = existing["phone"]
 
         # Build update fields
-        full_name = (
-            payload.full_name.strip() if payload.full_name else existing["full_name"]
-        )
-        birthday = (
-            payload.birthday if payload.birthday is not None else existing["birthday"]
-        )
+        full_name = payload.full_name.strip() if payload.full_name else existing["full_name"]
+        birthday = payload.birthday if payload.birthday is not None else existing["birthday"]
         gender = payload.gender if payload.gender is not None else existing["gender"]
         email = payload.email if payload.email is not None else existing["email"]
         city = payload.city if payload.city is not None else existing["city"]
         marketing_allowed = (
-            payload.marketing_allowed
-            if payload.marketing_allowed is not None
-            else existing["marketing_allowed"]
+            payload.marketing_allowed if payload.marketing_allowed is not None else existing["marketing_allowed"]
         )
         data_processing_allowed = (
             payload.data_processing_allowed
@@ -1286,18 +1245,14 @@ def get_receipt(
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute(
-            "SELECT receipt_pdf_path FROM transactions WHERE id=?", (transaction_id,)
-        )
+        cur = conn.execute("SELECT receipt_pdf_path FROM transactions WHERE id=?", (transaction_id,))
         row = cur.fetchone()
         if not row or not row["receipt_pdf_path"]:
             raise HTTPException(status_code=404, detail="Receipt not found")
         path = str(row["receipt_pdf_path"])
         if not os.path.exists(path):
             raise HTTPException(status_code=404, detail="Receipt file missing")
-        return FileResponse(
-            path, media_type="application/pdf", filename=os.path.basename(path)
-        )
+        return FileResponse(path, media_type="application/pdf", filename=os.path.basename(path))
     finally:
         conn.close()
 
@@ -1434,27 +1389,17 @@ def create_sale(
         bonus_earned = calc_earned_points(payable_main, spent_amount_main, rules)
 
         receipt_dir = os.getenv("RECEIPTS_DIR", "receipts")
-        receipt_name = (
-            f"receipt_{payload.customer_id}_{int(datetime.now().timestamp())}.pdf"
-        )
+        receipt_name = f"receipt_{payload.customer_id}_{int(datetime.now().timestamp())}.pdf"
         receipt_path = os.path.join(os.path.dirname(db.path), receipt_dir, receipt_name)
         lines = []
         for it in payload.items:
-            lines.append(
-                ReceiptLine(
-                    text=f"{it.name} x{it.qty} = {format_currency(it.price * it.qty)}"
-                )
-            )
+            lines.append(ReceiptLine(text=f"{it.name} x{it.qty} = {format_currency(it.price * it.qty)}"))
         lines.append(ReceiptLine(text=f"Сумма: {format_currency(total_main)}"))
         lines.append(ReceiptLine(text=f"Списано: {format_currency(bonus_used)}"))
         lines.append(ReceiptLine(text=f"К оплате: {format_currency(payable_main)}"))
         lines.append(ReceiptLine(text=f"Начислено: {bonus_earned}"))
         lines.append(ReceiptLine(text=f"Баланс до: {int(cust['balance_points'])}"))
-        lines.append(
-            ReceiptLine(
-                text=f"Баланс после: {int(cust['balance_points']) - bonus_used + bonus_earned}"
-            )
-        )
+        lines.append(ReceiptLine(text=f"Баланс после: {int(cust['balance_points']) - bonus_used + bonus_earned}"))
         write_simple_receipt_pdf(receipt_path, title="Coffee CRM Receipt", lines=lines)
 
         new_balance = int(cust["balance_points"]) - bonus_used + bonus_earned
@@ -1557,9 +1502,7 @@ def create_sale(
             "bonus_used": bonus_used,
             "bonus_earned": bonus_earned,
         }
-        background_tasks.add_task(
-            evaluate_and_queue_triggers, payload.customer_id, "pos.sale", event_data
-        )
+        background_tasks.add_task(evaluate_and_queue_triggers, payload.customer_id, "pos.sale", event_data)
 
         tg_id = cust["telegram_id"]
         if tg_id:
@@ -1571,9 +1514,7 @@ def create_sale(
             ]
             send_customer_message.delay(int(tg_id), "\n".join(msg_lines))
 
-        erp_ref = _maybe_sync_to_erpnext(
-            int(cust["telegram_id"] or 0), payload.items, bonus_used
-        )
+        erp_ref = _maybe_sync_to_erpnext(int(cust["telegram_id"] or 0), payload.items, bonus_used)
         if erp_ref:
             conn.execute(
                 "UPDATE transactions SET external_erp_ref=? WHERE id=?",
@@ -1610,9 +1551,7 @@ def create_sale(
     raise HTTPException(status_code=500, detail="Transaction not created")
 
 
-def _maybe_sync_to_erpnext(
-    telegram_id: int, items: list[SaleItem], bonus_used: int
-) -> str | None:
+def _maybe_sync_to_erpnext(telegram_id: int, items: list[SaleItem], bonus_used: int) -> str | None:
     enabled = os.getenv("ERP_SYNC_ENABLED", "false").lower() in ("1", "true", "yes")
     if not enabled:
         return None
@@ -1624,10 +1563,7 @@ def _maybe_sync_to_erpnext(
         tg = await client.get_customer_by_telegram_id(telegram_id)
         if not tg:
             return None
-        mapped = [
-            {"code": i.code, "qty": i.qty, "price": i.price, "name": i.name}
-            for i in items
-        ]
+        mapped = [{"code": i.code, "qty": i.qty, "price": i.price, "name": i.name} for i in items]
         res = await client.create_order(tg["name"], mapped, bonus_used)
         return res.get("order_id")
 
@@ -1692,9 +1628,7 @@ class MarketingPushIn(BaseModel):
 
     message: str = Field(min_length=1, max_length=1000)
     min_balance_points: int = Field(default=100, ge=0)
-    channel_filter: str | None = Field(
-        default=None, pattern="^(tg|vk|telegram|vkontakte)$"
-    )
+    channel_filter: str | None = Field(default=None, pattern="^(tg|vk|telegram|vkontakte)$")
 
 
 @router.post("/marketing/push")
@@ -1751,9 +1685,7 @@ def marketing_push(
         from .worker import send_customer_message
 
         settings = get_settings()
-        vk_token = getattr(settings, "vk_group_token", None) or os.getenv(
-            "VK_GROUP_TOKEN"
-        )
+        vk_token = getattr(settings, "vk_group_token", None) or os.getenv("VK_GROUP_TOKEN")
 
         # Separate customers by channel for optimized sending
         tg_customers = []
@@ -1776,9 +1708,7 @@ def marketing_push(
         # Send Telegram messages via Celery (immediate queue)
         for customer in tg_customers:
             try:
-                send_customer_message.delay(
-                    int(customer["telegram_id"]), payload.message
-                )
+                send_customer_message.delay(int(customer["telegram_id"]), payload.message)
                 sent_tg += 1
             except Exception as e:
                 print(f"Error queuing TG message to customer {customer['id']}: {e}")
@@ -1793,9 +1723,7 @@ def marketing_push(
                 }
                 for c in vk_customers
             ]
-            background_tasks.add_task(
-                _send_vk_batch_task, vk_messages, vk_token, len(vk_customers)
-            )
+            background_tasks.add_task(_send_vk_batch_task, vk_messages, vk_token, len(vk_customers))
 
         return {
             "status": "queued",
@@ -1804,11 +1732,7 @@ def marketing_push(
             "sent_vk": len(vk_customers),
             "failed": failed,
             "vk_queued_for_background": len(vk_customers),
-            "message": (
-                payload.message[:50] + "..."
-                if len(payload.message) > 50
-                else payload.message
-            ),
+            "message": (payload.message[:50] + "..." if len(payload.message) > 50 else payload.message),
         }
 
     finally:

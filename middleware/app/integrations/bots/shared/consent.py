@@ -107,9 +107,7 @@ def revoke_all_consents(source: Source, user_id: int, conn=None) -> None:
 
     try:
         # Get customer ID using validated column name
-        cur = conn.execute(
-            f"SELECT id FROM customers WHERE {id_column} = ?", (user_id,)
-        )
+        cur = conn.execute(f"SELECT id FROM customers WHERE {id_column} = ?", (user_id,))
         row = cur.fetchone()
         if row:
             customer_id = row["id"]
@@ -224,9 +222,7 @@ def get_customer_consents(source: Source, user_id: int, conn=None) -> Dict[str, 
     return {"marketing_allowed": False, "data_processing_allowed": False}
 
 
-def cleanup_user_data(
-    source: Source, user_id: int, conn=None, log_refusal: bool = True
-) -> None:
+def cleanup_user_data(source: Source, user_id: int, conn=None, log_refusal: bool = True) -> None:
     """
     Clean all client data when user refuses registration or deletes profile (152-ФЗ compliance).
     Deletes user from customers table and cleans all client history.
@@ -250,9 +246,7 @@ def cleanup_user_data(
 
     try:
         # Get customer ID before deleting
-        cur = conn.execute(
-            f"SELECT id FROM customers WHERE {id_column} = ?", (user_id,)
-        )
+        cur = conn.execute(f"SELECT id FROM customers WHERE {id_column} = ?", (user_id,))
         row = cur.fetchone()
         customer_id = row["id"] if row else None
 
@@ -335,9 +329,7 @@ def update_consent(
         )
 
         # Get customer ID to store consent record
-        cur = conn.execute(
-            f"SELECT id FROM customers WHERE {id_column} = ?", (user_id,)
-        )
+        cur = conn.execute(f"SELECT id FROM customers WHERE {id_column} = ?", (user_id,))
         row = cur.fetchone()
         if row:
             customer_id = row["id"]

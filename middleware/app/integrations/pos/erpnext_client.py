@@ -33,9 +33,7 @@ class ERPClient:
     def _cid(self, telegram_id: int) -> str:
         return str(telegram_id)
 
-    async def _request(
-        self, method: str, endpoint: str, **kwargs
-    ) -> Optional[Dict[str, Any]]:
+    async def _request(self, method: str, endpoint: str, **kwargs) -> Optional[Dict[str, Any]]:
         if self.mock:
             return None
 
@@ -46,18 +44,14 @@ class ERPClient:
         for attempt in range(max_retries):
             async with httpx.AsyncClient(timeout=20.0) as client:
                 try:
-                    response = await client.request(
-                        method, url, headers=self.headers, **kwargs
-                    )
+                    response = await client.request(method, url, headers=self.headers, **kwargs)
                     response.raise_for_status()
                     return response.json()  # type: ignore[no-any-return]
                 except httpx.HTTPStatusError as e:
                     if e.response.status_code == 404:
                         return None
                     # Retry on 5xx errors or 429 (Too Many Requests)
-                    if (
-                        e.response.status_code >= 500 or e.response.status_code == 429
-                    ) and attempt < max_retries - 1:
+                    if (e.response.status_code >= 500 or e.response.status_code == 429) and attempt < max_retries - 1:
                         logger.warning(
                             f"ERPNext API Error {e.response.status_code}, retrying (attempt {attempt + 1})..."
                         )
@@ -67,9 +61,7 @@ class ERPClient:
                     raise
                 except (httpx.RequestError, asyncio.TimeoutError) as e:
                     if attempt < max_retries - 1:
-                        logger.warning(
-                            f"Request failed: {e}, retrying (attempt {attempt + 1})..."
-                        )
+                        logger.warning(f"Request failed: {e}, retrying (attempt {attempt + 1})...")
                         await asyncio.sleep(retry_delay * (attempt + 1))
                         continue
                     logger.error(f"Request failed: {e}")
@@ -79,9 +71,7 @@ class ERPClient:
                     raise
         return None
 
-    async def get_customer_by_telegram_id(
-        self, telegram_id: int
-    ) -> Optional[dict[str, Any]]:
+    async def get_customer_by_telegram_id(self, telegram_id: int) -> Optional[dict[str, Any]]:
         if self.mock:
             key = f"crm:tg:{telegram_id}"
             cid = self.r.get(key)
@@ -100,9 +90,7 @@ class ERPClient:
             return data["data"][0]  # type: ignore[no-any-return]
         return None
 
-    async def create_customer(
-        self, telegram_id: int, name: str, phone: str, consent_text: str
-    ) -> dict[str, Any]:
+    async def create_customer(self, telegram_id: int, name: str, phone: str, consent_text: str) -> dict[str, Any]:
         ts = int(time.time())
         consent_hash = hashlib.sha256(consent_text.encode()).hexdigest()[:8]
 
@@ -149,15 +137,11 @@ class ERPClient:
         try:
             # Try to find existing customer by phone to avoid duplicates
             filters = f'[["mobile_no","=","{phone}"]]'
-            existing = await self._request(
-                "GET", f"/api/resource/Customer?filters={filters}"
-            )
+            existing = await self._request("GET", f"/api/resource/Customer?filters={filters}")
             if existing and existing.get("data"):
                 erp_customer_name = existing["data"][0]["name"]
             else:
-                res = await self._request(
-                    "POST", "/api/resource/Customer", json=customer_payload
-                )
+                res = await self._request("POST", "/api/resource/Customer", json=customer_payload)
                 if res and res.get("data"):
                     erp_customer_name = res["data"]["name"]
         except Exception as e:
@@ -182,15 +166,11 @@ class ERPClient:
         new_client = res["data"]
 
         # 3. Create initial transaction
-        await self.create_loyalty_transaction(
-            new_client["name"], "Accrual", 100, "Welcome Bonus"
-        )
+        await self.create_loyalty_transaction(new_client["name"], "Accrual", 100, "Welcome Bonus")
 
         return new_client  # type: ignore[no-any-return]
 
-    async def create_loyalty_transaction(
-        self, client_name: str, ttype: str, points: int, desc: str
-    ):
+    async def create_loyalty_transaction(self, client_name: str, ttype: str, points: int, desc: str):
         if self.mock:
             return
 
@@ -202,9 +182,7 @@ class ERPClient:
             "transaction_date": time.strftime("%Y-%m-%d %H:%M:%S"),
         }
         try:
-            await self._request(
-                "POST", "/api/resource/Loyalty Transaction", json=payload
-            )
+            await self._request("POST", "/api/resource/Loyalty Transaction", json=payload)
         except Exception as e:
             logger.error(f"Failed to create loyalty transaction: {e}")
 
@@ -235,9 +213,7 @@ class ERPClient:
 
         return total
 
-    async def get_transactions(
-        self, client_name: str, limit: int = 5
-    ) -> List[Dict[str, Any]]:
+    async def get_transactions(self, client_name: str, limit: int = 5) -> List[Dict[str, Any]]:
         if self.mock:
             items = self.r.lrange(f"crm:tx:{client_name}", 0, limit - 1) or []
             result = []
@@ -263,9 +239,7 @@ class ERPClient:
 
         return data["data"]  # type: ignore[no-any-return]
 
-    async def create_order(
-        self, client_name: str, items: List[Dict[str, Any]], bonus_points: int
-    ) -> Dict[str, Any]:
+    async def create_order(self, client_name: str, items: List[Dict[str, Any]], bonus_points: int) -> Dict[str, Any]:
         if self.mock:
             bal = await self.get_balance(client_name)
             bonus_apply = min(bonus_points, bal)
@@ -299,9 +273,7 @@ class ERPClient:
 
         sales_order_items = []
         for item in items:
-            sales_order_items.append(
-                {"item_code": item["code"], "qty": item["qty"], "rate": item["price"]}
-            )
+            sales_order_items.append({"item_code": item["code"], "qty": item["qty"], "rate": item["price"]})
 
         payload = {
             "customer": customer_link,
@@ -313,9 +285,7 @@ class ERPClient:
             # "bonus_points_used": bonus_points
         }
 
-        res: Optional[Dict[str, Any]] = await self._request(
-            "POST", "/api/resource/Sales Order", json=payload
-        )
+        res: Optional[Dict[str, Any]] = await self._request("POST", "/api/resource/Sales Order", json=payload)
         if res is None or res.get("data") is None:
             raise ValueError("Failed to create sales order in ERP")
         order_id = res["data"]["name"]
@@ -336,9 +306,7 @@ class ERPClient:
         if paid_amount >= 100:  # Minimum 100
             accrual = int(paid_amount * 0.1)
             if accrual > 0:
-                await self.create_loyalty_transaction(
-                    client_name, "Accrual", accrual, f"Accrual for Order {order_id}"
-                )
+                await self.create_loyalty_transaction(client_name, "Accrual", accrual, f"Accrual for Order {order_id}")
 
         return {"order_id": order_id, "total": paid_amount, "bonus_used": bonus_points}
 

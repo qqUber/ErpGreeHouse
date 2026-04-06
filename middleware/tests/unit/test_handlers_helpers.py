@@ -41,9 +41,7 @@ class TestHandlersHelperFunctions:
     def test_store_consent(self, mock_store):
         """Test _store_consent function."""
         _store_consent(1, "test consent", "1.0")
-        mock_store.assert_called_once_with(
-            1, "tg", "test consent", "1.0", "data_processing", None
-        )
+        mock_store.assert_called_once_with(1, "tg", "test consent", "1.0", "data_processing", None)
 
     @patch("app.handlers._shared_get")
     def test_get_customer_consents(self, mock_get):
@@ -145,9 +143,7 @@ class TestHandlersHelperFunctions:
     @patch("app.handlers.get_db")
     @patch("app.handlers.normalize_name")
     @patch("app.handlers.resolve_or_create_customer")
-    def test_upsert_local_customer_existing(
-        self, mock_resolve, mock_normalize, mock_get_db
-    ):
+    def test_upsert_local_customer_existing(self, mock_resolve, mock_normalize, mock_get_db):
         """Test _upsert_local_customer for existing customer."""
         mock_normalize.return_value = "Test User"
         mock_resolve.return_value = (1, False)

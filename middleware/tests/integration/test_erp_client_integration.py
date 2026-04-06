@@ -50,14 +50,10 @@ async def test_erp_client_create_customer_real_logic(erpnext_mock, redis_client)
     # Setup mock HTTP response via respx
     erpnext_mock.mock_get_customer_by_phone(phone)  # Search by phone first
     erpnext_mock.mock_create_customer_resource(phone)  # Create Customer resource
-    erpnext_mock.mock_create_customer(
-        str(telegram_id), name
-    )  # Create Telegram Client link
+    erpnext_mock.mock_create_customer(str(telegram_id), name)  # Create Telegram Client link
 
     # Initialize client with mock mode OFF
-    with patch(
-        "app.integrations.pos.erpnext_client.get_settings"
-    ) as mock_settings, patch(
+    with patch("app.integrations.pos.erpnext_client.get_settings") as mock_settings, patch(
         "app.integrations.pos.erpnext_client.get_redis", return_value=redis_client
     ):
         mock_settings.return_value.erp_mock_mode = False
@@ -205,9 +201,7 @@ async def test_erp_client_get_product_by_id(mock_erp_client, test_product_data):
 async def test_erp_client_error_handling(mock_erp_client):
     """Test ERP client error handling"""
     # Setup mock to raise exception
-    mock_erp_client.get_customer_by_phone = AsyncMock(
-        side_effect=Exception("Connection timeout")
-    )
+    mock_erp_client.get_customer_by_phone = AsyncMock(side_effect=Exception("Connection timeout"))
 
     # Call method and verify exception
     with pytest.raises(Exception) as exc_info:

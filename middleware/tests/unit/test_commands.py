@@ -111,9 +111,7 @@ class TestSharedCommands:
     @patch("app.integrations.bots.shared.commands.get_db")
     @patch("app.integrations.bots.shared.commands.update_consent")
     @patch("app.integrations.bots.shared.commands.store_consent")
-    def test_cmd_revoke_consent_not_registered(
-        self, mock_store, mock_update, mock_get_db
-    ):
+    def test_cmd_revoke_consent_not_registered(self, mock_store, mock_update, mock_get_db):
         """Test /revoke_consent command for unregistered user."""
         # Setup mock
         mock_conn = Mock()

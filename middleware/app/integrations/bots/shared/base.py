@@ -170,9 +170,7 @@ class BaseBotAdapter(ABC):
         """
         from .commands import cmd_revoke_consent
 
-        cmd_revoke_consent(
-            self.source, user_id, lambda msg: self.send_message(user_id, msg)
-        )
+        cmd_revoke_consent(self.source, user_id, lambda msg: self.send_message(user_id, msg))
 
     async def handle_profile(self, user_id: int) -> None:
         """
@@ -239,9 +237,7 @@ class BaseBotAdapter(ABC):
                 return
 
             keyboard = self.format_keyboard("marketing")
-            self.send_message(
-                user_id, "Хотите получать новости и акции?", keyboard=keyboard
-            )
+            self.send_message(user_id, "Хотите получать новости и акции?", keyboard=keyboard)
 
     async def handle_marketing_consent(self, user_id: int, agreed: bool) -> None:
         """
@@ -265,9 +261,7 @@ class BaseBotAdapter(ABC):
         marketing_allowed = 1 if agreed else 0
 
         # Complete registration
-        customer_dict, is_new = self.registration_flow.complete_registration(
-            user_id, name, phone, marketing_allowed
-        )
+        customer_dict, is_new = self.registration_flow.complete_registration(user_id, name, phone, marketing_allowed)
 
         if not customer_dict.get("id"):
             self.send_message(user_id, "Ошибка регистрации. Попробуйте /start")
@@ -316,6 +310,4 @@ class BaseBotAdapter(ABC):
         """Send consent request to new user."""
         self.send_message(user_id, "Добро пожаловать в GreenHouse! 🏠☕")
         keyboard = self.format_keyboard("consent")
-        self.send_message(
-            user_id, "Для регистрации необходимо принять условия:", keyboard=keyboard
-        )
+        self.send_message(user_id, "Для регистрации необходимо принять условия:", keyboard=keyboard)

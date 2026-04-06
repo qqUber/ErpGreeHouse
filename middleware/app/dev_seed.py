@@ -76,14 +76,10 @@ def _seed_customers(conn: Any, rng: random.Random) -> list[int]:
     ids: list[int] = []
     for i in range(36):
         full_name = f"{rng.choice(first_names)} {rng.choice(last_names)}"
-        phone = (
-            f"+7 (9{rng.randint(10, 99)}) {rng.randint(100, 999)}-{rng.randint(10, 99)}"
-        )
+        phone = f"+7 (9{rng.randint(10, 99)}) {rng.randint(100, 999)}-{rng.randint(10, 99)}"
         qr_token = f"seed-{i:03d}-{rng.randint(1000, 9999)}"
         marketing_allowed = 1 if rng.random() > 0.25 else 0
-        birthday = (
-            f"199{rng.randint(0, 9)}-{rng.randint(1, 12):02d}-{rng.randint(1, 28):02d}"
-        )
+        birthday = f"199{rng.randint(0, 9)}-{rng.randint(1, 12):02d}-{rng.randint(1, 28):02d}"
         created_days_ago = rng.randint(1, 180)
         conn.execute(
             """
@@ -108,9 +104,7 @@ def _seed_customers(conn: Any, rng: random.Random) -> list[int]:
 
 
 def _seed_transactions(conn: Any, customer_ids: list[int], rng: random.Random) -> None:
-    products = conn.execute(
-        "SELECT code, name, price FROM products WHERE active = 1"
-    ).fetchall()
+    products = conn.execute("SELECT code, name, price FROM products WHERE active = 1").fetchall()
     if not products or not customer_ids:
         return
 
@@ -197,21 +191,15 @@ def _seed_marketing(conn: Any, customer_ids: list[int], rng: random.Random) -> N
             (name, ctype, content, status),
         )
 
-    trigger_rows = conn.execute(
-        "SELECT id FROM marketing_triggers ORDER BY id"
-    ).fetchall()
+    trigger_rows = conn.execute("SELECT id FROM marketing_triggers ORDER BY id").fetchall()
     trigger_ids = [int(r["id"]) for r in trigger_rows]
-    tx_rows = conn.execute(
-        "SELECT id FROM transactions ORDER BY id DESC LIMIT 200"
-    ).fetchall()
+    tx_rows = conn.execute("SELECT id FROM transactions ORDER BY id DESC LIMIT 200").fetchall()
     tx_ids = [int(r["id"]) for r in tx_rows]
     if not trigger_ids or not customer_ids:
         return
 
     for _ in range(120):
-        status = rng.choices(["processed", "pending", "failed"], weights=[70, 20, 10])[
-            0
-        ]
+        status = rng.choices(["processed", "pending", "failed"], weights=[70, 20, 10])[0]
         days_ago = rng.randint(0, 7)
         conn.execute(
             """
@@ -247,10 +235,7 @@ def _seed_integrations(conn: Any, rng: random.Random) -> None:
             row,
         )
 
-    ids = [
-        int(r["id"])
-        for r in conn.execute("SELECT id FROM integrations ORDER BY id").fetchall()
-    ]
+    ids = [int(r["id"]) for r in conn.execute("SELECT id FROM integrations ORDER BY id").fetchall()]
     if not ids:
         return
     event_types = [
@@ -261,9 +246,7 @@ def _seed_integrations(conn: Any, rng: random.Random) -> None:
     ]
     for _ in range(180):
         status = rng.choices(["success", "failed", "pending"], weights=[78, 14, 8])[0]
-        http_status = (
-            200 if status == "success" else (500 if status == "failed" else None)
-        )
+        http_status = 200 if status == "success" else (500 if status == "failed" else None)
         conn.execute(
             """
             INSERT INTO integration_deliveries

@@ -82,9 +82,7 @@ class TestStoreConsentEdgeCases:
         customer_id = cur.fetchone()["id"]
 
         # Store marketing consent
-        _store_consent(
-            customer_id, "Consent to receive marketing messages", "1.0.0", "marketing"
-        )
+        _store_consent(customer_id, "Consent to receive marketing messages", "1.0.0", "marketing")
 
         # Verify consent was stored
         cur = conn.execute(
@@ -124,9 +122,7 @@ class TestStoreConsentEdgeCases:
         _store_consent(customer_id, "Default consent", "1.0.0")
 
         # Verify consent was stored with default type
-        cur = conn.execute(
-            "SELECT * FROM consents WHERE customer_id = ?", (customer_id,)
-        )
+        cur = conn.execute("SELECT * FROM consents WHERE customer_id = ?", (customer_id,))
         consent = cur.fetchone()
 
         assert consent is not None

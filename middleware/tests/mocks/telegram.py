@@ -31,9 +31,7 @@ class TelegramMock:
         return message
 
     @staticmethod
-    def create_callback_query(
-        data: str, user_id: int = 12345, message: Optional[MagicMock] = None
-    ) -> MagicMock:
+    def create_callback_query(data: str, user_id: int = 12345, message: Optional[MagicMock] = None) -> MagicMock:
         """Create a mock aiogram CallbackQuery."""
         cb = MagicMock()
         cb.data = data

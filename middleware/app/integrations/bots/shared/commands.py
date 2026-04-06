@@ -92,9 +92,7 @@ def cmd_subscribe(
     conn = db.connect()
     try:
         id_column = _get_id_column(source)
-        cur = conn.execute(
-            f"SELECT id, full_name FROM customers WHERE {id_column}=?", (user_id,)
-        )
+        cur = conn.execute(f"SELECT id, full_name FROM customers WHERE {id_column}=?", (user_id,))
         row = cur.fetchone()
 
         if not row:
@@ -141,9 +139,7 @@ def cmd_revoke_consent(
     conn = db.connect()
     try:
         id_column = _get_id_column(source)
-        cur = conn.execute(
-            f"SELECT id, full_name FROM customers WHERE {id_column}=?", (user_id,)
-        )
+        cur = conn.execute(f"SELECT id, full_name FROM customers WHERE {id_column}=?", (user_id,))
         row = cur.fetchone()
 
         if not row:

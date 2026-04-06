@@ -47,9 +47,7 @@ def get_tenant_config(tenant_id: str = "default") -> dict:
     """Get tenant configuration from database"""
     db = DB()
     with db.conn() as conn:
-        cursor = conn.execute(
-            "SELECT config FROM tenant_configs WHERE tenant_id = ?", (tenant_id,)
-        )
+        cursor = conn.execute("SELECT config FROM tenant_configs WHERE tenant_id = ?", (tenant_id,))
         row = cursor.fetchone()
         if row:
             import json
@@ -86,9 +84,7 @@ async def get_tenant_theme(tenant_id: str = "default"):
 
 
 @router.put("/theme", response_model=ThemeConfig)
-async def update_tenant_theme(
-    theme: ThemeConfig, tenant_id: str = "default", admin=Depends(require_admin)
-):
+async def update_tenant_theme(theme: ThemeConfig, tenant_id: str = "default", admin=Depends(require_admin)):
     """Update tenant theme configuration (admin only)"""
     config = get_tenant_config(tenant_id)
     config["theme"] = theme.model_dump()
@@ -126,9 +122,7 @@ async def upload_logo(
     config["theme"]["logo_url"] = f"/api/v1/assets/{tenant_id}/logo"
     save_tenant_config(tenant_id, config)
 
-    return AssetUploadResponse(
-        asset_type="logo", url=f"/api/v1/assets/{tenant_id}/logo", filename=filename
-    )
+    return AssetUploadResponse(asset_type="logo", url=f"/api/v1/assets/{tenant_id}/logo", filename=filename)
 
 
 @router.post("/assets/favicon", response_model=AssetUploadResponse)

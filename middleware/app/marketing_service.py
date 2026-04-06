@@ -41,9 +41,7 @@ class MarketingCampaignService:
 
     def list_segments(self) -> list[dict[str, Any]]:
         with self._db.connect() as conn:
-            rows = conn.execute(
-                "SELECT * FROM marketing_segments ORDER BY created_at DESC"
-            ).fetchall()
+            rows = conn.execute("SELECT * FROM marketing_segments ORDER BY created_at DESC").fetchall()
             return [dict(row) for row in rows]
 
     def create_segment(self, name: str, criteria: dict[str, Any]) -> dict[str, Any]:
@@ -63,16 +61,12 @@ class MarketingCampaignService:
 
     def refresh_segment(self, segment_id: int) -> dict[str, Any]:
         with self._db.connect() as conn:
-            conn.execute(
-                "SELECT id FROM marketing_segments WHERE id = ?", (segment_id,)
-            )
+            conn.execute("SELECT id FROM marketing_segments WHERE id = ?", (segment_id,))
             return {"status": "success", "message": "Segment refreshed"}
 
     def list_triggers(self) -> list[dict[str, Any]]:
         with self._db.connect() as conn:
-            rows = conn.execute(
-                "SELECT * FROM marketing_triggers ORDER BY created_at DESC"
-            ).fetchall()
+            rows = conn.execute("SELECT * FROM marketing_triggers ORDER BY created_at DESC").fetchall()
             return [dict(row) for row in rows]
 
     def create_trigger(
@@ -151,8 +145,7 @@ class MarketingCampaignService:
 
     def get_events_breakdown(self) -> dict[str, Any]:
         with self._db.connect() as conn:
-            rows = conn.execute(
-                """
+            rows = conn.execute("""
                 SELECT
                     event_type,
                     COUNT(*) as count,
@@ -160,15 +153,12 @@ class MarketingCampaignService:
                 FROM marketing_events
                 GROUP BY event_type, json_extract(event_data, '$.channel')
                 ORDER BY event_type
-                """
-            ).fetchall()
+                """).fetchall()
             return {"events": [dict(row) for row in rows]}
 
     def list_campaigns(self) -> list[dict[str, Any]]:
         with self._db.connect() as conn:
-            rows = conn.execute(
-                "SELECT * FROM marketing_campaigns ORDER BY created_at DESC, id DESC"
-            ).fetchall()
+            rows = conn.execute("SELECT * FROM marketing_campaigns ORDER BY created_at DESC, id DESC").fetchall()
             return [self._serialize_campaign(dict(row)) for row in rows]
 
     def create_campaign(self, payload: CampaignCreatePayload) -> dict[str, Any]:
@@ -207,9 +197,7 @@ class MarketingCampaignService:
                 ),
             )
             conn.commit()
-            row = conn.execute(
-                "SELECT * FROM marketing_campaigns WHERE id = ?", (cursor.lastrowid,)
-            ).fetchone()
+            row = conn.execute("SELECT * FROM marketing_campaigns WHERE id = ?", (cursor.lastrowid,)).fetchone()
             if not row:
                 raise HTTPException(status_code=500, detail="Campaign creation failed")
             return self._serialize_campaign(dict(row))
@@ -328,9 +316,7 @@ class MarketingCampaignService:
             timestamp_field="cancelled_at",
         )
 
-    def update_budget(
-        self, campaign_id: int, budget_limit: Optional[int]
-    ) -> dict[str, Any]:
+    def update_budget(self, campaign_id: int, budget_limit: Optional[int]) -> dict[str, Any]:
         normalized_budget = None if budget_limit is None else max(0, int(budget_limit))
         with self._db.connect() as conn:
             campaign = self._require_campaign(conn, campaign_id)
@@ -352,9 +338,7 @@ class MarketingCampaignService:
             refreshed = self._require_campaign(conn, campaign_id)
             return self._serialize_campaign(refreshed)
 
-    def preview_segment(
-        self, segment_id: int, limit: int = 50, offset: int = 0
-    ) -> dict[str, Any]:
+    def preview_segment(self, segment_id: int, limit: int = 50, offset: int = 0) -> dict[str, Any]:
         with self._db.connect() as conn:
             criteria = self._get_segment_criteria(conn, segment_id)
             customers = self._resolve_customers_by_criteria(
@@ -387,10 +371,7 @@ class MarketingCampaignService:
                 "budget_spent": 0,
             }
             customers = self._resolve_segment_customers(conn, campaign, limit=5)
-            rendered = [
-                self._render_customer_preview(payload.content, customer)
-                for customer in customers
-            ]
+            rendered = [self._render_customer_preview(payload.content, customer) for customer in customers]
             return {
                 "audience_preview": customers,
                 "rendered_messages": rendered,
@@ -502,9 +483,7 @@ class MarketingCampaignService:
         return customers
 
     def _count_customers_by_criteria(self, conn: Any, criteria: dict[str, Any]) -> int:
-        query, params = self._build_customer_query(
-            criteria, select_clause="SELECT COUNT(*) as total"
-        )
+        query, params = self._build_customer_query(criteria, select_clause="SELECT COUNT(*) as total")
         row = conn.execute(query, params).fetchone()
         return int(row["total"] or 0)
 
@@ -539,20 +518,16 @@ class MarketingCampaignService:
             filters.append("balance_points >= ?")
             params.append(int(criteria["min_balance"]))
         if criteria.get("days_since_visit") is not None:
-            filters.append(
-                "(last_purchase_date IS NOT NULL AND julianday('now') - julianday(last_purchase_date) >= ?)"
-            )
+            filters.append("(last_purchase_date IS NOT NULL AND julianday('now') - julianday(last_purchase_date) >= ?)")
             params.append(int(criteria["days_since_visit"]))
         if criteria.get("min_purchase_amount") is not None:
-            filters.append(
-                """
+            filters.append("""
                 EXISTS (
                     SELECT 1 FROM transactions
                     WHERE customer_id = customers.id
                     AND total_amount >= ?
                 )
-                """
-            )
+                """)
             params.append(int(criteria["min_purchase_amount"]))
         if criteria.get("purchase_frequency") is not None:
             filters.append("purchase_frequency >= ?")
@@ -573,22 +548,14 @@ class MarketingCampaignService:
     def _build_time_of_day_clause(self, value: Any) -> str:
         normalized = str(value or "").strip().lower()
         if normalized == "morning":
-            return (
-                "CAST(strftime('%H', last_purchase_date) AS INTEGER) BETWEEN 6 AND 11"
-            )
+            return "CAST(strftime('%H', last_purchase_date) AS INTEGER) BETWEEN 6 AND 11"
         if normalized == "lunch":
-            return (
-                "CAST(strftime('%H', last_purchase_date) AS INTEGER) BETWEEN 12 AND 15"
-            )
+            return "CAST(strftime('%H', last_purchase_date) AS INTEGER) BETWEEN 12 AND 15"
         if normalized == "evening":
-            return (
-                "CAST(strftime('%H', last_purchase_date) AS INTEGER) BETWEEN 16 AND 22"
-            )
+            return "CAST(strftime('%H', last_purchase_date) AS INTEGER) BETWEEN 16 AND 22"
         return "1 = 1"
 
-    def _assert_budget_capacity(
-        self, campaign: dict[str, Any], audience_count: int
-    ) -> None:
+    def _assert_budget_capacity(self, campaign: dict[str, Any], audience_count: int) -> None:
         budget_limit = campaign.get("budget_limit")
         if budget_limit is None:
             return
@@ -600,9 +567,7 @@ class MarketingCampaignService:
                 detail="Campaign budget limit would be exceeded by this send",
             )
 
-    def _queue_campaign_delivery(
-        self, campaign: dict[str, Any], customer: dict[str, Any]
-    ) -> None:
+    def _queue_campaign_delivery(self, campaign: dict[str, Any], customer: dict[str, Any]) -> None:
         campaign_id = campaign["id"]
         content_type = campaign.get("content_type") or "text"
         media_urls = campaign.get("media_urls")
@@ -693,9 +658,7 @@ class MarketingCampaignService:
             return "vk"
         return "unknown"
 
-    def _render_customer_preview(
-        self, content: str, customer: dict[str, Any]
-    ) -> dict[str, Any]:
+    def _render_customer_preview(self, content: str, customer: dict[str, Any]) -> dict[str, Any]:
         name = (customer.get("full_name") or "Guest").strip() or "Guest"
         first_name = name.split()[0]
         favorite_drink = self._resolve_favorite_drink(customer)

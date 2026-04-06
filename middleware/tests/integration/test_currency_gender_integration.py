@@ -71,9 +71,7 @@ class TestCurrencyGenderIntegration(unittest.TestCase):
         customer_data = {"full_name": "Александра Петров", "phone": "+79998887755"}
 
         # Normalize name with gender checking
-        name_result = normalize_name(
-            customer_data["full_name"], "ru", check_gender=True
-        )
+        name_result = normalize_name(customer_data["full_name"], "ru", check_gender=True)
 
         # Verify gender detection
         self.assertEqual(name_result["detected_gender"], "female")
@@ -119,21 +117,13 @@ class TestCurrencyGenderIntegration(unittest.TestCase):
         for case in test_cases:
             with self.subTest(locale=case["locale"]):
                 # Test gender correction
-                name_result = normalize_name(
-                    case["name"], case["locale"], check_gender=True
-                )
-                self.assertEqual(
-                    name_result["detected_gender"], case["expected_gender"]
-                )
-                self.assertEqual(
-                    name_result["suggestions"], case["expected_suggestion"]
-                )
+                name_result = normalize_name(case["name"], case["locale"], check_gender=True)
+                self.assertEqual(name_result["detected_gender"], case["expected_gender"])
+                self.assertEqual(name_result["suggestions"], case["expected_suggestion"])
 
                 # Test currency formatting
                 locale_map = {"ru": "ru_RU", "en": "en_US", "sr": "sr_RS"}
-                currency_result = format_currency(
-                    case["amount"], locale_map[case["locale"]]
-                )
+                currency_result = format_currency(case["amount"], locale_map[case["locale"]])
                 self.assertIn(case["expected_currency"], currency_result)
 
     def test_edge_cases_integration(self):
@@ -185,9 +175,7 @@ class TestCurrencyGenderIntegration(unittest.TestCase):
             # Simulate concurrent operations
             for i in range(10):
                 currency_result = format_currency(1000 + i, "ru_RU")
-                gender_result = normalize_name(
-                    f"Александр Иванов {i}", "ru", check_gender=True
-                )
+                gender_result = normalize_name(f"Александр Иванов {i}", "ru", check_gender=True)
                 results.append((currency_result, gender_result["detected_gender"]))
 
         # Create multiple threads

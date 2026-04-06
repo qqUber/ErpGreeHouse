@@ -9,9 +9,7 @@ from .worker import celery_app
 logger = logging.getLogger(__name__)
 
 
-def evaluate_and_queue_triggers(
-    customer_id: int, event_source: str, event_data: Dict[str, Any]
-) -> None:
+def evaluate_and_queue_triggers(customer_id: int, event_source: str, event_data: Dict[str, Any]) -> None:
     """
     Evaluates all active triggers for a given event_source and queues Celery tasks for them if conditions are met.
     """
@@ -72,9 +70,7 @@ def evaluate_and_queue_triggers(
 
             task_kwargs["event_id"] = event_id
 
-            logger.info(
-                f"Queueing trigger {trigger_id} for customer {customer_id} in {delay_hours} hours"
-            )
+            logger.info(f"Queueing trigger {trigger_id} for customer {customer_id} in {delay_hours} hours")
             # Send task to Celery
             celery_app.send_task(
                 "app.worker.execute_marketing_trigger",

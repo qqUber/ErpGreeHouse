@@ -45,10 +45,7 @@ def discover_seed_files(seed_dir: str | None = None) -> list[Path]:
     seed_files = sorted(
         p
         for p in path.glob("*.json")
-        if p.is_file()
-        and len(p.name) >= 4
-        and p.name[0:2].isdigit()
-        and p.name[2] == "-"
+        if p.is_file() and len(p.name) >= 4 and p.name[0:2].isdigit() and p.name[2] == "-"
     )
     if not seed_files:
         logger.warning("No ordered seed files found in %s", seed_dir)
@@ -75,9 +72,7 @@ def get_applied_seed_files() -> dict[str, str]:
     db = get_db()
     conn = db.connect()
     try:
-        rows = conn.execute(
-            "SELECT filename, checksum FROM seed_migrations ORDER BY filename"
-        ).fetchall()
+        rows = conn.execute("SELECT filename, checksum FROM seed_migrations ORDER BY filename").fetchall()
         return {str(row[0]): str(row[1] or "") for row in rows}
     finally:
         conn.close()
@@ -101,9 +96,7 @@ def bootstrap_operational_demo_from_seed(seed_data: dict) -> dict[str, int]:
     }
 
     try:
-        customers = conn.execute(
-            "SELECT id, qr_token, balance_points, created_at FROM customers"
-        ).fetchall()
+        customers = conn.execute("SELECT id, qr_token, balance_points, created_at FROM customers").fetchall()
         customer_ids = [int(row["id"]) for row in customers]
         tx_rows = conn.execute(
             "SELECT id, customer_id, total_amount, created_at FROM transactions ORDER BY id DESC"
@@ -130,9 +123,7 @@ def bootstrap_operational_demo_from_seed(seed_data: dict) -> dict[str, int]:
 
             segment_ids = {
                 str(row["name"]): int(row["id"])
-                for row in conn.execute(
-                    "SELECT id, name FROM marketing_segments ORDER BY id"
-                ).fetchall()
+                for row in conn.execute("SELECT id, name FROM marketing_segments ORDER BY id").fetchall()
             }
 
             for campaign in seed_data.get("marketing_campaigns", []):
@@ -159,9 +150,7 @@ def bootstrap_operational_demo_from_seed(seed_data: dict) -> dict[str, int]:
                         str(campaign.get("content") or ""),
                         str(campaign.get("content_type") or "text"),
                         (
-                            json.dumps(
-                                campaign.get("media_urls") or [], ensure_ascii=False
-                            )
+                            json.dumps(campaign.get("media_urls") or [], ensure_ascii=False)
                             if campaign.get("media_urls") is not None
                             else None
                         ),
@@ -172,9 +161,7 @@ def bootstrap_operational_demo_from_seed(seed_data: dict) -> dict[str, int]:
                         campaign.get("budget_limit"),
                         int(campaign.get("budget_spent", 0)),
                         int(campaign.get("audience_count", 0)),
-                        json.dumps(
-                            campaign.get("stats_json") or {}, ensure_ascii=False
-                        ),
+                        json.dumps(campaign.get("stats_json") or {}, ensure_ascii=False),
                     ),
                 )
                 created["campaigns"] += 1
@@ -198,9 +185,7 @@ def bootstrap_operational_demo_from_seed(seed_data: dict) -> dict[str, int]:
                     (
                         name,
                         str(trigger.get("event_source") or "transaction.completed"),
-                        json.dumps(
-                            trigger.get("criteria_json") or {}, ensure_ascii=False
-                        ),
+                        json.dumps(trigger.get("criteria_json") or {}, ensure_ascii=False),
                         int(trigger.get("delay_hours", 0)),
                         str(trigger.get("message_text") or ""),
                         1 if trigger.get("active", True) else 0,
@@ -210,15 +195,11 @@ def bootstrap_operational_demo_from_seed(seed_data: dict) -> dict[str, int]:
 
             trigger_ids = {
                 str(row["name"]): int(row["id"])
-                for row in conn.execute(
-                    "SELECT id, name FROM marketing_triggers ORDER BY id"
-                ).fetchall()
+                for row in conn.execute("SELECT id, name FROM marketing_triggers ORDER BY id").fetchall()
             }
             tx_by_customer = {}
             for row in tx_rows:
-                tx_by_customer.setdefault(int(row["customer_id"]), []).append(
-                    int(row["id"])
-                )
+                tx_by_customer.setdefault(int(row["customer_id"]), []).append(int(row["id"]))
 
             for event in seed_data.get("marketing_trigger_events", []):
                 trigger_id = trigger_ids.get(str(event.get("trigger_name") or ""))
@@ -257,9 +238,7 @@ def bootstrap_operational_demo_from_seed(seed_data: dict) -> dict[str, int]:
                 name = str(integration.get("name") or "").strip()
                 if not name:
                     continue
-                exists = conn.execute(
-                    "SELECT id FROM integrations WHERE name = ?", (name,)
-                ).fetchone()
+                exists = conn.execute("SELECT id FROM integrations WHERE name = ?", (name,)).fetchone()
                 if exists:
                     continue
                 conn.execute(
@@ -271,14 +250,9 @@ def bootstrap_operational_demo_from_seed(seed_data: dict) -> dict[str, int]:
                         name,
                         str(integration.get("kind") or "telegram"),
                         1 if integration.get("enabled", True) else 0,
-                        str(
-                            integration.get("secret")
-                            or f"seed-{name.lower().replace(' ', '-')}"
-                        ),
+                        str(integration.get("secret") or f"seed-{name.lower().replace(' ', '-')}"),
                         json.dumps(
-                            integration.get("config_json")
-                            or integration.get("config")
-                            or {},
+                            integration.get("config_json") or integration.get("config") or {},
                             ensure_ascii=False,
                         ),
                     ),
@@ -287,14 +261,10 @@ def bootstrap_operational_demo_from_seed(seed_data: dict) -> dict[str, int]:
 
             integration_ids = {
                 str(row["name"]): int(row["id"])
-                for row in conn.execute(
-                    "SELECT id, name FROM integrations ORDER BY id"
-                ).fetchall()
+                for row in conn.execute("SELECT id, name FROM integrations ORDER BY id").fetchall()
             }
             for delivery in seed_data.get("integration_deliveries", []):
-                integration_id = integration_ids.get(
-                    str(delivery.get("integration_name") or "")
-                )
+                integration_id = integration_ids.get(str(delivery.get("integration_name") or ""))
                 if not integration_id:
                     continue
                 exists = conn.execute(
@@ -363,12 +333,8 @@ def bootstrap_operational_demo_from_seed(seed_data: dict) -> dict[str, int]:
                 location_name = str(visit.get("location_name") or "").strip()
                 if not customer_qr or not location_name:
                     continue
-                customer_row = conn.execute(
-                    "SELECT id FROM customers WHERE qr_token = ?", (customer_qr,)
-                ).fetchone()
-                location_row = conn.execute(
-                    "SELECT id FROM locations WHERE name = ?", (location_name,)
-                ).fetchone()
+                customer_row = conn.execute("SELECT id FROM customers WHERE qr_token = ?", (customer_qr,)).fetchone()
+                location_row = conn.execute("SELECT id FROM locations WHERE name = ?", (location_name,)).fetchone()
                 if not customer_row or not location_row:
                     continue
                 exists = conn.execute(
@@ -446,23 +412,15 @@ def bootstrap_demo_data_from_seed(seed_data: dict) -> dict[str, int]:
                         1 if customer.get("marketing_allowed", True) else 0,
                     ),
                 )
-                customer_id = int(
-                    conn.execute("SELECT last_insert_rowid()").fetchone()[0]
-                )
+                customer_id = int(conn.execute("SELECT last_insert_rowid()").fetchone()[0])
                 created["customers"] += 1
 
                 consents = customer.get("consents", [])
                 if isinstance(consents, list):
                     for consent in consents:
-                        source = (
-                            str(consent.get("source") or "admin_panel").strip()
-                            or "admin_panel"
-                        )
+                        source = str(consent.get("source") or "admin_panel").strip() or "admin_panel"
                         consent_type = (
-                            str(
-                                consent.get("consent_type") or "data_processing"
-                            ).strip()
-                            or "data_processing"
+                            str(consent.get("consent_type") or "data_processing").strip() or "data_processing"
                         )
                         consent_text = str(consent.get("consent_text") or "").strip()
                         if not consent_text:
@@ -485,20 +443,10 @@ def bootstrap_demo_data_from_seed(seed_data: dict) -> dict[str, int]:
 
         transactions = seed_data.get("demo_transactions", [])
         if isinstance(transactions, list):
-            customer_rows = conn.execute(
-                "SELECT id, qr_token FROM customers"
-            ).fetchall()
-            customer_by_qr = {
-                str(row["qr_token"]): int(row["id"])
-                for row in customer_rows
-                if row["qr_token"]
-            }
-            product_rows = conn.execute(
-                "SELECT code, name, price FROM products"
-            ).fetchall()
-            product_by_code = {
-                str(row["code"]): row for row in product_rows if row["code"]
-            }
+            customer_rows = conn.execute("SELECT id, qr_token FROM customers").fetchall()
+            customer_by_qr = {str(row["qr_token"]): int(row["id"]) for row in customer_rows if row["qr_token"]}
+            product_rows = conn.execute("SELECT code, name, price FROM products").fetchall()
+            product_by_code = {str(row["code"]): row for row in product_rows if row["code"]}
 
             for tx in transactions:
                 customer_qr = str(tx.get("customer_qr_token") or "").strip()
@@ -533,9 +481,7 @@ def bootstrap_demo_data_from_seed(seed_data: dict) -> dict[str, int]:
                     continue
 
                 bonus_used = int(tx.get("bonus_used", 0))
-                bonus_earned = int(
-                    tx.get("bonus_earned", max(0, int(total_amount * 0.05)))
-                )
+                bonus_earned = int(tx.get("bonus_earned", max(0, int(total_amount * 0.05))))
                 created_at_days = int(tx.get("days_ago", 0))
                 created_at_hours = int(tx.get("hours_ago", 0))
                 conn.execute(
@@ -592,10 +538,7 @@ def bootstrap_admins_from_seed(seed_data: dict) -> list[str]:
 
     try:
         # Check existing admins
-        existing = {
-            row[0]
-            for row in conn.execute("SELECT username FROM admin_users").fetchall()
-        }
+        existing = {row[0] for row in conn.execute("SELECT username FROM admin_users").fetchall()}
 
         for admin in seed_data.get("admins", []):
             username = admin.get("username")
@@ -606,9 +549,7 @@ def bootstrap_admins_from_seed(seed_data: dict) -> list[str]:
             # Hash password
             salt = hashlib.sha256(os.urandom(32)).hexdigest()[:16]
             password = admin.get("password", "admin123")
-            password_hash = hashlib.pbkdf2_hmac(
-                "sha256", password.encode(), salt.encode(), 200000
-            ).hex()
+            password_hash = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 200000).hex()
 
             conn.execute(
                 """
@@ -625,9 +566,7 @@ def bootstrap_admins_from_seed(seed_data: dict) -> list[str]:
                 ),
             )
             created.append(username)
-            logger.info(
-                "Created admin user: %s (role=%s)", username, admin.get("role", "owner")
-            )
+            logger.info("Created admin user: %s (role=%s)", username, admin.get("role", "owner"))
 
         conn.commit()
         return created
@@ -653,9 +592,7 @@ def bootstrap_reference_data_from_seed(
                     name = str(country.get("name", "")).strip()
                     if not code or not name:
                         continue
-                    exists = conn.execute(
-                        "SELECT id FROM countries WHERE code = ?", (code,)
-                    ).fetchone()
+                    exists = conn.execute("SELECT id FROM countries WHERE code = ?", (code,)).fetchone()
                     if exists:
                         continue
                     conn.execute(
@@ -681,9 +618,7 @@ def bootstrap_reference_data_from_seed(
                     city_name = str(city.get("name", "")).strip()
                     if not country_code or not city_name:
                         continue
-                    country_row = conn.execute(
-                        "SELECT id FROM countries WHERE code = ?", (country_code,)
-                    ).fetchone()
+                    country_row = conn.execute("SELECT id FROM countries WHERE code = ?", (country_code,)).fetchone()
                     if not country_row:
                         logger.warning(
                             "Skipping city %s: unknown country code %s",
@@ -718,9 +653,7 @@ def bootstrap_reference_data_from_seed(
                     location_name = str(location.get("name", "")).strip()
                     if not city_name or not location_name:
                         continue
-                    city_row = conn.execute(
-                        "SELECT id FROM cities WHERE name = ?", (city_name,)
-                    ).fetchone()
+                    city_row = conn.execute("SELECT id FROM cities WHERE name = ?", (city_name,)).fetchone()
                     if not city_row:
                         logger.warning(
                             "Skipping location %s: unknown city %s",
@@ -790,16 +723,12 @@ def bootstrap_products_from_seed(seed_data: dict) -> list[str]:
 
     try:
         # Check existing product codes (legacy seed payloads may call this field sku)
-        existing = {
-            row[0] for row in conn.execute("SELECT code FROM products").fetchall()
-        }
+        existing = {row[0] for row in conn.execute("SELECT code FROM products").fetchall()}
 
         for product in seed_data.get("products", []):
             code = str(product.get("code") or product.get("sku") or "").strip()
             if not code or code in existing:
-                logger.info(
-                    "Product '%s' already exists or missing code, skipping", code
-                )
+                logger.info("Product '%s' already exists or missing code, skipping", code)
                 continue
 
             conn.execute(

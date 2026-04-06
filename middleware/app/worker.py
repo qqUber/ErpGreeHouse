@@ -19,9 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def _setting_int(conn, key: str, default: int) -> int:
-    row = conn.execute(
-        "SELECT value FROM system_settings WHERE key=?", (key,)
-    ).fetchone()
+    row = conn.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
     if not row:
         return default
     try:
@@ -52,9 +50,7 @@ celery_app.conf.timezone = "UTC"
 
 
 @celery_app.task
-def send_media_group_message(
-    chat_id: int, media_items: list, campaign_id: int = None, customer_id: int = None
-) -> dict:
+def send_media_group_message(chat_id: int, media_items: list, campaign_id: int = None, customer_id: int = None) -> dict:
     async def runner() -> dict:
         bot = create_bot()
         ok = await send_media_group(bot, int(chat_id), media_items)
@@ -83,9 +79,7 @@ def send_media_group_message(
 
 
 @celery_app.task
-def send_vk_message(
-    user_id: int, text: str, campaign_id: int = None, customer_id: int = None
-) -> dict:
+def send_vk_message(user_id: int, text: str, campaign_id: int = None, customer_id: int = None) -> dict:
     async def runner() -> dict:
         from app.config import get_settings
         from app.integrations.bots.vk_handler import create_vk_bot, get_vk_bot
@@ -219,9 +213,7 @@ def send_broadcast(text: str) -> dict:
 
 
 @celery_app.task
-def send_customer_message(
-    chat_id: int, text: str, campaign_id: int = None, customer_id: int = None
-) -> dict:
+def send_customer_message(chat_id: int, text: str, campaign_id: int = None, customer_id: int = None) -> dict:
     async def runner() -> dict:
         bot = create_bot()
         ok = await safe_send(bot, int(chat_id), text)
@@ -419,9 +411,7 @@ async def safe_send(bot, chat_id: int, text: str) -> bool:
         return False
 
 
-async def safe_send_photo(
-    bot, chat_id: int, photo_path: str, caption: str = None
-) -> bool:
+async def safe_send_photo(bot, chat_id: int, photo_path: str, caption: str = None) -> bool:
     try:
         from aiogram.methods.send_photo import SendPhoto
         from aiogram.types.input_file import FSInputFile
@@ -434,9 +424,7 @@ async def safe_send_photo(
         return False
 
 
-async def safe_send_video(
-    bot, chat_id: int, video_path: str, caption: str = None
-) -> bool:
+async def safe_send_video(bot, chat_id: int, video_path: str, caption: str = None) -> bool:
     try:
         from aiogram.methods.send_video import SendVideo
         from aiogram.types.input_file import FSInputFile
@@ -449,9 +437,7 @@ async def safe_send_video(
         return False
 
 
-async def safe_send_document(
-    bot, chat_id: int, document_path: str, caption: str = None
-) -> bool:
+async def safe_send_document(bot, chat_id: int, document_path: str, caption: str = None) -> bool:
     try:
         from aiogram.methods.send_document import SendDocument
         from aiogram.types.input_file import FSInputFile
@@ -473,20 +459,14 @@ async def send_media_group(bot, chat_id: int, media_items: list) -> bool:
         media_group = MediaGroupBuilder()
         for item in media_items:
             if item["type"] == "photo":
-                media_group.add_photo(
-                    media=FSInputFile(item["path"]), caption=item.get("caption")
-                )
+                media_group.add_photo(media=FSInputFile(item["path"]), caption=item.get("caption"))
             elif item["type"] == "video":
-                media_group.add_video(
-                    media=FSInputFile(item["path"]), caption=item.get("caption")
-                )
+                media_group.add_video(media=FSInputFile(item["path"]), caption=item.get("caption"))
 
         await bot(SendMediaGroup(chat_id=chat_id, media=media_group.build()))
         return True
     except Exception:
-        logger.warning(
-            "Failed to send media group to chat_id=%s", chat_id, exc_info=True
-        )
+        logger.warning("Failed to send media group to chat_id=%s", chat_id, exc_info=True)
         return False
 
 
@@ -496,8 +476,7 @@ def expire_inactive_points() -> dict:
     db = get_db()
     conn = db.connect()
     try:
-        cur = conn.execute(
-            f"""
+        cur = conn.execute(f"""
             UPDATE customers
             SET balance_points = 0, updated_at = datetime('now')
             WHERE balance_points > 0
@@ -505,8 +484,7 @@ def expire_inactive_points() -> dict:
                 SELECT customer_id FROM transactions
                 WHERE created_at >= datetime('now', '-{INACTIVE_POINTS_EXPIRY_DAYS} days')
             )
-        """
-        )
+        """)
         conn.commit()
         return {"expired_accounts": cur.rowcount}
     finally:
@@ -537,9 +515,7 @@ def execute_marketing_trigger(
                     return {"sent": False, "reason": "event cancelled or already sent"}
 
             # Get user TG ID
-            row = conn.execute(
-                "SELECT telegram_id FROM customers WHERE id=?", (customer_id,)
-            ).fetchone()
+            row = conn.execute("SELECT telegram_id FROM customers WHERE id=?", (customer_id,)).fetchone()
             if not row or not row["telegram_id"]:
                 if event_id:
                     conn.execute(
@@ -554,17 +530,11 @@ def execute_marketing_trigger(
 
             if media_type:
                 if media_type == "photo" and media_url:
-                    ok = await safe_send_photo(
-                        bot, int(row["telegram_id"]), media_url, caption or message_text
-                    )
+                    ok = await safe_send_photo(bot, int(row["telegram_id"]), media_url, caption or message_text)
                 elif media_type == "video" and media_url:
-                    ok = await safe_send_video(
-                        bot, int(row["telegram_id"]), media_url, caption or message_text
-                    )
+                    ok = await safe_send_video(bot, int(row["telegram_id"]), media_url, caption or message_text)
                 elif media_type == "document" and media_url:
-                    ok = await safe_send_document(
-                        bot, int(row["telegram_id"]), media_url, caption or message_text
-                    )
+                    ok = await safe_send_document(bot, int(row["telegram_id"]), media_url, caption or message_text)
                 else:
                     ok = await safe_send(bot, int(row["telegram_id"]), message_text)
             else:
@@ -594,24 +564,16 @@ def _process_periodic_marketing_impl() -> dict:
     conn = db.connect()
     try:
         birthday_bonus = max(0, _setting_int(conn, "birthday_bonus_points", 200))
-        birthday_year = int(
-            conn.execute("SELECT strftime('%Y', 'now')").fetchone()[0]
-            or datetime.utcnow().year
-        )
+        birthday_year = int(conn.execute("SELECT strftime('%Y', 'now')").fetchone()[0] or datetime.utcnow().year)
 
         # Birthday triggers + points bonus
-        rows = conn.execute(
-            """
+        rows = conn.execute("""
             SELECT id, telegram_id, birthday_bonus_last_year FROM customers
             WHERE birthday IS NOT NULL
             AND strftime('%m-%d', birthday) = strftime('%m-%d', 'now')
-        """
-        ).fetchall()
+        """).fetchall()
         for r in rows:
-            if (
-                birthday_bonus > 0
-                and int(r["birthday_bonus_last_year"] or 0) != birthday_year
-            ):
+            if birthday_bonus > 0 and int(r["birthday_bonus_last_year"] or 0) != birthday_year:
                 conn.execute(
                     "UPDATE customers SET balance_points = balance_points + ?, birthday_bonus_last_year=?, updated_at=datetime('now') WHERE id=?",
                     (birthday_bonus, birthday_year, int(r["id"])),
@@ -620,21 +582,17 @@ def _process_periodic_marketing_impl() -> dict:
                     "INSERT INTO points_ledger(customer_id, amount, source, source_ref_id, expires_at) VALUES (?, ?, 'birthday_bonus', NULL, NULL)",
                     (int(r["id"]), birthday_bonus),
                 )
-            trigger_engine.evaluate_and_queue_triggers(
-                int(r["id"]), "customer.birthday", {}
-            )
+            trigger_engine.evaluate_and_queue_triggers(int(r["id"]), "customer.birthday", {})
 
         # Inactive customer triggers
-        rows = conn.execute(
-            """
+        rows = conn.execute("""
             SELECT c.id,
                    CAST((julianday('now') - julianday(MAX(t.created_at))) AS INTEGER) as days_inactive
             FROM customers c
             LEFT JOIN transactions t ON c.id = t.customer_id
             GROUP BY c.id
             HAVING days_inactive IS NOT NULL
-        """
-        ).fetchall()
+        """).fetchall()
         for r in rows:
             trigger_engine.evaluate_and_queue_triggers(
                 int(r["id"]),
@@ -645,12 +603,10 @@ def _process_periodic_marketing_impl() -> dict:
         welcome_bonus = max(0, _setting_int(conn, "welcome_bonus_points", 100))
 
         # Welcome message triggers + points bonus for new customers
-        rows = conn.execute(
-            """
+        rows = conn.execute("""
             SELECT id, welcome_bonus_awarded FROM customers
             WHERE created_at >= datetime('now', '-24 hours')
-        """
-        ).fetchall()
+        """).fetchall()
         for r in rows:
             if welcome_bonus > 0 and int(r["welcome_bonus_awarded"] or 0) == 0:
                 conn.execute(
@@ -661,13 +617,10 @@ def _process_periodic_marketing_impl() -> dict:
                     "INSERT INTO points_ledger(customer_id, amount, source, source_ref_id, expires_at) VALUES (?, ?, 'welcome_bonus', NULL, NULL)",
                     (int(r["id"]), welcome_bonus),
                 )
-            trigger_engine.evaluate_and_queue_triggers(
-                int(r["id"]), "customer.welcome", {}
-            )
+            trigger_engine.evaluate_and_queue_triggers(int(r["id"]), "customer.welcome", {})
 
         # Expire ledger points that reached expires_at and were not expired
-        expiring_now_rows = conn.execute(
-            """
+        expiring_now_rows = conn.execute("""
             SELECT customer_id, SUM(amount) AS amount_to_expire
             FROM points_ledger
             WHERE expired = 0
@@ -676,8 +629,7 @@ def _process_periodic_marketing_impl() -> dict:
               AND expires_at <= datetime('now')
             GROUP BY customer_id
             HAVING amount_to_expire > 0
-            """
-        ).fetchall()
+            """).fetchall()
         for row in expiring_now_rows:
             customer_id = int(row["customer_id"])
             amount_to_expire = int(row["amount_to_expire"] or 0)
@@ -701,8 +653,7 @@ def _process_periodic_marketing_impl() -> dict:
             )
 
         # Points expiration triggers (notify points expiring in next 7 days)
-        rows = conn.execute(
-            """
+        rows = conn.execute("""
             SELECT customer_id AS id, SUM(amount) as points_to_expire
             FROM points_ledger
             WHERE expired = 0
@@ -712,8 +663,7 @@ def _process_periodic_marketing_impl() -> dict:
               AND expires_at <= datetime('now', '+7 days')
             GROUP BY customer_id
             HAVING points_to_expire > 0
-        """
-        ).fetchall()
+        """).fetchall()
         for r in rows:
             trigger_engine.evaluate_and_queue_triggers(
                 int(r["id"]),

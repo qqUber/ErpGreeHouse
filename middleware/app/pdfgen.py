@@ -15,17 +15,13 @@ def _pdf_escape(s: str) -> str:
     return s.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
-def write_simple_receipt_pdf(
-    path: str, title: str, lines: Iterable[ReceiptLine]
-) -> str:
+def write_simple_receipt_pdf(path: str, title: str, lines: Iterable[ReceiptLine]) -> str:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
 
     body_lines = [f"({_pdf_escape(title)}) Tj"]
     body_lines.append("0 -18 Td")
-    body_lines.append(
-        f"({_pdf_escape(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))}) Tj"
-    )
+    body_lines.append(f"({_pdf_escape(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))}) Tj")
     body_lines.append("0 -24 Td")
 
     for line in lines:
@@ -47,9 +43,7 @@ def write_simple_receipt_pdf(
         "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>"
     )
     add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
-    add(
-        f"<< /Length {len(content_bytes)} >>\nstream\n{content_bytes.decode('latin-1')}\nendstream"
-    )
+    add(f"<< /Length {len(content_bytes)} >>\nstream\n{content_bytes.decode('latin-1')}\nendstream")
 
     offsets = []
     out = bytearray()

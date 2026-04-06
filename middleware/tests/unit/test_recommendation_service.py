@@ -51,9 +51,7 @@ class TestProductRecommendationService:
         service = ProductRecommendationService()
         service.db = mock_db_instance
 
-        with patch(
-            "app.services.recommendation_service.get_redis", return_value=mock_redis
-        ), patch.object(
+        with patch("app.services.recommendation_service.get_redis", return_value=mock_redis), patch.object(
             service,
             "analyze_customer_preferences",
             return_value={"top_categories": [], "preferred_visit_hour": None},

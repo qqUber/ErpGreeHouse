@@ -22,9 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def _setting_int(conn: Connection, key: str, default: int) -> int:
-    row = conn.execute(
-        "SELECT value FROM system_settings WHERE key=?", (key,)
-    ).fetchone()
+    row = conn.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
     if not row:
         return default
     try:
@@ -34,9 +32,7 @@ def _setting_int(conn: Connection, key: str, default: int) -> int:
 
 
 def _setting_text(conn: Connection, key: str, default: str) -> str:
-    row = conn.execute(
-        "SELECT value FROM system_settings WHERE key=?", (key,)
-    ).fetchone()
+    row = conn.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
     if not row or row[0] is None:
         return default
     return str(row[0])
@@ -58,9 +54,7 @@ def _get_redis() -> Optional[redis.Redis]:
             # Test connection
             _redis_client.ping()
         except Exception as e:
-            logger.warning(
-                f"[Loyalty] Redis unavailable, leaderboard features disabled: {e}"
-            )
+            logger.warning(f"[Loyalty] Redis unavailable, leaderboard features disabled: {e}")
             _redis_client = None
     return _redis_client
 
@@ -68,19 +62,15 @@ def _get_redis() -> Optional[redis.Redis]:
 def get_loyalty_rules(conn: Connection | None = None) -> LoyaltyRules:
     if conn is None:
         return LoyaltyRules()
-    rows = conn.execute(
-        """
+    rows = conn.execute("""
         SELECT name, min_spent, accrual_percent, max_redeem_percent
         FROM loyalty_tiers
         WHERE active=1
         ORDER BY sort_order ASC, min_spent ASC
-        """
-    ).fetchall()
+        """).fetchall()
     if not rows:
         return LoyaltyRules(
-            min_amount_for_accrual=max(
-                0, _setting_int(conn, "min_amount_for_accrual", 100)
-            ),
+            min_amount_for_accrual=max(0, _setting_int(conn, "min_amount_for_accrual", 100)),
         )
     tiers = [
         Tier(
@@ -95,17 +85,13 @@ def get_loyalty_rules(conn: Connection | None = None) -> LoyaltyRules:
     return LoyaltyRules(min_amount_for_accrual=min_amount, tiers=tiers)
 
 
-def get_tier_with_referrals(
-    conn: Connection, spent_amount: int, referral_count: int
-) -> Tier:
-    rows = conn.execute(
-        """
+def get_tier_with_referrals(conn: Connection, spent_amount: int, referral_count: int) -> Tier:
+    rows = conn.execute("""
         SELECT name, min_spent, accrual_percent, max_redeem_percent, min_referrals
         FROM loyalty_tiers
         WHERE active=1
         ORDER BY sort_order ASC, min_spent ASC
-        """
-    ).fetchall()
+        """).fetchall()
     if not rows:
         return get_tier(spent_amount, get_loyalty_rules(conn))
     picked: Optional[Tier] = None
@@ -127,9 +113,7 @@ def get_tier_with_referrals(
     )
 
 
-def recalculate_customer_tier(
-    conn: Connection, customer_id: int
-) -> tuple[Optional[int], Optional[str]]:
+def recalculate_customer_tier(conn: Connection, customer_id: int) -> tuple[Optional[int], Optional[str]]:
     spent_row = conn.execute(
         "SELECT COALESCE(SUM(total_amount), 0) FROM transactions WHERE customer_id=?",
         (customer_id,),
@@ -199,9 +183,7 @@ def get_tier(spent_amount: int, rules: LoyaltyRules) -> Tier:
     return current_tier
 
 
-def calc_earned_points(
-    total_amount: int, spent_amount: int, rules: LoyaltyRules
-) -> int:
+def calc_earned_points(total_amount: int, spent_amount: int, rules: LoyaltyRules) -> int:
     """Calculates earned points using the dynamic tier accrual percent.
 
     Includes bounds checking to prevent overflow with very large amounts.
@@ -212,9 +194,7 @@ def calc_earned_points(
     # Prevent overflow: max reasonable transaction is 100 million
     MAX_AMOUNT = 100_000_000
     if total_amount > MAX_AMOUNT:
-        logger.warning(
-            f"[Loyalty] Transaction amount {total_amount} exceeds maximum {MAX_AMOUNT}"
-        )
+        logger.warning(f"[Loyalty] Transaction amount {total_amount} exceeds maximum {MAX_AMOUNT}")
         total_amount = MAX_AMOUNT
 
     tier = get_tier(spent_amount, rules)
@@ -431,9 +411,7 @@ def remove_user_from_leaderboard(user_id: int) -> None:
     """
     r = _get_redis()
     if r is None:
-        logger.warning(
-            "[Loyalty] Redis unavailable, cannot remove user from leaderboard"
-        )
+        logger.warning("[Loyalty] Redis unavailable, cannot remove user from leaderboard")
         return
     r.zrem(LEADERBOARD_KEY, str(user_id))
 
@@ -494,9 +472,7 @@ def calculate_user_tier(user_id: int, rules: LoyaltyRules) -> Tuple[Tier, int]:
     return current_tier, remaining
 
 
-def get_tier_leaderboard(
-    tier_name: str, rules: LoyaltyRules, limit: int = 100
-) -> List[Tuple[int, int, int]]:
+def get_tier_leaderboard(tier_name: str, rules: LoyaltyRules, limit: int = 100) -> List[Tuple[int, int, int]]:
     """
     Get leaderboard for users within a specific tier using ZREVRANGE.
 
@@ -528,10 +504,7 @@ def get_tier_leaderboard(
 
     # Sort by score descending and assign ranks
     results_sorted = sorted(results, key=lambda x: x[1], reverse=True)  # type: ignore[arg-type]
-    return [
-        (i, int(uid), int(score))
-        for i, (uid, score) in enumerate(results_sorted[:limit])
-    ]
+    return [(i, int(uid), int(score)) for i, (uid, score) in enumerate(results_sorted[:limit])]
 
 
 def get_user_tier_rank(user_id: int) -> Optional[int]:
