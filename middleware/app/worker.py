@@ -1,19 +1,21 @@
-from .storage import get_redis
-from .integrations.bots.telegram_handler import create_bot
-from .db import get_db
+import asyncio
+import json
+import logging
+from datetime import datetime
+from typing import Any, Optional
+
+import httpx
+from celery import Celery
+
+from .config import get_settings
 from .constants import (
     EXPIRE_INACTIVE_POINTS_INTERVAL,
     INACTIVE_POINTS_EXPIRY_DAYS,
     PROCESS_MARKETING_INTERVAL,
 )
-from .config import get_settings
-from celery import Celery
-import httpx
-from typing import Any
-import json
-import asyncio
-import logging
-from datetime import datetime
+from .db import get_db
+from .integrations.bots.telegram_handler import create_bot
+from .storage import get_redis
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +52,9 @@ celery_app.conf.timezone = "UTC"
 
 
 @celery_app.task
-def send_media_group_message(chat_id: int, media_items: list, campaign_id: int = None, customer_id: int = None) -> dict:
+def send_media_group_message(
+    chat_id: int, media_items: list, campaign_id: Optional[int] = None, customer_id: Optional[int] = None
+) -> dict:
     async def runner() -> dict:
         bot = create_bot()
         ok = await send_media_group(bot, int(chat_id), media_items)
@@ -79,7 +83,9 @@ def send_media_group_message(chat_id: int, media_items: list, campaign_id: int =
 
 
 @celery_app.task
-def send_vk_message(user_id: int, text: str, campaign_id: int = None, customer_id: int = None) -> dict:
+def send_vk_message(
+    user_id: int, text: str, campaign_id: Optional[int] = None, customer_id: Optional[int] = None
+) -> dict:
     async def runner() -> dict:
         from app.config import get_settings
         from app.integrations.bots.vk_handler import create_vk_bot, get_vk_bot
@@ -125,9 +131,9 @@ def send_vk_message(user_id: int, text: str, campaign_id: int = None, customer_i
 def send_vk_photo_message(
     user_id: int,
     photo_path: str,
-    caption: str = None,
-    campaign_id: int = None,
-    customer_id: int = None,
+    caption: Optional[str] = None,
+    campaign_id: Optional[int] = None,
+    customer_id: Optional[int] = None,
 ) -> dict:
     async def runner() -> dict:
         from app.config import get_settings
@@ -175,7 +181,7 @@ def send_vk_photo_message(
 def send_broadcast(text: str) -> dict:
     async def runner() -> dict:
         r = get_redis()
-        chats = r.smembers("crm:known_chats") or set()  # type: ignore[union-attr]
+        chats = r.smembers("crm:known_chats") or set()
         bot = create_bot()
         ok = 0
         failed = 0
@@ -213,7 +219,9 @@ def send_broadcast(text: str) -> dict:
 
 
 @celery_app.task
-def send_customer_message(chat_id: int, text: str, campaign_id: int = None, customer_id: int = None) -> dict:
+def send_customer_message(
+    chat_id: int, text: str, campaign_id: Optional[int] = None, customer_id: Optional[int] = None
+) -> dict:
     async def runner() -> dict:
         bot = create_bot()
         ok = await safe_send(bot, int(chat_id), text)
@@ -245,9 +253,9 @@ def send_customer_message(chat_id: int, text: str, campaign_id: int = None, cust
 def send_photo_message(
     chat_id: int,
     photo_path: str,
-    caption: str = None,
-    campaign_id: int = None,
-    customer_id: int = None,
+    caption: Optional[str] = None,
+    campaign_id: Optional[int] = None,
+    customer_id: Optional[int] = None,
 ) -> dict:
     async def runner() -> dict:
         bot = create_bot()
@@ -280,9 +288,9 @@ def send_photo_message(
 def send_video_message(
     chat_id: int,
     video_path: str,
-    caption: str = None,
-    campaign_id: int = None,
-    customer_id: int = None,
+    caption: Optional[str] = None,
+    campaign_id: Optional[int] = None,
+    customer_id: Optional[int] = None,
 ) -> dict:
     async def runner() -> dict:
         bot = create_bot()
@@ -315,9 +323,9 @@ def send_video_message(
 def send_document_message(
     chat_id: int,
     document_path: str,
-    caption: str = None,
-    campaign_id: int = None,
-    customer_id: int = None,
+    caption: Optional[str] = None,
+    campaign_id: Optional[int] = None,
+    customer_id: Optional[int] = None,
 ) -> dict:
     async def runner() -> dict:
         bot = create_bot()
@@ -411,7 +419,7 @@ async def safe_send(bot, chat_id: int, text: str) -> bool:
         return False
 
 
-async def safe_send_photo(bot, chat_id: int, photo_path: str, caption: str = None) -> bool:
+async def safe_send_photo(bot, chat_id: int, photo_path: str, caption: Optional[str] = None) -> bool:
     try:
         from aiogram.methods.send_photo import SendPhoto
         from aiogram.types.input_file import FSInputFile
@@ -424,7 +432,7 @@ async def safe_send_photo(bot, chat_id: int, photo_path: str, caption: str = Non
         return False
 
 
-async def safe_send_video(bot, chat_id: int, video_path: str, caption: str = None) -> bool:
+async def safe_send_video(bot, chat_id: int, video_path: str, caption: Optional[str] = None) -> bool:
     try:
         from aiogram.methods.send_video import SendVideo
         from aiogram.types.input_file import FSInputFile
@@ -437,7 +445,7 @@ async def safe_send_video(bot, chat_id: int, video_path: str, caption: str = Non
         return False
 
 
-async def safe_send_document(bot, chat_id: int, document_path: str, caption: str = None) -> bool:
+async def safe_send_document(bot, chat_id: int, document_path: str, caption: Optional[str] = None) -> bool:
     try:
         from aiogram.methods.send_document import SendDocument
         from aiogram.types.input_file import FSInputFile
@@ -496,9 +504,9 @@ def execute_marketing_trigger(
     customer_id: int,
     trigger_id: int,
     message_text: str,
-    media_type: str = None,
-    media_url: str = None,
-    caption: str = None,
+    media_type: Optional[str] = None,
+    media_url: Optional[str] = None,
+    caption: Optional[str] = None,
     event_id: int | None = None,
 ) -> dict:
     async def runner() -> dict:

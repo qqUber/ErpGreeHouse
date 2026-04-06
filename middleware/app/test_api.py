@@ -1,7 +1,8 @@
-import random
+# type: ignore
 import json
 import logging
 import os
+import random
 from typing import Any, Optional
 
 from fastapi import APIRouter, Header, HTTPException

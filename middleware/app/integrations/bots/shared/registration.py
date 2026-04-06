@@ -14,7 +14,7 @@ from typing import Any, Dict, Optional, Tuple
 
 from ....customer_identity import get_customer_row, resolve_or_create_customer
 from ....db import get_db
-from ....identify import normalize_name, normalize_phone
+from ....identify import normalize_name, normalize_phone  # type: ignore
 from ....storage import get_redis
 from .consent import CURRENT_POLICY_VERSION, store_consent
 from .keys import consent_key

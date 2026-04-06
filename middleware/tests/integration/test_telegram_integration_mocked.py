@@ -5,7 +5,6 @@ These tests verify the Telegram API integration using mocked API calls.
 Uses responses for HTTP mocking of requests calls.
 """
 
-import json
 from unittest.mock import patch
 
 import pytest
@@ -53,7 +52,7 @@ def test_bot_can_access_channel_mocked(telegram_api_mock):
     channel_id = "-100123456789"
     telegram_api_mock.add(
         responses.GET,
-        f"https://api.telegram.org/bot12345:ABCDE/getChat",
+        "https://api.telegram.org/bot12345:ABCDE/getChat",
         json={
             "ok": True,
             "result": {

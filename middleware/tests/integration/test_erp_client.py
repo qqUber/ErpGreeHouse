@@ -1,14 +1,13 @@
 import os
 import sys
-from typing import Dict
 from unittest.mock import Mock, patch
 
 import pytest
 
+from app.integrations.pos.erpnext_client import ERPClient
+
 # Ensure we can import app
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from app.integrations.pos.erpnext_client import ERPClient
 
 
 @pytest.fixture
@@ -49,7 +48,7 @@ async def test_get_customer_by_telegram_id(erp_client):
 
 @pytest.mark.asyncio
 async def test_create_customer(erp_client):
-    with patch.object(erp_client, "_request") as mock_req:
+    with patch.object(erp_client, "_request") as _:
         # Mock responses for different calls
         async def side_effect(method, endpoint, **kwargs):
             if endpoint.startswith("/api/resource/Customer?filters="):
@@ -71,7 +70,7 @@ async def test_create_customer(erp_client):
 
 @pytest.mark.asyncio
 async def test_get_balance(erp_client):
-    with patch.object(erp_client, "_request") as mock_req:
+    with patch.object(erp_client, "_request") as _:
 
         async def side_effect(method, endpoint, **kwargs):
             return {
@@ -89,7 +88,7 @@ async def test_get_balance(erp_client):
 
 @pytest.mark.asyncio
 async def test_create_order(erp_client):
-    with patch.object(erp_client, "_request") as mock_req:
+    with patch.object(erp_client, "_request") as _:
 
         async def side_effect(method, endpoint, **kwargs):
             if endpoint.startswith("/api/resource/Telegram Client"):

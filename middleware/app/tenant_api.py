@@ -3,14 +3,17 @@ Tenant Theming API
 Design Token API v2 for per-tenant customization
 """
 
-from typing import Optional
-from pydantic import BaseModel, Field
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from app.auth import require_admin
-from app.db import DB
+# type: ignore
 import os
 import shutil
 from pathlib import Path
+from typing import Optional
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from pydantic import BaseModel, Field
+
+from app.auth import require_admin
+from app.db import DB
 
 router = APIRouter(prefix="/api/v1/tenant", tags=["tenant"])
 

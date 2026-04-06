@@ -5,8 +5,6 @@ Tests runtime environment detection and configuration.
 """
 
 import os
-import sys
-import pytest
 from unittest.mock import patch
 
 from app.runtime import IS_TESTING, is_debug
@@ -31,6 +29,7 @@ class TestRuntime:
     def test_is_testing_respects_env_var(self):
         """IS_TESTING respects TESTING environment variable."""
         import importlib
+
         import app.runtime as runtime_module
 
         with patch.dict(os.environ, {"TESTING": "true"}, clear=False):
@@ -41,6 +40,7 @@ class TestRuntime:
     def test_is_testing_false_when_no_env(self):
         """IS_TESTING should be False when no testing env is set."""
         import importlib
+
         import app.runtime as runtime_module
 
         # Remove TESTING env var if present
@@ -59,6 +59,7 @@ class TestRuntime:
     def test_is_debug_true_when_debug_env(self):
         """is_debug() should return True when DEBUG env var is set."""
         import importlib
+
         import app.runtime as runtime_module
 
         with patch.dict(os.environ, {"DEBUG": "1"}, clear=False):
@@ -68,6 +69,7 @@ class TestRuntime:
     def test_is_debug_false_when_no_debug_env(self):
         """is_debug() should return False when DEBUG env var is not set."""
         import importlib
+
         import app.runtime as runtime_module
 
         env_without_debug = {k: v for k, v in os.environ.items() if k != "DEBUG"}
@@ -78,6 +80,7 @@ class TestRuntime:
     def test_is_debug_handles_various_true_values(self):
         """is_debug() should handle various true-like values."""
         import importlib
+
         import app.runtime as runtime_module
 
         true_values = ["1", "true", "yes", "True", "TRUE"]

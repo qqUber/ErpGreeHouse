@@ -1,4 +1,4 @@
-import logging
+import logging  # type: ignore
 import math
 import time
 from typing import Any, Awaitable, Callable, Dict

@@ -1,8 +1,10 @@
 """Configuration API endpoints for theme, user preferences, and feature flags."""
 
 from typing import Any, Literal
-from pydantic import BaseModel, Field
+
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel, Field
+
 from .auth import require_admin
 from .db import get_db
 

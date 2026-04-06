@@ -4,7 +4,6 @@ Unit tests for app.request_context module.
 Tests the context variable management for admin session tokens.
 """
 
-import pytest
 from app.request_context import (
     get_admin_session_token,
     reset_admin_session_token,
@@ -61,7 +60,6 @@ class TestRequestContext:
 
     def test_isolation_between_contexts(self):
         """Context variables should be isolated between different contexts."""
-        import contextvars
         import asyncio
 
         async def task1():

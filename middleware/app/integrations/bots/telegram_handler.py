@@ -1,8 +1,3 @@
-from ...storage import get_redis as get_redis_client
-from ...middlewares import ThrottleMiddleware
-from ...handlers import router
-from ...db import get_db
-from ...config import get_settings
 import asyncio
 import json
 import sys
@@ -12,6 +7,12 @@ from typing import Any, AsyncGenerator, Coroutine, Optional
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+
+from ...config import get_settings
+from ...db import get_db
+from ...handlers import router
+from ...middlewares import ThrottleMiddleware
+from ...storage import get_redis as get_redis_client
 
 # Try to import aiogram - may fail in some versions
 MemoryStorage: type | None = None

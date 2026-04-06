@@ -5,22 +5,21 @@ Tests authentication, authorization, and admin management functions.
 """
 
 import os
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from fastapi import HTTPException
 
 import app.admin_auth_api as admin_auth_module
 from app.admin_auth_api import (
-    _hash_token,
-    _is_jwt_format,
-    _is_bootstrap_allowed,
-    _get_jwt_cookie_settings,
-    _get_admin_by_token,
-    _get_admin_by_id,
+    LoginIn,
     _check_rate_limit,
+    _get_jwt_cookie_settings,
+    _hash_token,
+    _is_bootstrap_allowed,
+    _is_jwt_format,
     require_admin_token_or_env,
     require_roles,
-    LoginIn,
 )
 
 

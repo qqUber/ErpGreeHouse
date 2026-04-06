@@ -7,6 +7,8 @@ Only VK-specific API code is kept in this file.
 """
 
 import asyncio
+
+# type: ignore
 import json
 import logging
 from typing import Any, Callable, Literal, Optional

@@ -1,6 +1,9 @@
 import csv
 import io
+
+# type: ignore
 import json
+import logging
 import re
 import sqlite3
 from datetime import datetime

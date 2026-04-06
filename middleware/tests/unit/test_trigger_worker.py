@@ -1,5 +1,3 @@
-import pytest
-
 # This test file tests the worker functions.
 # Due to celery task wrapping, we test the core logic in a simplified manner.
 # Full integration testing would require a running celery worker.

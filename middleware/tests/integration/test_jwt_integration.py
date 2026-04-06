@@ -5,11 +5,10 @@ Tests the full JWT authentication cycle including login, token refresh, and prot
 
 import time
 from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import jwt
 import pytest
-from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app.auth import create_access_token, create_refresh_token, validate_access_token
@@ -208,11 +207,11 @@ class TestJWTRefreshFlow:
         assert response.status_code in [200, 401]
 
         if response.status_code == 200:
-            data = response.json()
+            response.json()
 
             # Check new tokens in response cookies
             new_access = response.cookies.get("access_token")
-            new_refresh = response.cookies.get("refresh_token")
+            response.cookies.get("refresh_token")
 
             # Access token should always be rotated
             if new_access:

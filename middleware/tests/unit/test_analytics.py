@@ -4,7 +4,6 @@ NOTE: aiogram and celery are stubbed out globally in conftest.py.
 """
 
 import os
-import tempfile
 from pathlib import Path
 
 import pytest

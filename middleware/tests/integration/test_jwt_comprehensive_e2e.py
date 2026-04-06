@@ -1,12 +1,10 @@
 import time
-from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
-import jwt
 import pytest
 from fastapi.testclient import TestClient
 
-from app.auth import create_access_token, create_refresh_token, validate_access_token
+from app.auth import create_access_token, create_refresh_token
 from app.config import get_settings
 from app.main import app
 
@@ -141,7 +139,7 @@ class TestJWTComprehensiveE2E:
             # If logout endpoint exists, it should return 200
             if logout_resp.status_code == 200:
                 # After logout, should not have access
-                subsequent_resp = client.get("/api/v1/auth/me")
+                client.get("/api/v1/auth/me")
                 # May or may not have access depending on implementation
         except Exception:
             # Logout endpoint doesn't exist - skip

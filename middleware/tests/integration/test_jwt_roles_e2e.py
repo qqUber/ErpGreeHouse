@@ -1,5 +1,3 @@
-import time
-from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 import jwt
@@ -10,7 +8,6 @@ from app.auth import (
     create_access_token,
     create_refresh_token,
     validate_access_token,
-    validate_refresh_token,
 )
 from app.config import get_settings
 from app.main import app

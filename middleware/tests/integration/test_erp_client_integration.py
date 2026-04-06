@@ -7,7 +7,7 @@ Uses fixtures from conftest.py for consistent test data.
 
 import sys
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -215,8 +215,6 @@ async def test_erp_client_retry_logic(monkeypatch):
     """Test ERP client retry logic with HTTP mocks."""
     import httpx
     import respx
-
-    from app.integrations.pos.erpnext_client import ERPClient
 
     # Create a real client but point it to a mock base URL
     monkeypatch.setenv("ERP_MOCK_MODE", "false")

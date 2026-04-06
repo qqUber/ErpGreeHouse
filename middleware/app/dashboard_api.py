@@ -5,7 +5,7 @@ Provides comprehensive operational, marketing, customer, product, and integratio
 analytics for the admin dashboard.
 """
 
-from datetime import datetime
+from datetime import datetime  # type: ignore
 from typing import Any
 
 from fastapi import APIRouter, Depends

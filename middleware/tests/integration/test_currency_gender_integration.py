@@ -167,7 +167,6 @@ class TestCurrencyGenderIntegration(unittest.TestCase):
     def test_concurrent_access(self):
         """Test concurrent access to currency and gender systems."""
         import threading
-        import time
 
         results = []
 

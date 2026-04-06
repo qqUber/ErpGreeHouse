@@ -1,5 +1,5 @@
 import importlib
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import httpx
 import pytest
@@ -8,7 +8,6 @@ from fastapi.testclient import TestClient
 from app.auth import create_access_token
 from app.db import get_db
 from app.integrations.pos.erpnext_client import ERPClient
-from tests.mocks.erpnext import ERPNextMock
 
 
 @pytest.fixture
@@ -25,7 +24,6 @@ async def test_erp_client_get_balance(erpnext_mock, redis_client):
     """Test ERPClient.get_balance with HTTP mock."""
     client_name = "CUST-001"
     # Use regex to match the URL with filters and fields which might be encoded differently
-    import re
 
     erpnext_mock.mock.get(url__regex=r".*/api/resource/Loyalty%20Transaction.*").mock(
         return_value=httpx.Response(

@@ -1,18 +1,13 @@
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
-import httpx
 import pytest
 
-from app.db import get_db
 from app.integrations.pos.erpnext_client import ERPClient
-from tests.mocks.erpnext import ERPNextMock
 
 
 @pytest.mark.asyncio
 async def test_loyalty_accrual_sync_flow(erpnext_mock, clean_database, redis_client):
     """Test full loyalty accrual flow with ERP sync."""
-    telegram_id = 123456789
-    phone = "+79991234567"
     points = 100
 
     # 1. Setup ERPNext mocks

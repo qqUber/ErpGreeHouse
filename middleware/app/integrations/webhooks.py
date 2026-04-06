@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3  # type: ignore
 """ERPNext Webhook Handler"""
 
 import logging

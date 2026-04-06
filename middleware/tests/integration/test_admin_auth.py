@@ -32,12 +32,12 @@ def _build_client(
 
     # Load seed files for test data (direct call to avoid argument parsing)
     from app.db_init import (
-        run_migrations,
-        discover_seed_files,
-        bootstrap_demo_data_from_seed,
         bootstrap_admins_from_seed,
-        bootstrap_reference_data_from_seed,
+        bootstrap_demo_data_from_seed,
         bootstrap_products_from_seed,
+        bootstrap_reference_data_from_seed,
+        discover_seed_files,
+        run_migrations,
     )
 
     # Run migrations first
@@ -74,8 +74,8 @@ def _build_client(
             if "demo_customers" in seed_data or "demo_transactions" in seed_data:
                 bootstrap_demo_data_from_seed(seed_data)
 
-    from app.config import get_settings
     from app import main as main_module
+    from app.config import get_settings
 
     get_settings.cache_clear()
     importlib.reload(main_module)

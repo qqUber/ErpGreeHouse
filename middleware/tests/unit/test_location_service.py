@@ -1,7 +1,7 @@
-import pytest
 import json
-from datetime import datetime
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
+
+import pytest
 
 from app.services.location_service import LocationService, get_location_service
 
@@ -188,7 +188,7 @@ class TestLocationService:
             service.record_customer_visit(1, 1, transaction_id=100, amount_spent=150.0)
 
         # Check the order of operations
-        calls = mock_conn.method_calls
+        mock_conn.method_calls
 
         # Redis delete should be called before commit
         # Note: In the fixed implementation, cache is invalidated BEFORE commit

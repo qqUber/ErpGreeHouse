@@ -3,7 +3,6 @@ Master JWT Test Suite for ErpGreeHouse Middleware.
 Validates authentication, authorization, token lifecycle, security, and performance.
 """
 
-import os
 import time
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
@@ -15,7 +14,6 @@ from fastapi.testclient import TestClient
 from app.auth import (
     create_access_token,
     create_refresh_token,
-    decode_token,
     get_admin_from_jwt,
     validate_access_token,
     validate_refresh_token,
@@ -242,7 +240,7 @@ class TestJWTPerformance:
         end_time = time.time()
 
         avg_time = (end_time - start_time) / iterations
-        print(f"\nAverage token generation time: {avg_time*1000:.4f}ms")
+        print(f"\nAverage token generation time: {avg_time * 1000:.4f}ms")
         # Assert generation is reasonably fast (e.g., < 100ms per token is safe for most environments)
         assert avg_time < 0.1  # < 100ms per token
 
@@ -256,7 +254,7 @@ class TestJWTPerformance:
         end_time = time.time()
 
         avg_time = (end_time - start_time) / iterations
-        print(f"\nAverage token validation time: {avg_time*1000:.4f}ms")
+        print(f"\nAverage token validation time: {avg_time * 1000:.4f}ms")
         assert avg_time < 0.1  # < 100ms per validation
 
 

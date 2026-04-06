@@ -1,4 +1,3 @@
-from .utils.qr_codes import generate_unique_token as generate_unique_qr_token
 import json
 import logging
 import sqlite3
@@ -6,6 +5,7 @@ from datetime import datetime
 from typing import Any
 
 from .identify import normalize_name, normalize_phone
+from .utils.qr_codes import generate_unique_token as generate_unique_qr_token
 
 logger = logging.getLogger(__name__)
 

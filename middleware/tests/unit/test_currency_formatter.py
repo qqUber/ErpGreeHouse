@@ -4,7 +4,7 @@ Tests the CurrencyFormatter class with different locales and configurations.
 """
 
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from app.utils.currency import CurrencyConfig, CurrencyFormatter, format_currency
 
@@ -39,10 +39,6 @@ class TestCurrencyFormatter(unittest.TestCase):
     def test_custom_config_loading(self):
         """Test that custom environment variables are loaded."""
         # Reset the global formatter to pick up new env vars
-        from app.utils.currency import _currency_formatter
-
-        _currency_formatter = None
-
         formatter = CurrencyFormatter()
         config = formatter.get_config()
 

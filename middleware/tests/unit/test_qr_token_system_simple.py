@@ -5,7 +5,7 @@ Focuses on core functionality without threading complications.
 
 import sqlite3
 import uuid
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 

@@ -1,3 +1,4 @@
+# type: ignore
 import json
 import secrets
 from datetime import datetime

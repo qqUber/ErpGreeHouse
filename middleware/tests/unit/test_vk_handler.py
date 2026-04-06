@@ -13,8 +13,7 @@ Run with: pytest middleware/tests/unit/test_vk_handler.py -v
 
 import os
 import tempfile
-from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -116,7 +115,7 @@ class TestVKWebhookProcessing:
                 # Note: Full processing requires more setup
                 try:
                     await process_vk_webhook_event(event)
-                except Exception as e:
+                except Exception:
                     # Some exceptions are expected due to incomplete setup
                     # Just verify the function is callable
                     pass
@@ -761,7 +760,7 @@ class TestCleanupUserData:
         conn.commit()
 
         cur = conn.execute("SELECT id FROM customers WHERE telegram_id = 999004")
-        customer_id = cur.fetchone()["id"]
+        cur.fetchone()["id"]
         conn.close()
 
         with patch("app.integrations.bots.shared.consent.get_redis") as mock_redis:

@@ -7,8 +7,7 @@ Covers:
 - constant_time_equals: timing attack resistant comparison
 """
 
-import pytest
-from app.security import hash_password, new_salt, constant_time_equals
+from app.security import constant_time_equals, hash_password, new_salt
 
 
 class TestHashPassword:

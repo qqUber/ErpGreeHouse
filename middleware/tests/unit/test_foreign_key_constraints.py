@@ -18,9 +18,10 @@ from pathlib import Path
 
 import pytest
 
+from app.db import get_db_path
+
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from app.db import get_db_path, init_db
 
 
 class TestForeignKeyConstraints:
@@ -222,7 +223,7 @@ def test_real_database_fk_constraints():
     conn.close()
 
     # Report findings
-    print(f"\nForeign Key Status:")
+    print("\nForeign Key Status:")
     print(f"  FK Constraints Enabled: {fk_enabled == 1}")
     print(f"  Tables with FK constraints: {len(tables_with_fk)}")
     for table in tables_with_fk:

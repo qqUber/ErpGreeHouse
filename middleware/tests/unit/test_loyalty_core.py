@@ -9,8 +9,6 @@ Tests cover:
 - LoyaltyRules dataclass
 """
 
-import pytest
-
 from app.loyalty import (
     LoyaltyRules,
     Tier,

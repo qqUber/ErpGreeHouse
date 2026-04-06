@@ -1,5 +1,4 @@
-import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import respx
 from httpx import Response
@@ -43,7 +42,7 @@ class ERPNextMock:
         """Mock POST request to create a Customer resource."""
         data = {
             "data": {
-                "name": f"CUST-NEW",
+                "name": "CUST-NEW",
                 "mobile_no": phone,
                 "customer_name": "New Customer",
             }

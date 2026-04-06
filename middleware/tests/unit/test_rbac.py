@@ -9,25 +9,19 @@ Comprehensive tests for:
 """
 
 import os
-import sqlite3
-from typing import Any, Dict
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
-from fastapi.testclient import TestClient
 
 # Import the functions we need to test
 from app.auth import (
-    ALL_PERMISSIONS,
     check_permission,
     check_roles,
     get_default_permissions,
     get_role_permissions,
-    has_permission,
 )
-from app.config import get_settings
-from app.db import get_db, init_db
+from app.db import get_db
 
 
 class TestOperatorAccessDenied:
@@ -243,7 +237,7 @@ class TestPasswordRecoveryRateLimiting:
             # Make 5 requests - should all succeed
             for i in range(5):
                 is_allowed, remaining = _check_rate_limit(test_ip)
-                assert is_allowed is True, f"Request {i+1} should be allowed"
+                assert is_allowed is True, f"Request {i + 1} should be allowed"
 
             # 6th request should be blocked
             is_allowed, remaining = _check_rate_limit(test_ip)
@@ -289,7 +283,6 @@ class TestPasswordRecoveryAuditLogging:
         Verify that password reset attempts are logged with
         correct parameters.
         """
-        import logging
 
         from app.admin_auth_api import _log_password_reset_audit
 
@@ -317,7 +310,6 @@ class TestPasswordRecoveryAuditLogging:
         """
         Test that failed password reset attempts are logged.
         """
-        import logging
 
         from app.admin_auth_api import _log_password_reset_audit
 

@@ -1,30 +1,4 @@
-from .worker import process_telegram_update, send_broadcast
-from .tma_api import router as tma_router
-from .test_api import router as test_router
-from .runtime import is_debug
-from .products_api import router as products_router
-from .marketing_api import router as marketing_router
-from .integrations_api import router as integrations_router
-from .integrations_api import public_router as integrations_public_router
-from .integrations.webhooks import router as erp_webhook_router
-from .integrations.bots.vk_handler import process_vk_webhook_event
-from .integrations.bots.telegram_handler import create_bot, ensure_telegram_bot_menu
-from .integration_settings_api import router as integration_settings_router
-from .erp_scheduler import start_erp_sync_scheduler
-from .debug_api import router as debug_router
-from .dashboard_api import router as dashboard_router
-from .analytics_api import router as analytics_router
-from .admin_auth_api import router as auth_router
-from .admin_auth_api import public_router as auth_public_router
-from .admin_api import router as admin_router
-from .admin_api import public_router as public_router
-from .roadmap_api import router as roadmap_router
-from .middlewares import rate_limit_middleware
-from .db import get_db, init_db
-from .config_api import router as config_router
-from .tenant_api import router as tenant_router
-from .assets_api import router as assets_router
-from .config import get_settings
+# type: ignore
 import logging
 import logging.config
 import mimetypes
@@ -39,6 +13,34 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import FileResponse, JSONResponse, RedirectResponse
 from starlette.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
+
+from .admin_api import public_router as public_router
+from .admin_api import router as admin_router
+from .admin_auth_api import public_router as auth_public_router
+from .admin_auth_api import router as auth_router
+from .analytics_api import router as analytics_router
+from .assets_api import router as assets_router
+from .config import get_settings
+from .config_api import router as config_router
+from .dashboard_api import router as dashboard_router
+from .db import get_db, init_db
+from .debug_api import router as debug_router
+from .erp_scheduler import start_erp_sync_scheduler
+from .integration_settings_api import router as integration_settings_router
+from .integrations.bots.telegram_handler import create_bot, ensure_telegram_bot_menu
+from .integrations.bots.vk_handler import process_vk_webhook_event
+from .integrations.webhooks import router as erp_webhook_router
+from .integrations_api import public_router as integrations_public_router
+from .integrations_api import router as integrations_router
+from .marketing_api import router as marketing_router
+from .middlewares import rate_limit_middleware
+from .products_api import router as products_router
+from .roadmap_api import router as roadmap_router
+from .runtime import is_debug
+from .tenant_api import router as tenant_router
+from .test_api import router as test_router
+from .tma_api import router as tma_router
+from .worker import process_telegram_update, send_broadcast
 
 # Configure logging
 logging.config.dictConfig(

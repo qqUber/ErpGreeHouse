@@ -8,10 +8,6 @@ Tests cover edge cases for consent functions:
 - Consent audit trail
 """
 
-from datetime import datetime
-
-import pytest
-
 
 class TestStoreConsentEdgeCases:
     """Test _store_consent with different scenarios."""

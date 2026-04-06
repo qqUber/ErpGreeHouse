@@ -10,7 +10,6 @@ This module provides:
 - Common utilities for all tests
 """
 
-import asyncio
 import os
 import sqlite3
 import sys
@@ -19,9 +18,10 @@ from typing import Any, Dict, Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from dotenv import load_dotenv
 
 # Import required app modules
-from app.db import get_db, init_db
+from app.db import get_db
 
 # Import new mocks
 from tests.mocks.erpnext import ERPNextMock
@@ -84,13 +84,6 @@ sys.modules["aiogram"].Router = MagicMock(return_value=mock_router)
 
 # Add app to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# Load environment variables from .env.test file if it exists AND
-# no Telegram credentials are already set (e.g., from docker-compose env_file)
-# This supports both:
-# - Docker: env vars passed via docker-compose env_file (preferred)
-# - Local: fallback to loading from .env.test file
-from dotenv import load_dotenv
 
 if not os.getenv("TELEGRAM_BOT_TOKEN") or not os.getenv("TELEGRAM_CHANNEL_ID"):
     env_test_path = Path(__file__).parent.parent.parent / ".env.test"
@@ -165,7 +158,6 @@ def clean_database(test_db_path: str) -> Generator[str, None, None]:
     import os
     import sqlite3
     import time
-    from pathlib import Path
 
     from app.db import init_db
 
@@ -190,13 +182,11 @@ def clean_database(test_db_path: str) -> Generator[str, None, None]:
                 if i == max_retries - 1:
                     # If all retries failed, try to delete on next run by renaming
                     try:
-                        import time
-
                         temp_path = f"{db_path}.{int(time.time())}.tmp"
                         os.rename(db_path, temp_path)
                         print(f"Warning: Renamed locked database file to {temp_path}")
                         break
-                    except Exception as rename_error:
+                    except Exception:
                         # If even rename fails, skip cleanup but continue
                         print(f"Warning: Failed to delete or rename database file {db_path}: {e}")
 
@@ -552,7 +542,6 @@ def mock_inline_keyboard() -> MagicMock:
     """
     Create a mock inline keyboard builder.
     """
-    from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
     keyboard = MagicMock()
     keyboard.add = MagicMock()

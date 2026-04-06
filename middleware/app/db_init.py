@@ -6,11 +6,11 @@ Called by init container or manually.
 """
 
 import argparse
+import hashlib
 import json
 import logging
 import os
 import sys
-import hashlib
 from pathlib import Path
 from typing import Any
 
@@ -529,8 +529,9 @@ def bootstrap_admins_from_seed(seed_data: dict) -> list[str]:
     Idempotent: skips if admins already exist.
     Returns list of created usernames.
     """
-    from app.db import get_db
     import hashlib
+
+    from app.db import get_db
 
     db = get_db()
     conn = db.connect()

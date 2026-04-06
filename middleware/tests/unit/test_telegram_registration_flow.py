@@ -15,10 +15,8 @@ Run with: pytest middleware/tests/unit/test_telegram_registration_flow.py -v
 """
 
 import os
-import sqlite3
 import tempfile
-from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -142,10 +140,9 @@ class TestStartCommand:
     def test_start_existing_user_shows_balance_and_consent_status(self, setup_test_db, clean_redis, sample_user):
         """Test that /start for existing user shows balance and consent status."""
         # First create a test customer in the database
-        from app.db import get_db
         from app.handlers import _upsert_local_customer, cmd_start
 
-        customer_id = _upsert_local_customer(
+        _upsert_local_customer(
             telegram_id=sample_user["id"],
             full_name="Test User",
             phone="+79991234567",
@@ -214,9 +211,9 @@ class TestConsentCallback:
     def test_consent_refuse_cleans_user_data(self, setup_test_db, clean_redis, sample_user):
         """Test that clicking refuse button cleans all user data (152-ФЗ compliance)."""
         # First create a test customer that will be deleted
-        from app.handlers import _cleanup_user_data, _upsert_local_customer, cb_consent
+        from app.handlers import _upsert_local_customer, cb_consent
 
-        customer_id = _upsert_local_customer(
+        _upsert_local_customer(
             telegram_id=sample_user["id"],
             full_name="Test User",
             phone="+79991234567",
@@ -656,7 +653,7 @@ class TestRegistrationFlow:
     async def test_registration_refusal_cleans_all_data(self, setup_test_db, clean_redis, sample_user):
         """Test that refusing consent at any point cleans all data."""
         # First create a customer (simulating partially registered user)
-        from app.handlers import _cleanup_user_data, _upsert_local_customer, cb_consent
+        from app.handlers import _upsert_local_customer, cb_consent
 
         _upsert_local_customer(
             telegram_id=sample_user["id"],

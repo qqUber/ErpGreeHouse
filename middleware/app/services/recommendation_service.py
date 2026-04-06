@@ -1,7 +1,10 @@
 """Product Recommendation Service - centralized logic for smart product recommendations."""
 
-from typing import Any, Optional
+import json
+import logging
 from datetime import datetime
+from typing import Any, Optional
+
 from app.constants import (
     CACHE_TTL_LONG_SECONDS,
     CACHE_TTL_SHORT_SECONDS,
@@ -17,8 +20,6 @@ from app.constants import (
 )
 from app.db import get_db
 from app.utils.redis_cache import get_redis
-import json
-import logging
 
 logger = logging.getLogger(__name__)
 

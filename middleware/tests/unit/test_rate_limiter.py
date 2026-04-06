@@ -4,13 +4,12 @@ Unit tests for app.rate_limiter module.
 Covers Redis-backed token bucket rate limiting for chat channels.
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
 
 import app.rate_limiter as rate_limiter_module
 from app.rate_limiter import (
-    _get_redis,
     _RATE_LIMIT_LUA,
+    _get_redis,
     check_rate_limit,
     get_rate_limit_config,
     is_rate_limited,

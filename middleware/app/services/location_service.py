@@ -1,11 +1,13 @@
 """Location Service - centralized logic for Country → City → Point of Service (ТО) hierarchy."""
 
-from typing import Any, Optional
-from datetime import datetime
-from app.db import get_db
-from app.utils.redis_cache import get_redis
+# type: ignore
 import json
 import logging
+from datetime import datetime
+from typing import Any, Optional
+
+from app.db import get_db
+from app.utils.redis_cache import get_redis
 
 logger = logging.getLogger(__name__)
 

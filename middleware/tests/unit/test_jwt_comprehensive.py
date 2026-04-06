@@ -3,11 +3,9 @@ Comprehensive JWT unit tests with 100% coverage
 Tests all JWT functionality including security edge cases
 """
 
-import os
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import jwt
 import pytest
@@ -21,12 +19,10 @@ from app.auth import (
     decode_token,
     get_admin_from_jwt,
     get_default_permissions,
-    get_role_permissions,
     validate_access_token,
     validate_refresh_token,
 )
 from app.config import get_settings
-from app.security import constant_time_equals
 
 
 class TestJWTTokenCreation:
@@ -152,7 +148,6 @@ class TestJWTTokenValidation:
     def test_validate_access_token_expired(self):
         """Test validation fails for expired token"""
         # Create token with past expiration
-        admin = {"user_id": 1}
         settings = get_settings()
 
         expire = datetime.now(timezone.utc) - timedelta(hours=1)
@@ -405,7 +400,6 @@ class TestSecurityEdgeCases:
         settings = get_settings()
 
         # Try to create token with different algorithm
-        admin = {"user_id": 1}
         payload = {
             "sub": "1",
             "type": "access",

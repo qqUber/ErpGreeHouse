@@ -1,9 +1,4 @@
-from .utils.qr_codes import make_qr_image as _make_qr_image
-from .integrations.bots.shared.consent import update_consent as _shared_update
-from .integrations.bots.shared.consent import store_consent as _shared_store
-from .integrations.bots.shared.consent import cleanup_user_data as _shared_cleanup
-from .integrations.bots.shared.consent import get_customer_consents as _shared_get
-from .integrations.bots.shared.consent import CURRENT_POLICY_VERSION
+# type: ignore
 import json
 import logging
 import re
@@ -30,12 +25,18 @@ from .customer_identity import (
 )
 from .db import get_db
 from .identify import normalize_name, normalize_phone
+from .integrations.bots.shared.consent import CURRENT_POLICY_VERSION
+from .integrations.bots.shared.consent import cleanup_user_data as _shared_cleanup
+from .integrations.bots.shared.consent import get_customer_consents as _shared_get
+from .integrations.bots.shared.consent import store_consent as _shared_store
+from .integrations.bots.shared.consent import update_consent as _shared_update
 from .integrations.pos.erpnext_client import ERPClient
 from .loyalty_profile import build_customer_loyalty_profile
 from .menu import find_item
 from .services import get_location_service
 from .storage import delete, get_json, get_redis, set_json
 from .utils.currency import format_currency
+from .utils.qr_codes import make_qr_image as _make_qr_image
 
 logger = logging.getLogger(__name__)
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")

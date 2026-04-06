@@ -13,7 +13,7 @@ Use pytest.skip() if credentials are not configured.
 """
 
 import os
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import pytest
 import requests
@@ -349,7 +349,7 @@ class TestTelegramOmnichannelStatus:
             "status": ("ACTIVE" if channel_info["result"]["permissions"]["can_send_messages"] else "INACTIVE"),
         }
 
-        print(f"\n=== Telegram Channel Status ===")
+        print("\n=== Telegram Channel Status ===")
         for key, value in status.items():
             print(f"  {key}: {value}")
 

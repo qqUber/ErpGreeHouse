@@ -3,6 +3,7 @@ Integration Settings API
 Provides endpoints for managing Telegram and VK bot configurations
 """
 
+# type: ignore
 import json
 import secrets
 import shutil

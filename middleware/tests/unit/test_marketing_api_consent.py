@@ -6,10 +6,6 @@ Tests cover:
 - Marketing consent filtering logic
 """
 
-from datetime import datetime
-
-import pytest
-
 
 class TestGetCustomersWithConsent:
     """Test get_customers_with_consent function."""

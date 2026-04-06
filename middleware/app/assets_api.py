@@ -3,10 +3,11 @@ Asset Serving API
 Serve tenant logos, favicons, and other static assets
 """
 
-from fastapi import APIRouter, HTTPException, Response
-from fastapi.responses import FileResponse
 import os
 from pathlib import Path
+
+from fastapi import APIRouter, HTTPException, Response
+from fastapi.responses import FileResponse
 
 router = APIRouter(prefix="/api/v1/assets", tags=["assets"])
 

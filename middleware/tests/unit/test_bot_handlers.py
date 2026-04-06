@@ -5,12 +5,11 @@ Smoke tests verify handler functions can be imported and have correct signatures
 Full handler logic is tested via integration tests.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 from app import handlers
-from tests.mocks.telegram import TelegramMock
 
 
 def test_handlers_module_imports():

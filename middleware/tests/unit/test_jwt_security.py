@@ -3,13 +3,8 @@ JWT security tests - comprehensive security validation
 Tests for various JWT security vulnerabilities and attack vectors
 """
 
-import base64
-import hashlib
-import hmac
-import json
 import time
 from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock, Mock, patch
 
 import jwt
 import pytest
@@ -17,10 +12,8 @@ from fastapi import HTTPException
 
 from app.auth import (
     create_access_token,
-    create_refresh_token,
     decode_token,
     validate_access_token,
-    validate_refresh_token,
 )
 from app.config import get_settings
 from app.security import constant_time_equals
@@ -149,7 +142,7 @@ class TestJWTAlgorithmAttacks:
         admin = {"user_id": 1}
 
         # Create token with expected algorithm
-        valid_token = create_access_token(admin)
+        create_access_token(admin)
 
         # Try to create token with different algorithm
         different_algo_payload = {
@@ -188,7 +181,7 @@ class TestJWTAlgorithmAttacks:
 
         # Create token with correct key
         admin = {"user_id": 1}
-        valid_token = create_access_token(admin)
+        create_access_token(admin)
 
         # Try to create token with wrong key
         wrong_key_payload = {
@@ -310,14 +303,13 @@ class TestJWTReplayAttacks:
         # Validate token multiple times
         for i in range(5):
             result = validate_access_token(token)
-            assert result is not None, f"Token validation failed on attempt {i+1}"
+            assert result is not None, f"Token validation failed on attempt {i + 1}"
             assert result["sub"] == "1"
 
     def test_expired_token_rejection(self):
         """Test that expired tokens are rejected (basic replay protection)"""
         # Create token with past expiration
         settings = get_settings()
-        admin = {"user_id": 1}
 
         # Create an already-expired token
         expire = datetime.now(timezone.utc) - timedelta(hours=1)

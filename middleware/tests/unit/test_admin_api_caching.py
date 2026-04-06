@@ -8,10 +8,7 @@ Tests cover:
 """
 
 import json
-from datetime import datetime
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 
 class TestCacheFunctions:
