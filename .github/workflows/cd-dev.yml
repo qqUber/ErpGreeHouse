@@ -62,14 +62,14 @@ jobs:
       - name: middleware tests
         working-directory: middleware
         run: |
-          mkdir -p ../out
+          mkdir -p reports
           set -o pipefail
           set +e
-          bash ./run_tests.sh 2>&1 | tee ../out/middleware-tests.log
+          bash ./run_tests.sh 2>&1 | tee reports/middleware-tests.log
           status=${PIPESTATUS[0]}
           set -e
           if [[ $status -ne 0 ]]; then
-            msg=$(tail -n 60 ../out/middleware-tests.log | tr '\n' ' ' | sed 's/%/%25/g')
+            msg=$(tail -n 60 reports/middleware-tests.log | tr '\n' ' ' | sed 's/%/%25/g')
             echo "::error::middleware tests failed: ${msg}"
             exit $status
           fi
@@ -190,6 +190,6 @@ jobs:
         with:
           name: dev-debug-${{ github.sha }}
           path: |
-            out/middleware-tests.log
+            middleware/reports/middleware-tests.log
             middleware/reports
           if-no-files-found: warn
