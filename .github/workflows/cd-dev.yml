@@ -192,4 +192,4 @@ jobs:
           path: |
             middleware/reports/middleware-tests.log
             middleware/reports
-          if-no-files-found: warn
+          if-no-files-found: error
