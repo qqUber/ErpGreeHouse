@@ -85,3 +85,12 @@ Recent DevOps fixes:
 - ✅ Synced pre-commit versions with requirements.txt
 - ✅ Removed `|| true` from linting commands (flake8, mypy, isort, bandit)
 - ✅ Fixed git fetch error masking in CD workflows
+- ✅ Removed `|| true` from E2E log monitoring (tests.yml, pr.yml, ci.yml, e2e-dev.yml)
+
+## Known Issues
+
+### Trufflehog Action (PR Workflow)
+- **Issue**: `trufflesecurity/trufflehog-action@main` cannot be resolved
+- **Status**: Temporarily disabled in `pr.yml` secret-scan job
+- **Action**: Needs verification of correct action version
+- **Impact**: Secret scanning disabled for PRs until fixed
