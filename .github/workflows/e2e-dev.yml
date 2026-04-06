@@ -59,7 +59,8 @@ jobs:
       
       - name: Monitor E2E logs
         run: |
-          timeout 45s docker compose -f docker-compose.yml -f docker-compose.test.yml logs -f --tail=50 e2e-runner
+          docker compose -f docker-compose.yml -f docker-compose.test.yml logs -f --tail=50 e2e-runner &
+          LOG_PID=$!
           CID="$(docker compose -f docker-compose.yml -f docker-compose.test.yml ps -aq e2e-runner | tail -n 1)"
           if [ -z "$CID" ]; then
             echo "E2E runner container ID not found"
@@ -68,6 +69,7 @@ jobs:
           fi
           timeout 1800 bash -c "until [ \"\$(docker inspect -f '{{.State.Status}}' \"$CID\")\" = \"exited\" ]; do sleep 10; done" || \
           { echo "E2E tests timed out"; docker compose -f docker-compose.yml -f docker-compose.test.yml logs e2e-runner; exit 1; }
+          kill "$LOG_PID" 2>/dev/null || true
           [ "$(docker inspect -f '{{.State.ExitCode}}' "$CID")" = "0" ] || \
           { echo "E2E tests failed"; docker compose -f docker-compose.yml -f docker-compose.test.yml logs e2e-runner; exit 1; }
       - name: upload e2e artifacts
@@ -79,7 +81,7 @@ jobs:
             admin-ui/playwright-report
             admin-ui/test-results
             admin-ui/allure-results
-          if-no-files-found: warn
+          if-no-files-found: error
 
       - name: stop e2e stack
         if: always()
@@ -140,7 +142,7 @@ jobs:
         with:
           name: allure-report
           path: merged/allure-report
-          if-no-files-found: warn
+          if-no-files-found: error
 
   publish-gh-pages:
     runs-on: ubuntu-latest
