@@ -3,16 +3,16 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsView } from './AnalyticsView';
 import {
-    AdminMe,
-    Api,
-    CreateSaleRequest,
-    CustomerDetails,
-    CustomerListItem,
-    Integration,
-    IntegrationDelivery,
-    IntegrationTemplate,
-    RolePermissions,
-    setAdminSecret,
+  AdminMe,
+  Api,
+  CreateSaleRequest,
+  CustomerDetails,
+  CustomerListItem,
+  Integration,
+  IntegrationDelivery,
+  IntegrationTemplate,
+  RolePermissions,
+  setAdminSecret,
 } from './api';
 import { ComplianceView } from './ComplianceView';
 import { DashboardView } from './components/dashboard/DashboardView';
@@ -48,7 +48,9 @@ type Notice = { level: NoticeLevel; message: string; visible: boolean };
 
 function money(n: number, locale?: string) {
   const storedLocale =
-    typeof window !== 'undefined' ? window.localStorage.getItem('i18nextLng') || undefined : undefined;
+    typeof window !== 'undefined'
+      ? window.localStorage.getItem('i18nextLng') || undefined
+      : undefined;
   const appLocale = (locale || storedLocale || 'en').toLowerCase();
   const localeMap: Record<string, string> = {
     en: 'en-US',
@@ -765,12 +767,12 @@ function App() {
           </nav>
           {authReady ? (
             <div className="header-toolbar">
-            <ThemeSwitcher value={themeMode} onChange={setThemeMode} />
-            <LanguageSwitcher />
-            <div className="pill role-pill">
-              {t('common.role')}: {roleLabel(me?.role || '')}
+              <ThemeSwitcher value={themeMode} onChange={setThemeMode} />
+              <LanguageSwitcher />
+              <div className="pill role-pill">
+                {t('common.role')}: {roleLabel(me?.role || '')}
+              </div>
             </div>
-          </div>
           ) : null}
         </header>
       ) : null}
@@ -871,7 +873,9 @@ function App() {
               onSuggestionSelect={(customer) => {
                 handleSelectCustomer(customer.id);
                 const customerName =
-                  customer.full_name || customer.phone || t('customers.unnamed', { id: customer.id });
+                  customer.full_name ||
+                  customer.phone ||
+                  t('customers.unnamed', { id: customer.id });
                 setQ(customerName);
                 setShowSuggestions(false);
                 // Also filter the main customer list
@@ -1161,14 +1165,14 @@ function CustomersView({
         gap: '20px',
         height: '100%',
         padding: '20px',
-        backgroundColor: '#f8fafc',
+        backgroundColor: 'var(--bg)',
       }}
     >
       {/* Search Controls */}
       <div
         style={{
-          backgroundColor: 'white',
-          border: '1px solid #e2e8f0',
+          backgroundColor: 'var(--panel)',
+          border: '1px solid var(--border)',
           borderRadius: '8px',
           padding: '16px',
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
@@ -1214,7 +1218,7 @@ function CustomersView({
             style={{
               flex: 1,
               padding: '12px 16px',
-              border: '1px solid #d1d5db',
+              border: '1px solid var(--border)',
               borderRadius: '6px',
               fontSize: '14px',
             }}
@@ -1228,8 +1232,8 @@ function CustomersView({
                 top: '100%',
                 left: 0,
                 right: 0,
-                backgroundColor: 'white',
-                border: '1px solid #d1d5db',
+                backgroundColor: 'var(--panel)',
+                border: '1px solid var(--border)',
                 borderTop: 'none',
                 borderRadius: '0 0 6px 6px',
                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
@@ -1247,22 +1251,22 @@ function CustomersView({
                   style={{
                     padding: '12px 16px',
                     cursor: 'pointer',
-                    borderBottom: '1px solid #f3f4f6',
+                    borderBottom: '1px solid var(--neutral-200)',
                     fontSize: '14px',
-                    color: '#374151',
+                    color: 'var(--text)',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                    e.currentTarget.style.backgroundColor = 'var(--neutral-100)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'white';
+                    e.currentTarget.style.backgroundColor = 'var(--panel)';
                   }}
                 >
                   <div style={{ fontWeight: '500' }}>
                     {customer.full_name || t('customers.unnamed', { id: customer.id })}
                   </div>
                   {customer.phone && (
-                    <div style={{ fontSize: '12px', color: '#6b7280' }}>{customer.phone}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{customer.phone}</div>
                   )}
                 </div>
               ))}
@@ -1275,7 +1279,7 @@ function CustomersView({
             data-testid="customers_search_button"
             style={{
               padding: '12px 20px',
-              backgroundColor: '#2563eb',
+              backgroundColor: 'var(--primary)',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
@@ -1293,9 +1297,9 @@ function CustomersView({
             data-testid="customers_clear_button"
             style={{
               padding: '12px 20px',
-              backgroundColor: 'white',
-              color: '#374151',
-              border: '1px solid #d1d5db',
+              backgroundColor: 'var(--panel)',
+              color: 'var(--text)',
+              border: '1px solid var(--border)',
               borderRadius: '6px',
               fontSize: '14px',
               fontWeight: '500',
@@ -1322,8 +1326,8 @@ function CustomersView({
         <div
           style={{
             minWidth: 0,
-            backgroundColor: 'white',
-            border: '1px solid #e2e8f0',
+            backgroundColor: 'var(--panel)',
+            border: '1px solid var(--border)',
             borderRadius: '12px',
             boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
             display: 'flex',
@@ -1335,8 +1339,8 @@ function CustomersView({
           <div
             style={{
               padding: '16px 20px',
-              borderBottom: '1px solid #e2e8f0',
-              backgroundColor: '#f8fafc',
+              borderBottom: '1px solid var(--border)',
+              backgroundColor: 'var(--bg)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -1346,23 +1350,23 @@ function CustomersView({
               style={{
                 margin: 0,
                 fontSize: '16px',
-                fontWeight: '600',
-                color: '#1e293b',
+                fontWeight: 600,
+                color: 'var(--text)',
               }}
             >
-              {i18n.language === 'ru' ? 'Список клиентов' : 'Customer List'}
+              {t('customers.list')}
             </h3>
-            <span
+            <div
               style={{
                 fontSize: '12px',
-                color: '#64748b',
-                backgroundColor: '#e2e8f0',
+                color: 'var(--muted)',
+                backgroundColor: 'var(--neutral-200)',
                 padding: '4px 8px',
                 borderRadius: '12px',
               }}
             >
-              {total} {i18n.language === 'ru' ? 'клиентов' : 'customers'}
-            </span>
+              {total} {t('menu.clients')}
+            </div>
           </div>
 
           {/* Customer Items */}
@@ -1390,9 +1394,13 @@ function CustomersView({
                     alignItems: 'flex-start',
                     justifyContent: 'space-between',
                     padding: '16px',
-                    border: selected?.id === c.id ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                    border:
+                      selected?.id === c.id
+                        ? '2px solid var(--primary)'
+                        : '1px solid var(--border)',
                     borderRadius: '8px',
-                    backgroundColor: selected?.id === c.id ? '#f0f9ff' : 'white',
+                    backgroundColor:
+                      selected?.id === c.id ? 'var(--primary-light)' : 'var(--panel)',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     textAlign: 'left',
@@ -1403,14 +1411,14 @@ function CustomersView({
                   }}
                   onMouseEnter={(e) => {
                     if (selected?.id !== c.id) {
-                      e.currentTarget.style.borderColor = '#2563eb';
+                      e.currentTarget.style.borderColor = 'var(--primary)';
                       e.currentTarget.style.transform = 'translateY(-1px)';
                       e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (selected?.id !== c.id) {
-                      e.currentTarget.style.borderColor = '#e2e8f0';
+                      e.currentTarget.style.borderColor = 'var(--border)';
                       e.currentTarget.style.transform = 'translateY(0)';
                       e.currentTarget.style.boxShadow = 'none';
                     }
@@ -1421,22 +1429,20 @@ function CustomersView({
                       style={{
                         fontWeight: '600',
                         fontSize: '14px',
-                        color: '#1e293b',
+                        color: 'var(--text)',
                       }}
                     >
-                      {c.full_name || `Клиент #${c.id}`}
+                      {c.full_name || t('customers.unnamed', { id: c.id })}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      {c.phone || 'Телефон не указан'}
-                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{c.phone || '—'}</div>
                     <div
                       style={{
                         fontSize: '11px',
-                        color: '#94a3b8',
+                        color: 'var(--neutral-600)',
                         fontFamily: 'monospace',
                       }}
                     >
-                      ID: {c.id}
+                      {t('table.id')}: {c.id}
                     </div>
                   </div>
                   <div
@@ -1451,7 +1457,7 @@ function CustomersView({
                       style={{
                         fontWeight: '700',
                         fontSize: '14px',
-                        color: '#2563eb',
+                        color: 'var(--primary)',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '2px',
@@ -1468,11 +1474,11 @@ function CustomersView({
                 style={{
                   textAlign: 'center',
                   padding: '40px',
-                  color: '#64748b',
+                  color: 'var(--muted)',
                   fontSize: '14px',
                 }}
               >
-                {i18n.language === 'ru' ? 'Клиенты не найдены' : 'No customers found'}
+                {t('table.noResults')}
               </div>
             ) : null}
           </div>
@@ -1482,22 +1488,20 @@ function CustomersView({
             <div
               style={{
                 padding: '16px 20px',
-                borderTop: '1px solid #e2e8f0',
+                borderTop: '1px solid var(--border)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                backgroundColor: '#f8fafc',
+                backgroundColor: 'var(--bg)',
               }}
             >
               <div
                 style={{
                   fontSize: '12px',
-                  color: '#64748b',
+                  color: 'var(--muted)',
                 }}
               >
-                {i18n.language === 'ru' ? 'Страница' : 'Page'} {page}{' '}
-                {i18n.language === 'ru' ? 'из' : 'of'} {totalPages} ({total}{' '}
-                {i18n.language === 'ru' ? 'всего' : 'total'})
+                {t('pagination.page', { page, total: totalPages })}
               </div>
               <div
                 style={{
@@ -1511,8 +1515,8 @@ function CustomersView({
                   disabled={!hasPrevPage}
                   style={{
                     padding: '6px 12px',
-                    backgroundColor: hasPrevPage ? '#2563eb' : '#e2e8f0',
-                    color: hasPrevPage ? 'white' : '#94a3b8',
+                    backgroundColor: hasPrevPage ? 'var(--primary)' : 'var(--neutral-200)',
+                    color: hasPrevPage ? 'white' : 'var(--neutral-500)',
                     border: 'none',
                     borderRadius: '6px',
                     fontSize: '12px',
@@ -1520,13 +1524,13 @@ function CustomersView({
                     transition: 'all 0.2s ease',
                   }}
                 >
-                  ← {i18n.language === 'ru' ? 'Назад' : 'Previous'}
+                  ← {t('pagination.prev')}
                 </button>
 
                 <span
                   style={{
                     fontSize: '12px',
-                    color: '#374151',
+                    color: 'var(--text)',
                     fontWeight: '500',
                   }}
                 >
@@ -1538,8 +1542,8 @@ function CustomersView({
                   disabled={!hasNextPage}
                   style={{
                     padding: '6px 12px',
-                    backgroundColor: hasNextPage ? '#2563eb' : '#e2e8f0',
-                    color: hasNextPage ? 'white' : '#94a3b8',
+                    backgroundColor: hasNextPage ? 'var(--primary)' : 'var(--neutral-200)',
+                    color: hasNextPage ? 'white' : 'var(--neutral-500)',
                     border: 'none',
                     borderRadius: '6px',
                     fontSize: '12px',
@@ -1547,7 +1551,7 @@ function CustomersView({
                     transition: 'all 0.2s ease',
                   }}
                 >
-                  {i18n.language === 'ru' ? 'Вперед' : 'Next'} →
+                  {t('pagination.next')} →
                 </button>
               </div>
             </div>
@@ -1558,8 +1562,8 @@ function CustomersView({
         <div
           style={{
             minWidth: 0,
-            backgroundColor: 'white',
-            border: '1px solid #e2e8f0',
+            backgroundColor: 'var(--panel)',
+            border: '1px solid var(--border)',
             borderRadius: '12px',
             boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
             display: 'flex',
@@ -1573,8 +1577,8 @@ function CustomersView({
               <div
                 style={{
                   padding: '16px 20px',
-                  borderBottom: '1px solid #e2e8f0',
-                  backgroundColor: '#f8fafc',
+                  borderBottom: '1px solid var(--border)',
+                  backgroundColor: 'var(--bg)',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
@@ -1585,10 +1589,10 @@ function CustomersView({
                     margin: 0,
                     fontSize: '16px',
                     fontWeight: '600',
-                    color: '#1e293b',
+                    color: 'var(--text)',
                   }}
                 >
-                  {i18n.language === 'ru' ? 'Детали клиента' : 'Customer Details'}
+                  {t('customers.details')}
                 </h3>
                 <button
                   onClick={() => select(0)}
@@ -1600,16 +1604,16 @@ function CustomersView({
                     cursor: 'pointer',
                     padding: '4px',
                     borderRadius: '4px',
-                    color: '#64748b',
+                    color: 'var(--muted)',
                     transition: 'all 0.2s ease',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#e2e8f0';
-                    e.currentTarget.style.color = '#374151';
+                    e.currentTarget.style.backgroundColor = 'var(--neutral-200)';
+                    e.currentTarget.style.color = 'var(--text)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = '#64748b';
+                    e.currentTarget.style.color = 'var(--muted)';
                   }}
                 >
                   ✕
@@ -1634,7 +1638,7 @@ function CustomersView({
                     alignItems: 'center',
                     gap: '16px',
                     padding: '16px',
-                    backgroundColor: '#f8fafc',
+                    backgroundColor: 'var(--bg)',
                     borderRadius: '12px',
                   }}
                 >
@@ -1643,7 +1647,7 @@ function CustomersView({
                       width: '48px',
                       height: '48px',
                       borderRadius: '50%',
-                      backgroundColor: '#2563eb',
+                      backgroundColor: 'var(--primary)',
                       color: 'white',
                       display: 'flex',
                       alignItems: 'center',
@@ -1659,18 +1663,18 @@ function CustomersView({
                       style={{
                         fontWeight: '600',
                         fontSize: '16px',
-                        color: '#1e293b',
+                        color: 'var(--text)',
                       }}
                     >
                       {details.customer.full_name || '—'}
                     </div>
-                    <div style={{ fontSize: '14px', color: '#64748b' }}>
+                    <div style={{ fontSize: '14px', color: 'var(--muted)' }}>
                       {details.customer.phone || '—'}
                     </div>
                     <div
                       style={{
                         fontSize: '12px',
-                        color: '#94a3b8',
+                        color: 'var(--neutral-600)',
                         fontFamily: 'monospace',
                       }}
                     >
@@ -1683,14 +1687,14 @@ function CustomersView({
                 <div
                   style={{
                     padding: '16px',
-                    background: 'linear-gradient(135deg, #dbeafe, #2563eb)',
+                    background: 'linear-gradient(135deg, var(--primary-light), var(--primary))',
                     color: 'white',
                     borderRadius: '8px',
                     textAlign: 'center',
                   }}
                 >
                   <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '4px' }}>
-                    {i18n.language === 'ru' ? 'Баланс' : 'Balance'}
+                    {t('clients.balanceLabel')}
                   </div>
                   <div style={{ fontSize: '24px', fontWeight: '700' }}>
                     {customerBalance.toLocaleString()} ₽
@@ -1707,42 +1711,42 @@ function CustomersView({
                   <div
                     style={{
                       padding: '14px 16px',
-                      border: '1px solid #e2e8f0',
+                      border: '1px solid var(--border)',
                       borderRadius: '12px',
                     }}
                   >
-                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>
-                      {i18n.language === 'ru' ? 'Покупок' : 'Transactions'}
+                    <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '6px' }}>
+                      {t('analytics.transactions')}
                     </div>
-                    <div style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>
+                    <div style={{ fontSize: '20px', fontWeight: '700', color: 'var(--text)' }}>
                       {details.transactions.length}
                     </div>
                   </div>
                   <div
                     style={{
                       padding: '14px 16px',
-                      border: '1px solid #e2e8f0',
+                      border: '1px solid var(--border)',
                       borderRadius: '12px',
                     }}
                   >
-                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>
-                      {i18n.language === 'ru' ? 'QR токен' : 'QR Token'}
+                    <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '6px' }}>
+                      {t('sales.qrToken')}
                     </div>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>
-                      {details.customer.qr_token ? 'Available' : '—'}
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text)' }}>
+                      {details.customer.qr_token ? t('common.yesShort') : '—'}
                     </div>
                   </div>
                   <div
                     style={{
                       padding: '14px 16px',
-                      border: '1px solid #e2e8f0',
+                      border: '1px solid var(--border)',
                       borderRadius: '12px',
                     }}
                   >
-                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>
-                      {i18n.language === 'ru' ? 'Последняя активность' : 'Last activity'}
+                    <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '6px' }}>
+                      {t('clients.lastVisit')}
                     </div>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text)' }}>
                       {details.transactions[0]?.created_at
                         ? new Date(details.transactions[0].created_at).toLocaleDateString()
                         : '—'}
@@ -1756,24 +1760,24 @@ function CustomersView({
                     style={{
                       fontSize: '12px',
                       fontWeight: '600',
-                      color: '#374151',
+                      color: 'var(--text)',
                       marginBottom: '12px',
                     }}
                   >
-                    QR Code
+                    {t('sales.qrToken')}
                   </div>
                   <div
                     style={{
                       padding: '20px',
-                      backgroundColor: '#f8fafc',
-                      border: '2px dashed #d1d5db',
+                      backgroundColor: 'var(--bg)',
+                      border: '2px dashed var(--border)',
                       borderRadius: '8px',
                     }}
                   >
                     {qrCodeUrl ? (
                       <img
                         src={qrCodeUrl}
-                        alt="QR Code"
+                        alt={t('sales.qrToken')}
                         style={{
                           width: '200px',
                           height: '200px',
@@ -1797,12 +1801,13 @@ function CustomersView({
                     <div
                       style={{
                         fontSize: '11px',
-                        color: '#64748b',
+                        color: 'var(--muted)',
                         fontFamily: 'monospace',
                         marginTop: '8px',
                       }}
                     >
-                      {details.customer.qr_token || `Customer ID: ${details.customer.id}`}
+                      {details.customer.qr_token ||
+                        `${t('sales.customerId')}: ${details.customer.id}`}
                     </div>
                   </div>
                 </div>
@@ -1814,10 +1819,10 @@ function CustomersView({
                       margin: '0 0 12px 0',
                       fontSize: '14px',
                       fontWeight: '600',
-                      color: '#1e293b',
+                      color: 'var(--text)',
                     }}
                   >
-                    {i18n.language === 'ru' ? 'Последние транзакции' : 'Recent Transactions'}
+                    {t('clients.transactionHistory')}
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {details.transactions.slice(0, 10).map((tx) => (
@@ -1828,7 +1833,7 @@ function CustomersView({
                           alignItems: 'center',
                           justifyContent: 'space-between',
                           padding: '12px',
-                          backgroundColor: '#f8fafc',
+                          backgroundColor: 'var(--bg)',
                           borderRadius: '6px',
                         }}
                       >
@@ -1837,7 +1842,7 @@ function CustomersView({
                             style={{
                               fontSize: '11px',
                               fontWeight: '600',
-                              color: '#64748b',
+                              color: 'var(--muted)',
                             }}
                           >
                             #{tx.id}
@@ -1845,7 +1850,7 @@ function CustomersView({
                           <div
                             style={{
                               fontSize: '11px',
-                              color: '#94a3b8',
+                              color: 'var(--neutral-600)',
                             }}
                           >
                             {new Date(tx.created_at).toLocaleString()}
@@ -1854,7 +1859,7 @@ function CustomersView({
                         <div
                           style={{
                             fontWeight: '600',
-                            color: '#059669',
+                            color: 'var(--good)',
                             fontSize: '14px',
                           }}
                         >
@@ -1867,11 +1872,11 @@ function CustomersView({
                         style={{
                           textAlign: 'center',
                           padding: '20px',
-                          color: '#64748b',
+                          color: 'var(--muted)',
                           fontSize: '12px',
                         }}
                       >
-                        {i18n.language === 'ru' ? 'Нет транзакций' : 'No transactions'}
+                        {t('common.noData')}
                       </div>
                     ) : null}
                   </div>
@@ -1888,7 +1893,7 @@ function CustomersView({
                 justifyContent: 'center',
                 height: '100%',
                 textAlign: 'center',
-                color: '#64748b',
+                color: 'var(--muted)',
                 padding: '40px',
               }}
             >
@@ -1901,9 +1906,7 @@ function CustomersView({
               >
                 👤
               </div>
-              <div style={{ fontSize: '16px' }}>
-                {i18n.language === 'ru' ? 'Выберите клиента в списке' : 'Select customer from list'}
-              </div>
+              <div style={{ fontSize: '16px' }}>{t('customers.selectCustomer')}</div>
             </div>
           )}
         </div>
@@ -2289,7 +2292,9 @@ function IntegrationsView({
               <div className="grid gap-1 mt-2">
                 {deliveries.slice(0, 10).map((d) => (
                   <div key={d.id} className="card cardCompact">
-                    <div className="font-bold">#{d.id} {d.event_type}</div>
+                    <div className="font-bold">
+                      #{d.id} {d.event_type}
+                    </div>
                     <div className="text-xs text-muted">
                       {d.status} {d.http_status ? `(${d.http_status})` : ''} ·{' '}
                       {new Date(d.created_at).toLocaleString()}
@@ -2548,12 +2553,7 @@ function PermissionsTable() {
   }
 
   if (loading) return <div className="card cardFull">{t('common.loading')}</div>;
-  if (err)
-    return (
-      <div className="card cardFull text-error">
-        {err}
-      </div>
-    );
+  if (err) return <div className="card cardFull text-error">{err}</div>;
 
   return (
     <div className="card cardFull">
@@ -2573,16 +2573,15 @@ function PermissionsTable() {
           <tbody>
             {allPermissions.map((permission) => (
               <tr key={permission}>
-                <td className="p-2 border-t">{t(`settings.permissionNames.${permission}`, permission)}</td>
+                <td className="p-2 border-t">
+                  {t(`settings.permissionNames.${permission}`, permission)}
+                </td>
                 {roles.map((r) => {
                   const state =
                     r.permissions.find((p) => p.permission === permission)?.is_allowed ?? false;
                   const key = `${r.role}:${permission}`;
                   return (
-                    <td
-                      key={key}
-                      className="text-center p-2 border-t"
-                    >
+                    <td key={key} className="text-center p-2 border-t">
                       <input
                         type="checkbox"
                         checked={state}

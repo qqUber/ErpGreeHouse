@@ -1,6 +1,7 @@
 {
   "app": {
     "title": "ERP Гринхаус - Админ панель",
+    "brand": "ERP Гринхаус",
     "controlPanel": "Панель управления"
   },
   "roles": {
@@ -325,7 +326,11 @@
     "triggerInactive": "💤 Клиент \"остыл\"",
     "triggerWelcome": "👋 Приветственное сообщение",
     "triggerPointsExpiration": "⏰ Истечение баллов",
-    "welcomeTriggerDesc": "Срабатывает для новых клиентов в течение 24 часов после регистрации."
+    "welcomeTriggerDesc": "Срабатывает для новых клиентов в течение 24 часов после регистрации.",
+    "fillAllFields": "Заполните все обязательные поля",
+    "mediaGroupMustBeArray": "Media group должен быть JSON-массивом",
+    "invalidJson": "Неверный JSON формат для media URL",
+    "confirmSend": "Отправить кампанию сейчас?"
   },
   "integrations": {
     "title": "Интеграции",
@@ -692,6 +697,7 @@
       "newThisWeek": "Новых за неделю",
       "active": "Активные",
       "plusThisWeek": "+{{count}} за недели",
+      "attention": "Требует внимания",
       "reachable": "Доступно",
       "consentRate": "Процент согласия",
       "trending": "В тренде",
@@ -871,6 +877,9 @@
     "campaignName": "Название кампании",
     "campaignNamePlaceholder": "Введите название кампании",
     "type": "Тип",
+    "channelTelegram": "Telegram",
+    "channelSms": "SMS",
+    "channelPush": "Push",
     "budgetLimit": "Лимит бюджета",
     "budgetPlaceholder": "Например: 250",
     "segment": "Сегмент",
@@ -908,6 +917,7 @@
     "pause": "Приостановить",
     "resume": "Возобновить",
     "cancelCampaign": "Отменить",
+    "confirmCancel": "Отменить эту кампанию?",
     "budgetAction": "Бюджет",
     "setBudgetPrompt": "Установите лимит бюджета для кампании",
     "budgetMustBeNumber": "Бюджет должен быть числом",

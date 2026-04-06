@@ -36,15 +36,15 @@ interface UsePreferencesReturn {
   isLoading: boolean;
   error: string | null;
   updatePreferences: (prefs: Partial<UserPreferences>) => Promise<void>;
-  
+
   // Dashboard preferences
   dashboardPrefs: DashboardPreferences | null;
   updateDashboardPrefs: (prefs: Partial<DashboardPreferences>) => Promise<void>;
-  
+
   // Feature flags
   featureFlags: FeatureFlags | null;
   isFeatureEnabled: (flag: string) => boolean;
-  
+
   // Helper methods
   setTheme: (theme: Theme) => Promise<void>;
   setDensity: (density: Density) => Promise<void>;
@@ -118,54 +118,72 @@ export function usePreferences(): UsePreferencesReturn {
     loadPreferences();
   }, [loadPreferences]);
 
-  const updatePreferences = useCallback(async (prefs: Partial<UserPreferences>) => {
-    try {
-      const current = preferences || DEFAULT_PREFERENCES;
-      const updated = { ...current, ...prefs };
-      
-      await Api.updateUserPreferences(updated);
-      setPreferences(updated);
-    } catch (err) {
-      setError(String(err));
-      throw err;
-    }
-  }, [preferences]);
+  const updatePreferences = useCallback(
+    async (prefs: Partial<UserPreferences>) => {
+      try {
+        const current = preferences || DEFAULT_PREFERENCES;
+        const updated = { ...current, ...prefs };
 
-  const updateDashboardPrefs = useCallback(async (prefs: Partial<DashboardPreferences>) => {
-    try {
-      const current = dashboardPrefs || DEFAULT_DASHBOARD_PREFS;
-      const updated = { ...current, ...prefs };
-      
-      await Api.updateDashboardPreferences(updated);
-      setDashboardPrefs(updated);
-    } catch (err) {
-      setError(String(err));
-      throw err;
-    }
-  }, [dashboardPrefs]);
+        await Api.updateUserPreferences(updated);
+        setPreferences(updated);
+      } catch (err) {
+        setError(String(err));
+        throw err;
+      }
+    },
+    [preferences]
+  );
 
-  const setTheme = useCallback(async (theme: Theme) => {
-    await updatePreferences({ theme });
-  }, [updatePreferences]);
+  const updateDashboardPrefs = useCallback(
+    async (prefs: Partial<DashboardPreferences>) => {
+      try {
+        const current = dashboardPrefs || DEFAULT_DASHBOARD_PREFS;
+        const updated = { ...current, ...prefs };
 
-  const setDensity = useCallback(async (density: Density) => {
-    await updatePreferences({ density });
-  }, [updatePreferences]);
+        await Api.updateDashboardPreferences(updated);
+        setDashboardPrefs(updated);
+      } catch (err) {
+        setError(String(err));
+        throw err;
+      }
+    },
+    [dashboardPrefs]
+  );
 
-  const setLocale = useCallback(async (locale: Locale) => {
-    await updatePreferences({ locale });
-    await i18n.changeLanguage(locale);
-  }, [updatePreferences, i18n]);
+  const setTheme = useCallback(
+    async (theme: Theme) => {
+      await updatePreferences({ theme });
+    },
+    [updatePreferences]
+  );
+
+  const setDensity = useCallback(
+    async (density: Density) => {
+      await updatePreferences({ density });
+    },
+    [updatePreferences]
+  );
+
+  const setLocale = useCallback(
+    async (locale: Locale) => {
+      await updatePreferences({ locale });
+      await i18n.changeLanguage(locale);
+    },
+    [updatePreferences, i18n]
+  );
 
   const toggleSidebar = useCallback(async () => {
     const current = preferences || DEFAULT_PREFERENCES;
     await updatePreferences({ sidebarCollapsed: !current.sidebarCollapsed });
   }, [preferences, updatePreferences]);
 
-  const isFeatureEnabled = useCallback((flag: string): boolean => {
-    if (!featureFlags?.flags) return false;
-    return featureFlags.flags[flag] ?? false;
-  }, [featureFlags]);
+  const isFeatureEnabled = useCallback(
+    (flag: string): boolean => {
+      if (!featureFlags?.flags) return false;
+      return featureFlags.flags[flag] ?? false;
+    },
+    [featureFlags]
+  );
 
   return {
     preferences,

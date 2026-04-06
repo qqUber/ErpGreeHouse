@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react';
+import i18n from '../../i18n';
 
 interface Props {
   children: ReactNode;
@@ -47,23 +48,23 @@ export class DashboardErrorBoundary extends Component<Props, State> {
           style={{
             padding: '24px',
             margin: '16px',
-            background: '#fef2f2',
-            border: '1px solid #fecaca',
+            background: 'var(--bad-light)',
+            border: '1px solid var(--bad)',
             borderRadius: '8px',
             textAlign: 'center',
           }}
         >
-          <h3 style={{ margin: '0 0 12px 0', color: '#dc2626', fontSize: '16px' }}>
-            Widget temporarily unavailable
+          <h3 style={{ margin: '0 0 12px 0', color: 'var(--bad)', fontSize: '16px' }}>
+            {i18n.t('errors.boundaryTitle')}
           </h3>
-          <p style={{ margin: '0 0 16px 0', color: '#7f1d1d', fontSize: '14px' }}>
-            Something went wrong loading this dashboard section.
+          <p style={{ margin: '0 0 16px 0', color: 'var(--muted)', fontSize: '14px' }}>
+            {i18n.t('errors.boundaryDescription')}
           </p>
           <button
             onClick={this.handleRetry}
             style={{
               padding: '8px 16px',
-              background: '#dc2626',
+              background: 'var(--bad)',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
@@ -71,7 +72,7 @@ export class DashboardErrorBoundary extends Component<Props, State> {
               fontSize: '14px',
             }}
           >
-            Retry
+            {i18n.t('errors.boundaryRetry')}
           </button>
         </div>
       );

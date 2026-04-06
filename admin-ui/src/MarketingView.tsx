@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Api,
-    baseUrl,
-    injectAuthHeaders,
-    MarketingCampaign,
-    MarketingCampaignPreview,
-    MarketingSegment,
-    MarketingTrigger,
+  Api,
+  baseUrl,
+  injectAuthHeaders,
+  MarketingCampaign,
+  MarketingCampaignPreview,
+  MarketingSegment,
+  MarketingTrigger,
 } from './api';
 import { useMarketingData } from './hooks/useMarketingData';
 import { marketingService } from './services/marketing.service';
@@ -19,7 +19,7 @@ export function MarketingView() {
   const { campaigns, segments, triggers, loading, error, refresh } = useMarketingData();
 
   return (
-    <div className="grid gap-6">
+    <div className="marketing-view grid gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t('marketing.title')}</h1>
         <button onClick={() => void refresh()} className="text-sm text-blue-600 hover:underline">
@@ -27,21 +27,21 @@ export function MarketingView() {
         </button>
       </div>
 
-      <div className="flex gap-6 border-b border-gray-200">
+      <div className="marketing-tabs flex gap-6 border-b border-gray-200">
         <button
-          className={`pb-2 px-1 ${tab === 'campaigns' ? 'border-b-2 border-blue-600 font-medium text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`marketing-tab-btn pb-2 px-1 ${tab === 'campaigns' ? 'border-b-2 border-blue-600 font-medium text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
           onClick={() => setTab('campaigns')}
         >
           {t('marketing.campaigns')}
         </button>
         <button
-          className={`pb-2 px-1 ${tab === 'segments' ? 'border-b-2 border-blue-600 font-medium text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`marketing-tab-btn pb-2 px-1 ${tab === 'segments' ? 'border-b-2 border-blue-600 font-medium text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
           onClick={() => setTab('segments')}
         >
           {t('marketing.segments')}
         </button>
         <button
-          className={`pb-2 px-1 ${tab === 'triggers' ? 'border-b-2 border-blue-600 font-medium text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`marketing-tab-btn pb-2 px-1 ${tab === 'triggers' ? 'border-b-2 border-blue-600 font-medium text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
           onClick={() => setTab('triggers')}
         >
           {t('marketing.triggers')}
@@ -50,7 +50,7 @@ export function MarketingView() {
 
       {error ? <div className="text-sm text-red-600">{error}</div> : null}
 
-      {loading && <div className="text-gray-500">{t('marketing.loading')}</div>}
+      {loading && <div className="marketing-loading text-gray-500">{t('marketing.loading')}</div>}
 
       {!loading && tab === 'campaigns' && (
         <CampaignsManager campaigns={campaigns} segments={segments} onUpdate={refresh} />
@@ -117,7 +117,7 @@ function CampaignsManager({
 
   async function handleCreate() {
     if (!newName || !newContent || !newSegmentId) {
-      setError(t('marketing.fillAllFields') || 'Fill all required fields');
+      setError(t('marketing.fillAllFields'));
       return;
     }
 
@@ -126,11 +126,11 @@ function CampaignsManager({
       try {
         const parsed = JSON.parse(newMediaUrls);
         if (!Array.isArray(parsed)) {
-          setError(t('marketing.mediaGroupMustBeArray') || 'Media group must be a JSON array');
+          setError(t('marketing.mediaGroupMustBeArray'));
           return;
         }
       } catch (e) {
-        setError(t('marketing.invalidJson') || 'Invalid JSON format for media URLs');
+        setError(t('marketing.invalidJson'));
         return;
       }
     }
@@ -145,7 +145,7 @@ function CampaignsManager({
 
   async function handlePreview() {
     if (!newName || !newContent || !newSegmentId) {
-      setError(t('marketing.fillAllFields') || 'Fill all required fields');
+      setError(t('marketing.fillAllFields'));
       return;
     }
     try {
@@ -161,7 +161,7 @@ function CampaignsManager({
   }
 
   async function handleSend(id: number) {
-    if (!confirm(t('marketing.confirmSend') || 'Send campaign now?')) return;
+    if (!confirm(t('marketing.confirmSend'))) return;
     try {
       setError('');
       setBusyId(id);
@@ -201,7 +201,7 @@ function CampaignsManager({
   }
 
   async function handleCancel(id: number) {
-    if (!confirm('Cancel this campaign?')) return;
+    if (!confirm(t('marketingView.confirmCancel'))) return;
     try {
       setError('');
       setBusyId(id);
@@ -215,11 +215,11 @@ function CampaignsManager({
   }
 
   async function handleBudgetUpdate(id: number, currentValue?: number | null) {
-    const nextValue = prompt('Set budget limit for this campaign', currentValue?.toString() ?? '');
+    const nextValue = prompt(t('marketingView.setBudgetPrompt'), currentValue?.toString() ?? '');
     if (nextValue === null) return;
     const normalized = nextValue.trim() ? Number(nextValue) : null;
     if (normalized !== null && Number.isNaN(normalized)) {
-      setError('Budget must be a number');
+      setError(t('marketingView.budgetMustBeNumber'));
       return;
     }
     try {
@@ -255,16 +255,16 @@ function CampaignsManager({
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
-            {t('marketingView.type')}
-          </label>
+              {t('marketingView.type')}
+            </label>
             <select
               className="input w-full"
               value={newType}
               onChange={(e) => setNewType(e.target.value)}
             >
-              <option value="telegram">Telegram</option>
-              <option value="sms">SMS</option>
-              <option value="push">Push</option>
+              <option value="telegram">{t('marketingView.channelTelegram')}</option>
+              <option value="sms">{t('marketingView.channelSms')}</option>
+              <option value="push">{t('marketingView.channelPush')}</option>
             </select>
           </div>
 
@@ -353,7 +353,9 @@ function CampaignsManager({
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {newContentType === 'text' ? t('marketingView.messageText') : t('marketingView.altText')}
+              {newContentType === 'text'
+                ? t('marketingView.messageText')
+                : t('marketingView.altText')}
             </label>
             <textarea
               className="input w-full h-24"
@@ -364,7 +366,7 @@ function CampaignsManager({
           </div>
 
           {preview ? (
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 grid gap-3">
+            <div className="marketing-preview-panel rounded-xl border border-gray-200 bg-gray-50 p-4 grid gap-3">
               <div className="flex items-center justify-between">
                 <h4 className="font-semibold text-sm">{t('marketingView.previewTitle')}</h4>
                 <span className="text-xs text-gray-500">
@@ -376,14 +378,16 @@ function CampaignsManager({
                   preview.rendered_messages.map((item) => (
                     <div
                       key={item.customer_id}
-                      className="rounded-lg bg-white border border-gray-200 p-3"
+                      className="marketing-preview-item rounded-lg bg-white border border-gray-200 p-3"
                     >
                       <div className="text-xs text-gray-500 mb-1">{item.customer_name}</div>
                       <div className="text-sm whitespace-pre-wrap">{item.message}</div>
                     </div>
                   ))
                 ) : (
-                  <div className="text-sm text-gray-500">{t('marketingView.noPreviewRecipients')}</div>
+                  <div className="text-sm text-gray-500">
+                    {t('marketingView.noPreviewRecipients')}
+                  </div>
                 )}
               </div>
             </div>
@@ -407,7 +411,7 @@ function CampaignsManager({
         </button>
       )}
 
-      <div className="card">
+      <div className="marketing-campaigns-table card">
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b">
@@ -422,22 +426,27 @@ function CampaignsManager({
           </thead>
           <tbody>
             {campaigns.map((c) => (
-              <tr key={c.id} className="border-b last:border-0 hover:bg-gray-50">
+              <tr
+                key={c.id}
+                className="marketing-campaign-row border-b last:border-0 hover:bg-gray-50"
+              >
                 <td className="p-2 text-gray-500">#{c.id}</td>
                 <td className="p-2 font-medium">{c.name}</td>
                 <td className="p-2">
-                  <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">{c.type}</span>
+                  <span className="marketing-type-badge bg-gray-100 px-2 py-0.5 rounded text-xs">
+                    {c.type}
+                  </span>
                 </td>
                 <td className="p-2">
                   <span
-                    className={`px-2 py-0.5 rounded text-xs ${
+                    className={`marketing-status-badge px-2 py-0.5 rounded text-xs ${
                       c.status === 'completed'
-                        ? 'bg-green-100 text-green-700'
+                        ? 'marketing-status-badge-completed bg-green-100 text-green-700'
                         : c.status === 'scheduled' || c.status === 'active'
-                          ? 'bg-blue-100 text-blue-700'
+                          ? 'marketing-status-badge-active bg-blue-100 text-blue-700'
                           : c.status === 'paused'
-                            ? 'bg-orange-100 text-orange-700'
-                            : 'bg-yellow-100 text-yellow-700'
+                            ? 'marketing-status-badge-paused bg-orange-100 text-orange-700'
+                            : 'marketing-status-badge-draft bg-yellow-100 text-yellow-700'
                     }`}
                   >
                     {c.status}
@@ -453,46 +462,46 @@ function CampaignsManager({
                       c.status === 'scheduled' ||
                       c.status === 'paused') && (
                       <button
-                        className="text-blue-600 hover:underline"
+                        className="marketing-action-btn marketing-action-btn-send text-blue-600 hover:underline"
                         onClick={() => handleSend(c.id)}
                         disabled={busyId === c.id}
                       >
-                        Send
+                        {t('marketingView.send')}
                       </button>
                     )}
                     {(c.status === 'scheduled' || c.status === 'active') && (
                       <button
-                        className="text-orange-600 hover:underline"
+                        className="marketing-action-btn marketing-action-btn-pause text-orange-600 hover:underline"
                         onClick={() => handlePause(c.id)}
                         disabled={busyId === c.id}
                       >
-                        Pause
+                        {t('marketingView.pause')}
                       </button>
                     )}
                     {c.status === 'paused' && (
                       <button
-                        className="text-emerald-600 hover:underline"
+                        className="marketing-action-btn marketing-action-btn-resume text-emerald-600 hover:underline"
                         onClick={() => handleResume(c.id)}
                         disabled={busyId === c.id}
                       >
-                        Resume
+                        {t('marketingView.resume')}
                       </button>
                     )}
                     {['draft', 'scheduled', 'active', 'paused'].includes(c.status) && (
                       <button
-                        className="text-red-600 hover:underline"
+                        className="marketing-action-btn marketing-action-btn-cancel text-red-600 hover:underline"
                         onClick={() => handleCancel(c.id)}
                         disabled={busyId === c.id}
                       >
-                        Cancel
+                        {t('marketingView.cancelCampaign')}
                       </button>
                     )}
                     <button
-                      className="text-gray-700 hover:underline"
+                      className="marketing-action-btn marketing-action-btn-budget text-gray-700 hover:underline"
                       onClick={() => handleBudgetUpdate(c.id, c.budget_limit)}
                       disabled={busyId === c.id}
                     >
-                      Budget
+                      {t('marketingView.budgetAction')}
                     </button>
                   </div>
                 </td>
@@ -723,7 +732,9 @@ function SegmentsManager({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-gray-500">{t('marketingView.ageFrom')}</label>
+                  <label className="block text-xs text-gray-500">
+                    {t('marketingView.ageFrom')}
+                  </label>
                   <input
                     className="input w-full"
                     type="number"
@@ -745,7 +756,9 @@ function SegmentsManager({
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500">{t('marketingView.preferences')}</label>
+                <label className="block text-xs text-gray-500">
+                  {t('marketingView.preferences')}
+                </label>
                 <div className="grid grid-cols-3 gap-2 mt-1">
                   {['coffee', 'tea', 'pastries', 'breakfast', 'lunch'].map((preference) => (
                     <label key={preference} className="flex items-center gap-2 text-sm">
@@ -971,7 +984,9 @@ function TriggersManager({
                   <option value="customer.birthday">{t('marketingView.eventBirthday')}</option>
                   <option value="customer.inactive">{t('marketingView.eventInactive')}</option>
                   <option value="customer.welcome">{t('marketingView.eventWelcome')}</option>
-                  <option value="points.expiration">{t('marketingView.eventPointsExpiration')}</option>
+                  <option value="points.expiration">
+                    {t('marketingView.eventPointsExpiration')}
+                  </option>
                 </select>
               </div>
               <div>
@@ -996,7 +1011,9 @@ function TriggersManager({
               {eventSource === 'pos.sale' && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-600">{t('marketingView.orderAmountMin')}</span>
+                    <span className="text-sm text-gray-600">
+                      {t('marketingView.orderAmountMin')}
+                    </span>
                     <input
                       className="input w-32"
                       type="number"
@@ -1009,7 +1026,9 @@ function TriggersManager({
                     </span>
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">{t('marketingView.purchaseCategory')}</label>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      {t('marketingView.purchaseCategory')}
+                    </label>
                     <select
                       className="input w-full"
                       value={purchaseCategory}
@@ -1166,12 +1185,16 @@ function TriggersManager({
                     ? JSON.stringify(trigger.criteria_json)
                     : t('marketingView.noConditions')}
                 </td>
-                <td className="p-2">{trigger.delay_hours} {t('marketingView.hoursSuffix')}</td>
+                <td className="p-2">
+                  {trigger.delay_hours} {t('marketingView.hoursSuffix')}
+                </td>
                 <td className="p-2">
                   <span
                     className={`px-2 py-0.5 rounded text-xs ${trigger.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
                   >
-                    {trigger.active ? t('marketingView.triggerActive') : t('marketingView.triggerInactive')}
+                    {trigger.active
+                      ? t('marketingView.triggerActive')
+                      : t('marketingView.triggerInactive')}
                   </span>
                 </td>
               </tr>

@@ -4,16 +4,16 @@ import * as path from 'path';
 
 // Import i18n utilities
 import {
-    Auth,
-    Clients,
-    Common,
-    Dashboard,
-    Marketing,
-    Menu,
-    Products,
-    Sales,
-    setTestLanguage,
-    t,
+  Auth,
+  Clients,
+  Common,
+  Dashboard,
+  Marketing,
+  Menu,
+  Products,
+  Sales,
+  setTestLanguage,
+  t,
 } from './i18n-test';
 
 export { Auth, Clients, Common, Dashboard, Marketing, Menu, Products, Sales, t };

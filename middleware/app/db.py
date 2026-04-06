@@ -860,18 +860,23 @@ def init_db() -> None:
             conn.commit()
 
         # Migration: create tenant_configs table for UI theming
-        tables = [r[0] for r in conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table'"
-        ).fetchall()]
+        tables = [
+            r[0]
+            for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        ]
         if "tenant_configs" not in tables:
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE tenant_configs (
                     tenant_id TEXT PRIMARY KEY,
                     config TEXT NOT NULL DEFAULT '{}',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """)
+            """
+            )
             conn.execute(
                 "INSERT INTO tenant_configs (tenant_id, config) VALUES ('default', '{}')"
             )

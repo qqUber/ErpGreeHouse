@@ -48,7 +48,9 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
         setResult(null);
         setError(null);
       } else {
-        setError(t('products.import.errors.unsupportedFormat') || 'Поддерживаются только файлы CSV и XLSX');
+        setError(
+          t('products.import.errors.unsupportedFormat') || 'Поддерживаются только файлы CSV и XLSX'
+        );
       }
     }
   }, []);
@@ -186,19 +188,13 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
             </button>
           </div>
 
-          {error && (
-            <div className="product-import-alert product-import-alert-error">
-              {error}
-            </div>
-          )}
+          {error && <div className="product-import-alert product-import-alert-error">{error}</div>}
 
           {result && (
             <div
               className={`product-import-result ${result.errors.length > 0 ? 'product-import-result-warning' : 'product-import-result-success'}`}
             >
-              <div className="product-import-result-title">
-                {t('productImport.result.title')}
-              </div>
+              <div className="product-import-result-title">{t('productImport.result.title')}</div>
               <div className="product-import-stats">
                 <div>
                   {t('productImport.result.total')} <strong>{result.total}</strong>
@@ -229,7 +225,11 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                         </li>
                       ))}
                       {result.errors.length > 10 && (
-                        <li>{t('productImport.result.moreErrors', { count: result.errors.length - 10 })}</li>
+                        <li>
+                          {t('productImport.result.moreErrors', {
+                            count: result.errors.length - 10,
+                          })}
+                        </li>
                       )}
                     </ul>
                   </details>
@@ -264,10 +264,7 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                 </div>
               )}
 
-              <button
-                className="btn product-import-btn-margin"
-                onClick={handleReset}
-              >
+              <button className="btn product-import-btn-margin" onClick={handleReset}>
                 {t('productImport.buttons.importMore')}
               </button>
             </div>
@@ -288,21 +285,15 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                   >
                     {file ? (
                       <div>
-                        <div className="product-import-icon">
-                          📄
-                        </div>
-                        <div className="product-import-file-name">
-                          {file.name}
-                        </div>
+                        <div className="product-import-icon">📄</div>
+                        <div className="product-import-file-name">{file.name}</div>
                         <div className="product-import-file-size">
                           {(file.size / 1024).toFixed(1)} KB
                         </div>
                       </div>
                     ) : (
                       <div>
-                        <div className="product-import-icon">
-                          📁
-                        </div>
+                        <div className="product-import-icon">📁</div>
                         <div className="product-import-text">
                           {t('productImport.dropzone.dropText')}
                         </div>
@@ -323,7 +314,9 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                   {file && !preview && (
                     <div className="product-import-margin-top">
                       <button className="btn" onClick={handlePreview} disabled={busy}>
-                        {busy ? t('productImport.buttons.loading') : t('productImport.buttons.preview')}
+                        {busy
+                          ? t('productImport.buttons.loading')
+                          : t('productImport.buttons.preview')}
                       </button>
                     </div>
                   )}
@@ -364,7 +357,9 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                       onClick={handleImportFile}
                       disabled={!file || busy}
                     >
-                      {busy ? t('productImport.buttons.importing') : t('productImport.buttons.import')}
+                      {busy
+                        ? t('productImport.buttons.importing')
+                        : t('productImport.buttons.import')}
                     </button>
                     {file && (
                       <button className="btn" onClick={handleReset} disabled={busy}>
@@ -379,9 +374,7 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
               {activeTab === 'url' && (
                 <div>
                   <div className="product-import-form-group">
-                    <label className="product-import-label">
-                      {t('productImport.url.label')}
-                    </label>
+                    <label className="product-import-label">{t('productImport.url.label')}</label>
                     <input
                       className="input"
                       value={url}
@@ -422,7 +415,9 @@ export function ProductImport({ onImportComplete, onClose }: ProductImportProps)
                       onClick={handleImportUrl}
                       disabled={!url.trim() || busy}
                     >
-                      {busy ? t('productImport.buttons.importing') : t('productImport.buttons.import')}
+                      {busy
+                        ? t('productImport.buttons.importing')
+                        : t('productImport.buttons.import')}
                     </button>
                   </div>
                 </div>

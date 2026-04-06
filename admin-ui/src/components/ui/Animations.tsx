@@ -30,7 +30,13 @@ interface SlideInProps {
   className?: string;
 }
 
-export function SlideIn({ children, direction = 'up', delay = 0, duration = 0.3, className }: SlideInProps) {
+export function SlideIn({
+  children,
+  direction = 'up',
+  delay = 0,
+  duration = 0.3,
+  className,
+}: SlideInProps) {
   const directions = {
     left: { x: -20, y: 0 },
     right: { x: 20, y: 0 },
@@ -78,7 +84,11 @@ interface StaggerContainerProps {
   className?: string;
 }
 
-export function StaggerContainer({ children, staggerDelay = 0.1, className }: StaggerContainerProps) {
+export function StaggerContainer({
+  children,
+  staggerDelay = 0.1,
+  className,
+}: StaggerContainerProps) {
   return (
     <motion.div
       initial="hidden"
@@ -139,7 +149,12 @@ interface SkeletonProps {
   className?: string;
 }
 
-export function Skeleton({ width = '100%', height = '1rem', circle = false, className }: SkeletonProps) {
+export function Skeleton({
+  width = '100%',
+  height = '1rem',
+  circle = false,
+  className,
+}: SkeletonProps) {
   return (
     <motion.div
       className={`skeleton ${className || ''}`}

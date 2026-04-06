@@ -62,7 +62,9 @@ export function Widget({
             data-testid="widget-toggle-button"
             aria-label={isExpanded ? t('widgets.hideDetails') : t('widgets.showDetails')}
           >
-            <span className="widget-toggle-label">{isExpanded ? t('common.close') : t('widgets.details')}</span>
+            <span className="widget-toggle-label">
+              {isExpanded ? t('common.close') : t('widgets.details')}
+            </span>
             <svg
               className={`arrow-icon ${isExpanded ? 'rotated' : ''}`}
               width="12"
@@ -104,6 +106,7 @@ export function Widget({
             direction="right"
             size={drawerSize}
             className="widget-drawer"
+            style={{ background: 'var(--panel)', color: 'var(--text)' }}
             data-testid="widget-drawer"
           >
             <div className="drawer-content">

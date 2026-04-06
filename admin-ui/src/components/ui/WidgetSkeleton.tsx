@@ -5,10 +5,7 @@
 
 export function WidgetSkeleton({ type }: { type: string }) {
   return (
-    <div
-      className="widget-skeleton"
-      data-testid={`${type}-widget-skeleton`}
-    >
+    <div className="widget-skeleton" data-testid={`${type}-widget-skeleton`}>
       {/* Header skeleton */}
       <div className="widget-skeleton-header" />
 
@@ -43,7 +40,10 @@ export function SalesWidgetSkeleton() {
 
 export function CustomersWidgetSkeleton() {
   return (
-    <div className="widget-skeleton widget-skeleton-customers" data-testid="customers-widget-skeleton">
+    <div
+      className="widget-skeleton widget-skeleton-customers"
+      data-testid="customers-widget-skeleton"
+    >
       <div className="widget-skeleton-title" />
       <div className="widget-skeleton-cards">
         <div className="widget-skeleton-card" />
@@ -56,7 +56,10 @@ export function CustomersWidgetSkeleton() {
 
 export function ProductsWidgetSkeleton() {
   return (
-    <div className="widget-skeleton widget-skeleton-products" data-testid="products-widget-skeleton">
+    <div
+      className="widget-skeleton widget-skeleton-products"
+      data-testid="products-widget-skeleton"
+    >
       <div className="widget-skeleton-title" />
       <div className="widget-skeleton-grid">
         <div className="widget-skeleton-grid-item" />

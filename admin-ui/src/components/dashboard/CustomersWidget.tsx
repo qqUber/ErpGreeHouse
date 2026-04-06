@@ -151,7 +151,7 @@ export function CustomersWidget({ data }: { data?: any }) {
           {!hasTelegram && !hasVk && (
             <span
               className="badge-2026"
-              style={{ background: 'rgba(100,116,139,0.1)', color: '#64748b' }}
+              style={{ background: 'var(--brand-light)', color: 'var(--muted)' }}
             >
               {t('widgets.customers.noChannel')}
             </span>

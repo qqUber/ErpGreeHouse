@@ -5,40 +5,40 @@
 
 import { api, fetchWithAuth } from './client';
 import type {
-    AdminMe,
-    CategoryDistribution,
-    ChartData,
-    ConsentRecord,
-    CreateSaleRequest,
-    CreateSaleResponse,
-    CustomerDetails,
-    CustomerListItem,
-    CustomerSegmentation,
-    DashboardOverview,
-    DashboardPreferences,
-    DevCreateSaleResult,
-    FeatureFlags,
-    ImportPreview,
-    ImportResult,
-    Integration,
-    IntegrationDelivery,
-    IntegrationTemplate,
-    LoyaltyDetailedReport,
-    LoyaltyReportOverview,
-    MarketingCampaign,
-    MarketingCampaignPreview,
-    MarketingSegment,
-    MarketingTrigger,
-    PaginationInfo,
-    Product,
-    RecalculateAnalytics,
-    RolePermissions,
-    SalesByDay,
-    SalesStats,
-    ThemeConfig,
-    TopProduct,
-    TransactionItem,
-    UserPreferences
+  AdminMe,
+  CategoryDistribution,
+  ChartData,
+  ConsentRecord,
+  CreateSaleRequest,
+  CreateSaleResponse,
+  CustomerDetails,
+  CustomerListItem,
+  CustomerSegmentation,
+  DashboardOverview,
+  DashboardPreferences,
+  DevCreateSaleResult,
+  FeatureFlags,
+  ImportPreview,
+  ImportResult,
+  Integration,
+  IntegrationDelivery,
+  IntegrationTemplate,
+  LoyaltyDetailedReport,
+  LoyaltyReportOverview,
+  MarketingCampaign,
+  MarketingCampaignPreview,
+  MarketingSegment,
+  MarketingTrigger,
+  PaginationInfo,
+  Product,
+  RecalculateAnalytics,
+  RolePermissions,
+  SalesByDay,
+  SalesStats,
+  ThemeConfig,
+  TopProduct,
+  TransactionItem,
+  UserPreferences,
 } from './types';
 
 // Auth API
@@ -179,10 +179,7 @@ export const integrationsApi = {
   create: (payload: { name: string; kind: string; enabled: boolean; config: any }) =>
     api<{ id: number }>('/api/v1/integrations', { method: 'POST', body: JSON.stringify(payload) }),
 
-  update: (
-    id: number,
-    payload: { name: string; kind: string; enabled: boolean; config: any }
-  ) =>
+  update: (id: number, payload: { name: string; kind: string; enabled: boolean; config: any }) =>
     api<{ updated: boolean }>(`/api/v1/integrations/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
@@ -218,13 +215,8 @@ export const productsApi = {
     );
   },
 
-  create: (payload: {
-    code: string;
-    name: string;
-    kind: string;
-    price: number;
-    active: boolean;
-  }) => api<{ id: number }>('/api/v1/products', { method: 'POST', body: JSON.stringify(payload) }),
+  create: (payload: { code: string; name: string; kind: string; price: number; active: boolean }) =>
+    api<{ id: number }>('/api/v1/products', { method: 'POST', body: JSON.stringify(payload) }),
 
   importFromFile: (file: File) => {
     const formData = new FormData();
@@ -358,8 +350,7 @@ export const marketingApi = {
 
 // Analytics API
 export const analyticsApi = {
-  salesByDay: (days: number = 30) =>
-    api<SalesByDay>(`/api/v1/analytics/sales-by-day?days=${days}`),
+  salesByDay: (days: number = 30) => api<SalesByDay>(`/api/v1/analytics/sales-by-day?days=${days}`),
 
   topProducts: (days: number = 30, limit: number = 10) =>
     api<TopProduct>(`/api/v1/analytics/top-products?days=${days}&limit=${limit}`),
@@ -367,8 +358,7 @@ export const analyticsApi = {
   categoryDistribution: (days: number = 30) =>
     api<CategoryDistribution>(`/api/v1/analytics/category-distribution?days=${days}`),
 
-  recalculate: () =>
-    api<RecalculateAnalytics>('/api/v1/analytics/recalculate', { method: 'POST' }),
+  recalculate: () => api<RecalculateAnalytics>('/api/v1/analytics/recalculate', { method: 'POST' }),
 
   dashboard: {
     overview: (timeRange: string = '7d') =>
@@ -387,8 +377,7 @@ export const analyticsApi = {
       ),
   },
 
-  customerSegmentation: () =>
-    api<CustomerSegmentation>('/api/v1/analytics/customers/segmentation'),
+  customerSegmentation: () => api<CustomerSegmentation>('/api/v1/analytics/customers/segmentation'),
 
   reports: {
     loyaltyOverview: (timeRange: string = '30d') =>
@@ -436,10 +425,8 @@ export const dashboardApi = {
     api<import('../hooks/useDashboard').OperationalData>('/api/v1/dashboard/operational'),
   marketing: () =>
     api<import('../hooks/useDashboard').MarketingData>('/api/v1/dashboard/marketing'),
-  customers: () =>
-    api<import('../hooks/useDashboard').CustomerData>('/api/v1/dashboard/customers'),
-  products: () =>
-    api<import('../hooks/useDashboard').ProductData>('/api/v1/dashboard/products'),
+  customers: () => api<import('../hooks/useDashboard').CustomerData>('/api/v1/dashboard/customers'),
+  products: () => api<import('../hooks/useDashboard').ProductData>('/api/v1/dashboard/products'),
   integrations: () =>
     api<import('../hooks/useDashboard').IntegrationData>('/api/v1/dashboard/integrations'),
   home: () =>

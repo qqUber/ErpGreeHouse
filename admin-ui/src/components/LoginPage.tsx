@@ -46,45 +46,45 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-4xl">
+    <div className="login-page min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="login-card bg-white p-8 rounded-xl shadow-2xl w-full max-w-4xl">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">ERP Greenhouse</h1>
-          <p className="text-gray-600">Панель управления для вашего бизнеса</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('app.brand')}</h1>
+          <p className="text-gray-600">{t('app.controlPanel')}</p>
         </div>
 
         {/* Login Mode Tabs */}
         <div className="flex justify-center mb-8">
-          <div className="inline-flex bg-gray-100 p-1 rounded-lg">
+          <div className="login-tabs inline-flex bg-gray-100 p-1 rounded-lg">
             <button
               onClick={() => setLoginMode('password')}
-              className={`px-6 py-2 rounded-md font-medium transition-all ${
+              className={`login-tab-btn px-6 py-2 rounded-md font-medium transition-all ${
                 loginMode === 'password'
-                  ? 'bg-white text-blue-600 shadow-sm'
+                  ? 'login-tab-btn-active bg-white text-blue-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              По паролю
+              {t('auth.byPassword')}
             </button>
             <button
               onClick={() => setLoginMode('key')}
-              className={`px-6 py-2 rounded-md font-medium transition-all ${
+              className={`login-tab-btn px-6 py-2 rounded-md font-medium transition-all ${
                 loginMode === 'key'
-                  ? 'bg-white text-blue-600 shadow-sm'
+                  ? 'login-tab-btn-active bg-white text-blue-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              По ключу
+              {t('auth.byKey')}
             </button>
             <button
               onClick={() => setLoginMode('recover')}
-              className={`px-6 py-2 rounded-md font-medium transition-all ${
+              className={`login-tab-btn px-6 py-2 rounded-md font-medium transition-all ${
                 loginMode === 'recover'
-                  ? 'bg-white text-blue-600 shadow-sm'
+                  ? 'login-tab-btn-active bg-white text-blue-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Восстановление
+              {t('auth.recovery')}
             </button>
           </div>
         </div>
@@ -94,27 +94,29 @@ export function LoginPage() {
           <form onSubmit={handlePasswordLogin} className="max-w-md mx-auto">
             <div className="mb-6">
               <label className="block text-gray-700 text-sm font-semibold mb-2">
-                Имя пользователя
+                {t('auth.username')}
               </label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="admin"
+                className="login-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder={t('auth.loginPlaceholder')}
                 required
               />
             </div>
 
             <div className="mb-6">
-              <label className="block text-gray-700 text-sm font-semibold mb-2">Пароль</label>
+              <label className="block text-gray-700 text-sm font-semibold mb-2">
+                {t('auth.password')}
+              </label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="Введите пароль"
+                  className="login-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  placeholder={t('auth.passwordPlaceholder')}
                   required
                 />
                 <button
@@ -122,7 +124,7 @@ export function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-600 hover:text-gray-900"
                 >
-                  {showPassword ? 'Скрыть' : 'Показать'}
+                  {showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                 </button>
               </div>
             </div>
@@ -138,7 +140,7 @@ export function LoginPage() {
               disabled={loading}
               className="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              {loading ? 'Вход...' : 'Войти'}
+              {loading ? t('auth.loggingIn') : t('auth.loginButton')}
             </button>
           </form>
         )}
@@ -154,8 +156,8 @@ export function LoginPage() {
                 type="text"
                 value={adminKey}
                 onChange={(e) => setAdminKey(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="Введите ключ доступа"
+                className="login-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder={t('auth.accessSettings')}
                 required
               />
             </div>
@@ -165,7 +167,7 @@ export function LoginPage() {
               disabled={loading}
               className="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              {loading ? 'Вход...' : 'Войти'}
+              {loading ? t('auth.loggingIn') : t('auth.loginButton')}
             </button>
           </form>
         )}
@@ -175,27 +177,29 @@ export function LoginPage() {
           <form onSubmit={handleRecovery} className="max-w-md mx-auto">
             <div className="mb-6">
               <label className="block text-gray-700 text-sm font-semibold mb-2">
-                Имя пользователя
+                {t('auth.username')}
               </label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="admin"
+                className="login-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder={t('auth.loginPlaceholder')}
                 required
               />
             </div>
 
             <div className="mb-6">
-              <label className="block text-gray-700 text-sm font-semibold mb-2">Новый пароль</label>
+              <label className="block text-gray-700 text-sm font-semibold mb-2">
+                {t('auth.newPassword')}
+              </label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="Новый пароль"
+                  className="login-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  placeholder={t('auth.newPasswordPlaceholder')}
                   required
                 />
                 <button
@@ -203,21 +207,21 @@ export function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-600 hover:text-gray-900"
                 >
-                  {showPassword ? 'Скрыть' : 'Показать'}
+                  {showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                 </button>
               </div>
             </div>
 
             <div className="mb-6">
               <label className="block text-gray-700 text-sm font-semibold mb-2">
-                Код восстановления
+                {t('auth.recoveryCode')}
               </label>
               <input
                 type="text"
                 value={recoverySecret}
                 onChange={(e) => setRecoverySecret(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="Введите код восстановления"
+                className="login-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder={t('auth.recoveryCode')}
                 required
               />
             </div>
@@ -227,7 +231,7 @@ export function LoginPage() {
               disabled={loading}
               className="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              {loading ? 'Восстановление...' : 'Сбросить пароль'}
+              {loading ? t('common.loading') : t('auth.resetPassword')}
             </button>
           </form>
         )}

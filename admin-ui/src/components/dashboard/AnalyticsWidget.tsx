@@ -67,7 +67,7 @@ export function AnalyticsWidget({ data }: { data?: MarketingAnalyticsData }) {
               <div
                 className="kpi-value-2026"
                 style={{
-                  background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                  background: 'var(--gradient-success)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                 }}
@@ -88,7 +88,7 @@ export function AnalyticsWidget({ data }: { data?: MarketingAnalyticsData }) {
               <div
                 className="kpi-value-2026"
                 style={{
-                  background: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)',
+                  background: 'var(--gradient-warning)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                 }}
@@ -103,7 +103,7 @@ export function AnalyticsWidget({ data }: { data?: MarketingAnalyticsData }) {
               <div
                 className="kpi-value-2026"
                 style={{
-                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                  background: 'var(--gradient-cool)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                 }}
@@ -156,26 +156,26 @@ export function AnalyticsWidget({ data }: { data?: MarketingAnalyticsData }) {
           <h4 className="section-title-2026">Campaign activity</h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="kpi-card-2026">
-              <div className="text-2xl font-bold text-gray-800">{activeCampaigns}</div>
-              <div className="text-xs text-gray-500 uppercase tracking-wide">Active</div>
+              <div className="text-2xl font-bold text-gray-900">{activeCampaigns}</div>
+              <div className="text-xs text-gray-600 uppercase tracking-wide">Active</div>
             </div>
             <div className="kpi-card-2026">
-              <div className="text-2xl font-bold text-gray-800">
+              <div className="text-2xl font-bold text-gray-900">
                 {Number(campaigns.upcoming_campaigns || 0)}
               </div>
-              <div className="text-xs text-gray-500 uppercase tracking-wide">Upcoming</div>
+              <div className="text-xs text-gray-600 uppercase tracking-wide">Upcoming</div>
             </div>
             <div className="kpi-card-2026">
-              <div className="text-2xl font-bold text-gray-800">
+              <div className="text-2xl font-bold text-gray-900">
                 {Number(campaigns.messages_sent_24h || 0)}
               </div>
-              <div className="text-xs text-gray-500 uppercase tracking-wide">Messages/24h</div>
+              <div className="text-xs text-gray-600 uppercase tracking-wide">Messages/24h</div>
             </div>
             <div className="kpi-card-2026">
-              <div className="text-2xl font-bold text-gray-800">
+              <div className="text-2xl font-bold text-gray-900">
                 {Number(campaigns.open_rate || 0)}%
               </div>
-              <div className="text-xs text-gray-500 uppercase tracking-wide">Open Rate</div>
+              <div className="text-xs text-gray-600 uppercase tracking-wide">Open Rate</div>
             </div>
           </div>
         </section>

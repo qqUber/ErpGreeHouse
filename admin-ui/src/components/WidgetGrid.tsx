@@ -87,7 +87,9 @@ export function WidgetGrid({ role, widgets, onLayoutChange, data }: WidgetGridPr
       className="layout dashboard-grid"
       layouts={{ lg: initialLayout.length > 0 ? initialLayout : defaultLayout }}
       breakpoints={{ '4k': 3840, xxl: 2560, lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-      cols={{ '4k': 24, xxl: 18, lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 } as { [key: string]: number }}
+      cols={
+        { '4k': 24, xxl: 18, lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 } as { [key: string]: number }
+      }
       rowHeight={rowHeight}
       margin={margin}
       containerPadding={containerPadding}

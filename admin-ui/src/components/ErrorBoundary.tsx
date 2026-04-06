@@ -28,9 +28,9 @@ interface ErrorBoundaryState {
 function ErrorFallback({ error, onRetry }: { error: Error | null; onRetry: () => void }) {
   const { t } = useTranslation();
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+    <div className="error-fallback min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="error-fallback-card bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <div className="error-fallback-icon flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
           <svg
             className="w-6 h-6 text-red-600"
             fill="none"
@@ -50,31 +50,27 @@ function ErrorFallback({ error, onRetry }: { error: Error | null; onRetry: () =>
           {t('errors.boundaryTitle')}
         </h2>
 
-        <p className="text-gray-600 text-center mb-6">
-          {t('errors.boundaryDescription')}
-        </p>
+        <p className="text-gray-600 text-center mb-6">{t('errors.boundaryDescription')}</p>
 
         {error && (
           <details className="mb-4 p-3 bg-gray-50 rounded text-sm">
             <summary className="cursor-pointer text-gray-500 font-medium">
               {t('errors.boundaryDetails')}
             </summary>
-            <pre className="mt-2 text-xs text-red-600 overflow-auto max-h-32">
-              {error.message}
-            </pre>
+            <pre className="mt-2 text-xs text-red-600 overflow-auto max-h-32">{error.message}</pre>
           </details>
         )}
 
-        <div className="flex gap-3">
+        <div className="error-fallback-actions flex gap-3">
           <button
             onClick={onRetry}
-            className="flex-1 bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600 transition-colors"
+            className="error-fallback-btn error-fallback-btn-primary flex-1 bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600 transition-colors"
           >
             {t('errors.boundaryRetry')}
           </button>
           <button
             onClick={() => window.location.reload()}
-            className="flex-1 bg-gray-500 text-white font-bold py-2 px-4 rounded hover:bg-gray-600 transition-colors"
+            className="error-fallback-btn error-fallback-btn-secondary flex-1 bg-gray-500 text-white font-bold py-2 px-4 rounded hover:bg-gray-600 transition-colors"
           >
             {t('errors.boundaryReload')}
           </button>
@@ -117,12 +113,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         return this.props.fallback;
       }
 
-      return (
-        <ErrorFallback
-          error={this.state.error}
-          onRetry={this.handleRetry}
-        />
-      );
+      return <ErrorFallback error={this.state.error} onRetry={this.handleRetry} />;
     }
 
     return this.props.children;

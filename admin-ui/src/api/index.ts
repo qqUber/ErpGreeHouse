@@ -1,9 +1,9 @@
 /**
  * API Module Barrel Export
- * 
+ *
  * This is the main entry point for the API module.
  * All imports should come from this file for consistency.
- * 
+ *
  * @example
  * import { api, Api, customersApi, authApi } from './api';
  * import type { Customer, Product } from './api/types';
@@ -11,68 +11,68 @@
 
 // Core client exports
 export {
-  api,
-  fetchWithAuth,
-  baseUrl,
-  getAdminSecret,
-  setAdminSecret,
-  injectAuthHeaders,
-  clearPendingRequests,
   abortRequest,
+  api,
+  baseUrl,
+  clearPendingRequests,
+  fetchWithAuth,
+  getAdminSecret,
+  injectAuthHeaders,
+  setAdminSecret,
 } from './client';
 
 // Domain-specific API exports
 export {
-  authApi,
-  customersApi,
-  salesApi,
-  integrationsApi,
-  productsApi,
-  permissionsApi,
-  marketingApi,
-  analyticsApi,
-  configApi,
-  dashboardApi,
-  complianceApi,
   Api,
+  analyticsApi,
+  authApi,
+  complianceApi,
+  configApi,
+  customersApi,
+  dashboardApi,
+  integrationsApi,
+  marketingApi,
+  permissionsApi,
+  productsApi,
+  salesApi,
 } from './endpoints';
 
 // Type exports
 export type {
-  SalesStats,
-  SalesByDay,
-  TopProduct,
+  AdminMe,
   CategoryDistribution,
-  RecalculateAnalytics,
-  DashboardOverview,
   ChartData,
-  LoyaltyReportOverview,
-  LoyaltyDetailedReport,
-  CustomerSegmentation,
-  CustomerListItem,
-  PaginationInfo,
-  TransactionItem,
+  ConsentRecord,
+  CreateSaleRequest,
+  CreateSaleResponse,
   CustomerDetails,
+  CustomerListItem,
+  CustomerSegmentation,
+  DashboardOverview,
+  DashboardPreferences,
+  DevCreateSaleResult,
+  FeatureFlags,
+  ImportPreview,
+  ImportResult,
   Integration,
   IntegrationDelivery,
   IntegrationTemplate,
-  DevCreateSaleResult,
-  SaleItem,
-  CreateSaleRequest,
-  CreateSaleResponse,
-  Product,
-  ImportResult,
-  ImportPreview,
-  AdminMe,
-  PermissionItem,
-  RolePermissions,
-  MarketingSegment,
-  MarketingCampaignPreview,
+  LoyaltyDetailedReport,
+  LoyaltyReportOverview,
   MarketingCampaign,
+  MarketingCampaignPreview,
+  MarketingSegment,
   MarketingTrigger,
-  ConsentRecord,
+  PaginationInfo,
+  PermissionItem,
+  Product,
+  RecalculateAnalytics,
+  RolePermissions,
+  SaleItem,
+  SalesByDay,
+  SalesStats,
   ThemeConfig,
+  TopProduct,
+  TransactionItem,
   UserPreferences,
-  DashboardPreferences,
-  FeatureFlags,
 } from './types';

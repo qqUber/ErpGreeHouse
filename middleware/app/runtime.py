@@ -1,7 +1,11 @@
 import os
 import sys
 
-IS_TESTING = "pytest" in sys.modules or os.getenv("TESTING", "").lower() in ("1", "true", "yes")
+IS_TESTING = "pytest" in sys.modules or os.getenv("TESTING", "").lower() in (
+    "1",
+    "true",
+    "yes",
+)
 
 
 def is_debug() -> bool:

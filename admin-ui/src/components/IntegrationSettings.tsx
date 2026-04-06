@@ -606,11 +606,7 @@ export function IntegrationSettings() {
       {info && (
         <div className="card info-banner">
           <span>{info}</span>
-          <button
-            onClick={() => setInfo(null)}
-            className="info-banner-close"
-            aria-label="Close"
-          >
+          <button onClick={() => setInfo(null)} className="info-banner-close" aria-label="Close">
             ×
           </button>
         </div>
@@ -662,7 +658,11 @@ export function IntegrationSettings() {
             {getStatusBadge(telegramValidateStatus)}
             {telegramValidationResult && (
               <span
-                className={telegramValidationResult.valid ? 'integration-status-success' : 'integration-status-error'}
+                className={
+                  telegramValidationResult.valid
+                    ? 'integration-status-success'
+                    : 'integration-status-error'
+                }
               >
                 {telegramValidationResult.valid
                   ? `@${telegramValidationResult.bot_username} (ID: ${telegramValidationResult.bot_id})`
@@ -808,9 +808,7 @@ export function IntegrationSettings() {
                         const vars = definition?.availableVars || [];
                         if (vars.length === 0) return null;
                         return (
-                          <div className="vars-hint">
-                            Доступные переменные: {vars.join(', ')}
-                          </div>
+                          <div className="vars-hint">Доступные переменные: {vars.join(', ')}</div>
                         );
                       })()}
                     </div>
@@ -913,7 +911,10 @@ export function IntegrationSettings() {
                         selectedTelegramMenuItem.city_entries.map((entry, index) => {
                           const uploadKey = `${selectedTelegramMenuItem.id}:city:${index}`;
                           return (
-                            <div key={`${selectedTelegramMenuItem.id}-${index}`} className="city-entry">
+                            <div
+                              key={`${selectedTelegramMenuItem.id}-${index}`}
+                              className="city-entry"
+                            >
                               <div className="city-entry-row">
                                 <input
                                   className="input integration-input-full"
@@ -1121,7 +1122,13 @@ export function IntegrationSettings() {
             </button>
             {getStatusBadge(vkValidateStatus)}
             {vkValidationResult && (
-              <span className={vkValidationResult.valid ? 'integration-status-success' : 'integration-status-error'}>
+              <span
+                className={
+                  vkValidationResult.valid
+                    ? 'integration-status-success'
+                    : 'integration-status-error'
+                }
+              >
                 {vkValidationResult.valid
                   ? `${vkValidationResult.group_name} (ID: ${vkValidationResult.group_id})`
                   : vkValidationResult.error || 'Ошибка'}

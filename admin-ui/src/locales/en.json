@@ -1,6 +1,7 @@
 {
   "app": {
     "title": "ERP Greenhouse - Admin Panel",
+    "brand": "ERP Greenhouse",
     "controlPanel": "Control Panel"
   },
   "roles": {
@@ -315,7 +316,11 @@
     "triggerInactive": "💤 Customer Inactive",
     "triggerWelcome": "👋 Welcome Message",
     "triggerPointsExpiration": "⏰ Points Expiration",
-    "welcomeTriggerDesc": "Triggers for new customers within 24 hours after registration."
+    "welcomeTriggerDesc": "Triggers for new customers within 24 hours after registration.",
+    "fillAllFields": "Fill all required fields",
+    "mediaGroupMustBeArray": "Media group must be a JSON array",
+    "invalidJson": "Invalid JSON format for media URLs",
+    "confirmSend": "Send campaign now?"
   },
   "integrations": {
     "title": "Integrations",
@@ -668,11 +673,17 @@
   "widgets": {
     "showDetails": "Show Details",
     "hideDetails": "Hide Details",
+    "details": "Details",
     "detailsSuffix": "Details",
     "common": {
       "newThisWeek": "New This Week",
       "active": "Active",
-      "plusThisWeek": "+{{count}} this week"
+      "plusThisWeek": "+{{count}} this week",
+      "attention": "Need attention",
+      "reachable": "Reachable",
+      "consentRate": "Consent rate",
+      "trending": "Trending",
+      "lowStock": "Low stock"
     },
     "customers": {
       "title": "Customers",
@@ -773,6 +784,13 @@
       "summaryTitle": "Sales snapshot",
       "txSuffix": "tx"
     },
+    "loyaltyHealth": {
+      "title": "Loyalty Health",
+      "earned": "Points earned",
+      "redeemed": "Points redeemed",
+      "redemptionRate": "Redemption rate",
+      "avgOrder": "Average order"
+    },
     "attentionRequired": {
       "title": "Attention Required",
       "attention": "Attention",
@@ -806,6 +824,9 @@
     "campaignName": "Campaign Name",
     "campaignNamePlaceholder": "Enter campaign name",
     "type": "Type",
+    "channelTelegram": "Telegram",
+    "channelSms": "SMS",
+    "channelPush": "Push",
     "budgetLimit": "Budget Limit",
     "budgetPlaceholder": "e.g. 250",
     "segment": "Segment",
@@ -843,6 +864,7 @@
     "pause": "Pause",
     "resume": "Resume",
     "cancelCampaign": "Cancel",
+    "confirmCancel": "Cancel this campaign?",
     "budgetAction": "Budget",
     "setBudgetPrompt": "Set budget limit for this campaign",
     "budgetMustBeNumber": "Budget must be a number",

@@ -3,12 +3,12 @@ import { TFunction } from 'i18next';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Api,
-    ChartData,
-    CustomerSegmentation,
-    DashboardOverview,
-    LoyaltyDetailedReport,
-    LoyaltyReportOverview,
+  Api,
+  ChartData,
+  CustomerSegmentation,
+  DashboardOverview,
+  LoyaltyDetailedReport,
+  LoyaltyReportOverview,
 } from './api';
 
 // Factory function to create common chart configuration
@@ -172,15 +172,11 @@ export function AnalyticsView() {
       {/* Header */}
       <div className="analytics-header">
         <div>
-          <h1 className="analytics-title">
-            {t('analytics.dashboardTitle')}
-          </h1>
+          <h1 className="analytics-title">{t('analytics.dashboardTitle')}</h1>
           <p className="analytics-desc">{t('analytics.dashboardDesc')}</p>
         </div>
         <div className="analytics-controls">
-          <label className="analytics-label">
-            {t('analytics.timeRange')}:
-          </label>
+          <label className="analytics-label">{t('analytics.timeRange')}:</label>
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
@@ -194,37 +190,22 @@ export function AnalyticsView() {
           </select>
         </div>
         <div className="analytics-export-row">
-          <span className="analytics-export-label">
-            {t('analytics.export')}:
-          </span>
+          <span className="analytics-export-label">{t('analytics.export')}:</span>
           <div className="analytics-btn-group">
-            <button
-              onClick={() => handleExport('loyalty')}
-              className="analytics-btn-primary"
-            >
+            <button onClick={() => handleExport('loyalty')} className="analytics-btn-primary">
               {t('analytics.exportLoyalty')}
             </button>
-            <button
-              onClick={() => handleExport('sales')}
-              className="analytics-btn-success"
-            >
+            <button onClick={() => handleExport('sales')} className="analytics-btn-success">
               {t('analytics.exportSales')}
             </button>
-            <button
-              onClick={() => handleExport('customers')}
-              className="analytics-btn-info"
-            >
+            <button onClick={() => handleExport('customers')} className="analytics-btn-info">
               {t('analytics.exportCustomers')}
             </button>
           </div>
         </div>
       </div>
 
-      {exportError ? (
-        <div className="analytics-export-error">
-          {exportError}
-        </div>
-      ) : null}
+      {exportError ? <div className="analytics-export-error">{exportError}</div> : null}
 
       {/* Key Metrics Overview */}
       {overview && (
@@ -257,10 +238,7 @@ export function AnalyticsView() {
           ].map((metric, i) => (
             <div key={i} className="card dashboard-widget-2026 analytics-metric-card">
               <div className="analytics-metric-row">
-                <div
-                  className="analytics-metric-icon"
-                  style={{ background: metric.color }}
-                >
+                <div className="analytics-metric-icon" style={{ background: metric.color }}>
                   <span>{metric.icon}</span>
                 </div>
                 <div className="analytics-metric-content">
@@ -277,9 +255,7 @@ export function AnalyticsView() {
       <div className="analytics-charts-grid">
         {salesChart && (
           <div className="card dashboard-widget-2026 analytics-chart-card">
-            <h3 className="analytics-chart-title">
-              {t('analytics.salesDynamics')}
-            </h3>
+            <h3 className="analytics-chart-title">{t('analytics.salesDynamics')}</h3>
             <ReactECharts
               option={getSalesChartOption(salesChart.data, t)}
               className="analytics-chart"
@@ -289,9 +265,7 @@ export function AnalyticsView() {
         )}
         {customerChart && (
           <div className="card dashboard-widget-2026 analytics-chart-card">
-            <h3 className="analytics-chart-title">
-              {t('analytics.customerDynamics')}
-            </h3>
+            <h3 className="analytics-chart-title">{t('analytics.customerDynamics')}</h3>
             <ReactECharts
               option={getCustomersChartOption(customerChart.data, t)}
               className="analytics-chart"
@@ -305,38 +279,24 @@ export function AnalyticsView() {
       <div className="analytics-loyalty-grid">
         {loyaltyOverview && (
           <div className="card dashboard-widget-2026 analytics-loyalty-card">
-            <h3 className="analytics-loyalty-title">
-              {t('analytics.loyalty')}
-            </h3>
+            <h3 className="analytics-loyalty-title">{t('analytics.loyalty')}</h3>
             <div className="analytics-stats-grid">
               <div>
-                <p className="analytics-stat-label">
-                  {t('analytics.pointsEarned')}
-                </p>
-                <p className="analytics-stat-value">
-                  {loyaltyOverview.metrics.points_earned}
-                </p>
+                <p className="analytics-stat-label">{t('analytics.pointsEarned')}</p>
+                <p className="analytics-stat-value">{loyaltyOverview.metrics.points_earned}</p>
               </div>
               <div>
-                <p className="analytics-stat-label">
-                  {t('analytics.pointsRedeemed')}
-                </p>
-                <p className="analytics-stat-value">
-                  {loyaltyOverview.metrics.points_redeemed}
-                </p>
+                <p className="analytics-stat-label">{t('analytics.pointsRedeemed')}</p>
+                <p className="analytics-stat-value">{loyaltyOverview.metrics.points_redeemed}</p>
               </div>
               <div>
-                <p className="analytics-stat-label">
-                  {t('analytics.redemptionRate')}
-                </p>
+                <p className="analytics-stat-label">{t('analytics.redemptionRate')}</p>
                 <p className="analytics-stat-value">
                   {loyaltyOverview.metrics.redemption_rate.toFixed(1)}%
                 </p>
               </div>
               <div>
-                <p className="analytics-stat-label">
-                  {t('analytics.avgPointsPerTransaction')}
-                </p>
+                <p className="analytics-stat-label">{t('analytics.avgPointsPerTransaction')}</p>
                 <p className="analytics-stat-value">
                   {loyaltyOverview.metrics.avg_points_per_transaction.toFixed(1)}
                 </p>
@@ -346,9 +306,7 @@ export function AnalyticsView() {
         )}
         {loyaltyChart && (
           <div className="card dashboard-widget-2026 analytics-loyalty-card">
-            <h3 className="analytics-loyalty-title">
-              {t('analytics.loyaltyByDay')}
-            </h3>
+            <h3 className="analytics-loyalty-title">{t('analytics.loyaltyByDay')}</h3>
             <ReactECharts
               option={getLoyaltyChartOption(loyaltyChart.data, t)}
               className="analytics-chart"
@@ -360,18 +318,12 @@ export function AnalyticsView() {
 
       {/* Customer Segmentation */}
       {segmentation && (
-        <div
-          className="card dashboard-widget-2026 analytics-segmentation-card"
-        >
-          <h3 className="analytics-segmentation-title">
-            {t('analytics.customerSegmentation')}
-          </h3>
+        <div className="card dashboard-widget-2026 analytics-segmentation-card">
+          <h3 className="analytics-segmentation-title">{t('analytics.customerSegmentation')}</h3>
           <div className="analytics-segments-grid">
             {Object.entries(segmentation.segments).map(([segment, data]) => (
               <div key={segment} className="card analytics-segment-card">
-                <p className="analytics-segment-name">
-                  {getSegmentDisplayName(segment, t)}
-                </p>
+                <p className="analytics-segment-name">{getSegmentDisplayName(segment, t)}</p>
                 <p className="analytics-segment-count">{data.count}</p>
                 <p className="analytics-segment-percent">
                   {((data.count / segmentation.total_customers) * 100).toFixed(1)}%
@@ -385,9 +337,7 @@ export function AnalyticsView() {
       {/* Loyalty Details Table */}
       {loyaltyDetails && loyaltyDetails.customer_data.length > 0 && (
         <div className="card dashboard-widget-2026 analytics-loyalty-card">
-          <h3 className="analytics-loyalty-title">
-            {t('analytics.customerDetails')}
-          </h3>
+          <h3 className="analytics-loyalty-title">{t('analytics.customerDetails')}</h3>
           <div className="analytics-table-container">
             <table className="analytics-table">
               <thead>
@@ -401,41 +351,22 @@ export function AnalyticsView() {
                     t('analytics.redeemed'),
                     t('analytics.lastTransaction'),
                   ].map((h, i) => (
-                    <th key={i}>
-                      {h}
-                    </th>
+                    <th key={i}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {loyaltyDetails.customer_data.slice(0, 10).map((customer) => (
-                  <tr
-                    key={customer.customer_id}
-                    className="analytics-table-row"
-                  >
+                  <tr key={customer.customer_id} className="analytics-table-row">
                     <td>
-                      <div className="analytics-table-customer">
-                        {customer.full_name}
-                      </div>
+                      <div className="analytics-table-customer">{customer.full_name}</div>
                     </td>
-                    <td>
-                      {customer.phone}
-                    </td>
-                    <td>
-                      {customer.transaction_count}
-                    </td>
-                    <td>
-                      {new Intl.NumberFormat('ru-RU').format(customer.total_spent)} ₽
-                    </td>
-                    <td>
-                      {customer.points_earned}
-                    </td>
-                    <td>
-                      {customer.points_redeemed}
-                    </td>
-                    <td>
-                      {new Date(customer.last_transaction).toLocaleDateString('ru-RU')}
-                    </td>
+                    <td>{customer.phone}</td>
+                    <td>{customer.transaction_count}</td>
+                    <td>{new Intl.NumberFormat('ru-RU').format(customer.total_spent)} ₽</td>
+                    <td>{customer.points_earned}</td>
+                    <td>{customer.points_redeemed}</td>
+                    <td>{new Date(customer.last_transaction).toLocaleDateString('ru-RU')}</td>
                   </tr>
                 ))}
               </tbody>
