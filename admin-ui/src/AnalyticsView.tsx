@@ -1,15 +1,9 @@
 import ReactECharts from 'echarts-for-react';
 import { TFunction } from 'i18next';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Api,
-  ChartData,
-  CustomerSegmentation,
-  DashboardOverview,
-  LoyaltyDetailedReport,
-  LoyaltyReportOverview,
-} from './api';
+import { Api, ChartData } from './api';
+import { useAnalyticsData } from './hooks/use-analytics-data';
 
 // Factory function to create common chart configuration
 function createChartBase(
@@ -54,56 +48,18 @@ function createChartBase(
 export function AnalyticsView() {
   const { t } = useTranslation();
   const [timeRange, setTimeRange] = useState<string>('7d');
-  const [overview, setOverview] = useState<DashboardOverview | null>(null);
-  const [salesChart, setSalesChart] = useState<ChartData | null>(null);
-  const [customerChart, setCustomerChart] = useState<ChartData | null>(null);
-  const [loyaltyChart, setLoyaltyChart] = useState<ChartData | null>(null);
-  const [loyaltyOverview, setLoyaltyOverview] = useState<LoyaltyReportOverview | null>(null);
-  const [loyaltyDetails, setLoyaltyDetails] = useState<LoyaltyDetailedReport | null>(null);
-  const [segmentation, setSegmentation] = useState<CustomerSegmentation | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadAnalyticsData();
-  }, [timeRange]);
-
-  async function loadAnalyticsData() {
-    setLoading(true);
-    setError(null);
-    try {
-      const [
-        overviewData,
-        salesData,
-        customerData,
-        loyaltyData,
-        loyaltyReport,
-        loyaltyDetailed,
-        segmentationData,
-      ] = await Promise.all([
-        Api.dashboardOverview(timeRange),
-        Api.salesChart(timeRange),
-        Api.customerChart(timeRange),
-        Api.loyaltyChart(timeRange),
-        Api.loyaltyReportOverview(timeRange),
-        Api.loyaltyDetailedReport(timeRange),
-        Api.customerSegmentation(),
-      ]);
-      setOverview(overviewData);
-      setSalesChart(salesData);
-      setCustomerChart(customerData);
-      setLoyaltyChart(loyaltyData);
-      setLoyaltyOverview(loyaltyReport);
-      setLoyaltyDetails(loyaltyDetailed);
-      setSegmentation(segmentationData);
-    } catch (e) {
-      console.error('Failed to load analytics:', e);
-      setError(t('analytics.loadError'));
-    } finally {
-      setLoading(false);
-    }
-  }
+  const analyticsQuery = useAnalyticsData({ timeRange });
+  const overview = analyticsQuery.data?.overview ?? null;
+  const salesChart = analyticsQuery.data?.salesChart ?? null;
+  const customerChart = analyticsQuery.data?.customerChart ?? null;
+  const loyaltyChart = analyticsQuery.data?.loyaltyChart ?? null;
+  const loyaltyOverview = analyticsQuery.data?.loyaltyOverview ?? null;
+  const loyaltyDetails = analyticsQuery.data?.loyaltyDetails ?? null;
+  const segmentation = analyticsQuery.data?.segmentation ?? null;
+  const loading = analyticsQuery.isLoading;
+  const error = analyticsQuery.error ? t('analytics.loadError') : null;
 
   async function handleExport(type: string) {
     try {
@@ -157,7 +113,7 @@ export function AnalyticsView() {
       <div className="analytics-error-box">
         <div className="analytics-error-text">{error}</div>
         <button
-          onClick={loadAnalyticsData}
+          onClick={() => void analyticsQuery.refetch()}
           className="analytics-error-btn"
           data-testid="analytics_retry_button"
         >

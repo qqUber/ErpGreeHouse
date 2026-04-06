@@ -1,5 +1,7 @@
+import { useMutation } from '@tanstack/react-query';
 import { ChangeEvent, DragEvent, useEffect, useState } from 'react';
 import { Api } from '../api';
+import { useIntegrationsStatus } from '../hooks/use-integrations-status';
 
 type TelegramMenuItemConfig = {
   id: string;
@@ -245,31 +247,86 @@ export function IntegrationSettings() {
   const [vkSaveStatus, setVkSaveStatus] = useState<Status>('idle');
 
   const [info, setInfo] = useState<string | null>(null);
-
-  async function loadStatus() {
-    try {
-      const status = await Api.getIntegrationsStatus();
-      setTelegramStatus(status.telegram);
-      setVkStatus(status.vk);
-
-      // Pre-fill form with existing values
-      if (status.telegram.config?.bot_token) {
-        setTelegramToken(status.telegram.config.bot_token);
-      }
-      if (status.telegram.config?.enabled !== undefined) {
-        setTelegramEnabled(status.telegram.config.enabled);
-      }
-      setTelegramSupportChatId(status.telegram.config?.support_chat_id || '');
-      setTelegramMenuItems(mapTelegramMenuItems(status.telegram.config?.menu_items));
-    } catch (e: any) {
-      const msg = String(e?.message || e);
-      setInfo(msg.toLowerCase().includes('forbidden') ? 'Нет доступа к статусу интеграций' : msg);
-    }
-  }
+  const integrationsStatusQuery = useIntegrationsStatus();
+  const validateTelegramMutation = useMutation({
+    mutationFn: ({ token, enabled }: { token: string; enabled: boolean }) =>
+      Api.validateTelegramToken(token, enabled),
+  });
+  const saveTelegramMutation = useMutation({
+    mutationFn: ({
+      token,
+      enabled,
+      supportChatId,
+      menuItems,
+    }: {
+      token: string;
+      enabled: boolean;
+      supportChatId: string;
+      menuItems: ReturnType<typeof serializeTelegramMenuItems>;
+    }) => Api.saveTelegramSettings(token, enabled, supportChatId, menuItems),
+  });
+  const setupTelegramWebhookMutation = useMutation({
+    mutationFn: () => Api.setTelegramWebhook(),
+  });
+  const validateVkMutation = useMutation({
+    mutationFn: ({
+      token,
+      groupId,
+      apiVersion,
+      enabled,
+    }: {
+      token: string;
+      groupId: number;
+      apiVersion: string;
+      enabled: boolean;
+    }) => Api.validateVkToken(token, groupId, apiVersion, enabled),
+  });
+  const saveVkMutation = useMutation({
+    mutationFn: ({
+      token,
+      groupId,
+      apiVersion,
+      enabled,
+    }: {
+      token: string;
+      groupId: number;
+      apiVersion: string;
+      enabled: boolean;
+    }) => Api.saveVkSettings(token, groupId, apiVersion, enabled),
+  });
+  const setupVkWebhookMutation = useMutation({
+    mutationFn: () => Api.setVkWebhook(),
+  });
 
   useEffect(() => {
-    loadStatus();
-  }, []);
+    const status = integrationsStatusQuery.data;
+    if (!status) {
+      return;
+    }
+
+    setTelegramStatus(status.telegram);
+    setVkStatus(status.vk);
+
+    if (status.telegram.config?.bot_token) {
+      setTelegramToken(status.telegram.config.bot_token);
+    }
+    if (status.telegram.config?.enabled !== undefined) {
+      setTelegramEnabled(status.telegram.config.enabled);
+    }
+    setTelegramSupportChatId(status.telegram.config?.support_chat_id || '');
+    setTelegramMenuItems(mapTelegramMenuItems(status.telegram.config?.menu_items));
+  }, [integrationsStatusQuery.data]);
+
+  useEffect(() => {
+    if (!integrationsStatusQuery.error) {
+      return;
+    }
+
+    const msg = String(
+      (integrationsStatusQuery.error as Error)?.message || integrationsStatusQuery.error
+    );
+    setInfo(msg.toLowerCase().includes('forbidden') ? 'Нет доступа к статусу интеграций' : msg);
+  }, [integrationsStatusQuery.error]);
 
   async function validateTelegram() {
     if (!telegramToken.trim()) {
@@ -281,7 +338,10 @@ export function IntegrationSettings() {
     setTelegramValidationResult(null);
 
     try {
-      const result = await Api.validateTelegramToken(telegramToken.trim(), telegramEnabled);
+      const result = await validateTelegramMutation.mutateAsync({
+        token: telegramToken.trim(),
+        enabled: telegramEnabled,
+      });
       setTelegramValidationResult(result);
       setTelegramValidateStatus(result.valid ? 'success' : 'error');
     } catch (e: any) {
@@ -299,15 +359,15 @@ export function IntegrationSettings() {
     setTelegramSaveStatus('loading');
 
     try {
-      await Api.saveTelegramSettings(
-        telegramToken.trim(),
-        telegramEnabled,
-        telegramSupportChatId.trim(),
-        serializeTelegramMenuItems(telegramMenuItems)
-      );
+      await saveTelegramMutation.mutateAsync({
+        token: telegramToken.trim(),
+        enabled: telegramEnabled,
+        supportChatId: telegramSupportChatId.trim(),
+        menuItems: serializeTelegramMenuItems(telegramMenuItems),
+      });
       setTelegramSaveStatus('success');
       setInfo('Настройки Telegram сохранены');
-      await loadStatus();
+      await integrationsStatusQuery.refetch();
     } catch (e: any) {
       setTelegramSaveStatus('error');
       setInfo(`Ошибка сохранения: ${e.message || e}`);
@@ -316,7 +376,7 @@ export function IntegrationSettings() {
 
   async function setupTelegramWebhook() {
     try {
-      const result = await Api.setTelegramWebhook();
+      const result = await setupTelegramWebhookMutation.mutateAsync();
       setInfo(`Webhook установлен: ${result.url}`);
     } catch (e: any) {
       setInfo(`Ошибка установки webhook: ${e.message || e}`);
@@ -337,12 +397,12 @@ export function IntegrationSettings() {
     setVkValidationResult(null);
 
     try {
-      const result = await Api.validateVkToken(
-        vkToken.trim(),
-        parseInt(vkGroupId, 10),
-        vkApiVersion,
-        vkEnabled
-      );
+      const result = await validateVkMutation.mutateAsync({
+        token: vkToken.trim(),
+        groupId: parseInt(vkGroupId, 10),
+        apiVersion: vkApiVersion,
+        enabled: vkEnabled,
+      });
       setVkValidationResult(result);
       setVkValidateStatus(result.valid ? 'success' : 'error');
     } catch (e: any) {
@@ -364,10 +424,15 @@ export function IntegrationSettings() {
     setVkSaveStatus('loading');
 
     try {
-      await Api.saveVkSettings(vkToken.trim(), parseInt(vkGroupId, 10), vkApiVersion, vkEnabled);
+      await saveVkMutation.mutateAsync({
+        token: vkToken.trim(),
+        groupId: parseInt(vkGroupId, 10),
+        apiVersion: vkApiVersion,
+        enabled: vkEnabled,
+      });
       setVkSaveStatus('success');
       setInfo('Настройки VK сохранены');
-      await loadStatus();
+      await integrationsStatusQuery.refetch();
     } catch (e: any) {
       setVkSaveStatus('error');
       setInfo(`Ошибка сохранения: ${e.message || e}`);
@@ -376,7 +441,7 @@ export function IntegrationSettings() {
 
   async function setupVkWebhook() {
     try {
-      const result = await Api.setVkWebhook();
+      const result = await setupVkWebhookMutation.mutateAsync();
       setInfo(`Webhook настроен: ${result.url}`);
     } catch (e: any) {
       setInfo(`Ошибка настройки webhook: ${e.message || e}`);

@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../stores/auth';
@@ -15,17 +16,19 @@ export function LoginPage() {
   const [newPassword, setNewPassword] = useState('');
   const [recoverySecret, setRecoverySecret] = useState('');
 
+  const passwordLoginMutation = useMutation({
+    mutationFn: ({ username, password }: { username: string; password: string }) =>
+      login(username, password),
+  });
+
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
     try {
-      await login(username, password);
+      await passwordLoginMutation.mutateAsync({ username, password });
     } catch (err) {
       setError(t('auth.invalidCredentials'));
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -137,10 +140,12 @@ export function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || passwordLoginMutation.isPending}
               className="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              {loading ? t('auth.loggingIn') : t('auth.loginButton')}
+              {loading || passwordLoginMutation.isPending
+                ? t('auth.loggingIn')
+                : t('auth.loginButton')}
             </button>
           </form>
         )}

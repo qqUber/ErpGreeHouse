@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Api } from '../api';
 
 export interface OperationalData {
@@ -117,22 +117,9 @@ export interface DashboardData {
 }
 
 export const useDashboard = () => {
-  const [data, setData] = useState<DashboardData>({
-    operational: null,
-    marketing: null,
-    customers: null,
-    products: null,
-    integrations: null,
-  });
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const refresh = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
+  const query = useQuery<DashboardData>({
+    queryKey: ['dashboard'],
+    queryFn: async () => {
       const [operational, marketing, customers, products, integrations, productsList] =
         await Promise.all([
           Api.dashboardOperational(),
@@ -140,46 +127,38 @@ export const useDashboard = () => {
           Api.dashboardCustomers(),
           Api.dashboardProducts(),
           Api.dashboardIntegrations(),
-          Api.products(), // Get products list to count total products
+          Api.products(),
         ]);
 
-      // Extract total products count from products list
       const totalProducts = productsList?.pagination?.total || 0;
 
-      setData({
+      return {
         operational,
         marketing,
         customers,
         products: {
           ...products,
-          total_products: totalProducts, // Add total products count
+          total_products: totalProducts,
         },
         integrations,
-      });
+      };
+    },
+  });
 
-      console.log('useDashboard - Raw API data:', {
-        operational,
-        marketing,
-        customers,
-        products,
-        integrations,
-      });
-    } catch (err) {
-      console.error('Failed to fetch dashboard data:', err);
-      setError('Не удалось загрузить данные панели управления');
-    } finally {
-      setLoading(false);
-    }
+  const data: DashboardData = query.data ?? {
+    operational: null,
+    marketing: null,
+    customers: null,
+    products: null,
+    integrations: null,
   };
-
-  useEffect(() => {
-    refresh();
-  }, []);
 
   return {
     data,
-    loading,
-    error,
-    refresh,
+    loading: query.isLoading,
+    error: query.error instanceof Error ? query.error.message : null,
+    refresh: async () => {
+      await query.refetch();
+    },
   };
 };

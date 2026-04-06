@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Api } from '../api';
@@ -15,9 +16,12 @@ export function ProfileDeletion({
   onDeleted: () => void;
 }) {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const [feedback, setFeedback] = useState<FeedbackMessage | null>(null);
+
+  const deleteMutation = useMutation({
+    mutationFn: () => Api.deleteCustomer(customerId),
+  });
 
   async function handleDelete() {
     const confirmWord = t('compliance.confirmDeleteWord');
@@ -29,17 +33,14 @@ export function ProfileDeletion({
       return;
     }
 
-    setLoading(true);
     setFeedback(null);
     try {
-      await Api.deleteCustomer(customerId);
+      await deleteMutation.mutateAsync();
       setFeedback({ kind: 'success', message: t('compliance.profileDeletedSuccessfully') });
       onDeleted();
     } catch (e) {
       console.error(e);
       setFeedback({ kind: 'error', message: t('compliance.profileDeleteError') });
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -75,10 +76,10 @@ export function ProfileDeletion({
 
       <button
         onClick={handleDelete}
-        disabled={loading || confirmText !== t('compliance.confirmDeleteWord')}
+        disabled={deleteMutation.isPending || confirmText !== t('compliance.confirmDeleteWord')}
         className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? t('compliance.deleting') : t('compliance.deleteProfile')}
+        {deleteMutation.isPending ? t('compliance.deleting') : t('compliance.deleteProfile')}
       </button>
     </div>
   );

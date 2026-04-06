@@ -1,5 +1,6 @@
+import { useQuery } from '@tanstack/react-query';
 import WebApp from '@twa-dev/sdk';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import QRCode from 'react-qr-code';
 import { api } from './api';
 import { formatCurrency } from './utils/translationHelpers';
@@ -17,55 +18,52 @@ interface TmaCustomerData {
 }
 
 export function LoyaltyTmaView() {
-  const [data, setData] = useState<TmaCustomerData | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     WebApp.ready();
     WebApp.expand();
-
-    const initData = WebApp.initData || '';
-    if (!initData) {
-      if (import.meta.env.DEV) {
-        // Mock data for local testing
-        setData({
-          first_name: 'Test user',
-          telegram_id: 12345,
-          balance: 1500,
-          qr_token: 'test_qr_123',
-          tier: 'Gold',
-          percent: 10,
-          spent_amount: 55000,
-          next_tier_name: 'Platinum',
-          next_tier_spent: 100000,
-        });
-        setLoading(false);
-      } else {
-        setError('No initData found. Please open from Telegram.');
-        setLoading(false);
-      }
-      return;
-    }
-
-    // Fetch data using initData
-    api<{ error?: string } & TmaCustomerData>('/api/v1/tma/me', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ initData }),
-    })
-      .then((res) => {
-        if (res.error) {
-          setError(res.error);
-        } else {
-          setData(res);
-        }
-      })
-      .catch((e) => setError(String(e)))
-      .finally(() => setLoading(false));
   }, []);
+
+  const initData = WebApp.initData || '';
+
+  const query = useQuery<TmaCustomerData>({
+    queryKey: ['tma-customer', initData || 'dev'],
+    queryFn: async () => {
+      if (!initData) {
+        if (import.meta.env.DEV) {
+          return {
+            first_name: 'Test user',
+            telegram_id: 12345,
+            balance: 1500,
+            qr_token: 'test_qr_123',
+            tier: 'Gold',
+            percent: 10,
+            spent_amount: 55000,
+            next_tier_name: 'Platinum',
+            next_tier_spent: 100000,
+          };
+        }
+        throw new Error('No initData found. Please open from Telegram.');
+      }
+
+      const response = await api<{ error?: string } & TmaCustomerData>('/api/v1/tma/me', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ initData }),
+      });
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      return response;
+    },
+  });
+
+  const data = query.data ?? null;
+  const error = query.error instanceof Error ? query.error.message : '';
+  const loading = query.isLoading;
 
   if (loading) {
     return <div className="p-8 text-center text-gray-500">Загрузка карты...</div>;

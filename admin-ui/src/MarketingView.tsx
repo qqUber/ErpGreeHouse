@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -87,6 +88,27 @@ function CampaignsManager({
   const [busyId, setBusyId] = useState<number | null>(null);
   const [isPreviewing, setIsPreviewing] = useState(false);
 
+  const createCampaignMutation = useMutation({
+    mutationFn: (payload: Parameters<typeof marketingService.createCampaign>[0]) =>
+      marketingService.createCampaign(payload),
+  });
+  const sendCampaignMutation = useMutation({
+    mutationFn: (id: number) => marketingService.sendCampaign(id),
+  });
+  const pauseCampaignMutation = useMutation({
+    mutationFn: (id: number) => marketingService.pauseCampaign(id),
+  });
+  const resumeCampaignMutation = useMutation({
+    mutationFn: (id: number) => marketingService.resumeCampaign(id),
+  });
+  const cancelCampaignMutation = useMutation({
+    mutationFn: (id: number) => marketingService.cancelCampaign(id),
+  });
+  const updateCampaignBudgetMutation = useMutation({
+    mutationFn: ({ id, budgetLimit }: { id: number; budgetLimit: number | null }) =>
+      marketingService.updateCampaignBudget(id, budgetLimit),
+  });
+
   function resetForm() {
     setIsCreating(false);
     setNewName('');
@@ -135,7 +157,7 @@ function CampaignsManager({
       }
     }
     try {
-      await marketingService.createCampaign(buildCampaignPayload());
+      await createCampaignMutation.mutateAsync(buildCampaignPayload());
       resetForm();
       await onUpdate();
     } catch (e) {
@@ -165,7 +187,7 @@ function CampaignsManager({
     try {
       setError('');
       setBusyId(id);
-      await marketingService.sendCampaign(id);
+      await sendCampaignMutation.mutateAsync(id);
       await onUpdate();
     } catch (e) {
       setError(String(e));
@@ -178,7 +200,7 @@ function CampaignsManager({
     try {
       setError('');
       setBusyId(id);
-      await marketingService.pauseCampaign(id);
+      await pauseCampaignMutation.mutateAsync(id);
       await onUpdate();
     } catch (e) {
       setError(String(e));
@@ -191,7 +213,7 @@ function CampaignsManager({
     try {
       setError('');
       setBusyId(id);
-      await marketingService.resumeCampaign(id);
+      await resumeCampaignMutation.mutateAsync(id);
       await onUpdate();
     } catch (e) {
       setError(String(e));
@@ -205,7 +227,7 @@ function CampaignsManager({
     try {
       setError('');
       setBusyId(id);
-      await marketingService.cancelCampaign(id);
+      await cancelCampaignMutation.mutateAsync(id);
       await onUpdate();
     } catch (e) {
       setError(String(e));
@@ -225,7 +247,7 @@ function CampaignsManager({
     try {
       setError('');
       setBusyId(id);
-      await marketingService.updateCampaignBudget(id, normalized);
+      await updateCampaignBudgetMutation.mutateAsync({ id, budgetLimit: normalized });
       await onUpdate();
     } catch (e) {
       setError(String(e));
@@ -543,6 +565,13 @@ function SegmentsManager({
   const [error, setError] = useState('');
   const [preview, setPreview] = useState<any[]>([]);
   const [isPreviewing, setIsPreviewing] = useState(false);
+  const createSegmentMutation = useMutation({
+    mutationFn: (payload: Parameters<typeof Api.createMarketingSegment>[0]) =>
+      Api.createMarketingSegment(payload),
+  });
+  const refreshSegmentMutation = useMutation({
+    mutationFn: (segmentId: number) => Api.refreshMarketingSegment(segmentId),
+  });
 
   async function handlePreview() {
     if (!newName) {
@@ -613,7 +642,7 @@ function SegmentsManager({
         if (ageMax) criteria.age_range.max = Number(ageMax);
       }
 
-      await Api.createMarketingSegment({
+      await createSegmentMutation.mutateAsync({
         name: newName,
         criteria,
       });
@@ -856,7 +885,7 @@ function SegmentsManager({
                     className="text-blue-600 hover:underline text-xs"
                     onClick={async () => {
                       try {
-                        await Api.refreshMarketingSegment(s.id);
+                        await refreshSegmentMutation.mutateAsync(s.id);
                         await onUpdate();
                       } catch (e) {
                         setError(String(e));
@@ -903,6 +932,10 @@ function TriggersManager({
   const [newMediaUrl, setNewMediaUrl] = useState('');
   const [newCaption, setNewCaption] = useState('');
   const [error, setError] = useState('');
+  const createTriggerMutation = useMutation({
+    mutationFn: (payload: Parameters<typeof Api.createMarketingTrigger>[0]) =>
+      Api.createMarketingTrigger(payload),
+  });
 
   async function handleCreate() {
     if (!newName || !newMessage) {
@@ -919,7 +952,7 @@ function TriggersManager({
       if (eventSource === 'pos.sale' && purchaseCategory)
         criteria.purchase_category = purchaseCategory;
 
-      await Api.createMarketingTrigger({
+      await createTriggerMutation.mutateAsync({
         name: newName,
         event_source: eventSource,
         criteria,

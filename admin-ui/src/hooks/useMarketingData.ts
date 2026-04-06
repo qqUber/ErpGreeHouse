@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { MarketingCampaign, MarketingSegment, MarketingTrigger } from '../api';
 import { marketingService } from '../services/marketing.service';
 
@@ -12,37 +12,20 @@ export interface UseMarketingDataResult {
 }
 
 export function useMarketingData(): UseMarketingDataResult {
-  const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
-  const [segments, setSegments] = useState<MarketingSegment[]>([]);
-  const [triggers, setTriggers] = useState<MarketingTrigger[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await marketingService.loadAll();
-      setCampaigns(data.campaigns);
-      setSegments(data.segments);
-      setTriggers(data.triggers);
-    } catch (err) {
-      setError(String(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  const query = useQuery({
+    queryKey: ['marketing-data'],
+    queryFn: () => marketingService.loadAll(),
+    staleTime: 30_000,
+  });
 
   return {
-    campaigns,
-    segments,
-    triggers,
-    loading,
-    error,
-    refresh,
+    campaigns: query.data?.campaigns ?? [],
+    segments: query.data?.segments ?? [],
+    triggers: query.data?.triggers ?? [],
+    loading: query.isLoading,
+    error: query.error instanceof Error ? query.error.message : null,
+    refresh: async () => {
+      await query.refetch();
+    },
   };
 }

@@ -1,7 +1,7 @@
 import ReactECharts from 'echarts-for-react';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Api, CategoryDistribution, SalesByDay, TopProduct } from '../api';
+import { CategoryDistribution, SalesByDay, TopProduct } from '../api';
+import { useAnalyticsChartsData } from '../hooks/use-analytics-charts-data';
 
 interface AnalyticsChartsProps {
   days?: number;
@@ -9,37 +9,12 @@ interface AnalyticsChartsProps {
 
 export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
   const { t } = useTranslation();
-  const [salesData, setSalesData] = useState<SalesByDay['sales_by_day']>([]);
-  const [topProducts, setTopProducts] = useState<TopProduct['top_products']>([]);
-  const [categoryData, setCategoryData] = useState<CategoryDistribution['category_distribution']>(
-    []
-  );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadAnalyticsData();
-  }, [days]);
-
-  async function loadAnalyticsData() {
-    setLoading(true);
-    setError(null);
-    try {
-      const [sales, products, categories] = await Promise.all([
-        Api.salesByDay(days),
-        Api.topProducts(days, 10),
-        Api.categoryDistribution(days),
-      ]);
-      setSalesData(sales.sales_by_day);
-      setTopProducts(products.top_products);
-      setCategoryData(categories.category_distribution);
-    } catch (e) {
-      console.error('Failed to load analytics:', e);
-      setError(t('analytics.collecting'));
-    } finally {
-      setLoading(false);
-    }
-  }
+  const analyticsChartsQuery = useAnalyticsChartsData({ days });
+  const salesData = analyticsChartsQuery.data?.salesData ?? [];
+  const topProducts = analyticsChartsQuery.data?.topProducts ?? [];
+  const categoryData = analyticsChartsQuery.data?.categoryData ?? [];
+  const loading = analyticsChartsQuery.isLoading;
+  const error = analyticsChartsQuery.error ? t('analytics.collecting') : null;
 
   if (loading) {
     return (
@@ -53,7 +28,10 @@ export function AnalyticsCharts({ days = 30 }: AnalyticsChartsProps) {
     return (
       <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
         <div className="text-red-600">{error}</div>
-        <button onClick={loadAnalyticsData} className="mt-2 text-sm text-red-700 underline">
+        <button
+          onClick={() => void analyticsChartsQuery.refetch()}
+          className="mt-2 text-sm text-red-700 underline"
+        >
           {t('common.refresh')}
         </button>
       </div>

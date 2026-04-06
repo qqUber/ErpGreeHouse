@@ -8,7 +8,17 @@ import './styles.css';
 
 console.log('[Main] Starting React App');
 
-const queryClient = new QueryClient();
+const MINUTE = 60_000;
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30 * 1000,
+      gcTime: 10 * MINUTE,
+      refetchOnWindowFocus: true,
+    },
+  },
+});
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <QueryClientProvider client={queryClient}>

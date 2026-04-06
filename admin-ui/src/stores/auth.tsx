@@ -1,3 +1,4 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createContext,
   ReactNode,
@@ -28,41 +29,101 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const TOKEN_VALIDATION_KEY = 'auth_validation_state';
 
+type LoginResult = {
+  user: AdminMe | null;
+  mustChangePassword: boolean;
+};
+
+type AuthContextState = {
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  user: AdminMe | null;
+  mustChangePassword: boolean;
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({
+  const queryClient = useQueryClient();
+  const initializedRef = useRef(false);
+
+  const [state, setState] = useState<AuthContextState>({
     isAuthenticated: false,
     isLoading: true,
     user: null,
     mustChangePassword: false,
   });
 
-  // Use ref to track validation state to avoid stale closures in callbacks
-  const validatingRef = useRef(false);
-  // Use ref to track if initial auth check has been done
-  const initializedRef = useRef(false);
+  const meQuery = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: async () => {
+      const user = await Api.me();
+      return user;
+    },
+    enabled: false,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const refreshTokenMutation = useMutation({
+    mutationFn: () => Api.refreshToken(),
+  });
+
+  const loginMutation = useMutation({
+    mutationFn: async ({ username, password }: { username: string; password: string }) => {
+      const result = await Api.login(username, password);
+      let user: AdminMe | null = null;
+      try {
+        user = await Api.me();
+      } catch (e) {
+        console.error('[Auth] Login successful but failed to fetch user:', e);
+      }
+      return { user, mustChangePassword: result.must_change_password };
+    },
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      clearPendingRequests();
+      try {
+        await Api.logout();
+      } catch (error) {
+        // Logout API call failed, continuing with local logout
+      }
+    },
+  });
+
+  const setUser = useCallback(
+    (user: AdminMe | null) => {
+      setState((prev) => ({
+        ...prev,
+        user,
+        isAuthenticated: !!user,
+        isLoading: false,
+      }));
+      if (user) {
+        queryClient.setQueryData(['auth', 'me'], user);
+      } else {
+        queryClient.removeQueries({ queryKey: ['auth', 'me'] });
+      }
+    },
+    [queryClient]
+  );
 
   const validateToken = useCallback(async (): Promise<boolean> => {
-    if (validatingRef.current) {
-      return false;
-    }
-
-    validatingRef.current = true;
-
     try {
-      const user = await Api.me();
-      setState({
-        isAuthenticated: true,
-        isLoading: false,
-        user,
-        mustChangePassword: false,
-      });
-      // Store validation state in sessionStorage (not localStorage for security)
-      sessionStorage.setItem(TOKEN_VALIDATION_KEY, 'valid');
-      return true;
+      const result = await meQuery.refetch();
+      if (result.data) {
+        setState({
+          isAuthenticated: true,
+          isLoading: false,
+          user: result.data,
+          mustChangePassword: false,
+        });
+        sessionStorage.setItem(TOKEN_VALIDATION_KEY, 'valid');
+        return true;
+      }
+      return false;
     } catch (error: any) {
       const msg = String(error?.message || error);
-
-      // If 401, try to refresh token
       if (
         msg.includes('401') ||
         msg.toLowerCase().includes('unauthorized') ||
@@ -70,7 +131,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ) {
         return false;
       }
-
       setState({
         isAuthenticated: false,
         isLoading: false,
@@ -79,81 +139,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       sessionStorage.removeItem(TOKEN_VALIDATION_KEY);
       return false;
-    } finally {
-      validatingRef.current = false;
     }
-  }, []);
+  }, [meQuery]);
 
   const refreshToken = useCallback(async (): Promise<boolean> => {
-    // Prevent concurrent refresh attempts
-    if (validatingRef.current) {
-      // Wait for current validation to complete
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      // Check actual auth state after waiting
-      return state.isAuthenticated;
-    }
-
     try {
-      const result = await Api.refreshToken();
-      // After refresh, validate again
+      await refreshTokenMutation.mutateAsync();
       return await validateToken();
-    } catch (error: any) {
+    } catch {
       return false;
     }
-  }, [validateToken, state.isAuthenticated]);
+  }, [refreshTokenMutation, validateToken]);
 
-  const login = useCallback(async (username: string, password: string) => {
-    const result = await Api.login(username, password);
-
-    // Note: JWT tokens are now in httpOnly cookies, so we don't need to store them in localStorage
-    // The cookies are automatically sent with subsequent requests
-
-    // Fetch user details immediately to have consistent state
-    let user = null;
-    try {
-      user = await Api.me();
-    } catch (e) {
-      console.error('[Auth] Login successful but failed to fetch user:', e);
-      // We still consider them authenticated, App.tsx bootstrap might retry or show error
-    }
-
-    setState({
-      isAuthenticated: true,
-      isLoading: false,
-      user: user,
-      mustChangePassword: result.must_change_password,
-    });
-
-    sessionStorage.setItem(TOKEN_VALIDATION_KEY, 'valid');
-  }, []);
+  const login = useCallback(
+    async (username: string, password: string) => {
+      const result = await loginMutation.mutateAsync({ username, password });
+      setState({
+        isAuthenticated: true,
+        isLoading: false,
+        user: result.user,
+        mustChangePassword: result.mustChangePassword,
+      });
+      if (result.user) {
+        queryClient.setQueryData(['auth', 'me'], result.user);
+      }
+      sessionStorage.setItem(TOKEN_VALIDATION_KEY, 'valid');
+    },
+    [loginMutation, queryClient]
+  );
 
   const logout = useCallback(async () => {
-    // Clear all pending requests before logout
-    clearPendingRequests();
-    try {
-      await Api.logout();
-    } catch (error) {
-      // Logout API call failed, continuing with local logout
-    }
-
+    await logoutMutation.mutateAsync();
+    queryClient.clear();
     setState({
       isAuthenticated: false,
       isLoading: false,
       user: null,
       mustChangePassword: false,
     });
-
     sessionStorage.removeItem(TOKEN_VALIDATION_KEY);
-  }, []);
-
-  const setUser = useCallback((user: AdminMe | null) => {
-    setState((prev) => ({
-      ...prev,
-      user,
-      isAuthenticated: !!user,
-      isLoading: false,
-    }));
-  }, []);
+  }, [logoutMutation, queryClient]);
 
   // Session restoration on app initialization
   useEffect(() => {

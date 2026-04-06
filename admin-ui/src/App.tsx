@@ -1,5 +1,5 @@
-import * as QRCode from 'qrcode';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsView } from './AnalyticsView';
 import {
@@ -21,6 +21,13 @@ import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ProductImport } from './components/ProductImport';
 import { type ThemeMode, ThemeSwitcher } from './components/ThemeSwitcher';
 import { ErrorMessage, SuccessMessage, WarningMessage } from './components/ui';
+import { useCustomerDetail } from './hooks/use-customer-detail';
+import { useCustomerSuggestions } from './hooks/use-customer-suggestions';
+import { useCustomers } from './hooks/use-customers';
+import { useIntegrationDeliveries } from './hooks/use-integration-deliveries';
+import { useIntegrations, useIntegrationTemplates } from './hooks/use-integrations';
+import { useProducts } from './hooks/use-products';
+import { usePublicStatus } from './hooks/use-public-status';
 import { useDashboardData } from './hooks/useDashboardData';
 import { useViewportMode } from './hooks/useViewportMode';
 import { MarketingView } from './MarketingView';
@@ -36,12 +43,6 @@ type Tab =
   | 'marketing'
   | 'compliance'
   | 'analytics';
-
-type PublicStatus = {
-  admin_auth_configured: boolean;
-  debug_mode: boolean;
-  erp_sync_enabled: boolean;
-};
 
 type NoticeLevel = 'ok' | 'warn' | 'err';
 type Notice = { level: NoticeLevel; message: string; visible: boolean };
@@ -69,6 +70,7 @@ function money(n: number, locale?: string) {
 function App() {
   // Use auth context for authentication state
   const { t, i18n } = useTranslation();
+  const queryClient = useQueryClient();
   const viewport = useViewportMode();
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     if (typeof window === 'undefined') return 'light';
@@ -96,16 +98,12 @@ function App() {
   } = useAuth();
 
   const [tab, setTab] = useState<Tab>('dashboard');
-  const [customers, setCustomers] = useState<CustomerListItem[]>([]);
   const [customerPage, setCustomerPage] = useState(1);
-  const [customerTotal, setCustomerTotal] = useState(0);
   const [customerLimit] = useState(15);
   const [q, setQ] = useState('');
+  const [customerQuery, setCustomerQuery] = useState('');
+  const [suggestionQuery, setSuggestionQuery] = useState('');
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [details, setDetails] = useState<CustomerDetails | null>(null);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
-  const customerRequestRef = useRef(0);
-  const [searchSuggestions, setSearchSuggestions] = useState<CustomerListItem[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -113,7 +111,6 @@ function App() {
   const [showSettingsOld, setShowSettingsOld] = useState(false);
   const [showSettingsNew, setShowSettingsNew] = useState(false);
 
-  const [publicStatus, setPublicStatus] = useState<PublicStatus | null>(null);
   const [username, setUsername] = useState(() => {
     if (typeof localStorage === 'undefined') return 'admin';
     return localStorage.getItem('admin_login_username') || 'admin';
@@ -123,16 +120,9 @@ function App() {
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [settingsNewPassword, setSettingsNewPassword] = useState('');
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
-  const [integrationTemplates, setIntegrationTemplates] = useState<IntegrationTemplate[]>([]);
   const [selectedIntegrationId, setSelectedIntegrationId] = useState<number | null>(null);
-  const [integrationDeliveries, setIntegrationDeliveries] = useState<IntegrationDelivery[]>([]);
-  const [integrationsBusy, setIntegrationsBusy] = useState(false);
   const [integrationSubTab, setIntegrationSubTab] = useState<'settings' | 'webhooks'>('settings');
   const [me, setMe] = useState<AdminMe | null>(null);
-  const [products, setProducts] = useState<
-    Array<{ id: number; code: string; name: string; kind: string; price: number; active: boolean }>
-  >([]);
   const [showProductImport, setShowProductImport] = useState(false);
 
   // Use auth context values
@@ -172,34 +162,48 @@ function App() {
     }
   }, [themeMode]);
 
-  useEffect(() => {
-    if (!selectedId || selectedId <= 0) {
-      setDetails(null);
-      setQrCodeUrl('');
-      return;
-    }
-
-    void loadCustomer(selectedId);
-  }, [selectedId]);
-
   function handleSelectCustomer(id: number | null) {
     if (!id || id <= 0) {
       setSelectedId(null);
-      setDetails(null);
-      setQrCodeUrl('');
       return;
     }
 
     setSelectedId(id);
   }
 
+  const showProtectedPanels = effectiveAuthReady && Boolean(effectiveMe);
+  const showLoginScreen = !effectiveAuthReady || !effectiveMe;
+
+  const publicStatusQuery = usePublicStatus();
+  const publicStatus = publicStatusQuery.data ?? null;
+
+  const customersQuery = useCustomers({
+    query: customerQuery,
+    page: customerPage,
+    limit: customerLimit,
+    enabled: showProtectedPanels,
+  });
+  const customers = customersQuery.data?.items ?? [];
+  const customerTotal = customersQuery.data?.pagination.total ?? 0;
+  const customerSuggestionsQuery = useCustomerSuggestions({
+    query: suggestionQuery,
+    enabled: showSuggestions,
+  });
+  const searchSuggestions = customerSuggestionsQuery.data ?? [];
+
+  const customerDetailQuery = useCustomerDetail({
+    id: selectedId,
+    enabled: showProtectedPanels,
+  });
+  const details: CustomerDetails | null = customerDetailQuery.data?.details ?? null;
+  const qrCodeUrl = customerDetailQuery.data?.qrCodeUrl ?? '';
+
+  const productsQuery = useProducts({ enabled: showProtectedPanels });
+  const products = productsQuery.data ?? [];
+
   const selected = useMemo(
     () => customers.find((c) => c.id === selectedId) || null,
     [customers, selectedId]
-  );
-  const selectedIntegration = useMemo(
-    () => integrations.find((i) => i.id === selectedIntegrationId) || null,
-    [integrations, selectedIntegrationId]
   );
 
   const effectivePermissions = useMemo(
@@ -220,6 +224,54 @@ function App() {
       effectivePermissions.has('integration.read'),
     [effectiveMe?.role, effectivePermissions]
   );
+
+  const integrationsEnabled = showProtectedPanels && tab === 'integrations' && canReadIntegrations;
+  const integrationsQuery = useIntegrations({ enabled: integrationsEnabled });
+  const integrationTemplatesQuery = useIntegrationTemplates({ enabled: integrationsEnabled });
+  const integrationDeliveriesQuery = useIntegrationDeliveries({
+    integrationId: selectedIntegrationId,
+    enabled: integrationsEnabled && selectedIntegrationId != null,
+  });
+
+  const integrations: Integration[] = integrationsQuery.data ?? [];
+  const integrationTemplates: IntegrationTemplate[] = integrationTemplatesQuery.data ?? [];
+  const integrationDeliveries: IntegrationDelivery[] = integrationDeliveriesQuery.data ?? [];
+  const integrationsBusy = integrationsQuery.isFetching || integrationTemplatesQuery.isFetching;
+  const selectedIntegration = useMemo(
+    () => integrations.find((i) => i.id === selectedIntegrationId) || null,
+    [integrations, selectedIntegrationId]
+  );
+
+  const createIntegrationMutation = useMutation({
+    mutationFn: (payload: Parameters<typeof Api.createIntegration>[0]) =>
+      Api.createIntegration(payload),
+  });
+  const updateIntegrationMutation = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: Parameters<typeof Api.updateIntegration>[1];
+    }) => Api.updateIntegration(id, payload),
+  });
+  const rotateIntegrationMutation = useMutation({
+    mutationFn: (id: number) => Api.rotateIntegrationSecret(id),
+  });
+  const removeIntegrationMutation = useMutation({
+    mutationFn: (id: number) => Api.deleteIntegration(id),
+  });
+  const changePasswordMutation = useMutation({
+    mutationFn: ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) =>
+      Api.changePassword(oldPassword, newPassword),
+  });
+  const createProductMutation = useMutation({
+    mutationFn: (payload: Parameters<typeof Api.createProduct>[0]) => Api.createProduct(payload),
+  });
+  const createDevSaleMutation = useMutation({
+    mutationFn: (customerQr: string) => Api.createDevSale(customerQr),
+  });
+
   const canUseDevSale = useMemo(
     () =>
       Boolean(publicStatus?.debug_mode) &&
@@ -285,9 +337,6 @@ function App() {
     return allowedTabs.includes(tab) ? tab : allowedTabs[0] || 'settings';
   }, [allowedTabs, tab]);
 
-  const showProtectedPanels = effectiveAuthReady && Boolean(effectiveMe);
-  const showLoginScreen = !effectiveAuthReady || !effectiveMe;
-
   async function doLoginByPassword() {
     try {
       setError(null);
@@ -313,7 +362,10 @@ function App() {
 
   async function doChangePassword() {
     try {
-      await Api.changePassword(oldPassword, settingsNewPassword);
+      await changePasswordMutation.mutateAsync({
+        oldPassword,
+        newPassword: settingsNewPassword,
+      });
       setOldPassword('');
       setSettingsNewPassword('');
       showNotice('ok', t('auth.passwordChangeSuccess', 'Password updated'));
@@ -349,140 +401,45 @@ function App() {
     window.setTimeout(() => setNotice((prev) => (prev ? { ...prev, visible: false } : prev)), 3500);
   }
 
-  async function loadPublicStatus() {
-    try {
-      const s = await Api.publicStatus();
-      setPublicStatus(s);
-    } catch {
-      setPublicStatus(null);
-    }
-  }
-
-  async function loadCustomers(query?: string, page: number = 1, limit: number = 15) {
+  async function loadCustomers(query?: string, page: number = 1, _limit: number = 15) {
     setError(null);
-
-    // Enhanced search parsing
-    let enhancedQuery = query || '';
-
-    if (enhancedQuery) {
-      // Handle numeric ID search (pure numbers)
-      if (/^\d+$/.test(enhancedQuery.trim())) {
-        enhancedQuery = `id:${enhancedQuery.trim()}`;
-      }
-      // Handle QR code search (8 digits)
-      else if (/^\d{8}$/.test(enhancedQuery.trim())) {
-        enhancedQuery = `qr:${enhancedQuery.trim()}`;
-      }
-      // Handle range operators like >5000<1000, >5000, <2000, !=10
-      else if (/^([><=!])(\d+)(<(\d+))?$/.test(enhancedQuery.trim())) {
-        const match = enhancedQuery.trim().match(/^([><=!])(\d+)(<(\d+))?$/);
-        if (match) {
-          const [, operator, value1, , value2] = match;
-          if (operator === '>' && value2) {
-            enhancedQuery = `balance:${value1}-${value2}`;
-          } else if (operator === '>') {
-            enhancedQuery = `balance>${value1}`;
-          } else if (operator === '<') {
-            enhancedQuery = `balance<${value1}`;
-          } else if (operator === '!' || operator === '!=') {
-            enhancedQuery = `balance!${value1}`;
-          }
-        }
-      }
-      // Handle phone numbers
-      else if (/^[\d\s\-+()]+$/.test(enhancedQuery.trim())) {
-        enhancedQuery = `phone:${enhancedQuery.trim()}`;
-      }
-      // Default to name search for text
-      else {
-        enhancedQuery = `name:${enhancedQuery.trim()}`;
-      }
-    }
-
-    const res = await Api.customers(enhancedQuery, page, limit);
-    setCustomers(res.items);
-    setCustomerTotal(res.pagination.total);
+    const nextQuery = query ?? '';
+    setCustomerQuery(nextQuery);
+    setQ(nextQuery);
     setCustomerPage(page);
-  }
 
-  async function loadCustomer(id: number) {
-    setError(null);
-    const requestId = customerRequestRef.current + 1;
-    customerRequestRef.current = requestId;
-    const d = await Api.customer(id);
-    if (customerRequestRef.current !== requestId) {
-      return;
-    }
-    setDetails(d);
-
-    // Generate QR code for the customer
-    if (d.customer.qr_token) {
-      try {
-        const qrDataUrl = await QRCode.toDataURL(d.customer.qr_token, {
-          width: 200,
-          margin: 1,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF',
-          },
-        });
-        if (customerRequestRef.current !== requestId) {
-          return;
-        }
-        setQrCodeUrl(qrDataUrl);
-      } catch (err) {
-        console.error('Failed to generate QR code:', err);
-        setQrCodeUrl('');
-      }
-    } else {
-      setQrCodeUrl('');
+    if (nextQuery === customerQuery && page === customerPage) {
+      await customersQuery.refetch();
     }
   }
 
   async function searchCustomers(query: string) {
     if (!query.trim()) {
-      setSearchSuggestions([]);
+      setSuggestionQuery('');
       setShowSuggestions(false);
       return;
     }
 
-    try {
-      const res = await Api.customers(query, 1, 5);
-      setSearchSuggestions(res.items);
-      setShowSuggestions(true);
-    } catch (err) {
-      console.error('Failed to search customers:', err);
-      setSearchSuggestions([]);
-    }
+    setSuggestionQuery(query);
+    setShowSuggestions(true);
   }
 
   async function loadIntegrations() {
     setError(null);
-    setIntegrationsBusy(true);
-    try {
-      const res = await Api.integrations();
-      setIntegrations(res);
-    } finally {
-      setIntegrationsBusy(false);
-    }
+    await queryClient.invalidateQueries({ queryKey: ['integrations'] });
   }
 
   async function loadDeliveries(id: number) {
     setError(null);
-    const res = await Api.integrationDeliveries(id);
-    setIntegrationDeliveries(res.items);
-  }
-
-  async function loadIntegrationTemplates() {
-    setError(null);
-    const res = await Api.integrationTemplates();
-    setIntegrationTemplates(res.items);
+    setSelectedIntegrationId(id);
+    if (selectedIntegrationId === id) {
+      await queryClient.invalidateQueries({ queryKey: ['integration-deliveries', id] });
+    }
   }
 
   async function loadProducts() {
     setError(null);
-    const res = await Api.products();
-    setProducts(res.items);
+    await queryClient.invalidateQueries({ queryKey: ['products'] });
   }
 
   async function bootstrap() {
@@ -494,20 +451,8 @@ function App() {
         return;
       }
 
-      await loadPublicStatus();
-
       setMe(user);
       console.log('[Bootstrap] Using user from auth context:', user.username);
-
-      try {
-        await Promise.all([
-          loadCustomers('', 1, customerLimit),
-          loadProducts(),
-          canReadDashboard ? refreshDashboard() : Promise.resolve(),
-        ]);
-      } catch (dataError: any) {
-        console.warn('[Bootstrap] Failed to load some data:', dataError?.message);
-      }
 
       setAuthReady(true);
     } catch (e: any) {
@@ -534,13 +479,6 @@ function App() {
     console.log('[App] Auth loading complete, running bootstrap...');
     bootstrap();
   }, [authLoading, user, canReadDashboard]);
-
-  useEffect(() => {
-    if (!showProtectedPanels) return;
-    if (selectedId != null) {
-      loadCustomer(selectedId).catch((e) => setError(String(e)));
-    }
-  }, [selectedId, showProtectedPanels]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -579,22 +517,6 @@ function App() {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, [allowedTabs, showProtectedPanels]);
-
-  useEffect(() => {
-    if (!showProtectedPanels) return;
-    if (tab === 'integrations' && canReadIntegrations) {
-      Promise.all([loadIntegrations(), loadIntegrationTemplates()]).catch((e) =>
-        setError(String(e))
-      );
-    }
-  }, [tab, canReadIntegrations, showProtectedPanels]);
-
-  useEffect(() => {
-    if (!showProtectedPanels) return;
-    if (tab === 'integrations' && canReadIntegrations && selectedIntegrationId != null) {
-      loadDeliveries(selectedIntegrationId).catch((e) => setError(String(e)));
-    }
-  }, [selectedIntegrationId, tab, canReadIntegrations, showProtectedPanels]);
 
   useEffect(() => {
     if (tab === 'integrations' && !canReadIntegrations && integrationSubTab === 'settings') {
@@ -878,6 +800,7 @@ function App() {
                   t('customers.unnamed', { id: customer.id });
                 setQ(customerName);
                 setShowSuggestions(false);
+                setSuggestionQuery('');
                 // Also filter the main customer list
                 loadCustomers(customerName, 1, customerLimit);
               }}
@@ -939,28 +862,29 @@ function App() {
                     select={(id) => setSelectedIntegrationId(id)}
                     reload={() => loadIntegrations()}
                     create={async (p) => {
-                      await Api.createIntegration(p);
-                      await loadIntegrations();
+                      await createIntegrationMutation.mutateAsync(p);
+                      await queryClient.invalidateQueries({ queryKey: ['integrations'] });
                     }}
                     update={async (id, p) => {
-                      await Api.updateIntegration(id, p);
-                      await loadIntegrations();
+                      await updateIntegrationMutation.mutateAsync({ id, payload: p });
+                      await queryClient.invalidateQueries({ queryKey: ['integrations'] });
                     }}
                     rotate={async (id) => {
-                      await Api.rotateIntegrationSecret(id);
-                      await loadIntegrations();
+                      await rotateIntegrationMutation.mutateAsync(id);
+                      await queryClient.invalidateQueries({ queryKey: ['integrations'] });
                       setSelectedIntegrationId(id);
                     }}
                     remove={async (id) => {
-                      await Api.deleteIntegration(id);
+                      await removeIntegrationMutation.mutateAsync(id);
                       setSelectedIntegrationId(null);
-                      await loadIntegrations();
+                      await queryClient.invalidateQueries({ queryKey: ['integrations'] });
+                      await queryClient.invalidateQueries({ queryKey: ['integration-deliveries'] });
                     }}
                     refreshDeliveries={async (id) => {
                       await loadDeliveries(id);
                     }}
                     createDevSale={async (customerQr) => {
-                      const result = await Api.createDevSale(customerQr);
+                      const result = await createDevSaleMutation.mutateAsync(customerQr);
                       await Promise.all([
                         canReadDashboard ? invalidateDashboard() : Promise.resolve(),
                         loadCustomers(),
@@ -982,8 +906,8 @@ function App() {
               canEdit={(me?.permissions || []).includes('product.create')}
               showProductImport={showProductImport}
               create={async (p) => {
-                await Api.createProduct(p);
-                await loadProducts();
+                await createProductMutation.mutateAsync(p);
+                await queryClient.invalidateQueries({ queryKey: ['products'] });
               }}
               setShowProductImport={setShowProductImport}
             />

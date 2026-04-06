@@ -1,34 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Api, ConsentRecord } from '../api';
+import { ConsentRecord } from '../api';
+import { useConsents } from '../hooks/use-consents';
 
 export function ConsentTable({ customerId }: { customerId?: number }) {
   const { t } = useTranslation();
-  const [consents, setConsents] = useState<ConsentRecord[]>([]);
-  const [loading, setLoading] = useState(false);
   const [selectedConsent, setSelectedConsent] = useState<ConsentRecord | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, [customerId]);
-
-  async function loadData() {
-    setLoading(true);
-    try {
-      let data;
-      if (customerId) {
-        data = await Api.getCustomerConsents(customerId);
-      } else {
-        data = await Api.listConsents();
-      }
-      setConsents(data.items);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const consentsQuery = useConsents({ customerId });
+  const consents = consentsQuery.data ?? [];
+  const loading = consentsQuery.isLoading;
 
   return (
     <div style={{ overflowX: 'auto' }}>

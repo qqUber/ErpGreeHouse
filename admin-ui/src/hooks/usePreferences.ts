@@ -1,3 +1,4 @@
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Api } from '../api';
@@ -75,14 +76,11 @@ export function usePreferences(): UsePreferencesReturn {
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [dashboardPrefs, setDashboardPrefs] = useState<DashboardPreferences | null>(null);
   const [featureFlags, setFeatureFlags] = useState<FeatureFlags | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadPreferences = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
+  const preferencesQuery = useQuery({
+    queryKey: ['user-preferences-bundle'],
+    queryFn: async () => {
       const [userPrefs, dashPrefs, flags] = await Promise.all([
         Api.getUserPreferences().catch((err) => {
           console.warn('[usePreferences] Failed to load user preferences:', err);
@@ -98,25 +96,44 @@ export function usePreferences(): UsePreferencesReturn {
         }),
       ]);
 
-      if (userPrefs) {
-        setPreferences(userPrefs.preferences);
-      }
-      if (dashPrefs) {
-        setDashboardPrefs(dashPrefs);
-      }
-      if (flags) {
-        setFeatureFlags(flags);
-      }
-    } catch (err) {
-      setError(String(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      return {
+        userPrefs,
+        dashPrefs,
+        flags,
+      };
+    },
+    staleTime: 60_000,
+  });
 
   useEffect(() => {
-    loadPreferences();
-  }, [loadPreferences]);
+    if (!preferencesQuery.data) {
+      return;
+    }
+
+    if (preferencesQuery.data.userPrefs) {
+      setPreferences(preferencesQuery.data.userPrefs.preferences);
+    }
+    if (preferencesQuery.data.dashPrefs) {
+      setDashboardPrefs(preferencesQuery.data.dashPrefs);
+    }
+    if (preferencesQuery.data.flags) {
+      setFeatureFlags(preferencesQuery.data.flags);
+    }
+  }, [preferencesQuery.data]);
+
+  useEffect(() => {
+    if (!preferencesQuery.error) {
+      return;
+    }
+    setError(String(preferencesQuery.error));
+  }, [preferencesQuery.error]);
+
+  const updatePreferencesMutation = useMutation({
+    mutationFn: (updated: UserPreferences) => Api.updateUserPreferences(updated),
+  });
+  const updateDashboardPrefsMutation = useMutation({
+    mutationFn: (updated: DashboardPreferences) => Api.updateDashboardPreferences(updated),
+  });
 
   const updatePreferences = useCallback(
     async (prefs: Partial<UserPreferences>) => {
@@ -124,14 +141,14 @@ export function usePreferences(): UsePreferencesReturn {
         const current = preferences || DEFAULT_PREFERENCES;
         const updated = { ...current, ...prefs };
 
-        await Api.updateUserPreferences(updated);
+        await updatePreferencesMutation.mutateAsync(updated);
         setPreferences(updated);
       } catch (err) {
         setError(String(err));
         throw err;
       }
     },
-    [preferences]
+    [preferences, updatePreferencesMutation]
   );
 
   const updateDashboardPrefs = useCallback(
@@ -140,14 +157,14 @@ export function usePreferences(): UsePreferencesReturn {
         const current = dashboardPrefs || DEFAULT_DASHBOARD_PREFS;
         const updated = { ...current, ...prefs };
 
-        await Api.updateDashboardPreferences(updated);
+        await updateDashboardPrefsMutation.mutateAsync(updated);
         setDashboardPrefs(updated);
       } catch (err) {
         setError(String(err));
         throw err;
       }
     },
-    [dashboardPrefs]
+    [dashboardPrefs, updateDashboardPrefsMutation]
   );
 
   const setTheme = useCallback(
@@ -187,7 +204,7 @@ export function usePreferences(): UsePreferencesReturn {
 
   return {
     preferences,
-    isLoading,
+    isLoading: preferencesQuery.isLoading,
     error,
     updatePreferences,
     dashboardPrefs,
@@ -198,6 +215,9 @@ export function usePreferences(): UsePreferencesReturn {
     setDensity,
     setLocale,
     toggleSidebar,
-    refresh: loadPreferences,
+    refresh: async () => {
+      setError(null);
+      await preferencesQuery.refetch();
+    },
   };
 }
