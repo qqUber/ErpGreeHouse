@@ -47,10 +47,10 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
+      - uses: github/codeql-action/init@v4
         with:
           languages: python,javascript-typescript
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@v4
 
   precommit:
     runs-on: ubuntu-latest
@@ -144,6 +144,28 @@ jobs:
       - name: e2e
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build e2e-runner
+      
+      - name: Wait for E2E services to be healthy
+        run: |
+          for i in {1..60}; do
+            docker compose -f docker-compose.yml -f docker-compose.test.yml ps backend-e2e | grep -q "healthy" && \
+            docker compose -f docker-compose.yml -f docker-compose.test.yml ps frontend-e2e | grep -q "healthy" && break
+            echo "Waiting for E2E services to be healthy..."
+            sleep 2
+          done
+          if ! docker compose -f docker-compose.yml -f docker-compose.test.yml ps backend-e2e | grep -q "healthy"; then
+            echo "Backend E2E failed to become healthy"
+            docker compose -f docker-compose.yml -f docker-compose.test.yml logs backend-e2e
+            exit 1
+          fi
+          if ! docker compose -f docker-compose.yml -f docker-compose.test.yml ps frontend-e2e | grep -q "healthy"; then
+            echo "Frontend E2E failed to become healthy"
+            docker compose -f docker-compose.yml -f docker-compose.test.yml logs frontend-e2e
+            exit 1
+          fi
+      
+      - name: Monitor E2E logs
+        run: |
           timeout 45s docker compose -f docker-compose.yml -f docker-compose.test.yml logs -f --tail=50 e2e-runner
           CID="$(docker compose -f docker-compose.yml -f docker-compose.test.yml ps -aq e2e-runner | tail -n 1)"
           if [ -z "$CID" ]; then

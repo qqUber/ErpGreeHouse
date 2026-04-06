@@ -68,11 +68,12 @@ jobs:
           path: middleware/reports/unit_report.html
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v5.5.2
+        uses: codecov/codecov-action@v5
         with:
           file: ./middleware/reports/coverage.xml
           flags: unittests
           name: codecov-unit
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   # =============================================================================
   # E2E Tests (Run After Unit Tests)
@@ -349,6 +350,9 @@ jobs:
     needs: [unit-tests, integration-tests, e2e-tests, security-tests, linting, frontend-tests]
     if: always()
     steps:
+      - uses: actions/checkout@v4
+      - name: Ensure compose base .env exists
+        run: touch .env
       - name: Remove test volumes
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml down -v

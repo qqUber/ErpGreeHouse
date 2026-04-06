@@ -86,6 +86,16 @@ Recent DevOps fixes:
 - ✅ Removed `|| true` from linting commands (flake8, mypy, isort, bandit)
 - ✅ Fixed git fetch error masking in CD workflows
 - ✅ Removed `|| true` from E2E log monitoring (tests.yml, pr.yml, ci.yml, e2e-dev.yml)
+- ✅ Fixed report path mismatch (run_tests.sh → middleware/reports/)
+- ✅ Fixed race conditions by preserving volumes between test jobs
+- ✅ Added cleanup job to remove volumes after all tests complete
+- ✅ Added service health check waits before all E2E tests (tests.yml, pr.yml, ci.yml, e2e-dev.yml)
+- ✅ Standardized artifact upload error handling (if-no-files-found: error)
+- ✅ Added coverage gate validation to prevent false failures
+- ✅ Updated CodeQL actions from deprecated v3 to v4
+- ✅ Updated codecov action to v5 with token support
+- ✅ Fixed cleanup job to checkout code before docker compose down
+- ✅ Added reports directory creation in telegram-integration.yml
 
 ## Known Issues
 

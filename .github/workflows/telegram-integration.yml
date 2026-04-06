@@ -34,10 +34,14 @@ jobs:
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
         run: |
           docker compose -f docker-compose.yml -f docker-compose.telegram-test.yml up --build --exit-code-from telegram-integration telegram-integration
-
+      
       - name: Stop Telegram test stack
         if: always()
         run: docker compose -f docker-compose.yml -f docker-compose.telegram-test.yml down -v
+      
+      - name: Ensure reports directory exists
+        if: always()
+        run: mkdir -p middleware/reports
 
       - name: Upload Telegram test report
         uses: actions/upload-artifact@v4
