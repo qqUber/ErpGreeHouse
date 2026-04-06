@@ -18,7 +18,7 @@ services:
 
   # PostgreSQL for testing (optional, SQLite is default)
   postgres-test:
-    image: postgres:18-alpine
+    image: postgres:16-alpine
     container_name: erp_test_postgres
     environment:
       POSTGRES_DB: telegram_crm_test
