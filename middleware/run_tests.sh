@@ -14,7 +14,7 @@ pytest -q \
   --cov-report=html:../out/coverage \
   --html=../out/test-report.html \
   --self-contained-html \
-  tests/unit/ || true
+  tests/unit/
 
 # Run integration tests
 echo "Running integration tests..."
@@ -25,6 +25,6 @@ pytest -q \
   --cov-report=xml:../out/coverage-integration.xml \
   --html=../out/test-integration-report.html \
   --self-contained-html \
-  tests/integrations/ || true
+  tests/integrations/
 
 echo "Middleware tests completed"
