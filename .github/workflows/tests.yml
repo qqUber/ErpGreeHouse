@@ -284,22 +284,22 @@ jobs:
       - name: Run Black format check
         working-directory: ./middleware
         run: |
-          black --check app/ tests/
+          black --check --line-length=120 app/ tests/
 
       - name: Run isort import check
         working-directory: ./middleware
         run: |
-          isort --check-only app/ tests/
+          isort --check-only --profile black app/ tests/
 
       - name: Run Flake8 linting
         working-directory: ./middleware
         run: |
-          flake8 app/ tests/ --max-line-length=88 --extend-ignore=E203,W503,E501,F401,E402,W291,W391,W293,F841,F541,E231,E201,E202,E712,E722,F811
+          flake8 app/ tests/ --max-line-length=120 --ignore=E501,W503,E203,E722
 
       - name: Run mypy type checking
         working-directory: ./middleware
         run: |
-          mypy app/ --ignore-missing-imports --install-types --non-interactive
+          mypy --config-file=mypy.ini app/ --ignore-missing-imports --install-types --non-interactive
 
   # =============================================================================
   # Frontend Tests (admin-ui)
