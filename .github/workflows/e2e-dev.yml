@@ -37,7 +37,7 @@ jobs:
           E2E_ARGS: --project ${{ matrix.project }} --shard ${{ matrix.shard }}/${{ matrix.shards }}
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build e2e-runner
-          timeout 45s docker compose -f docker-compose.yml -f docker-compose.test.yml logs -f --tail=50 e2e-runner || true
+          timeout 45s docker compose -f docker-compose.yml -f docker-compose.test.yml logs -f --tail=50 e2e-runner
           CID="$(docker compose -f docker-compose.yml -f docker-compose.test.yml ps -aq e2e-runner | tail -n 1)"
           if [ -z "$CID" ]; then
             echo "E2E runner container ID not found"

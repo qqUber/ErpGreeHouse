@@ -99,7 +99,7 @@ jobs:
 
       - name: update deploy pointer
         run: |
-          git fetch origin deploy-manifests || true
+          git fetch origin deploy-manifests
           if git show-ref --verify --quiet refs/remotes/origin/deploy-manifests; then
             git checkout -B deploy-manifests origin/deploy-manifests
           else
