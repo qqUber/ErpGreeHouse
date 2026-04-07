@@ -42,7 +42,7 @@ class TestRequestContext:
         reset_admin_session_token(initial_tok)
 
         # Set initial token
-        token1 = set_admin_session_token("token1")
+        set_admin_session_token("token1")
         assert get_admin_session_token() == "token1"
 
         # Set new token

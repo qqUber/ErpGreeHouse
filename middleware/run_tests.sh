@@ -28,6 +28,6 @@ pytest -q \
   --cov-report=xml:reports/coverage-integration.xml \
   --html=reports/test-integration-report.html \
   --self-contained-html \
-  tests/integrations/
+  tests/integration/
 
 echo "Middleware tests completed"

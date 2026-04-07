@@ -161,7 +161,7 @@ def clean_database() -> Generator[str, None, None]:
     import sqlite3
     import time
 
-    print(f"[conftest] clean_database fixture START")
+    print("[conftest] clean_database fixture START")
 
     try:
         from app.db import init_db
@@ -169,7 +169,7 @@ def clean_database() -> Generator[str, None, None]:
         print(f"[conftest] Error importing init_db: {e}")
         raise
 
-    print(f"[conftest] clean_database fixture called")
+    print("[conftest] clean_database fixture called")
 
     # Step 1: Restore the test database path before each test
     # This ensures tests that change CRM_DB_PATH don't affect other tests

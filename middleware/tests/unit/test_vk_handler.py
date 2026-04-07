@@ -11,7 +11,6 @@ Tests the VK bot integration including:
 Run with: pytest middleware/tests/unit/test_vk_handler.py -v
 """
 
-import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest

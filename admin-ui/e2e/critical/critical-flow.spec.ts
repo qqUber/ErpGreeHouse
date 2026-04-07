@@ -33,8 +33,8 @@ async function apiLogin(request: any, username: string, password: string) {
   const res = await request.post('/api/v1/public/auth/login', { data: { username, password } });
   expect(res.ok()).toBeTruthy();
   const j = await res.json();
-  expect(j.token).toBeTruthy();
-  return String(j.token);
+  expect(j.token || j.access_token).toBeTruthy();
+  return String(j.token || j.access_token);
 }
 
 async function apiPostTestCleanup(request: APIRequestContext, payload: any) {

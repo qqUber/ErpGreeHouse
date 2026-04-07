@@ -8,17 +8,16 @@ Comprehensive tests for:
 4. RBAC Permission Matrix validation
 """
 
-import os
-from unittest.mock import MagicMock, patch
+from app.auth import get_default_permissions, get_role_permissions
 
-import pytest
-from fastapi import HTTPException
 
-# Import the functions we need to test
-from app.auth import (
-    check_permission,
-    check_roles,
-    get_default_permissions,
-    get_role_permissions,
-)
-from app.db import get_db
+def test_default_permissions_for_operator_include_pos_sale():
+    """Operator default permissions should include POS sale."""
+    perms = get_default_permissions("operator")
+    assert "pos.sale" in perms
+
+
+def test_role_permissions_for_owner_is_wildcard():
+    """Owner role should have wildcard permission."""
+    owner_perms = get_role_permissions("owner")
+    assert owner_perms == ["*"]
