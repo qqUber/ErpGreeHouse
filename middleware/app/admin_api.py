@@ -639,7 +639,8 @@ def analytics_recalculate(
     conn = db.connect()
     try:
         # Get all customers with transactions
-        cur = conn.execute("""
+        cur = conn.execute(
+            """
             SELECT
                 c.id,
                 COALESCE(SUM(t.total_amount), 0) as ltv,
@@ -649,7 +650,8 @@ def analytics_recalculate(
             FROM customers c
             LEFT JOIN transactions t ON c.id = t.customer_id
             GROUP BY c.id
-            """)
+            """
+        )
 
         updated = 0
         for row in cur.fetchall():
@@ -721,13 +723,15 @@ def analytics_summary(
         sales = dict(cur.fetchone())
 
         # Customer summary
-        cur = conn.execute("""
+        cur = conn.execute(
+            """
             SELECT
                 COUNT(*) as total_customers,
                 COUNT(CASE WHEN created_at >= date('now', '-7 days') THEN 1 END) as new_this_week,
                 COUNT(CASE WHEN telegram_id IS NOT NULL THEN 1 END) as with_telegram
             FROM customers
-            """)
+            """
+        )
         customers = dict(cur.fetchone())
 
         return {
