@@ -37,8 +37,8 @@ class TestGetCustomersWithConsent:
         )
         conn.commit()
 
-        # Test filtering by marketing consent
-        result = get_customers_with_consent(marketing_consent=True, limit=10, offset=0)
+        # Test filtering by marketing consent (function returns only consented by default)
+        result = get_customers_with_consent(limit=10, offset=0)
 
         # Only customer with marketing consent should be returned
         assert len(result) == 1

@@ -36,19 +36,23 @@ class TestRequestContext:
 
     def test_reset_admin_session_token(self):
         """reset_admin_session_token should reset to previous value."""
+        # First, ensure we start from default (None)
+        # Save the current token so we can reset after the test
+        initial_tok = set_admin_session_token(None)
+        reset_admin_session_token(initial_tok)
+
         # Set initial token
         token1 = set_admin_session_token("token1")
         assert get_admin_session_token() == "token1"
 
         # Set new token
-        set_admin_session_token("token2")
+        token2 = set_admin_session_token("token2")
         assert get_admin_session_token() == "token2"
 
-        # Reset to previous
-        reset_admin_session_token(token1)
-        # After reset, should be None (default) since we reset to before any set
+        # Reset to state before token2 was set
+        reset_admin_session_token(token2)
         result = get_admin_session_token()
-        assert result is None
+        assert result == "token1"
 
     def test_set_none_token(self):
         """Should be able to set token to None explicitly."""
@@ -60,23 +64,21 @@ class TestRequestContext:
 
     def test_isolation_between_contexts(self):
         """Context variables should be isolated between different contexts."""
-        import asyncio
+        import contextvars
 
-        async def task1():
-            set_admin_session_token("task1-token")
-            return get_admin_session_token()
+        results = {}
 
-        async def task2():
-            set_admin_session_token("task2-token")
-            return get_admin_session_token()
+        def run_in_ctx(name, token_value):
+            set_admin_session_token(token_value)
+            results[name] = get_admin_session_token()
 
-        # Run both tasks and verify they have different tokens
-        t1 = asyncio.create_task(task1())
-        t2 = asyncio.create_task(task2())
+        # Run in separate contexts via copy_context()
+        ctx1 = contextvars.copy_context()
+        ctx2 = contextvars.copy_context()
 
-        result1 = asyncio.get_event_loop().run_until_complete(t1)
-        result2 = asyncio.get_event_loop().run_until_complete(t2)
+        ctx1.run(run_in_ctx, "task1", "task1-token")
+        ctx2.run(run_in_ctx, "task2", "task2-token")
 
-        # Each task should see its own token
-        assert result1 == "task1-token"
-        assert result2 == "task2-token"
+        # Each context should see its own token
+        assert results["task1"] == "task1-token"
+        assert results["task2"] == "task2-token"

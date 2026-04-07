@@ -82,6 +82,15 @@ services:
       TEST_MODE: "true"
       ERP_MOCK_MODE: "true"
       DEBUG_MODE: "true"
+      ENVIRONMENT: development
+      ADMIN_BOOTSTRAP_DEFAULT: "true"
+      ADMIN_BOOTSTRAP_DEMO_USERS: "true"
+      ADMIN_DEFAULT_USERNAME: admin
+      ADMIN_DEFAULT_PASSWORD: admin
+      ADMIN_OPERATOR_USERNAME: operator
+      ADMIN_OPERATOR_PASSWORD: operator
+      ADMIN_MARKETER_USERNAME: manager
+      ADMIN_MARKETER_PASSWORD: manager
       REDIS_URL: redis://redis:6379/1
       DATABASE_URL: sqlite:///app/data/test_telegram_crm.db
       CRM_DB_PATH: /app/data/test_telegram_crm.db

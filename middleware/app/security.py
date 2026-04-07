@@ -18,4 +18,4 @@ def new_salt() -> str:
 
 
 def constant_time_equals(a: str, b: str) -> bool:
-    return secrets.compare_digest(a, b)
+    return secrets.compare_digest(a.encode("utf-8"), b.encode("utf-8"))

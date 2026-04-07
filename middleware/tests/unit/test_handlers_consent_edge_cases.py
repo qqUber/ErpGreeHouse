@@ -31,8 +31,17 @@ class TestStoreConsentEdgeCases:
         )
         conn.commit()
 
-        # Test storing consent
-        _store_consent(123456, "data_processing", True, conn)
+        customer_row = conn.execute("SELECT id FROM customers WHERE telegram_id = ?", (123456,)).fetchone()
+        assert customer_row is not None
+
+        # Test storing consent — signature: (customer_id, consent_text, consent_version, consent_type, conn)
+        _store_consent(
+            customer_id=int(customer_row["id"]),
+            consent_text="I agree to data processing",
+            consent_version="1.0",
+            consent_type="data_processing",
+            conn=conn,
+        )
 
         # Verify consent was stored
         result = conn.execute(

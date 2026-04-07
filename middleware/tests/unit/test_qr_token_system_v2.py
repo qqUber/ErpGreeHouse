@@ -27,8 +27,7 @@ def _create_conn() -> sqlite3.Connection:
 
 def _create_customers_table(conn: sqlite3.Connection, *, unique_qr: bool = True) -> None:
     qr_constraint = "UNIQUE" if unique_qr else ""
-    conn.execute(
-        f"""
+    conn.execute(f"""
         CREATE TABLE customers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             phone TEXT,
@@ -49,8 +48,7 @@ def _create_customers_table(conn: sqlite3.Connection, *, unique_qr: bool = True)
             created_at TEXT DEFAULT (datetime('now')),
             updated_at TEXT DEFAULT (datetime('now'))
         )
-        """
-    )
+        """)
 
 
 class TestImprovedQRTokenSystem:
@@ -58,24 +56,20 @@ class TestImprovedQRTokenSystem:
 
     def test_uuid5_overflow_protection(self):
         conn = _create_conn()
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 qr_token TEXT
             )
-            """
-        )
-        conn.execute(
-            """
+            """)
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-            """
-        )
+            """)
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
             ("qr_token_base_guid", "550e8400-e29b-41d4-a716-446655440000"),
@@ -93,24 +87,20 @@ class TestImprovedQRTokenSystem:
 
     def test_simulated_multi_process_token_generation(self):
         conn = _create_conn()
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 qr_token TEXT UNIQUE
             )
-            """
-        )
-        conn.execute(
-            """
+            """)
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-            """
-        )
+            """)
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
             ("qr_token_base_guid", "550e8400-e29b-41d4-a716-446655440000"),
@@ -129,16 +119,14 @@ class TestImprovedQRTokenSystem:
     def test_simulated_multi_process_customer_creation(self):
         conn = _create_conn()
         _create_customers_table(conn)
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-            """
-        )
+            """)
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
             ("qr_token_base_guid", "550e8400-e29b-41d4-a716-446655440000"),
@@ -169,16 +157,14 @@ class TestImprovedQRTokenSystem:
 
     def test_base_guid_generation_is_stable_across_calls(self):
         conn = _create_conn()
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-            """
-        )
+            """)
 
         first_guid = get_or_generate_base_guid(conn)
         second_guid = get_or_generate_base_guid(conn)
@@ -189,16 +175,14 @@ class TestImprovedQRTokenSystem:
     def test_transaction_rollback_on_error(self):
         conn = _create_conn()
         _create_customers_table(conn)
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-            """
-        )
+            """)
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
             ("qr_token_base_guid", "550e8400-e29b-41d4-a716-446655440000"),
@@ -258,16 +242,14 @@ class TestImprovedQRTokenSystem:
     def test_database_locked_handling(self):
         conn = _create_conn()
         _create_customers_table(conn)
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-            """
-        )
+            """)
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
             ("qr_token_base_guid", "550e8400-e29b-41d4-a716-446655440000"),
@@ -290,16 +272,14 @@ class TestImprovedQRTokenSystem:
     def test_customer_conflict_error(self):
         conn = _create_conn()
         _create_customers_table(conn, unique_qr=False)
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-            """
-        )
+            """)
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
             ("qr_token_base_guid", "550e8400-e29b-41d4-a716-446655440000"),
@@ -333,24 +313,20 @@ class TestPerformanceAndScalability:
 
     def test_large_scale_token_generation(self):
         conn = _create_conn()
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 qr_token TEXT UNIQUE
             )
-            """
-        )
-        conn.execute(
-            """
+            """)
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-            """
-        )
+            """)
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
             ("qr_token_base_guid", "550e8400-e29b-41d4-a716-446655440000"),
@@ -370,24 +346,20 @@ class TestPerformanceAndScalability:
 
     def test_memory_usage_stability(self):
         conn = _create_conn()
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 qr_token TEXT UNIQUE
             )
-            """
-        )
-        conn.execute(
-            """
+            """)
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-            """
-        )
+            """)
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
             ("qr_token_base_guid", "550e8400-e29b-41d4-a716-446655440000"),

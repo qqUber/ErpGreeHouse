@@ -33,16 +33,14 @@ class TestQRTokenGeneration:
         mock_uuid.return_value = "550e8400-e29b-41d4-a716-446655440000"
 
         conn = sqlite3.connect(":memory:")
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-            """
-        )
+            """)
 
         base_guid = get_or_generate_base_guid(conn)
 
@@ -53,16 +51,14 @@ class TestQRTokenGeneration:
         existing_guid = "12345678-1234-5678-9abc-123456789012"
 
         conn = sqlite3.connect(":memory:")
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-            """
-        )
+            """)
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
             ("qr_token_base_guid", existing_guid),
@@ -75,24 +71,20 @@ class TestQRTokenGeneration:
         mock_get_guid.return_value = "550e8400-e29b-41d4-a716-446655440000"
 
         conn = sqlite3.connect(":memory:")
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 qr_token TEXT
             )
-            """
-        )
-        conn.execute(
-            """
+            """)
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-            """
-        )
+            """)
 
         token1 = generate_unique_qr_token(conn)
         assert len(token1) == 8
@@ -118,24 +110,20 @@ class TestQRTokenGeneration:
 
     def test_qr_token_incremental_pattern(self):
         conn = sqlite3.connect(":memory:")
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 qr_token TEXT
             )
-            """
-        )
-        conn.execute(
-            """
+            """)
+        conn.execute("""
             CREATE TABLE system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
-            """
-        )
+            """)
         conn.execute(
             "INSERT INTO system_settings (key, value) VALUES (?, ?)",
             ("qr_token_base_guid", "550e8400-e29b-41d4-a716-446655440000"),

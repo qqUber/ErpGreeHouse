@@ -67,8 +67,8 @@ class TestNewSalt:
     def test_new_salt_urlsafe(self):
         """Salt should be URL-safe base64."""
         salt = new_salt()
-        # URL-safe base64 uses - and _ instead of + and /
-        assert all(c in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-=" for c in salt)
+        # URL-safe base64 uses A-Z, a-z, 0-9, -, _ and optional = padding
+        assert all(c in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_=" for c in salt)
 
 
 class TestConstantTimeEquals:

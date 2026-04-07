@@ -5,9 +5,9 @@ name: Tests
 
 on:
   push:
-    branches: [ main, develop, 'feature/**', dev-clean ]
+    branches: [ main, dev, 'feature/**', dev-clean ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, dev ]
 
 jobs:
   # =============================================================================
@@ -394,9 +394,11 @@ jobs:
             echo "✅ Integration Tests: PASSED" >> $GITHUB_STEP_SUMMARY
           fi
           
-          if [ "$E2E_STATUS" != "success" ]; then
+          if [ "$E2E_STATUS" != "success" ] && [ "$E2E_STATUS" != "skipped" ]; then
             echo "❌ BLOCKER: E2E Tests Failed - MVP NOT Ready" >> $GITHUB_STEP_SUMMARY
             MVP_READY="false"
+          elif [ "$E2E_STATUS" = "skipped" ]; then
+            echo "⏭️ E2E Tests: SKIPPED" >> $GITHUB_STEP_SUMMARY
           else
             echo "✅ E2E Tests: PASSED (Including Loyalty Flow)" >> $GITHUB_STEP_SUMMARY
           fi

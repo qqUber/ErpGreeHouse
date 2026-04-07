@@ -62,7 +62,9 @@ class TestRuntime:
 
         import app.runtime as runtime_module
 
-        with patch.dict(os.environ, {"DEBUG": "1"}, clear=False):
+        env = {k: v for k, v in os.environ.items() if k != "DEBUG_MODE"}
+        env["DEBUG"] = "1"
+        with patch.dict(os.environ, env, clear=True):
             importlib.reload(runtime_module)
             assert runtime_module.is_debug() is True
 
@@ -85,6 +87,8 @@ class TestRuntime:
 
         true_values = ["1", "true", "yes", "True", "TRUE"]
         for val in true_values:
-            with patch.dict(os.environ, {"DEBUG": val}, clear=False):
+            env = {k: v for k, v in os.environ.items() if k != "DEBUG_MODE"}
+            env["DEBUG"] = val
+            with patch.dict(os.environ, env, clear=True):
                 importlib.reload(runtime_module)
                 assert runtime_module.is_debug() is True, f"Failed for DEBUG={val}"
