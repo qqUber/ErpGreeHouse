@@ -201,7 +201,7 @@ jobs:
           CID="$(docker compose -f docker-compose.yml -f docker-compose.test.yml ps -q backend-test-integration)"
           timeout 300 bash -c "until [ \"\$(docker inspect -f '{{.State.Status}}' \"$CID\")\" = \"exited\" ]; do sleep 5; done" || \
           { echo "Integration tests timed out"; docker compose -f docker-compose.yml -f docker-compose.test.yml logs backend-test-integration; exit 1; }
-          [ "$(docker inspect -f '{{.State.ExitCode}}' "$CID\")" = "0" ] || \
+          [ "$(docker inspect -f '{{.State.ExitCode}}' "$CID")" = "0" ] || \
           { echo "Integration tests failed"; docker compose -f docker-compose.yml -f docker-compose.test.yml logs backend-test-integration; exit 1; }
 
       - name: Stop integration test stack
