@@ -8,12 +8,32 @@ Two simple functions for all QR operations.
 import io
 import random
 import sqlite3
+import threading
+from collections import deque
 
 import qrcode
 from aiogram.types import BufferedInputFile
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 
 from ..config import get_settings
+
+_RECENT_TOKEN_CACHE_SIZE = 50_000
+_recent_tokens = deque()
+_recent_tokens_set = set()
+_recent_tokens_lock = threading.Lock()
+
+
+def _reserve_recent_token(token: str) -> bool:
+    """Reserve token in process-local cache to reduce burst duplicates."""
+    with _recent_tokens_lock:
+        if token in _recent_tokens_set:
+            return False
+        _recent_tokens.append(token)
+        _recent_tokens_set.add(token)
+        if len(_recent_tokens) > _RECENT_TOKEN_CACHE_SIZE:
+            expired = _recent_tokens.popleft()
+            _recent_tokens_set.discard(expired)
+        return True
 
 
 def generate_unique_token(conn: sqlite3.Connection, max_attempts: int = 100) -> str:
@@ -32,12 +52,13 @@ def generate_unique_token(conn: sqlite3.Connection, max_attempts: int = 100) -> 
         # Verify uniqueness in database
         try:
             existing = conn.execute("SELECT id FROM customers WHERE qr_token=?", (qr_code,)).fetchone()
-            if not existing:
+            if not existing and _reserve_recent_token(qr_code):
                 return qr_code
         except sqlite3.OperationalError as e:
             if "no such table" in str(e):
                 # Table doesn't exist, token is unique by default
-                return qr_code
+                if _reserve_recent_token(qr_code):
+                    return qr_code
             else:
                 raise
 
