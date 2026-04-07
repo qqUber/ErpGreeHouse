@@ -153,7 +153,7 @@ jobs:
           path: |
             admin-ui/playwright-report/
             admin-ui/test-results/
-          if-no-files-found: error
+          if-no-files-found: warn
       - name: Stop E2E test stack
         if: always()
         run: docker compose -f docker-compose.yml -f docker-compose.test.yml down -v

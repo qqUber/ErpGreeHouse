@@ -34,12 +34,23 @@ def discover_seed_files(seed_dir: str | None = None) -> list[Path]:
 
     Only files matching the `00-*.json` convention are considered seed migrations.
     """
-    if seed_dir is None:
-        seed_dir = os.getenv("SEED_DIR_PATH", "/app/seed")
+    candidates: list[Path] = []
+    if seed_dir is not None:
+        candidates.append(Path(seed_dir))
+    else:
+        configured = os.getenv("SEED_DIR_PATH")
+        if configured:
+            candidates.append(Path(configured))
+        candidates.append(Path("/app/seed"))
+        # Local fallback for non-container test runs.
+        candidates.append(Path(__file__).resolve().parent.parent / "seed")
 
-    path = Path(seed_dir)
-    if not path.exists():
-        logger.error("Seed directory not found: %s", seed_dir)
+    path = next((candidate for candidate in candidates if candidate.exists()), None)
+    if path is None:
+        logger.error(
+            "Seed directory not found. Checked: %s",
+            ", ".join(str(candidate) for candidate in candidates),
+        )
         raise SystemExit(1)
 
     seed_files = sorted(
@@ -48,7 +59,7 @@ def discover_seed_files(seed_dir: str | None = None) -> list[Path]:
         if p.is_file() and len(p.name) >= 4 and p.name[0:2].isdigit() and p.name[2] == "-"
     )
     if not seed_files:
-        logger.warning("No ordered seed files found in %s", seed_dir)
+        logger.warning("No ordered seed files found in %s", path)
     return seed_files
 
 
