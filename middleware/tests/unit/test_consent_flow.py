@@ -30,7 +30,7 @@ def setup_test_db():
         os.unlink(db_path)
 
 
-def test_consents_table_has_consent_type_column(setup_test_db):
+def test_consents_table_has_consent_type_column(clean_database):
     """Test that consents table has consent_type column for 152-ФЗ."""
     from app.db import get_db
 
@@ -45,7 +45,7 @@ def test_consents_table_has_consent_type_column(setup_test_db):
     conn.close()
 
 
-def test_store_consent_with_type(setup_test_db):
+def test_store_consent_with_type(clean_database):
     """Test storing consent with different types."""
     from app.db import get_db
     from app.handlers import _store_consent
@@ -87,7 +87,7 @@ def test_store_consent_with_type(setup_test_db):
     conn.close()
 
 
-def test_get_customer_consents(setup_test_db):
+def test_get_customer_consents(clean_database):
     """Test retrieving customer consent status."""
     from app.db import get_db
     from app.handlers import _get_customer_consents
@@ -114,7 +114,7 @@ def test_get_customer_consents(setup_test_db):
     conn.close()
 
 
-def test_update_consent(setup_test_db):
+def test_update_consent(clean_database):
     """Test updating customer consent status."""
     from app.db import get_db
     from app.handlers import _get_customer_consents, _update_consent
@@ -150,7 +150,7 @@ def test_update_consent(setup_test_db):
     conn.close()
 
 
-def test_customers_table_has_required_columns(setup_test_db):
+def test_customers_table_has_required_columns(clean_database):
     """Test that customers table has marketing_allowed and data_processing_allowed columns."""
     from app.db import get_db
 
@@ -178,7 +178,7 @@ def test_policy_version_constant():
     assert int(parts[0]) >= 1, "Major version should be at least 1"
 
 
-def test_consent_audit_trail(setup_test_db):
+def test_consent_audit_trail(clean_database):
     """Test that consent actions create audit trail entries."""
     from app.db import get_db
     from app.handlers import _store_consent, _update_consent

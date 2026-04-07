@@ -122,6 +122,8 @@ if not os.getenv("TELEGRAM_BOT_TOKEN"):
 if not os.getenv("TELEGRAM_CHANNEL_ID"):
     os.environ["TELEGRAM_CHANNEL_ID"] = "-100123456789"
 
+print("[conftest] Module loaded, fixtures registered")
+
 # Global patch for Redis to avoid connection errors during collection/tests
 try:
     import fakeredis
@@ -144,8 +146,8 @@ def test_db_path() -> str:
     return "sqlite:///test_telegram_crm.db"
 
 
-@pytest.fixture(scope="function", autouse=True)
-def clean_database(test_db_path: str) -> Generator[str, None, None]:
+@pytest.fixture(scope="function")
+def clean_database() -> Generator[str, None, None]:
     """
     Unified function-scoped fixture that ensures every test starts with a clean database.
     This combines the database initialization and path restoration logic.
@@ -159,14 +161,31 @@ def clean_database(test_db_path: str) -> Generator[str, None, None]:
     import sqlite3
     import time
 
-    from app.db import init_db
+    print(f"[conftest] clean_database fixture START")
+    
+    try:
+        from app.db import init_db
+    except Exception as e:
+        print(f"[conftest] Error importing init_db: {e}")
+        raise
 
+    print(f"[conftest] clean_database fixture called")
+    
     # Step 1: Restore the test database path before each test
     # This ensures tests that change CRM_DB_PATH don't affect other tests
     db_path = _TEST_DB_PATH
     os.environ["CRM_DB_PATH"] = db_path
+    os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
+    
+    print(f"[conftest] Database path set to {db_path}")
 
-    # Step 2: Ensure all connections are closed before attempting to delete
+    # Step 2: Ensure database directory exists
+    db_dir = os.path.dirname(db_path)
+    if not os.path.exists(db_dir):
+        os.makedirs(db_dir, exist_ok=True)
+        print(f"[conftest] Created database directory: {db_dir}")
+
+    # Step 3: Ensure all connections are closed before attempting to delete
     # Step 2-3: Robust database file cleanup - handle Windows file locking issue
     if os.path.exists(db_path):
         max_retries = 8
@@ -196,6 +215,8 @@ def clean_database(test_db_path: str) -> Generator[str, None, None]:
 
     # Step 4: Initialize fresh test database (this creates all tables)
     init_db()
+    
+    print(f"[conftest] Database initialized at {db_path}")
 
     # Enable WAL mode for better concurrency
     db = get_db()
@@ -204,7 +225,7 @@ def clean_database(test_db_path: str) -> Generator[str, None, None]:
         # Step 6: Seed default role_permissions data (Admin Role and Permissions)
         _seed_role_permissions(conn)
 
-    yield test_db_path
+    yield db_path
 
     # Cleanup: Delete all data from tables instead of dropping them
     # This is faster and avoids locking issues with DROP TABLE

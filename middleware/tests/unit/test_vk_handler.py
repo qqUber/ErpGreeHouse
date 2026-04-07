@@ -12,25 +12,9 @@ Run with: pytest middleware/tests/unit/test_vk_handler.py -v
 """
 
 import os
-import tempfile
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
-
-# Set test database path before importing app modules
-@pytest.fixture(scope="session", autouse=True)
-def setup_test_db():
-    """Set up a temporary test database for VK handler tests."""
-    db_fd, db_path = tempfile.mkstemp(suffix=".db")
-    os.environ["CRM_DB_PATH"] = db_path
-
-    yield db_path
-
-    # Cleanup
-    os.close(db_fd)
-    if os.path.exists(db_path):
-        os.unlink(db_path)
 
 
 @pytest.fixture
@@ -55,7 +39,7 @@ def clean_redis():
 class TestVKConfig:
     """Test VK configuration management."""
 
-    def test_set_vk_config_basic(self, setup_test_db):
+    def test_set_vk_config_basic(self):
         """Test setting basic VK configuration."""
         from app.integrations.bots.vk_handler import VKBot, set_vk_config
 
@@ -69,7 +53,7 @@ class TestVKConfig:
         assert bot.group_id == 123456789
         assert bot.api_version == "5.131"
 
-    def test_set_vk_config_default_version(self, setup_test_db):
+    def test_set_vk_config_default_version(self):
         """Test setting VK config with default API version."""
         from app.integrations.bots.vk_handler import VKBot, set_vk_config
 
@@ -84,7 +68,7 @@ class TestVKWebhookProcessing:
     """Test VK webhook event processing."""
 
     @pytest.mark.asyncio
-    async def test_process_message_event(self, setup_test_db, clean_redis):
+    async def test_process_message_event(self, clean_redis):
         """Test processing a new message event."""
         from app.integrations.bots.vk_handler import process_vk_webhook_event
 
@@ -121,7 +105,7 @@ class TestVKWebhookProcessing:
                     pass
 
     @pytest.mark.asyncio
-    async def test_process_callback_event(self, setup_test_db, clean_redis):
+    async def test_process_callback_event(self, clean_redis):
         """Test processing a callback event (button click)."""
         from app.integrations.bots.vk_handler import process_vk_webhook_event
 
@@ -153,7 +137,7 @@ class TestVKWebhookProcessing:
 class TestVKKeyboard:
     """Test VK keyboard formatting."""
 
-    def test_format_vk_keyboard_structure(self, setup_test_db):
+    def test_format_vk_keyboard_structure(self):
         """Test that VK keyboard has correct structure."""
         from app.integrations.bots.shared.keyboards import (
             format_vk_keyboard,
@@ -166,7 +150,7 @@ class TestVKKeyboard:
         # VK keyboards should have 'one_time' and 'buttons' keys
         assert "one_time" in keyboard or "buttons" in keyboard
 
-    def test_format_vk_keyboard_empty(self, setup_test_db):
+    def test_format_vk_keyboard_empty(self):
         """Test formatting empty keyboard."""
         from app.integrations.bots.shared.keyboards import format_vk_keyboard
 
@@ -178,7 +162,7 @@ class TestVKKeyboard:
 class TestVKSourceConstant:
     """Test VK source constant."""
 
-    def test_vk_source_constant(self, setup_test_db):
+    def test_vk_source_constant(self):
         """Test that VK_SOURCE is correctly defined."""
         from app.integrations.bots.vk_handler import VK_SOURCE
 
@@ -188,7 +172,7 @@ class TestVKSourceConstant:
 class TestVKBotInitialization:
     """Test VKBot class initialization."""
 
-    def test_vkbot_init(self, setup_test_db):
+    def test_vkbot_init(self):
         """Test VKBot initialization with parameters."""
         from app.integrations.bots.vk_handler import VKBot
 
@@ -205,7 +189,7 @@ class TestVKBotInitialization:
         assert bot.message_handler is not None
         assert bot._running is False
 
-    def test_vkbot_default_api_version(self, setup_test_db):
+    def test_vkbot_default_api_version(self):
         """Test VKBot default API version."""
         from app.integrations.bots.vk_handler import VKBot
 
@@ -217,7 +201,7 @@ class TestVKBotInitialization:
 class TestVKConsentIntegration:
     """Test VK consent handling integration."""
 
-    def test_consent_key_format(self, setup_test_db):
+    def test_consent_key_format(self):
         """Test that consent keys are properly formatted for VK."""
         from app.integrations.bots.shared.keys import consent_key
 
@@ -227,7 +211,7 @@ class TestVKConsentIntegration:
         assert "vk" in key
         assert "123456789" in key
 
-    def test_registration_key_format(self, setup_test_db):
+    def test_registration_key_format(self):
         """Test that registration keys are properly formatted for VK."""
         from app.integrations.bots.shared.keys import registration_key
 
@@ -240,21 +224,21 @@ class TestVKConsentIntegration:
 class TestConsentKeyGeneration:
     """Test consent key generation for both TG and VK platforms."""
 
-    def test_consent_key_format_tg(self, setup_test_db):
+    def test_consent_key_format_tg(self):
         """Test consent key format for Telegram."""
         from app.integrations.bots.shared.keys import consent_key
 
         key = consent_key("tg", 123456)
         assert key == "crm:consent:tg:123456"
 
-    def test_consent_key_format_vk(self, setup_test_db):
+    def test_consent_key_format_vk(self):
         """Test consent key format for VK."""
         from app.integrations.bots.shared.keys import consent_key
 
         key = consent_key("vk", 987654321)
         assert key == "crm:consent:vk:987654321"
 
-    def test_consent_key_different_sources(self, setup_test_db):
+    def test_consent_key_different_sources(self):
         """Test that different sources produce different keys."""
         from app.integrations.bots.shared.keys import consent_key
 
@@ -265,28 +249,28 @@ class TestConsentKeyGeneration:
         assert "tg:100" in tg_key
         assert "vk:100" in vk_key
 
-    def test_registration_key_format_tg(self, setup_test_db):
+    def test_registration_key_format_tg(self):
         """Test registration key format for Telegram."""
         from app.integrations.bots.shared.keys import registration_key
 
         key = registration_key("tg", 123456)
         assert key == "crm:reg:tg:123456"
 
-    def test_registration_key_format_vk(self, setup_test_db):
+    def test_registration_key_format_vk(self):
         """Test registration key format for VK."""
         from app.integrations.bots.shared.keys import registration_key
 
         key = registration_key("vk", 987654321)
         assert key == "crm:reg:vk:987654321"
 
-    def test_cart_key_format_tg(self, setup_test_db):
+    def test_cart_key_format_tg(self):
         """Test cart key format for Telegram."""
         from app.integrations.bots.shared.keys import cart_key
 
         key = cart_key("tg", 123456)
         assert key == "crm:cart:tg:123456"
 
-    def test_cart_key_format_vk(self, setup_test_db):
+    def test_cart_key_format_vk(self):
         """Test cart key format for VK."""
         from app.integrations.bots.shared.keys import cart_key
 
@@ -297,7 +281,7 @@ class TestConsentKeyGeneration:
 class TestConsentPolicyVersion:
     """Test consent policy version and text generation."""
 
-    def test_current_policy_version_constant(self, setup_test_db):
+    def test_current_policy_version_constant(self):
         """Test that CURRENT_POLICY_VERSION is defined."""
         from app.integrations.bots.shared.consent import CURRENT_POLICY_VERSION
 
@@ -307,7 +291,7 @@ class TestConsentPolicyVersion:
         # Should follow semver format
         assert "." in CURRENT_POLICY_VERSION
 
-    def test_policy_version_format(self, setup_test_db):
+    def test_policy_version_format(self):
         """Test that policy version follows semantic versioning."""
         from app.integrations.bots.shared.consent import CURRENT_POLICY_VERSION
 
@@ -319,7 +303,7 @@ class TestConsentPolicyVersion:
 class TestStoreConsent:
     """Test store_consent function from shared consent module."""
 
-    def test_store_consent_data_processing_tg(self, setup_test_db):
+    def test_store_consent_data_processing_tg(self, clean_database):
         """Test storing data processing consent for Telegram."""
         from app.db import get_db
         from app.integrations.bots.shared.consent import store_consent
@@ -363,7 +347,7 @@ class TestStoreConsent:
 
         conn.close()
 
-    def test_store_consent_marketing_tg(self, setup_test_db):
+    def test_store_consent_marketing_tg(self, clean_database):
         """Test storing marketing consent for Telegram."""
         from app.db import get_db
         from app.integrations.bots.shared.consent import store_consent
@@ -406,7 +390,7 @@ class TestStoreConsent:
 
         conn.close()
 
-    def test_store_consent_multiple_types(self, setup_test_db):
+    def test_store_consent_multiple_types(self, clean_database):
         """Test storing multiple consent types for same customer."""
         from app.db import get_db
         from app.integrations.bots.shared.consent import store_consent
@@ -444,7 +428,7 @@ class TestStoreConsent:
 class TestGetCustomerConsents:
     """Test get_customer_consents function from shared consent module."""
 
-    def test_get_customer_consents_tg_with_consent(self, setup_test_db):
+    def test_get_customer_consents_tg_with_consent(self, clean_database):
         """Test getting consents for Telegram user with consent granted."""
         from app.db import get_db
         from app.integrations.bots.shared.consent import get_customer_consents
@@ -470,7 +454,7 @@ class TestGetCustomerConsents:
 
         conn.close()
 
-    def test_get_customer_consents_tg_marketing_only(self, setup_test_db):
+    def test_get_customer_consents_tg_marketing_only(self, clean_database):
         """Test getting consents for user with only marketing consent."""
         from app.db import get_db
         from app.integrations.bots.shared.consent import get_customer_consents
@@ -496,7 +480,7 @@ class TestGetCustomerConsents:
 
         conn.close()
 
-    def test_get_customer_consents_not_found(self, setup_test_db):
+    def test_get_customer_consents_not_found(self):
         """Test getting consents for non-existent user returns False."""
         from app.integrations.bots.shared.consent import get_customer_consents
 
@@ -505,7 +489,7 @@ class TestGetCustomerConsents:
         assert consents["marketing_allowed"] is False
         assert consents["data_processing_allowed"] is False
 
-    def test_get_customer_consents_vk_not_found(self, setup_test_db):
+    def test_get_customer_consents_vk_not_found(self):
         """Test getting consents for non-existent VK user."""
         from app.integrations.bots.shared.consent import get_customer_consents
 
@@ -519,7 +503,7 @@ class TestGetCustomerConsents:
 class TestUpdateConsent:
     """Test update_consent function from shared consent module."""
 
-    def test_update_consent_marketing_only_tg(self, setup_test_db):
+    def test_update_consent_marketing_only_tg(self, clean_database):
         """Test updating only marketing consent for Telegram user."""
         from app.db import get_db
         from app.integrations.bots.shared.consent import (
@@ -550,7 +534,7 @@ class TestUpdateConsent:
 
         conn.close()
 
-    def test_update_consent_data_processing_only_tg(self, setup_test_db):
+    def test_update_consent_data_processing_only_tg(self, clean_database):
         """Test updating only data processing consent for Telegram user."""
         from app.db import get_db
         from app.integrations.bots.shared.consent import (
@@ -581,7 +565,7 @@ class TestUpdateConsent:
 
         conn.close()
 
-    def test_update_consent_both_flags(self, setup_test_db):
+    def test_update_consent_both_flags(self, clean_database):
         """Test updating both consent flags at once."""
         from app.db import get_db
         from app.integrations.bots.shared.consent import (
@@ -612,7 +596,7 @@ class TestUpdateConsent:
 
         conn.close()
 
-    def test_update_consent_nonexistent_user(self, setup_test_db):
+    def test_update_consent_nonexistent_user(self):
         """Test updating consent for non-existent user does not error."""
         from app.integrations.bots.shared.consent import update_consent
 
@@ -623,7 +607,7 @@ class TestUpdateConsent:
 class TestCleanupUserData:
     """Test cleanup_user_data function for 152-ФЗ compliance."""
 
-    def test_cleanup_user_data_tg(self, clean_redis):
+    def test_cleanup_user_data_tg(self, clean_database, clean_redis):
         """Test cleaning up user data for Telegram user with log_refusal=True."""
         from app.db import get_db
         from app.integrations.bots.shared.consent import cleanup_user_data
@@ -668,7 +652,7 @@ class TestCleanupUserData:
             assert cur.fetchone() is None
         conn.close()
 
-    def test_cleanup_user_data_tg_another(self, setup_test_db, clean_redis):
+    def test_cleanup_user_data_tg_another(self, clean_database, clean_redis):
         """Test cleaning up another Telegram user with log_refusal=False."""
         from app.db import get_db
         from app.integrations.bots.shared.consent import cleanup_user_data
@@ -729,7 +713,7 @@ class TestCleanupUserData:
         assert cur.fetchone() is None
         conn.close()
 
-    def test_cleanup_user_data_nonexistent(self, setup_test_db, clean_redis):
+    def test_cleanup_user_data_nonexistent(self, clean_database):
         """Test cleaning up non-existent user does not error."""
         from app.integrations.bots.shared.consent import cleanup_user_data
 
@@ -740,7 +724,7 @@ class TestCleanupUserData:
             # Should not raise
             cleanup_user_data("tg", 999003)
 
-    def test_cleanup_user_data_creates_refusal_record(self, setup_test_db, clean_redis):
+    def test_cleanup_user_data_creates_refusal_record(self, clean_database):
         """Test cleanup creates a refusal consent record for compliance."""
         from app.db import get_db
         from app.integrations.bots.shared.consent import cleanup_user_data
@@ -786,7 +770,7 @@ class TestCleanupUserData:
 class TestFindCustomerByPlatform:
     """Test find_customer_by_platform function."""
 
-    def test_find_customer_tg(self, setup_test_db):
+    def test_find_customer_tg(self, clean_database):
         """Test finding customer by Telegram ID."""
         from app.db import get_db
         from app.integrations.bots.shared.consent import find_customer_by_platform
@@ -811,7 +795,7 @@ class TestFindCustomerByPlatform:
         assert customer["telegram_id"] == 999005
         assert customer["full_name"] == "Find Me"
 
-    def test_find_customer_tg_vk(self, setup_test_db):
+    def test_find_customer_tg_vk(self, clean_database):
         """Test finding customer by Telegram ID (using vk source - tests shared module)."""
         from app.db import get_db
         from app.integrations.bots.shared.consent import find_customer_by_platform
@@ -836,7 +820,7 @@ class TestFindCustomerByPlatform:
         customer = find_customer_by_platform("vk", 999006)
         assert customer is None
 
-    def test_find_customer_not_found(self, setup_test_db):
+    def test_find_customer_not_found(self):
         """Test finding non-existent customer returns None."""
         from app.integrations.bots.shared.consent import find_customer_by_platform
 
@@ -847,7 +831,7 @@ class TestFindCustomerByPlatform:
 class TestGetCustomerId:
     """Test get_customer_id function."""
 
-    def test_get_customer_id_tg(self, setup_test_db):
+    def test_get_customer_id_tg(self, clean_database):
         """Test getting customer ID by Telegram ID."""
         from app.db import get_db
         from app.integrations.bots.shared.consent import get_customer_id
@@ -873,7 +857,7 @@ class TestGetCustomerId:
 
         assert customer_id == expected_id
 
-    def test_get_customer_id_tg_vk(self, setup_test_db):
+    def test_get_customer_id_tg_vk(self, clean_database):
         """Test getting customer ID with vk source (tests shared module)."""
         from app.db import get_db
         from app.integrations.bots.shared.consent import get_customer_id
@@ -896,7 +880,7 @@ class TestGetCustomerId:
         customer_id = get_customer_id("vk", 999008)
         assert customer_id is None
 
-    def test_get_customer_id_not_found(self, setup_test_db):
+    def test_get_customer_id_not_found(self):
         """Test getting ID for non-existent customer returns None."""
         from app.integrations.bots.shared.consent import get_customer_id
 
@@ -907,7 +891,7 @@ class TestGetCustomerId:
 class TestRegistrationFlowInit:
     """Test RegistrationFlow class initialization."""
 
-    def test_registration_flow_init_vk(self, setup_test_db):
+    def test_registration_flow_init_vk(self, clean_database):
         """Test initializing RegistrationFlow for VK source."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -919,7 +903,7 @@ class TestRegistrationFlowInit:
         assert flow.STEP_PHONE == "phone"
         assert flow.STEP_MARKETING == "marketing"
 
-    def test_registration_flow_init_tg(self, setup_test_db):
+    def test_registration_flow_init_tg(self, clean_database):
         """Test initializing RegistrationFlow for Telegram source."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -927,7 +911,7 @@ class TestRegistrationFlowInit:
 
         assert flow.source == "tg"
 
-    def test_registration_flow_ttl_constant(self, setup_test_db):
+    def test_registration_flow_ttl_constant(self, clean_database):
         """Test that REGISTRATION_TTL is properly defined."""
         from app.integrations.bots.shared.registration import REGISTRATION_TTL
 
@@ -937,7 +921,7 @@ class TestRegistrationFlowInit:
 class TestRegistrationFlowConsent:
     """Test RegistrationFlow consent handling."""
 
-    def test_is_in_registration_flow_true_vk(self, setup_test_db, clean_redis):
+    def test_is_in_registration_flow_true_vk(self, clean_database, clean_redis):
         """Test is_in_registration_flow returns True when consent given for VK."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -952,7 +936,7 @@ class TestRegistrationFlowConsent:
             assert result is True
             mock_r.hgetall.assert_called_once()
 
-    def test_is_in_registration_flow_true_tg(self, setup_test_db, clean_redis):
+    def test_is_in_registration_flow_true_tg(self, clean_database, clean_redis):
         """Test is_in_registration_flow returns True when consent given for Telegram."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -966,7 +950,7 @@ class TestRegistrationFlowConsent:
 
             assert result is True
 
-    def test_is_in_registration_flow_false_no_consent(self, setup_test_db, clean_redis):
+    def test_is_in_registration_flow_false_no_consent(self, clean_database, clean_redis):
         """Test is_in_registration_flow returns False when no consent."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -980,7 +964,7 @@ class TestRegistrationFlowConsent:
 
             assert result is False
 
-    def test_is_in_registration_flow_false_consent_0(self, setup_test_db, clean_redis):
+    def test_is_in_registration_flow_false_consent_0(self, clean_database, clean_redis):
         """Test is_in_registration_flow returns False when consent_given=0."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -994,7 +978,7 @@ class TestRegistrationFlowConsent:
 
             assert result is False
 
-    def test_start_registration_vk(self, setup_test_db, clean_redis):
+    def test_start_registration_vk(self, clean_database, clean_redis):
         """Test starting registration flow for VK user."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1013,7 +997,7 @@ class TestRegistrationFlowConsent:
             # Verify expire was called
             mock_r.expire.assert_called_once()
 
-    def test_start_registration_tg(self, setup_test_db, clean_redis):
+    def test_start_registration_tg(self, clean_database, clean_redis):
         """Test starting registration flow for Telegram user."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1033,7 +1017,7 @@ class TestRegistrationFlowConsent:
 class TestRegistrationFlowName:
     """Test RegistrationFlow name input handling."""
 
-    def test_store_name_vk(self, setup_test_db, clean_redis):
+    def test_store_name_vk(self, clean_database, clean_redis):
         """Test storing user's name for VK."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1054,7 +1038,7 @@ class TestRegistrationFlowName:
             # Verify expire was called
             mock_r.expire.assert_called_once()
 
-    def test_store_name_tg(self, setup_test_db, clean_redis):
+    def test_store_name_tg(self, clean_database, clean_redis):
         """Test storing user's name for Telegram."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1071,7 +1055,7 @@ class TestRegistrationFlowName:
 class TestRegistrationFlowPhone:
     """Test RegistrationFlow phone input handling."""
 
-    def test_store_phone_valid_vk(self, setup_test_db, clean_redis):
+    def test_store_phone_valid_vk(self, clean_database, clean_redis):
         """Test storing valid phone number for VK."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1091,7 +1075,7 @@ class TestRegistrationFlowPhone:
             assert "+79991234567" in str(call_args)
             assert "marketing" in str(call_args)  # Next step
 
-    def test_store_phone_valid_tg(self, setup_test_db, clean_redis):
+    def test_store_phone_valid_tg(self, clean_database, clean_redis):
         """Test storing valid phone number for Telegram."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1105,7 +1089,7 @@ class TestRegistrationFlowPhone:
             # Should return normalized phone
             assert result == "+79991234567"
 
-    def test_store_phone_invalid(self, setup_test_db, clean_redis):
+    def test_store_phone_invalid(self, clean_database, clean_redis):
         """Test storing invalid phone number returns None."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1121,7 +1105,7 @@ class TestRegistrationFlowPhone:
             # hset should not be called for invalid phone
             mock_r.hset.assert_not_called()
 
-    def test_store_phone_russian_format(self, setup_test_db, clean_redis):
+    def test_store_phone_russian_format(self, clean_database, clean_redis):
         """Test storing Russian phone format (8xxxxxxxxxx)."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1134,7 +1118,7 @@ class TestRegistrationFlowPhone:
 
             assert result == "+79991234567"
 
-    def test_store_phone_international_format(self, setup_test_db, clean_redis):
+    def test_store_phone_international_format(self, clean_database, clean_redis):
         """Test storing international phone format."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1151,7 +1135,7 @@ class TestRegistrationFlowPhone:
 class TestRegistrationFlowStep:
     """Test RegistrationFlow step management."""
 
-    def test_set_step_vk(self, setup_test_db, clean_redis):
+    def test_set_step_vk(self, clean_database, clean_redis):
         """Test setting current step for VK."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1165,7 +1149,7 @@ class TestRegistrationFlowStep:
             mock_r.hset.assert_called_once()
             mock_r.expire.assert_called_once()
 
-    def test_get_registration_data_vk(self, setup_test_db, clean_redis):
+    def test_get_registration_data_vk(self, clean_database, clean_redis):
         """Test getting registration data from Redis."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1191,7 +1175,7 @@ class TestRegistrationFlowStep:
 class TestRegistrationFlowClear:
     """Test RegistrationFlow cleanup."""
 
-    def test_clear_registration_vk(self, setup_test_db, clean_redis):
+    def test_clear_registration_vk(self, clean_database, clean_redis):
         """Test clearing registration data for VK."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1206,7 +1190,7 @@ class TestRegistrationFlowClear:
             call_args = mock_r.delete.call_args
             assert "crm:consent:vk:123456789" in str(call_args)
 
-    def test_clear_registration_tg(self, setup_test_db, clean_redis):
+    def test_clear_registration_tg(self, clean_database, clean_redis):
         """Test clearing registration data for Telegram."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1223,7 +1207,7 @@ class TestRegistrationFlowClear:
 class TestRegistrationFlowComplete:
     """Test complete_registration method."""
 
-    def test_complete_registration_new_user_vk(self, setup_test_db, clean_redis):
+    def test_complete_registration_new_user_vk(self, clean_database, clean_redis):
         """Test completing registration for new VK user."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1251,7 +1235,7 @@ class TestRegistrationFlowComplete:
                 assert is_new is True
                 mock_conn.commit.assert_called()
 
-    def test_complete_registration_new_user_tg(self, setup_test_db, clean_redis):
+    def test_complete_registration_new_user_tg(self, clean_database, clean_redis):
         """Test completing registration for new Telegram user."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1278,7 +1262,7 @@ class TestRegistrationFlowComplete:
 
                 assert is_new is True
 
-    def test_complete_registration_existing_user_vk(self, setup_test_db, clean_redis):
+    def test_complete_registration_existing_user_vk(self, clean_database, clean_redis):
         """Test completing registration for existing VK user."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1304,7 +1288,7 @@ class TestRegistrationFlowComplete:
 class TestRegistrationPathways:
     """Test complete registration pathways."""
 
-    def test_new_user_registration_pathway_vk(self, setup_test_db, clean_redis):
+    def test_new_user_registration_pathway_vk(self, clean_redis):
         """Test full registration pathway for new VK user."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1354,7 +1338,7 @@ class TestRegistrationPathways:
             mock_r.hgetall.return_value = {}
             assert flow.is_in_registration_flow(user_id) is False
 
-    def test_consent_refusal_handling_vk(self, setup_test_db, clean_redis):
+    def test_consent_refusal_handling_vk(self, clean_redis):
         """Test handling when user refuses consent."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1382,7 +1366,7 @@ class TestRegistrationPathways:
             mock_r.hgetall.return_value = {}
             assert flow.is_in_registration_flow(user_id) is False
 
-    def test_abandoned_registration_cleanup_vk(self, setup_test_db, clean_redis):
+    def test_abandoned_registration_cleanup_vk(self, clean_redis):
         """Test cleanup of abandoned registration."""
         from app.integrations.bots.shared.registration import RegistrationFlow
 
@@ -1408,35 +1392,35 @@ class TestRegistrationPathways:
 class TestRegistrationKeyManagement:
     """Test registration key generation and TTL."""
 
-    def test_consent_key_format_vk(self, setup_test_db):
+    def test_consent_key_format_vk(self):
         """Test consent key format for VK."""
         from app.integrations.bots.shared.keys import consent_key
 
         key = consent_key("vk", 123456789)
         assert key == "crm:consent:vk:123456789"
 
-    def test_consent_key_format_tg(self, setup_test_db):
+    def test_consent_key_format_tg(self):
         """Test consent key format for Telegram."""
         from app.integrations.bots.shared.keys import consent_key
 
         key = consent_key("tg", 999999)
         assert key == "crm:consent:tg:999999"
 
-    def test_registration_key_format_vk(self, setup_test_db):
+    def test_registration_key_format_vk(self):
         """Test registration key format for VK."""
         from app.integrations.bots.shared.keys import registration_key
 
         key = registration_key("vk", 123456789)
         assert key == "crm:reg:vk:123456789"
 
-    def test_registration_key_format_tg(self, setup_test_db):
+    def test_registration_key_format_tg(self):
         """Test registration key format for Telegram."""
         from app.integrations.bots.shared.keys import registration_key
 
         key = registration_key("tg", 999999)
         assert key == "crm:reg:tg:999999"
 
-    def test_keys_different_sources_different(self, setup_test_db):
+    def test_keys_different_sources_different(self):
         """Test that different sources produce different keys."""
         from app.integrations.bots.shared.keys import consent_key, registration_key
 
@@ -1454,7 +1438,7 @@ class TestRegistrationKeyManagement:
 class TestGetConsentText:
     """Test consent text generation."""
 
-    def test_get_consent_text_vk(self, setup_test_db):
+    def test_get_consent_text_vk(self):
         """Test getting consent text for VK."""
         from app.integrations.bots.shared.registration import get_consent_text
 
@@ -1463,7 +1447,7 @@ class TestGetConsentText:
         assert "Политикой конфиденциальности" in text
         assert "152-ФЗ" in text
 
-    def test_get_marketing_consent_text_vk(self, setup_test_db):
+    def test_get_marketing_consent_text_vk(self):
         """Test getting marketing consent text for VK."""
         from app.integrations.bots.shared.registration import get_marketing_consent_text
 
