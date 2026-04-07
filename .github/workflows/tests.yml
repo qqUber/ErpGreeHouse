@@ -130,7 +130,7 @@ jobs:
       
       - name: Monitor E2E logs
         run: |
-          timeout 45s docker compose -f docker-compose.yml -f docker-compose.test.yml logs -f --tail=50 e2e-runner
+          timeout 45s docker compose -f docker-compose.yml -f docker-compose.test.yml logs -f --tail=50 e2e-runner || true
       
       - name: Wait for E2E completion
         run: |

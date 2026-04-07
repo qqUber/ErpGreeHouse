@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { AdminMe, Api, clearPendingRequests } from '../api';
+import { AdminMe, Api, clearPendingRequests, setAdminSecret } from '../api';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -70,11 +70,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: async ({ username, password }: { username: string; password: string }) => {
       const result = await Api.login(username, password);
+      const sessionToken = result.access_token || result.token || '';
+      setAdminSecret(sessionToken);
       let user: AdminMe | null = null;
       try {
         user = await Api.me();
       } catch (e) {
         console.error('[Auth] Login successful but failed to fetch user:', e);
+      }
+      if (!user) {
+        throw new Error('Login succeeded, but profile fetch failed');
       }
       return { user, mustChangePassword: result.must_change_password };
     },
