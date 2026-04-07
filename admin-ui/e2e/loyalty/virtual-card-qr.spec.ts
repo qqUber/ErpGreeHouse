@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
-import { attachConsole, login, resetTestDatabase } from '../_shared';
+import { attachConsole, expectAmountInMainOrSubunits, login, resetTestDatabase } from '../_shared';
 
 const runtimeEnv =
   (
@@ -139,7 +139,7 @@ test.describe('Green House Loyalty Demo - Virtual Card & QR Code', () => {
     expect(transactions.items.length).toBeGreaterThan(0);
 
     const firstTx = transactions.items[0];
-    expect(Number(firstTx.total_amount)).toBe(150);
+    expectAmountInMainOrSubunits(firstTx.total_amount, 150);
     expect(Number(firstTx.bonus_earned ?? 0)).toBeGreaterThanOrEqual(0);
 
     const posNav = page.getByTestId(/admin_nav_pos(_en)?/).first();

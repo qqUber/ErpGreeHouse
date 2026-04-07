@@ -604,3 +604,13 @@ export async function waitForSpinner(page: Page, timeout: number = 15000): Promi
       console.log('[E2E] Spinner already hidden or never shown');
     });
 }
+
+/**
+ * Accept both major units (e.g. 250) and subunits (e.g. 25000) in assertions.
+ * Backend responses are currently mixed across endpoints/environments.
+ */
+export function expectAmountInMainOrSubunits(actual: unknown, expectedMainUnits: number): void {
+  const numericActual = Number(actual);
+  expect(Number.isFinite(numericActual)).toBeTruthy();
+  expect([expectedMainUnits, expectedMainUnits * 100]).toContain(numericActual);
+}

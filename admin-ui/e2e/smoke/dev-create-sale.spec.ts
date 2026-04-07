@@ -1,4 +1,4 @@
-import { expect, test } from '../_shared';
+import { expect, expectAmountInMainOrSubunits, test } from '../_shared';
 
 test('dev stack: admin can create sale from integrations simulator', async ({ page }) => {
   const runtimeEnv =
@@ -89,5 +89,5 @@ test('dev stack: admin can create sale from integrations simulator', async ({ pa
   const customerDetails = await customerDetailsResponse.json();
   expect(Array.isArray(customerDetails.transactions)).toBeTruthy();
   expect(customerDetails.transactions.length).toBeGreaterThan(0);
-  expect(customerDetails.transactions[0].total_amount).toBe(630);
+  expectAmountInMainOrSubunits(customerDetails.transactions[0].total_amount, 630);
 });

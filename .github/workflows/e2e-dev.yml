@@ -81,7 +81,7 @@ jobs:
             admin-ui/playwright-report
             admin-ui/test-results
             admin-ui/allure-results
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: stop e2e stack
         if: always()

@@ -6,6 +6,7 @@ Design Token API v2 for per-tenant customization
 # type: ignore
 import os
 import shutil
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -17,9 +18,39 @@ from app.db import DB
 
 router = APIRouter(prefix="/api/v1/tenant", tags=["tenant"])
 
-# Asset storage path
-ASSETS_DIR = Path(os.getenv("ASSETS_DIR", "/app/assets"))
-ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+
+def _resolve_assets_dir() -> Path:
+    """
+    Resolve writable asset storage path.
+
+    Priority:
+    1. Explicit ASSETS_DIR env var.
+    2. Legacy /app/assets path (for containers).
+    3. Project-local middleware/assets directory.
+    4. System temp fallback.
+    """
+    candidates = []
+    configured = os.getenv("ASSETS_DIR")
+    if configured:
+        candidates.append(Path(configured))
+    else:
+        candidates.append(Path("/app/assets"))
+
+    candidates.append(Path(__file__).resolve().parent.parent / "assets")
+    candidates.append(Path(tempfile.gettempdir()) / "erpgreehouse_assets")
+
+    for candidate in candidates:
+        try:
+            candidate.mkdir(parents=True, exist_ok=True)
+            return candidate
+        except OSError:
+            continue
+
+    # Final hard failure with explicit message if all writable paths failed.
+    raise RuntimeError("Unable to create writable assets directory")
+
+
+ASSETS_DIR = _resolve_assets_dir()
 
 
 class ThemeConfig(BaseModel):
@@ -50,7 +81,9 @@ def get_tenant_config(tenant_id: str = "default") -> dict:
     """Get tenant configuration from database"""
     db = DB()
     with db.conn() as conn:
-        cursor = conn.execute("SELECT config FROM tenant_configs WHERE tenant_id = ?", (tenant_id,))
+        cursor = conn.execute(
+            "SELECT config FROM tenant_configs WHERE tenant_id = ?", (tenant_id,)
+        )
         row = cursor.fetchone()
         if row:
             import json
@@ -87,7 +120,9 @@ async def get_tenant_theme(tenant_id: str = "default"):
 
 
 @router.put("/theme", response_model=ThemeConfig)
-async def update_tenant_theme(theme: ThemeConfig, tenant_id: str = "default", admin=Depends(require_admin)):
+async def update_tenant_theme(
+    theme: ThemeConfig, tenant_id: str = "default", admin=Depends(require_admin)
+):
     """Update tenant theme configuration (admin only)"""
     config = get_tenant_config(tenant_id)
     config["theme"] = theme.model_dump()
@@ -125,7 +160,9 @@ async def upload_logo(
     config["theme"]["logo_url"] = f"/api/v1/assets/{tenant_id}/logo"
     save_tenant_config(tenant_id, config)
 
-    return AssetUploadResponse(asset_type="logo", url=f"/api/v1/assets/{tenant_id}/logo", filename=filename)
+    return AssetUploadResponse(
+        asset_type="logo", url=f"/api/v1/assets/{tenant_id}/logo", filename=filename
+    )
 
 
 @router.post("/assets/favicon", response_model=AssetUploadResponse)

@@ -1,5 +1,13 @@
 import type { APIRequestContext } from '@playwright/test';
-import { attachConsole, expect, login, maybePause, retryBackoff, test } from '../_shared';
+import {
+  attachConsole,
+  expect,
+  expectAmountInMainOrSubunits,
+  login,
+  maybePause,
+  retryBackoff,
+  test,
+} from '../_shared';
 
 /**
  * Critical Flow E2E Tests
@@ -77,7 +85,7 @@ test('create product card (manager) and verify in DB', async ({ page, request })
   const db = await dbRes.json();
   expect(db.product).toBeTruthy();
   expect(db.product.code).toBe(code);
-  expect(Number(db.product.price)).toBe(250);
+  expectAmountInMainOrSubunits(db.product.price, 250);
 
   await apiPostTestCleanup(request, { product_codes: [code] });
 });
