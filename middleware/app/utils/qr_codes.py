@@ -18,21 +18,47 @@ from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 from ..config import get_settings
 
 _RECENT_TOKEN_CACHE_SIZE = 50_000
-_recent_tokens = deque()
-_recent_tokens_set = set()
 _recent_tokens_lock = threading.Lock()
+_recent_tokens_by_conn: dict[int, dict[str, object]] = {}
 
 
-def _reserve_recent_token(token: str) -> bool:
-    """Reserve token in process-local cache to reduce burst duplicates."""
+def _reserve_recent_token(conn: sqlite3.Connection, token: str) -> bool:
+    """
+    Reserve token in connection-local cache to reduce burst duplicates.
+
+    Cache is automatically reset when customers row-count decreases
+    (e.g. tests cleanup with DELETE), so old values do not poison later batches.
+    """
     with _recent_tokens_lock:
-        if token in _recent_tokens_set:
+        conn_key = id(conn)
+        state = _recent_tokens_by_conn.get(conn_key)
+        if state is None:
+            state = {"tokens": deque(), "set": set(), "last_count": -1}
+            _recent_tokens_by_conn[conn_key] = state
+
+        tokens_deque: deque[str] = state["tokens"]  # type: ignore[assignment]
+        tokens_set: set[str] = state["set"]  # type: ignore[assignment]
+        last_count = int(state["last_count"])  # type: ignore[arg-type]
+
+        try:
+            current_count_row = conn.execute("SELECT COUNT(*) FROM customers").fetchone()
+            current_count = int(current_count_row[0] or 0) if current_count_row else 0
+        except sqlite3.OperationalError:
+            current_count = last_count
+
+        if current_count < last_count:
+            tokens_deque.clear()
+            tokens_set.clear()
+
+        state["last_count"] = current_count
+
+        if token in tokens_set:
             return False
-        _recent_tokens.append(token)
-        _recent_tokens_set.add(token)
-        if len(_recent_tokens) > _RECENT_TOKEN_CACHE_SIZE:
-            expired = _recent_tokens.popleft()
-            _recent_tokens_set.discard(expired)
+        tokens_deque.append(token)
+        tokens_set.add(token)
+        if len(tokens_deque) > _RECENT_TOKEN_CACHE_SIZE:
+            expired = tokens_deque.popleft()
+            tokens_set.discard(expired)
         return True
 
 
@@ -52,12 +78,12 @@ def generate_unique_token(conn: sqlite3.Connection, max_attempts: int = 100) -> 
         # Verify uniqueness in database
         try:
             existing = conn.execute("SELECT id FROM customers WHERE qr_token=?", (qr_code,)).fetchone()
-            if not existing and _reserve_recent_token(qr_code):
+            if not existing and _reserve_recent_token(conn, qr_code):
                 return qr_code
         except sqlite3.OperationalError as e:
             if "no such table" in str(e):
                 # Table doesn't exist, token is unique by default
-                if _reserve_recent_token(qr_code):
+                if _reserve_recent_token(conn, qr_code):
                     return qr_code
             else:
                 raise
