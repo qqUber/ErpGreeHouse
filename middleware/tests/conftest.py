@@ -162,7 +162,7 @@ def clean_database() -> Generator[str, None, None]:
     import time
 
     print(f"[conftest] clean_database fixture START")
-
+    
     try:
         from app.db import init_db
     except Exception as e:
@@ -170,13 +170,13 @@ def clean_database() -> Generator[str, None, None]:
         raise
 
     print(f"[conftest] clean_database fixture called")
-
+    
     # Step 1: Restore the test database path before each test
     # This ensures tests that change CRM_DB_PATH don't affect other tests
     db_path = _TEST_DB_PATH
     os.environ["CRM_DB_PATH"] = db_path
     os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
-
+    
     print(f"[conftest] Database path set to {db_path}")
 
     # Step 2: Ensure database directory exists
@@ -215,7 +215,7 @@ def clean_database() -> Generator[str, None, None]:
 
     # Step 4: Initialize fresh test database (this creates all tables)
     init_db()
-
+    
     print(f"[conftest] Database initialized at {db_path}")
 
     # Enable WAL mode for better concurrency

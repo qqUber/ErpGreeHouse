@@ -239,8 +239,7 @@ class DB:
         except sqlite3.OperationalError:
             pass
 
-        conn.executescript(
-            """
+        conn.executescript("""
             CREATE TABLE IF NOT EXISTS points_ledger (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 customer_id INTEGER NOT NULL,
@@ -382,8 +381,7 @@ class DB:
                 UNIQUE(employee_id, metric_type, period)
             );
             CREATE INDEX IF NOT EXISTS idx_employee_metrics_period ON employee_metrics(period);
-            """
-        )
+            """)
 
         defaults = [
             ("welcome_bonus_points", "100"),
@@ -453,8 +451,7 @@ def init_db() -> None:
     conn.execute("PRAGMA journal_mode = WAL")
     conn.execute("PRAGMA synchronous = NORMAL")
     try:
-        conn.executescript(
-            """
+        conn.executescript("""
             CREATE TABLE IF NOT EXISTS customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 phone TEXT UNIQUE,
@@ -766,8 +763,7 @@ def init_db() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_customer_visits_customer_id ON customer_visits(customer_id);
             CREATE INDEX IF NOT EXISTS idx_customer_visits_location_id ON customer_visits(location_id);
-            """
-        )
+            """)
         conn.commit()
         cols = [r["name"] for r in conn.execute("PRAGMA table_info(transactions)").fetchall()]
         if "pos_receipt_id" not in cols:
@@ -803,16 +799,14 @@ def init_db() -> None:
         # Migration: create tenant_configs table for UI theming
         tables = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
         if "tenant_configs" not in tables:
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE tenant_configs (
                     tenant_id TEXT PRIMARY KEY,
                     config TEXT NOT NULL DEFAULT '{}',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-            )
+            """)
             conn.execute("INSERT INTO tenant_configs (tenant_id, config) VALUES ('default', '{}')")
             conn.commit()
     finally:

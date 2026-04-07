@@ -44,16 +44,14 @@ def get_or_generate_base_guid_safe(conn: sqlite3.Connection) -> str:
     """Safely get or generate base GUID with proper transaction handling."""
     with database_transaction(conn):
         # Ensure table exists
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
             )
-        """
-        )
+        """)
 
         # Try to get existing GUID
         row = conn.execute("SELECT value FROM system_settings WHERE key=?", (BASE_GUID_KEY,)).fetchone()

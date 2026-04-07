@@ -289,9 +289,7 @@ class ProductRecommendationService:
                         WHERE p.active = 1
                         AND p.code NOT IN ({0})
                         ORDER BY popularity DESC
-                        LIMIT ?""".format(
-                        ",".join(["?"] * len(existing_codes)) if existing_codes else "''"
-                    ),
+                        LIMIT ?""".format(",".join(["?"] * len(existing_codes)) if existing_codes else "''"),
                     tuple(existing_codes) + (needed,),
                 )
 

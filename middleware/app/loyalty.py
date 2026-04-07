@@ -62,14 +62,12 @@ def _get_redis() -> Optional[redis.Redis]:
 def get_loyalty_rules(conn: Connection | None = None) -> LoyaltyRules:
     if conn is None:
         return LoyaltyRules()
-    rows = conn.execute(
-        """
+    rows = conn.execute("""
         SELECT name, min_spent, accrual_percent, max_redeem_percent
         FROM loyalty_tiers
         WHERE active=1
         ORDER BY sort_order ASC, min_spent ASC
-        """
-    ).fetchall()
+        """).fetchall()
     if not rows:
         return LoyaltyRules(
             min_amount_for_accrual=max(0, _setting_int(conn, "min_amount_for_accrual", 100)),
@@ -88,14 +86,12 @@ def get_loyalty_rules(conn: Connection | None = None) -> LoyaltyRules:
 
 
 def get_tier_with_referrals(conn: Connection, spent_amount: int, referral_count: int) -> Tier:
-    rows = conn.execute(
-        """
+    rows = conn.execute("""
         SELECT name, min_spent, accrual_percent, max_redeem_percent, min_referrals
         FROM loyalty_tiers
         WHERE active=1
         ORDER BY sort_order ASC, min_spent ASC
-        """
-    ).fetchall()
+        """).fetchall()
     if not rows:
         return get_tier(spent_amount, get_loyalty_rules(conn))
     picked: Optional[Tier] = None

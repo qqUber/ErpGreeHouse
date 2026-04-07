@@ -160,8 +160,7 @@ def analytics_referrals(
     db = get_db()
     conn = db.connect()
     try:
-        rows = conn.execute(
-            """
+        rows = conn.execute("""
             SELECT r.referrer_id, c.full_name, COUNT(*) as total_invites,
                    SUM(CASE WHEN r.status='converted' THEN 1 ELSE 0 END) as converted
             FROM referrals r
@@ -169,8 +168,7 @@ def analytics_referrals(
             GROUP BY r.referrer_id, c.full_name
             ORDER BY converted DESC, total_invites DESC
             LIMIT 100
-            """
-        ).fetchall()
+            """).fetchall()
         items = []
         for r in rows:
             total = int(r["total_invites"] or 0)
@@ -509,15 +507,13 @@ def run_fraud_scan(
     db = get_db()
     conn = db.connect()
     try:
-        rows = conn.execute(
-            """
+        rows = conn.execute("""
             SELECT customer_id, COUNT(*) AS tx_count, SUM(bonus_used) AS used_points
             FROM transactions
             WHERE created_at >= datetime('now', '-1 day')
             GROUP BY customer_id
             HAVING tx_count >= 5 OR used_points >= 1000
-            """
-        ).fetchall()
+            """).fetchall()
 
         created = 0
         for row in rows:
