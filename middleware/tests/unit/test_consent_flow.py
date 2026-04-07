@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 """
 Unit tests for 152-ФЗ consent flow functionality.
 
