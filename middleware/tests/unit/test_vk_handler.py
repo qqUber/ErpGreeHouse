@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 """
 Unit tests for VK (VKontakte) Bot Handler
 

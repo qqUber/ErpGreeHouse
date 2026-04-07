@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 """
 Integration tests for Telegram bot 152-ФЗ compliance registration flow.
 
