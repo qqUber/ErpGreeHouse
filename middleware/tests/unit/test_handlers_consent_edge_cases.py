@@ -35,7 +35,9 @@ class TestStoreConsentEdgeCases:
         _store_consent(123456, "data_processing", True, conn)
 
         # Verify consent was stored
-        result = conn.execute("SELECT data_processing_allowed FROM customers WHERE telegram_id = ?", (123456,)).fetchone()
+        result = conn.execute(
+            "SELECT data_processing_allowed FROM customers WHERE telegram_id = ?", (123456,)
+        ).fetchone()
         assert result[0] == 1
 
         conn.close()

@@ -39,7 +39,8 @@ class TestForeignKeyConstraints:
         conn.execute("PRAGMA foreign_keys = ON")
 
         # Create minimal tables with FK
-        conn.executescript("""
+        conn.executescript(
+            """
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 phone TEXT UNIQUE,
@@ -56,7 +57,8 @@ class TestForeignKeyConstraints:
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE
             );
-        """)
+        """
+        )
         conn.commit()
 
         yield path
@@ -72,7 +74,8 @@ class TestForeignKeyConstraints:
 
         conn = sqlite3.connect(path)
         # NOT enabling foreign_keys
-        conn.executescript("""
+        conn.executescript(
+            """
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 phone TEXT UNIQUE,
@@ -88,7 +91,8 @@ class TestForeignKeyConstraints:
                 items_json TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT (datetime('now'))
             );
-        """)
+        """
+        )
         conn.commit()
 
         yield path
@@ -104,10 +108,12 @@ class TestForeignKeyConstraints:
         # Try to insert a transaction with non-existent customer_id
         # This SHOULD FAIL if FK constraints are properly enforced
         with pytest.raises(sqlite3.IntegrityError) as exc_info:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO transactions (customer_id, total_amount, bonus_used, bonus_earned, items_json)
                 VALUES (999, 100, 0, 10, '{}')
-            """)
+            """
+            )
 
         assert "FOREIGN KEY constraint failed" in str(exc_info.value)
         conn.close()
@@ -118,10 +124,12 @@ class TestForeignKeyConstraints:
         conn.execute("PRAGMA foreign_keys = ON")
 
         # Insert a customer first
-        cursor = conn.execute("""
+        cursor = conn.execute(
+            """
             INSERT INTO customers (phone, full_name)
             VALUES ('+1234567890', 'Test Customer')
-        """)
+        """
+        )
         customer_id = cursor.lastrowid
 
         # Insert a transaction with valid customer_id
@@ -146,10 +154,12 @@ class TestForeignKeyConstraints:
 
         # This will SUCCEED even though customer_id 999 doesn't exist
         # This demonstrates the problem when FK is not enabled
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO transactions (customer_id, total_amount, bonus_used, bonus_earned, items_json)
             VALUES (999, 100, 0, 10, '{}')
-        """)
+        """
+        )
 
         # Verify it was inserted (bad data!)
         result = conn.execute("SELECT customer_id FROM transactions WHERE customer_id = 999").fetchone()
@@ -164,10 +174,12 @@ class TestForeignKeyConstraints:
         conn.execute("PRAGMA foreign_keys = ON")
 
         # Insert a customer
-        cursor = conn.execute("""
+        cursor = conn.execute(
+            """
             INSERT INTO customers (phone, full_name)
             VALUES ('+1234567890', 'Test Customer')
-        """)
+        """
+        )
         customer_id = cursor.lastrowid
 
         # Insert a transaction
