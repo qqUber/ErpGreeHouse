@@ -1,5 +1,9 @@
-[bandit]
-exclude_dirs = /tests,/venv,/env,/__pycache__
-severity_threshold = high
-confidence_threshold = high
-skips = B105,B106,B110
+exclude_dirs:
+  - /tests
+  - /venv
+  - /env
+  - /__pycache__
+skips:
+  - B105
+  - B106
+  - B110
