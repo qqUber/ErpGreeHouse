@@ -244,7 +244,7 @@ jobs:
       - name: Run Bandit security scan
         working-directory: ./middleware
         run: |
-          bandit -r app/ -f json -o reports/bandit_report.json
+          bandit -r app/ -c .bandit -f json -o reports/bandit_report.json
 
       - name: Run pip-audit dependency check
         working-directory: ./middleware

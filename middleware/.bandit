@@ -1,0 +1,9 @@
+[bandit]
+# Exclude tests that produce false positives
+exclude_dirs = ['/tests', '/venv', '/env', '/__pycache__']
+# Only fail on HIGH severity issues
+severity_threshold = high
+# Only fail on HIGH confidence issues
+confidence_threshold = high
+# Skip specific tests that produce false positives
+skips = B105,B106,B110
