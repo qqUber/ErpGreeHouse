@@ -31,8 +31,8 @@ importers:
         specifier: ^2.36.0
         version: 2.36.0
       allure-playwright:
-        specifier: ^3.4.5
-        version: 3.4.5(@playwright/test@1.58.2)
+        specifier: ^3.7.0
+        version: 3.7.0(@playwright/test@1.58.2)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -445,16 +445,16 @@ packages:
     resolution: {integrity: sha512-ls/4fk2Psv2Tu2PbWFrQPmUnm3gmmO9MBan4MuPWwqdkJPEmln2KRwtvtWYr9Av+e5AnFK1fGXWVyxqJIPiPwA==}
     hasBin: true
 
-  allure-js-commons@3.4.5:
-    resolution: {integrity: sha512-mzAppLFva9PJqWvdI/aXn8jqr+5Am67JITdthMfEk8En6AhsrvRWZAjHZ1yUMDGEbxmivCni3lppvitJGStxFQ==}
+  allure-js-commons@3.7.0:
+    resolution: {integrity: sha512-cDjqmSIDhpk0AFktb7/qwAk4D3To8S0bmPROq0hS5dDby+uXf6ir4WyXI0HC/rHS9+smidyFHwBod3yIQ8kZ4w==}
     peerDependencies:
-      allure-playwright: 3.4.5
+      allure-playwright: 3.7.0
     peerDependenciesMeta:
       allure-playwright:
         optional: true
 
-  allure-playwright@3.4.5:
-    resolution: {integrity: sha512-pVewTpU9Z4qgT14VJdtYLAfF8rWROuESmvDkvyu/QnFWhRFrcDBnomynj84yx/QpXyMjJL+qu1yMU2z4Mq1YnA==}
+  allure-playwright@3.7.0:
+    resolution: {integrity: sha512-S/m8k6TxtK6ICvpnPF+iL/LyJxRA9M0ACobwFjE0+CmxikM9hCIbNyeaY+K0Z5CVj9oDkthvJhgpUmFlAq5rbA==}
     peerDependencies:
       '@playwright/test': '>=1.53.0'
 
@@ -970,16 +970,16 @@ snapshots:
 
   allure-commandline@2.36.0: {}
 
-  allure-js-commons@3.4.5(allure-playwright@3.4.5(@playwright/test@1.58.2)):
+  allure-js-commons@3.7.0(allure-playwright@3.7.0(@playwright/test@1.58.2)):
     dependencies:
       md5: 2.3.0
     optionalDependencies:
-      allure-playwright: 3.4.5(@playwright/test@1.58.2)
+      allure-playwright: 3.7.0(@playwright/test@1.58.2)
 
-  allure-playwright@3.4.5(@playwright/test@1.58.2):
+  allure-playwright@3.7.0(@playwright/test@1.58.2):
     dependencies:
       '@playwright/test': 1.58.2
-      allure-js-commons: 3.4.5(allure-playwright@3.4.5(@playwright/test@1.58.2))
+      allure-js-commons: 3.7.0(allure-playwright@3.7.0(@playwright/test@1.58.2))
 
   baseline-browser-mapping@2.10.0: {}
 
