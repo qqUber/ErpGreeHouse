@@ -23,7 +23,7 @@
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^5.1.4",
     "allure-commandline": "^2.36.0",
-    "allure-playwright": "^3.4.5",
+    "allure-playwright": "^3.7.1",
     "typescript": "^5.9.3",
     "vite": "^5.4.21"
   }
