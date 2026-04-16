@@ -276,7 +276,8 @@ class DashboardAnalyticsService:
                 / 100,  # Divide by 100 to convert from cents to rubles
                 "last_purchase_date": row["last_purchase_date"],
             }
-            for row in conn.execute("""SELECT c.id, c.full_name, c.phone, c.telegram_id, c.vk_id, c.marketing_allowed,
+            for row in conn.execute(
+                """SELECT c.id, c.full_name, c.phone, c.telegram_id, c.vk_id, c.marketing_allowed,
                           c.balance_points, c.ltv, c.last_purchase_date,
                           COALESCE(SUM(t.total_amount), 0) as total_spent,
                           COUNT(t.id) as transaction_count
@@ -284,7 +285,8 @@ class DashboardAnalyticsService:
                    LEFT JOIN transactions t ON c.id = t.customer_id
                    GROUP BY c.id
                    ORDER BY total_spent DESC
-                   LIMIT 8""").fetchall()
+                   LIMIT 8"""
+            ).fetchall()
         ]
 
         loyalty_tiers = [
